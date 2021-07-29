@@ -24,6 +24,6 @@ jobs:
     - name: Check black with tox
       run: TOXENV=black tox
     - name: Check isort tox
-      run: TOXENV=isort tox              
+      run: TOXENV=isort tox
     - name: Lint with tox
       run: TOXENV=lint tox

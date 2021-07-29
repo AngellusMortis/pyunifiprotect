@@ -1,3 +1,10 @@
+[build-system]
+requires = [
+  "setuptools >= 40.9.0",
+  "wheel",
+]
+build-backend = "setuptools.build_meta"
+
 [tool.black]
 target-version = ["py37", "py38"]
 exclude = 'generated'
@@ -79,6 +86,10 @@ disable = [
     "too-many-boolean-expressions",
     "unused-argument",
     "wrong-import-order",
+    "missing-docstring",
+    "empty-docstring",
+    "invalid-name",
+    "fixme",
 ]
 enable = [
     #"useless-suppression",  # temporarily every now and then to clean them up
@@ -111,3 +122,8 @@ norecursedirs = [
     ".git",
     "testing_config",
 ]
+
+[tool.flake8]
+exclude = ".eggs, .git, .tox, dist"
+ignore = "D10, D202, D210, D205, D4, E501, E126, E128, W504, W503, E203"
+max-line-length = 120
