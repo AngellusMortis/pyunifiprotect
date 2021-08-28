@@ -1,0 +1,88 @@
+# How to make a GHA Workflow to Test Against your UFP Instance
+
+## Create a self-hosted GHA Runner
+
+You can use any method for creating a GHA runner you want. It is just required you use the labels `self-hosted,linux,ufp,YOUR_USERNAME`. To help out, 3 possible install methods are listed below.
+
+The only other additional requirement for the GHA runner is that it _must_ be able to communitcate directly to your Unifi Protect instance.
+
+### Getting Required variables
+
+Beofre starting any of the 3 options, you need 4 pieces of data:
+
+* `REPO_URL`: the URL for the repo the GHA action runner will be for
+    * Either `https://github.com/briis/pyunifiprotect` or the URL of your fork
+* `RUNNER_NAME`: an identifiable name for your runner. Can be anything, but make sure it unique.
+* `LABELS`: should be `self-hosted,linux,ufp,YOUR_USERNAME`
+* `RUNNER_TOKEN`: See below
+
+#### Generating Runner Token
+
+To create a self-hosted GHA runner, you need owner level access to the repo and then you need to go and generate a time-based auth token to create the runner (token expires in ~1 hour).
+
+1. On your Github repo, Go to Settings -> Actions -> Runners and click "New self-hosted runner"
+2. Copy the value after the `--token` argument under the "Configure" section
+
+### Using a Home Assistant Add-on
+
+To help make the process as easy as possible, I made a simple Home Assistant add-on that wraps the "Using Docker" method below.
+
+1. Go to "Supervisor -> Add-on Store -> Triple dots in corner -> Repositories"
+2. Add the URL `https://github.com/AngellusMortis/ha-addons`
+3. Install the new "Github Actions Runner" add-on
+4. Click the "Configuration" tab and enter your values from above
+5. Start up the add-on
+
+`workdir` can be left as the default. It should already be a unique location that will not cause any issues.
+
+### Using Docker
+
+You can use the awesome [premade Docker GHA runner](https://github.com/myoung34/docker-github-actions-runner). Just start it in your prefered method.
+
+To be able to access the data from outside of the docker container to debug and such, you will also need to make a fodler on the host machine for the runner workflow. Replace `/path/to/host/folder/for/data` for the path to your folder.
+
+```bash
+docker run --rm -it \
+    -e REPO_URL=REPO_URL \
+    -e RUNNER_NAME=RUNNER_NAME \
+    -e LABELS=LABELS \
+    -e RUNNER_TOKEN=RUNNER_TOKEN \
+    -e RUNNER_WORKDIR=/data \
+    -v /path/to/host/folder/for/data:/data \
+    myoung34/github-runner:ubuntu-bionic
+```
+
+### Roll your Own Runner
+
+If you would prefer to make your own runner to ensure the complete security of your home network. Go for it.
+
+The docs for making your own runner can be found on [Github's docs site](https://docs.github.com/en/actions/hosting-your-own-runners/adding-self-hosted-runners)
+
+
+
+## Create a Local User in UFP for GHA
+
+Go to your UFP instance and create a Local User with admin permissions for GHA to use to access your instance. If you are already using the HA Integration for UFP, you can just reuse those credentials if you want.
+
+## Add Secrets to Github Repo
+
+Next step is to create an "environment" for your workflow to run it with the secrets you will need to connect to your UFP instnace. We will also want to lock it down to prevent other users from dumping your secrets.
+
+1. Go to "Settings -> Environments -> New Environment" and name it your Github username.
+2. Change "Deployment Branches" to "Selected Branches" and add `master`
+3. Under "Environment Secrets" add the following secrets:
+
+    * `UFP_ADDRESS`: IP or host name to your UFP instance
+    * `UFP_PORT`: Port for your UFP instance
+    * `UFP_SSL_VERIFY`: True or False. Whether or not to verify SSL certs for instance
+    * `UFP_USERNAME`: Username for your local admin user
+    * `UFP_PASSWORD`: Password for your local admin user
+
+## Create a workflow to Test data
+
+1. Copy one of the existing workflows under `.github/workflows/test-live-*.yml`
+2. Rename it to `test-live-YOUR_USERNAME.yml`
+3. Open the file and change the username in the `name` section at the top
+4. Replace the username in the `runs-on` section
+5. Replace the username in the `environment` section
+6. Replace `/share/gha-runner` in `UFP_SAMPLE_DIR: /share/gha-runner/ufp-data` toi match the root directory of your GHA runner you configured above. if you are using the HA Add-on, you may not need to change anything here.
