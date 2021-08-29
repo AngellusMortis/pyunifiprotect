@@ -844,7 +844,7 @@ class WSRawPacketFrame:
             packet_type, payload_format, deflated, unknown, payload_size = struct.unpack(
                 "!bbbbi", data[position:header_end]
             )
-        except Exception as e:
+        except struct.error as e:
             raise WSDecodeError from e
 
         if klass is None:
