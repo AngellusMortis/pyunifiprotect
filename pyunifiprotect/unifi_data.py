@@ -11,10 +11,10 @@ import json
 import logging
 import struct
 import time
-from typing import Any, Optional, Type
+from typing import Optional, Type
 import zlib
 
-from .exceptions import UnifiProtectError, WSDecodeError
+from .exceptions import WSDecodeError
 
 WS_HEADER_SIZE = 8
 _LOGGER = logging.getLogger(__name__)
