@@ -848,7 +848,7 @@ class WSRawPacketFrame:
             raise WSDecodeError from e
 
         if klass is None:
-            frame = WSRawPacketFrame.klass_from_format(payload_format)
+            frame = WSRawPacketFrame.klass_from_format(payload_format)()
         else:
             frame = klass()
             frame.payload_format = ProtectWSPayloadFormat(payload_format)
