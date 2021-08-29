@@ -11,7 +11,7 @@ import json
 import logging
 import struct
 import time
-from typing import Any, Optional
+from typing import Any, Optional, Type
 import zlib
 
 from .exceptions import UnifiProtectError, WSDecodeError
@@ -120,9 +120,8 @@ class ProtectWSPayloadFormat(enum.Enum):
 def decode_ws_frame(frame, position):
     """Decode a unifi updates websocket frame."""
 
-    frame_obj = WSPacketFrame(frame, position)
-
-    return frame_obj.raw_frame, frame_obj.payload_format, position + frame_obj.length
+    frame_obj = WSRawPacketFrame.from_binary(frame, position, klass=WSRawPacketFrame)
+    return frame_obj.data, frame_obj.payload_format, position + frame_obj.length
 
 
 def process_viewport(server_id, viewport, include_events):
@@ -821,7 +820,7 @@ class WSRawPacketFrame:
         return data
 
     @staticmethod
-    def class_from_format(format_raw=bytes):
+    def klass_from_format(format_raw=bytes):
         payload_format = ProtectWSPayloadFormat(format_raw)
 
         if payload_format == ProtectWSPayloadFormat.JSON:
@@ -830,7 +829,7 @@ class WSRawPacketFrame:
         return WSRawPacketFrame
 
     @staticmethod
-    def from_binary(data: bytes, position: int = 0) -> WSRawPacketFrame:
+    def from_binary(data: bytes, position: int = 0, klass: Optional[Type[WSRawPacketFrame]] = None) -> WSRawPacketFrame:
         """Decode a unifi updates websocket frame."""
         # The format of the frame is
         # b: packet_type
@@ -848,7 +847,12 @@ class WSRawPacketFrame:
         except Exception as e:
             raise WSDecodeError from e
 
-        frame = WSRawPacketFrame.class_from_format(payload_format)
+        if klass is None:
+            frame = WSRawPacketFrame.klass_from_format(payload_format)
+        else:
+            frame = klass()
+            frame.payload_format = ProtectWSPayloadFormat(payload_format)
+
         frame.header = WSPacketFrameHeader(packet_type, payload_format, deflated, unknown, payload_size)
         frame.length = WS_HEADER_SIZE + frame.header.payload_size
         frame.is_deflated = bool(frame.header.delated)
