@@ -1,4 +1,6 @@
 """Unifi Protect Data."""
+from __future__ import annotations
+
 import base64
 from collections import OrderedDict
 from dataclasses import dataclass
@@ -798,23 +800,37 @@ class WSPacketFrameHeader:
     payload_size: int
 
 
-class WSPacketFrame:
-    _raw: bytes
-    position: int
-
-    _frame_data: Optional[bytes] = None
+class WSRawPacketFrame:
+    data: bytes = b""
+    position: int = 0
     header: Optional[WSPacketFrameHeader] = None
-    payload_format: ProtectWSPayloadFormat = ProtectWSPayloadFormat.JSON
+    payload_format: ProtectWSPayloadFormat = ProtectWSPayloadFormat.NodeBuffer
     is_deflated: bool = False
     length: int = 0
 
-    _json_data: Optional[dict] = None
+    def set_data_from_binary(self, data: bytes):
+        self.data = data
+        if self.header.delated:
+            self.data = zlib.decompress(self.data)
 
-    def __init__(self, data: bytes, position: int = 0):
-        self._raw = data
-        self.position = position
+    def get_binary_from_data(self) -> bytes:
+        data = self.data
+        if self.is_deflated:
+            data = zlib.compress(data)
 
-    def decode(self):
+        return data
+
+    @staticmethod
+    def class_from_format(format_raw=bytes):
+        payload_format = ProtectWSPayloadFormat(format_raw)
+
+        if payload_format == ProtectWSPayloadFormat.JSON:
+            return WSJSONPacketFrame
+
+        return WSRawPacketFrame
+
+    @staticmethod
+    def from_binary(data: bytes, position: int = 0) -> WSRawPacketFrame:
         """Decode a unifi updates websocket frame."""
         # The format of the frame is
         # b: packet_type
@@ -823,71 +839,77 @@ class WSPacketFrame:
         # b: unknown
         # i: payload_size
 
-        header_end = self.position + WS_HEADER_SIZE
+        header_end = position + WS_HEADER_SIZE
 
         try:
             packet_type, payload_format, deflated, unknown, payload_size = struct.unpack(
-                "!bbbbi", self._raw[self.position : header_end]
+                "!bbbbi", data[position:header_end]
             )
         except Exception as e:
             raise WSDecodeError from e
 
-        self.header = WSPacketFrameHeader(packet_type, payload_format, deflated, unknown, payload_size)
-        self.length = WS_HEADER_SIZE + self.header.payload_size
-        self.payload_format = ProtectWSPayloadFormat(self.header.payload_format)
-        self.is_deflated = bool(self.header.delated)
-        frame_end = header_end + self.header.payload_size
-        self._frame_data = self._raw[header_end:frame_end]
+        frame = WSRawPacketFrame.class_from_format(payload_format)
+        frame.header = WSPacketFrameHeader(packet_type, payload_format, deflated, unknown, payload_size)
+        frame.length = WS_HEADER_SIZE + frame.header.payload_size
+        frame.is_deflated = bool(frame.header.delated)
+        frame_end = header_end + frame.header.payload_size
+        frame.set_data_from_binary(data[header_end:frame_end])
 
+        return frame
+
+    @property
+    def packed(self):
+        data = self.get_binary_from_data()
+        header = struct.pack(
+            "!bbbbi",
+            self.header.packet_type,
+            self.header.payload_format,
+            self.header.delated,
+            self.header.unknown,
+            len(data),
+        )
+
+        return header + data
+
+
+class WSJSONPacketFrame(WSRawPacketFrame):
+    data: dict = {}
+    payload_format: ProtectWSPayloadFormat = ProtectWSPayloadFormat.NodeBuffer
+
+    def set_data_from_binary(self, data: bytes):
         if self.header.delated:
-            self._frame_data = zlib.decompress(self._frame_data)
+            data = zlib.decompress(data)
+
+        self.data = json.loads(data)
+
+    def get_binary_from_data(self) -> bytes:
+        data = self.json.encode("utf-8")
+        if self.is_deflated:
+            data = zlib.compress(data)
+
+        return data
 
     @property
-    def raw_frame(self) -> bytes:
-        if self._frame_data is None:
-            self.decode()
-
-        if self._frame_data is None or self.payload_format is None:
-            raise WSDecodeError("Packet frame unexpectedly not decoded")
-
-        return self._frame_data
-
-    @property
-    def raw_json(self) -> dict:
-        if self._frame_data is None:
-            self.decode()
-
-        if self._frame_data is None or self.payload_format is None:
-            raise WSDecodeError("Packet frame unexpectedly not decoded")
-
-        if self.payload_format != ProtectWSPayloadFormat.JSON:
-            raise UnifiProtectError("Payload format must be JSON")
-
-        if self._json_data is None:
-            self._json_data = json.loads(self._frame_data)
-
-        return self._json_data
+    def json(self) -> str:
+        return json.dumps(self.data)
 
 
 class WSPacket:
     _raw: bytes
     _raw_encoded: Optional[str] = None
 
-    _action_frame: Optional[WSPacketFrame] = None
-    _data_frame: Optional[WSPacketFrame] = None
+    _action_frame: Optional[WSRawPacketFrame] = None
+    _data_frame: Optional[WSRawPacketFrame] = None
 
     def __init__(self, data: bytes):
         self._raw = data
 
     def decode(self):
-        self._action_frame = WSPacketFrame(self._raw)
-        self._action_frame.decode()
-
-        self._data_frame = WSPacketFrame(self._raw, self._action_frame.length)
-        self._data_frame.decode()
+        self._action_frame = WSRawPacketFrame.from_binary(self._raw)
+        self._data_frame = WSRawPacketFrame.from_binary(self._raw, self._action_frame.length)
 
     @property
-    def action_frame(self) -> WSPacketFrame:
+    def action_frame(self) -> WSRawPacketFrame:
         if self._action_frame is None:
             self.decode()
 
@@ -897,7 +919,7 @@ class WSPacket:
         return self._action_frame
 
     @property
-    def data_frame(self) -> WSPacketFrame:
+    def data_frame(self) -> WSRawPacketFrame:
         if self._data_frame is None:
             self.decode()
 
