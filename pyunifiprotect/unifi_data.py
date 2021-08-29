@@ -1,11 +1,18 @@
 """Unifi Protect Data."""
+import base64
 from collections import OrderedDict
+from dataclasses import dataclass
 import datetime
 import enum
+from enum import Enum
+import json
 import logging
 import struct
 import time
+from typing import Any, Optional
 import zlib
+
+from .exceptions import UnifiProtectError, WSDecodeError
 
 WS_HEADER_SIZE = 8
 _LOGGER = logging.getLogger(__name__)
@@ -110,19 +117,10 @@ class ProtectWSPayloadFormat(enum.Enum):
 
 def decode_ws_frame(frame, position):
     """Decode a unifi updates websocket frame."""
-    # The format of the frame is
-    # b: packet_type
-    # b: payload_format
-    # b: deflated
-    # b: unknown
-    # i: payload_size
-    _, payload_format, deflated, _, payload_size = struct.unpack("!bbbbi", frame[position : position + WS_HEADER_SIZE])
-    position += WS_HEADER_SIZE
-    frame = frame[position : position + payload_size]
-    if deflated:
-        frame = zlib.decompress(frame)
-    position += payload_size
-    return frame, ProtectWSPayloadFormat(payload_format), position
+
+    frame_obj = WSPacketFrame(frame, position)
+
+    return frame_obj.raw_frame, frame_obj.payload_format, position + frame_obj.length
 
 
 def process_viewport(server_id, viewport, include_events):
@@ -777,3 +775,177 @@ class FixSizeOrderedDict(OrderedDict):
         if self._max_size > 0:
             if len(self) > self._max_size:
                 self.popitem(False)
+
+
+class ModelType(str, Enum):
+    CAMERA = "camera"
+    CLOUD_IDENTITY = "cloudIdentity"
+    EVENT = "event"
+    GROUP = "group"
+    LIGHT = "light"
+    LIVEVIEW = "liveview"
+    NVR = "nvr"
+    USER = "user"
+    USER_LOCATION = "userLocation"
+
+
+@dataclass
+class WSPacketFrameHeader:
+    packet_type: bytes
+    payload_format: bytes
+    delated: bytes
+    unknown: bytes
+    payload_size: int
+
+
+class WSPacketFrame:
+    _raw: bytes
+    position: int
+
+    _frame_data: Optional[bytes] = None
+    header: Optional[WSPacketFrameHeader] = None
+    payload_format: ProtectWSPayloadFormat = ProtectWSPayloadFormat.JSON
+    is_deflated: bool = False
+    length: int = 0
+
+    _json_data: Optional[dict] = None
+
+    def __init__(self, data: bytes, position: int = 0):
+        self._raw = data
+        self.position = position
+
+    def decode(self):
+        """Decode a unifi updates websocket frame."""
+        # The format of the frame is
+        # b: packet_type
+        # b: payload_format
+        # b: deflated
+        # b: unknown
+        # i: payload_size
+
+        header_end = self.position + WS_HEADER_SIZE
+
+        try:
+            packet_type, payload_format, deflated, unknown, payload_size = struct.unpack(
+                "!bbbbi", self._raw[self.position : header_end]
+            )
+        except Exception as e:
+            raise WSDecodeError from e
+
+        self.header = WSPacketFrameHeader(packet_type, payload_format, deflated, unknown, payload_size)
+        self.length = WS_HEADER_SIZE + self.header.payload_size
+        self.payload_format = ProtectWSPayloadFormat(self.header.payload_format)
+        self.is_deflated = bool(self.header.delated)
+        frame_end = header_end + self.header.payload_size
+        self._frame_data = self._raw[header_end:frame_end]
+
+        if self.header.delated:
+            self._frame_data = zlib.decompress(self._frame_data)
+
+    @property
+    def raw_frame(self) -> bytes:
+        if self._frame_data is None:
+            self.decode()
+
+        if self._frame_data is None or self.payload_format is None:
+            raise WSDecodeError("Packet frame unexpectedly not decoded")
+
+        return self._frame_data
+
+    @property
+    def raw_json(self) -> dict:
+        if self._frame_data is None:
+            self.decode()
+
+        if self._frame_data is None or self.payload_format is None:
+            raise WSDecodeError("Packet frame unexpectedly not decoded")
+
+        if self.payload_format != ProtectWSPayloadFormat.JSON:
+            raise UnifiProtectError("Payload format must be JSON")
+
+        if self._json_data is None:
+            self._json_data = json.loads(self._frame_data)
+
+        return self._json_data
+
+
+class WSPacket:
+    _raw: bytes
+    _raw_encoded: Optional[str] = None
+
+    _action_frame: Optional[WSPacketFrame] = None
+    _data_frame: Optional[WSPacketFrame] = None
+
+    def __init__(self, data: bytes):
+        self._raw = data
+
+    def decode(self):
+        self._action_frame = WSPacketFrame(self._raw)
+        self._action_frame.decode()
+
+        self._data_frame = WSPacketFrame(self._raw, self._action_frame.length)
+        self._data_frame.decode()
+
+    @property
+    def action_frame(self) -> WSPacketFrame:
+        if self._action_frame is None:
+            self.decode()
+
+        if self._action_frame is None:
+            raise WSDecodeError("Packet unexpectedly not decoded")
+
+        return self._action_frame
+
+    @property
+    def data_frame(self) -> WSPacketFrame:
+        if self._data_frame is None:
+            self.decode()
+
+        if self._data_frame is None:
+            raise WSDecodeError("Packet unexpectedly not decoded")
+
+        return self._data_frame
+
+    @property
+    def raw(self) -> bytes:
+        return self._raw
+
+    @raw.setter
+    def raw(self, data: bytes):
+        self._raw = data
+        self._action_frame = None
+        self._data_frame = None
+        self._raw_encoded = None
+
+    @property
+    def raw_base64(self) -> str:
+        if self._raw_encoded is None:
+            self._raw_encoded = base64.b64encode(self._raw).decode("utf-8")
+
+        return self._raw_encoded
+
+    def _update_frame(self, frame: WSPacketFrameHeader, new_data: Any):
+        if frame.payload_format != ProtectWSPayloadFormat.JSON:
+            raise UnifiProtectError("Can only update JSON packets")
+
+        new_raw = json.dumps(new_data).encode("utf-8")
+
+        if self.action_frame.is_deflated:
+            new_raw = zlib.compress(new_raw)
+
+        new_header = struct.pack(
+            "!bbbbi",
+            frame.header.packet_type,
+            frame.header.payload_format,
+            frame.header.delated,
+            frame.header.unknown,
+            len(new_raw),
+        )
+
+        return new_header + new_raw
+
+    def update_packet(self, action_frame: Any, data_frame: Any):
+        new_action_frame = self._update_frame(self.action_frame, action_frame)
+        new_data_frame = self._update_frame(self.data_frame, data_frame)
+
+        self._raw = new_action_frame + new_data_frame

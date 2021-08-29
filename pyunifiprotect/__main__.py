@@ -2,7 +2,7 @@ import os
 
 from dotenv import load_dotenv
 
-from pyunifiprotect.cli import app
+from .cli import app
 
 
 def start():

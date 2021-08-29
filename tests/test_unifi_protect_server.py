@@ -3,7 +3,7 @@
 import aiohttp
 import pytest
 
-from pyunifiprotect.unifi_protect_server import UpvServer
+from .unifi_protect_server import UpvServer
 
 
 @pytest.mark.asyncio

@@ -7,7 +7,7 @@ from aiohttp import ClientSession, CookieJar
 from traitlets.config import get_config
 import typer
 
-from pyunifiprotect.unifi_protect_server import _LOGGER, UpvServer
+from .unifi_protect_server import _LOGGER, UpvServer
 
 try:
     from IPython import embed
