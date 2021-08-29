@@ -949,29 +949,3 @@ class WSPacket:
             self._raw_encoded = base64.b64encode(self._raw).decode("utf-8")
 
         return self._raw_encoded
-
-    def _update_frame(self, frame: WSPacketFrameHeader, new_data: Any):
-        if frame.payload_format != ProtectWSPayloadFormat.JSON:
-            raise UnifiProtectError("Can only update JSON packets")
-
-        new_raw = json.dumps(new_data).encode("utf-8")
-
-        if self.action_frame.is_deflated:
-            new_raw = zlib.compress(new_raw)
-
-        new_header = struct.pack(
-            "!bbbbi",
-            frame.header.packet_type,
-            frame.header.payload_format,
-            frame.header.delated,
-            frame.header.unknown,
-            len(new_raw),
-        )
-
-        return new_header + new_raw
-
-    def update_packet(self, action_frame: Any, data_frame: Any):
-        new_action_frame = self._update_frame(self.action_frame, action_frame)
-        new_data_frame = self._update_frame(self.data_frame, data_frame)
-
-        self._raw = new_action_frame + new_data_frame
