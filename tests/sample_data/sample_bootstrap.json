@@ -1,14 +1,14 @@
 {
-    "authUserId": "872d784181107e33cc4e9b79",
-    "accessKey": "0578418505271:640ed0014e8856a5fbd3afd1:fad0f41359db7b8586d566b8d469b99401db6959192e6c3f7a1e63d116b2d65cf34ff4fd3504f58118c37d13f2c62d3d0cd15c8cdc648a1ca09cf419cd85c0a8",
+    "authUserId": "fc88e5f467152adbe9fab9a9",
+    "accessKey": "1599513150445:82caa34ddaf14c60ca572ddf:7f8412296c37bbc636bc9decb2baf9de3476f0738df132510ad6fc43466fdf93683583a17c873051df72173a797a86e3acb8f6dce2d5738079986b95233b286f",
     "cameras": [
         {
             "isDeleting": false,
-            "mac": "106BCE3A7249",
-            "host": "192.168.79.52",
-            "connectionHost": "192.168.14.238",
+            "mac": "E245F93E36A5",
+            "host": "192.168.85.24",
+            "connectionHost": "192.168.218.234",
             "type": "UVC G4 Pro",
-            "name": "Fpl Jzgig",
+            "name": "Mbe Wql",
             "upSince": 1629579936280,
             "uptime": null,
             "lastSeen": 1629580240594,
@@ -44,7 +44,7 @@
             "lastPrivacyZonePositionId": null,
             "lastRing": null,
             "isLiveHeatmapEnabled": false,
-            "anonymousDeviceId": "d5af5cf4-db29-47a9-8929-8a8875374d20",
+            "anonymousDeviceId": "2547a0b3-495b-4818-a550-107f08fc1751",
             "eventStats": {
                 "motion": {
                     "today": 0,
@@ -95,10 +95,10 @@
                 {
                     "id": 0,
                     "videoId": "video1",
-                    "name": "Uzyogg Otouqf",
+                    "name": "Ieaaxox Bbfwc",
                     "enabled": true,
                     "isRtspEnabled": true,
-                    "rtspAlias": "vGORhMZIPMOgIxeZ",
+                    "rtspAlias": "4EASSWtT7MISoDcK",
                     "width": 1920,
                     "height": 1080,
                     "fps": 50,
@@ -119,7 +119,7 @@
                 {
                     "id": 1,
                     "videoId": "video3",
-                    "name": "Tsugvg Xhwkz",
+                    "name": "Xjtoffk Kvg",
                     "enabled": true,
                     "isRtspEnabled": false,
                     "rtspAlias": null,
@@ -143,7 +143,7 @@
                 {
                     "id": 2,
                     "videoId": "video2",
-                    "name": "Boipcg Vdh",
+                    "name": "Hrvgg Npfo",
                     "enabled": true,
                     "isRtspEnabled": false,
                     "rtspAlias": null,
@@ -316,11 +316,11 @@
                     "sleepState": "disconnected"
                 },
                 "video": {
-                    "recordingStart": 1627762148127,
+                    "recordingStart": 1628000595284,
                     "recordingEnd": 1629580192189,
                     "recordingStartLQ": 1627507589760,
                     "recordingEndLQ": 1629580211776,
-                    "timelapseStart": 1627762148127,
+                    "timelapseStart": 1628000595284,
                     "timelapseEnd": 1629580177782,
                     "timelapseStartLQ": 1627507589724,
                     "timelapseEndLQ": 1629580177782
@@ -440,7 +440,7 @@
                 "signalQuality": null,
                 "signalStrength": null
             },
-            "id": "c1e312660057efcca7ac95eb",
+            "id": "99dad682e18e2e5cefbd0653",
             "isConnected": false,
             "platform": "s5l",
             "hasSpeaker": false,
@@ -452,16 +452,16 @@
         },
         {
             "isDeleting": false,
-            "mac": "8DB4E7AA0436",
-            "host": "192.168.126.245",
-            "connectionHost": "192.168.14.238",
+            "mac": "4AC1E71B41EF",
+            "host": "192.168.24.191",
+            "connectionHost": "192.168.218.234",
             "type": "UVC G4 Bullet",
-            "name": "Vvbm Cmni",
-            "upSince": 1630240496013,
-            "uptime": 113659,
-            "lastSeen": 1630354155013,
-            "connectedSince": 1630240561117,
-            "state": "CONNECTED",
+            "name": "Jqrlqh Rpi",
+            "upSince": 1630464669187,
+            "uptime": 5007,
+            "lastSeen": 1630469815724,
+            "connectedSince": null,
+            "state": "DISCONNECTED",
             "hardwareRevision": "5",
             "firmwareVersion": "4.41.16",
             "latestFirmwareVersion": "4.41.16",
@@ -475,10 +475,10 @@
             "isSshEnabled": false,
             "canAdopt": false,
             "isAttemptingToConnect": false,
-            "lastMotion": 1629647293813,
+            "lastMotion": 1630469789303,
             "micVolume": 100,
             "isMicEnabled": true,
-            "isRecording": true,
+            "isRecording": false,
             "isMotionDetected": false,
             "phyRate": 1000,
             "hdrMode": false,
@@ -488,17 +488,17 @@
             "apRssi": null,
             "elementInfo": null,
             "chimeDuration": 300,
-            "isDark": true,
+            "isDark": false,
             "lastPrivacyZonePositionId": null,
             "lastRing": null,
             "isLiveHeatmapEnabled": false,
-            "anonymousDeviceId": "63533237-4198-4c02-8181-dff0a603fec5",
+            "anonymousDeviceId": "2d57a7b5-2f52-4edb-ac25-194e51490877",
             "eventStats": {
                 "motion": {
                     "today": 0,
                     "average": 0,
                     "lastDays": [
-                        0,
+                        3,
                         0,
                         0,
                         0,
@@ -543,10 +543,10 @@
                 {
                     "id": 0,
                     "videoId": "video1",
-                    "name": "Ptga Ktxu",
+                    "name": "Koibzi Opjwoyq",
                     "enabled": true,
                     "isRtspEnabled": true,
-                    "rtspAlias": "ZZnCUVX5uWDP0RoR",
+                    "rtspAlias": "bwVQIU6SBBIzKCjt",
                     "width": 2688,
                     "height": 1512,
                     "fps": 24,
@@ -577,7 +577,7 @@
                 {
                     "id": 1,
                     "videoId": "video3",
-                    "name": "Udjvw Rzmtpq",
+                    "name": "Mlai Yqsl",
                     "enabled": true,
                     "isRtspEnabled": false,
                     "rtspAlias": null,
@@ -611,7 +611,7 @@
                 {
                     "id": 2,
                     "videoId": "video2",
-                    "name": "Bdfjdhk Csqehzt",
+                    "name": "Dsqxvfz Chorq",
                     "enabled": true,
                     "isRtspEnabled": false,
                     "rtspAlias": null,
@@ -779,8 +779,8 @@
             ],
             "smartDetectLines": [],
             "stats": {
-                "rxBytes": 1563829849,
-                "txBytes": 49718212385,
+                "rxBytes": 71940752,
+                "txBytes": 2340657725,
                 "wifi": {
                     "channel": null,
                     "frequency": null,
@@ -794,18 +794,18 @@
                     "sleepState": "disconnected"
                 },
                 "video": {
-                    "recordingStart": 1627762148127,
-                    "recordingEnd": 1630354190621,
-                    "recordingStartLQ": 1627740400823,
-                    "recordingEndLQ": 1630354205599,
-                    "timelapseStart": 1627762148127,
-                    "timelapseEnd": 1630353895632,
+                    "recordingStart": 1628000595284,
+                    "recordingEnd": 1630469790648,
+                    "recordingStartLQ": 1627990022409,
+                    "recordingEndLQ": 1630469790905,
+                    "timelapseStart": 1628000595284,
+                    "timelapseEnd": 1630469625681,
                     "timelapseStartLQ": 1627508640800,
-                    "timelapseEndLQ": 1630352115590
+                    "timelapseEndLQ": 1630469730637
                 },
                 "storage": {
-                    "used": 496068722688,
-                    "rate": 306.70407399215
+                    "used": 513248591872,
+                    "rate": 306.98113532302
                 },
                 "wifiQuality": 50,
                 "wifiStrength": 0
@@ -921,8 +921,8 @@
                 "signalQuality": null,
                 "signalStrength": null
             },
-            "id": "c8be15963a37a2fca4ab8d79",
-            "isConnected": true,
+            "id": "c86063c4cdab848a7fc5a20b",
+            "isConnected": false,
             "platform": "s5l",
             "hasSpeaker": false,
             "hasWifi": false,
@@ -933,11 +933,11 @@
         },
         {
             "isDeleting": false,
-            "mac": "D14B3EF9F76C",
-            "host": "192.168.133.224",
-            "connectionHost": "192.168.14.238",
+            "mac": "789983FE36D7",
+            "host": "192.168.86.69",
+            "connectionHost": "192.168.218.234",
             "type": "UVC G4 Pro",
-            "name": "Ssxd Opujte",
+            "name": "Smqgu Qakav",
             "upSince": null,
             "uptime": null,
             "lastSeen": 1627574281870,
@@ -973,7 +973,7 @@
             "lastPrivacyZonePositionId": null,
             "lastRing": null,
             "isLiveHeatmapEnabled": false,
-            "anonymousDeviceId": "4bb2904d-7d7f-42d4-8137-3cc95a806b84",
+            "anonymousDeviceId": "099d16cf-ec4d-4a5f-812c-d294d29c8e24",
             "eventStats": {
                 "motion": {
                     "today": 0,
@@ -1024,10 +1024,10 @@
                 {
                     "id": 0,
                     "videoId": "video1",
-                    "name": "Jezpc Vbu",
+                    "name": "Umozcz Wrlpb",
                     "enabled": true,
                     "isRtspEnabled": true,
-                    "rtspAlias": "XX6KMNdBVZRrOPO3",
+                    "rtspAlias": "2KYMKgbtNpDH1ZDg",
                     "width": 1920,
                     "height": 1080,
                     "fps": 50,
@@ -1048,7 +1048,7 @@
                 {
                     "id": 1,
                     "videoId": "video3",
-                    "name": "Owhotmy Yvn",
+                    "name": "Zpnlaij Yhonv",
                     "enabled": true,
                     "isRtspEnabled": false,
                     "rtspAlias": null,
@@ -1072,7 +1072,7 @@
                 {
                     "id": 2,
                     "videoId": "video2",
-                    "name": "Qnzix Ycd",
+                    "name": "Ddhw Qzdp",
                     "enabled": true,
                     "isRtspEnabled": false,
                     "rtspAlias": null,
@@ -1370,7 +1370,7 @@
                 "signalQuality": null,
                 "signalStrength": null
             },
-            "id": "7eccfba3c1c156e40579ed5c",
+            "id": "71ef87ce24b3992e9c90559a",
             "isConnected": false,
             "platform": "s5l",
             "hasSpeaker": false,
@@ -1382,15 +1382,15 @@
         },
         {
             "isDeleting": false,
-            "mac": "F08F6DD27449",
-            "host": "192.168.202.21",
-            "connectionHost": "192.168.14.238",
+            "mac": "0CD50DE2E61A",
+            "host": "192.168.184.56",
+            "connectionHost": "192.168.218.234",
             "type": "UVC G4 Doorbell",
-            "name": "Gtaqb Ytgss",
-            "upSince": 1630240423013,
-            "uptime": 113732,
-            "lastSeen": 1630354155013,
-            "connectedSince": 1630240561373,
+            "name": "Lmlft Fsff",
+            "upSince": 1630240422428,
+            "uptime": 352219,
+            "lastSeen": 1630592641428,
+            "connectedSince": 1630464690894,
             "state": "CONNECTED",
             "hardwareRevision": "21",
             "firmwareVersion": "4.41.16",
@@ -1405,12 +1405,12 @@
             "isSshEnabled": false,
             "canAdopt": false,
             "isAttemptingToConnect": false,
-            "lastMotion": 1630354068639,
+            "lastMotion": 1630591685452,
             "micVolume": 100,
             "isMicEnabled": true,
             "isRecording": true,
             "isMotionDetected": false,
-            "phyRate": 72,
+            "phyRate": 86,
             "hdrMode": true,
             "videoMode": "highFps",
             "isProbingForWifi": false,
@@ -1420,49 +1420,49 @@
             "chimeDuration": 300,
             "isDark": false,
             "lastPrivacyZonePositionId": null,
-            "lastRing": 1630345085882,
+            "lastRing": 1630591667116,
             "isLiveHeatmapEnabled": false,
-            "anonymousDeviceId": "b2953ac8-1d5a-41dd-bff5-c552d0713d26",
+            "anonymousDeviceId": "ab423843-c22e-4ca2-99b0-fde024ee125c",
             "eventStats": {
                 "motion": {
-                    "today": 23,
-                    "average": 74,
+                    "today": 6,
+                    "average": 51,
                     "lastDays": [
+                        65,
+                        67,
+                        47,
                         33,
                         25,
                         71,
-                        50,
-                        237,
-                        67,
-                        37
+                        50
                     ],
                     "recentHours": [
                         2,
-                        5,
+                        0,
+                        0,
+                        0,
+                        1,
                         2,
-                        3,
-                        0,
-                        0,
+                        1,
                         0,
                         0,
                         0,
                         0,
                         3,
-                        4,
-                        2
+                        3
                     ]
                 },
                 "smart": {
                     "today": 0,
-                    "average": 11,
+                    "average": 3,
                     "lastDays": [
+                        0,
+                        0,
+                        0,
                         0,
                         5,
                         11,
-                        10,
-                        10,
-                        35,
-                        8
+                        10
                     ]
                 }
             },
@@ -1473,10 +1473,10 @@
                 {
                     "id": 0,
                     "videoId": "video1",
-                    "name": "Bsrrrho Kskeurd",
+                    "name": "Wqkysp Izxe",
                     "enabled": true,
                     "isRtspEnabled": true,
-                    "rtspAlias": "oDaqUPFVDbJGSEOS",
+                    "rtspAlias": "iI4GGTBPCOCAgFPO",
                     "width": 1600,
                     "height": 1200,
                     "fps": 45,
@@ -1495,7 +1495,7 @@
                 {
                     "id": 1,
                     "videoId": "video3",
-                    "name": "Oafmw Zhs",
+                    "name": "Nboxf Laua",
                     "enabled": true,
                     "isRtspEnabled": false,
                     "rtspAlias": null,
@@ -1515,7 +1515,7 @@
                 {
                     "id": 2,
                     "videoId": "video2",
-                    "name": "Yxh Knftq",
+                    "name": "Uaggo Chcu",
                     "enabled": true,
                     "isRtspEnabled": false,
                     "rtspAlias": null,
@@ -1679,7 +1679,7 @@
                 },
                 {
                     "id": 2,
-                    "name": "Bmbkrr Kxscqsx",
+                    "name": "Cmsom Onhm",
                     "color": "#FF0075",
                     "points": [
                         [
@@ -1723,14 +1723,14 @@
             ],
             "smartDetectLines": [],
             "stats": {
-                "rxBytes": 934592707,
-                "txBytes": 40940593823,
+                "rxBytes": 3160859093,
+                "txBytes": 149054974355,
                 "wifi": {
-                    "channel": 6,
-                    "frequency": 2437,
+                    "channel": 104,
+                    "frequency": 5520,
                     "linkSpeedMbps": null,
-                    "signalQuality": 100,
-                    "signalStrength": -60
+                    "signalQuality": 90,
+                    "signalStrength": -68
                 },
                 "battery": {
                     "percentage": null,
@@ -1738,21 +1738,21 @@
                     "sleepState": "disconnected"
                 },
                 "video": {
-                    "recordingStart": 1627762148127,
-                    "recordingEnd": 1630354189146,
-                    "recordingStartLQ": 1627749293179,
-                    "recordingEndLQ": 1630354204999,
-                    "timelapseStart": 1627762148127,
-                    "timelapseEnd": 1630353741079,
+                    "recordingStart": 1628000595284,
+                    "recordingEnd": 1630592628578,
+                    "recordingStartLQ": 1627995943582,
+                    "recordingEndLQ": 1630592648834,
+                    "timelapseStart": 1628000595284,
+                    "timelapseEnd": 1630592430838,
                     "timelapseStartLQ": 1614499304836,
-                    "timelapseEndLQ": 1630353525434
+                    "timelapseEndLQ": 1630591357641
                 },
                 "storage": {
-                    "used": 936302870528,
-                    "rate": 789.175814008985
+                    "used": 942745321472,
+                    "rate": 782.62045320754
                 },
-                "wifiQuality": 100,
-                "wifiStrength": -60
+                "wifiQuality": 90,
+                "wifiStrength": -68
             },
             "featureFlags": {
                 "canAdjustIrLedLevel": false,
@@ -1863,13 +1863,13 @@
                 "resetAt": null
             },
             "wifiConnectionState": {
-                "channel": 6,
-                "frequency": 2437,
-                "phyRate": 72,
-                "signalQuality": 100,
-                "signalStrength": -60
+                "channel": 104,
+                "frequency": 5520,
+                "phyRate": 86,
+                "signalQuality": 90,
+                "signalStrength": -68
             },
-            "id": "69c096fb9490185202cc3d76",
+            "id": "4201f72dd2820333bf325eae",
             "isConnected": true,
             "platform": "s5l",
             "hasSpeaker": true,
@@ -1881,11 +1881,11 @@
         },
         {
             "isDeleting": false,
-            "mac": "2B618BE49BED",
-            "host": "192.168.66.3",
-            "connectionHost": "192.168.14.238",
+            "mac": "B8FA1295E762",
+            "host": "192.168.172.159",
+            "connectionHost": "192.168.218.234",
             "type": "UVC G4 Pro",
-            "name": "Grcxft Bifwqj",
+            "name": "Vhg Lpojyn",
             "upSince": null,
             "uptime": null,
             "lastSeen": 1627573774828,
@@ -1921,7 +1921,7 @@
             "lastPrivacyZonePositionId": null,
             "lastRing": null,
             "isLiveHeatmapEnabled": false,
-            "anonymousDeviceId": "00a5d07e-32a4-4f6f-a8bd-97a85f9e137d",
+            "anonymousDeviceId": "a61fa96b-edd2-4201-96f0-651b06ea95e9",
             "eventStats": {
                 "motion": {
                     "today": 0,
@@ -1972,10 +1972,10 @@
                 {
                     "id": 0,
                     "videoId": "video1",
-                    "name": "Hxbaudb Jrmex",
+                    "name": "Ilfew Qhcwl",
                     "enabled": true,
                     "isRtspEnabled": true,
-                    "rtspAlias": "4zBXXmJBF94ZDAHG",
+                    "rtspAlias": "MBJIEDqFCVSGZFBK",
                     "width": 1920,
                     "height": 1080,
                     "fps": 50,
@@ -1996,7 +1996,7 @@
                 {
                     "id": 1,
                     "videoId": "video3",
-                    "name": "Krf Pyi",
+                    "name": "Kqb Vysca",
                     "enabled": true,
                     "isRtspEnabled": false,
                     "rtspAlias": null,
@@ -2020,7 +2020,7 @@
                 {
                     "id": 2,
                     "videoId": "video2",
-                    "name": "Zxdm Foyjhoh",
+                    "name": "Woaaivc Chqzz",
                     "enabled": true,
                     "isRtspEnabled": false,
                     "rtspAlias": null,
@@ -2318,7 +2318,7 @@
                 "signalQuality": null,
                 "signalStrength": null
             },
-            "id": "d7a31d95a65359602e9732d0",
+            "id": "69951ae3a82d2ef049b3de76",
             "isConnected": false,
             "platform": "s5l",
             "hasSpeaker": false,
@@ -2330,11 +2330,11 @@
         },
         {
             "isDeleting": false,
-            "mac": "1C944B4D97FE",
-            "host": "192.168.30.138",
-            "connectionHost": "192.168.14.238",
+            "mac": "ABE233144B64",
+            "host": "192.168.214.86",
+            "connectionHost": "192.168.218.234",
             "type": "UVC G4 Pro",
-            "name": "Gybxm Yazvr",
+            "name": "Hqyma Yszkvyc",
             "upSince": null,
             "uptime": null,
             "lastSeen": 1627576156752,
@@ -2370,7 +2370,7 @@
             "lastPrivacyZonePositionId": null,
             "lastRing": null,
             "isLiveHeatmapEnabled": false,
-            "anonymousDeviceId": "709b37b3-492e-4b05-a1d4-d5114cc52089",
+            "anonymousDeviceId": "2d531677-8a66-4dae-99d2-f6c705d13dce",
             "eventStats": {
                 "motion": {
                     "today": 0,
@@ -2421,10 +2421,10 @@
                 {
                     "id": 0,
                     "videoId": "video1",
-                    "name": "Fkfqign Cfss",
+                    "name": "Wblzcve Hnwe",
                     "enabled": true,
                     "isRtspEnabled": true,
-                    "rtspAlias": "DIYN5SG4LVvGJHDx",
+                    "rtspAlias": "EGCqOQDFXf1PIQuU",
                     "width": 1920,
                     "height": 1080,
                     "fps": 50,
@@ -2445,7 +2445,7 @@
                 {
                     "id": 1,
                     "videoId": "video3",
-                    "name": "Nlrbpp Qkcwz",
+                    "name": "Yozizw Fgbjftv",
                     "enabled": true,
                     "isRtspEnabled": false,
                     "rtspAlias": null,
@@ -2469,7 +2469,7 @@
                 {
                     "id": 2,
                     "videoId": "video2",
-                    "name": "Lrc Pzgmzw",
+                    "name": "Xltr Smdsvc",
                     "enabled": true,
                     "isRtspEnabled": false,
                     "rtspAlias": null,
@@ -2767,7 +2767,7 @@
                 "signalQuality": null,
                 "signalStrength": null
             },
-            "id": "78c3a1dcd2e4525148d8f947",
+            "id": "a0a8f80b5d91ac2f9551b868",
             "isConnected": false,
             "platform": "s5l",
             "hasSpeaker": false,
@@ -2788,11 +2788,11 @@
             "settings": {
                 "flags": {},
                 "cameraOrder": [
-                    "69c096fb9490185202cc3d76"
+                    "4201f72dd2820333bf325eae"
                 ]
             },
             "groups": [
-                "a6cb9bcf82c1035c4c3cb2fe"
+                "01f288931f90c894abe9d513"
             ],
             "location": {
                 "isAway": true,
@@ -2836,7 +2836,7 @@
                     "geofencing": "off"
                 }
             ],
-            "id": "045b9aa6d926ec41ff941acf",
+            "id": "1f7755558d14a53b93302cd6",
             "hasAcceptedInvite": true,
             "allPermissions": [
                 "nvr:read:*",
@@ -2856,14 +2856,14 @@
                 "display:create,read,write,delete:*"
             ],
             "cloudAccount": {
-                "firstName": "Ydncgm",
-                "lastName": "Vnr",
-                "email": "ibI@example.com",
+                "firstName": "Yxshkqh",
+                "lastName": "Svbl",
+                "email": "AvzZiGi@example.com",
                 "profileImg": null,
-                "user": "0a3f0b3516ca717eaac2df7d",
-                "id": "12e3efc104ad63f5c79097b3",
-                "cloudId": "ffd0f2dc-6ff4-4867-af11-22576403a640",
-                "name": "Ydncgm Vnr",
+                "user": "f40018d4f414738727f18468",
+                "id": "509d4aa1bfa8abab62f717d6",
+                "cloudId": "50e6ad5a-6a84-4820-8f98-37839fa2dd5e",
+                "name": "Yxshkqh Svbl",
                 "modelKey": "cloudIdentity",
                 "location": {
                     "isAway": true,
@@ -2872,11 +2872,11 @@
                     "modelKey": "userLocation"
                 }
             },
-            "name": "Ydncgm Vnr",
-            "firstName": "Ydncgm",
-            "lastName": "Vnr",
-            "email": "ibI@example.com",
-            "localUsername": "ibI",
+            "name": "Yxshkqh Svbl",
+            "firstName": "Yxshkqh",
+            "lastName": "Svbl",
+            "email": "AvzZiGi@example.com",
+            "localUsername": "AvzZiGi",
             "modelKey": "user"
         },
         {
@@ -2889,7 +2889,7 @@
                 "flags": {}
             },
             "groups": [
-                "b5e784cf2fde85046d9ba61a"
+                "9a929abf78db2d6aba84dc5c"
             ],
             "location": {
                 "isAway": true,
@@ -2897,7 +2897,7 @@
                 "longitude": null
             },
             "alertRules": [],
-            "id": "6362766d4638ffcfadf3d5ce",
+            "id": "eeb3324c9ee3b90fe575d5a5",
             "hasAcceptedInvite": true,
             "allPermissions": [
                 "nvr:read:*",
@@ -2912,14 +2912,14 @@
                 "display:read:*"
             ],
             "cloudAccount": {
-                "firstName": "Xhrxbkh",
-                "lastName": "Ggpx",
-                "email": "sridp@example.com",
+                "firstName": "Tgfeb",
+                "lastName": "Bxjjjmu",
+                "email": "gAlon@example.com",
                 "profileImg": null,
-                "user": "fd8312c6d957961df30e09a3",
-                "id": "6d38d940430a4e61f36d8690",
-                "cloudId": "51cf3403-3a1b-408f-9ae6-b6f0c26d008b",
-                "name": "Xhrxbkh Ggpx",
+                "user": "14da78b7b7573c4c74844981",
+                "id": "77d36022345e8cb0b575ef26",
+                "cloudId": "008a4e5a-a71f-4b0e-b743-85544e3000ff",
+                "name": "Tgfeb Bxjjjmu",
                 "modelKey": "cloudIdentity",
                 "location": {
                     "isAway": true,
@@ -2928,11 +2928,11 @@
                     "modelKey": "userLocation"
                 }
             },
-            "name": "Xhrxbkh Ggpx",
-            "firstName": "Xhrxbkh",
-            "lastName": "Ggpx",
-            "email": "sridp@example.com",
-            "localUsername": "sridp",
+            "name": "Tgfeb Bxjjjmu",
+            "firstName": "Tgfeb",
+            "lastName": "Bxjjjmu",
+            "email": "gAlon@example.com",
+            "localUsername": "gAlon",
             "modelKey": "user"
         },
         {
@@ -2943,7 +2943,7 @@
             "enableNotifications": false,
             "settings": null,
             "groups": [
-                "b5e784cf2fde85046d9ba61a"
+                "9a929abf78db2d6aba84dc5c"
             ],
             "location": {
                 "isAway": true,
@@ -2951,7 +2951,7 @@
                 "longitude": null
             },
             "alertRules": [],
-            "id": "b38c73ca4a0852cb8786255f",
+            "id": "6837cf6d00a5b42c0268aa8e",
             "hasAcceptedInvite": false,
             "allPermissions": [
                 "nvr:read:*",
@@ -2966,11 +2966,11 @@
                 "display:read:*"
             ],
             "cloudAccount": null,
-            "name": "Bzc Ddvdw",
-            "firstName": "Bzc",
-            "lastName": "Ddvdw",
-            "email": "bdN@example.com",
-            "localUsername": "bdN",
+            "name": "Jzlwe Bsr",
+            "firstName": "Jzlwe",
+            "lastName": "Bsr",
+            "email": "SLokeI@example.com",
+            "localUsername": "SLokeI",
             "modelKey": "user"
         },
         {
@@ -2987,7 +2987,7 @@
                 }
             },
             "groups": [
-                "b5e784cf2fde85046d9ba61a"
+                "9a929abf78db2d6aba84dc5c"
             ],
             "location": {
                 "isAway": true,
@@ -2995,7 +2995,7 @@
                 "longitude": null
             },
             "alertRules": [],
-            "id": "94ac380303f8e53e39c669b5",
+            "id": "a16d5a033a56cfe8e78de0a0",
             "hasAcceptedInvite": true,
             "allPermissions": [
                 "nvr:read:*",
@@ -3010,14 +3010,14 @@
                 "display:read:*"
             ],
             "cloudAccount": {
-                "firstName": "Svvwhdi",
-                "lastName": "Iuchdw",
-                "email": "sSre@example.com",
+                "firstName": "Tlyt",
+                "lastName": "Rizxi",
+                "email": "Dviz@example.com",
                 "profileImg": null,
-                "user": "224556fbeb9efaf3f5f33bca",
-                "id": "c578c4569b8c3f6743895634",
-                "cloudId": "95363955-0676-4c8a-afc9-537fbd6a43c3",
-                "name": "Svvwhdi Iuchdw",
+                "user": "4cd0cc4654b66b9c7a2562a9",
+                "id": "dddfccc4663ac05049c6b0ba",
+                "cloudId": "93f810f6-b717-4b4e-92d9-6b7e9acd1ec2",
+                "name": "Tlyt Rizxi",
                 "modelKey": "cloudIdentity",
                 "location": {
                     "isAway": true,
@@ -3026,16 +3026,16 @@
                     "modelKey": "userLocation"
                 }
             },
-            "name": "Svvwhdi Iuchdw",
-            "firstName": "Svvwhdi",
-            "lastName": "Iuchdw",
-            "email": "sSre@example.com",
-            "localUsername": "sSre",
+            "name": "Tlyt Rizxi",
+            "firstName": "Tlyt",
+            "lastName": "Rizxi",
+            "email": "Dviz@example.com",
+            "localUsername": "Dviz",
             "modelKey": "user"
         },
         {
             "permissions": [
-                "liveview:*:d79c32553b10ab3cc2fa0970"
+                "liveview:*:145b8ac233ef916bc368cb90"
             ],
             "lastLoginIp": "192.168.20.10",
             "lastLoginTime": 1607407177510,
@@ -3048,7 +3048,7 @@
                 }
             },
             "groups": [
-                "a6cb9bcf82c1035c4c3cb2fe"
+                "01f288931f90c894abe9d513"
             ],
             "location": {
                 "isAway": true,
@@ -3085,10 +3085,10 @@
                     "geofencing": "off"
                 }
             ],
-            "id": "e83b22ac04e1f6ca503457d5",
+            "id": "fc88e5f467152adbe9fab9a9",
             "hasAcceptedInvite": false,
             "allPermissions": [
-                "liveview:*:d79c32553b10ab3cc2fa0970",
+                "liveview:*:145b8ac233ef916bc368cb90",
                 "nvr:read:*",
                 "liveview:create",
                 "user:read,write,delete:$",
@@ -3106,11 +3106,11 @@
                 "display:create,read,write,delete:*"
             ],
             "cloudAccount": null,
-            "name": "Wepx Bcaot",
-            "firstName": "Wepx",
-            "lastName": "Bcaot",
-            "email": "GxVIZaG@example.com",
-            "localUsername": "GxVIZaG",
+            "name": "Vprzh Mjzu",
+            "firstName": "Vprzh",
+            "lastName": "Mjzu",
+            "email": "CORKRXa@example.com",
+            "localUsername": "CORKRXa",
             "modelKey": "user"
         },
         {
@@ -3127,15 +3127,15 @@
                 "longitude": null
             },
             "alertRules": [],
-            "id": "566b3f50df5f1c9de2240d26",
+            "id": "bca48fb5d05d8c067f610acb",
             "hasAcceptedInvite": false,
             "allPermissions": [],
             "cloudAccount": null,
-            "name": "Lxojjnn Zpsiq",
-            "firstName": "Lxojjnn",
-            "lastName": "Zpsiq",
-            "email": "WNCh@example.com",
-            "localUsername": "WNCh",
+            "name": "Mfrvxlk Dewuaa",
+            "firstName": "Mfrvxlk",
+            "lastName": "Dewuaa",
+            "email": "vGhxBVc@example.com",
+            "localUsername": "vGhxBVc",
             "modelKey": "user"
         },
         {
@@ -3146,8 +3146,8 @@
             "enableNotifications": false,
             "settings": null,
             "groups": [
-                "b5e784cf2fde85046d9ba61a",
-                "a6cb9bcf82c1035c4c3cb2fe"
+                "9a929abf78db2d6aba84dc5c",
+                "01f288931f90c894abe9d513"
             ],
             "location": {
                 "isAway": true,
@@ -3155,7 +3155,7 @@
                 "longitude": null
             },
             "alertRules": [],
-            "id": "b3fe8263a82c5e2c9c64ecfd",
+            "id": "14b42fdbe40877762fc3ce7a",
             "hasAcceptedInvite": false,
             "allPermissions": [
                 "nvr:read:*",
@@ -3185,17 +3185,17 @@
                 "display:create,read,write,delete:*"
             ],
             "cloudAccount": null,
-            "name": "Fbwfe Yaaup",
-            "firstName": "Fbwfe",
-            "lastName": "Yaaup",
-            "email": "GIuMtfF@example.com",
-            "localUsername": "GIuMtfF",
+            "name": "Bwukyar Gfuiznp",
+            "firstName": "Bwukyar",
+            "lastName": "Gfuiznp",
+            "email": "xshFWS@example.com",
+            "localUsername": "xshFWS",
             "modelKey": "user"
         }
     ],
     "groups": [
         {
-            "name": "Xof Tehywcj",
+            "name": "Ymn Yfa",
             "permissions": [
                 "nvr:read:*",
                 "liveview:create",
@@ -3215,11 +3215,11 @@
             ],
             "type": "preset",
             "isDefault": true,
-            "id": "a6cb9bcf82c1035c4c3cb2fe",
+            "id": "01f288931f90c894abe9d513",
             "modelKey": "group"
         },
         {
-            "name": "Xdtuen Ldzls",
+            "name": "Apootqh Tgt",
             "permissions": [
                 "nvr:read:*",
                 "user:read,write,delete:$",
@@ -3234,7 +3234,7 @@
             ],
             "type": "preset",
             "isDefault": false,
-            "id": "b5e784cf2fde85046d9ba61a",
+            "id": "9a929abf78db2d6aba84dc5c",
             "modelKey": "group"
         }
     ],
@@ -3288,12 +3288,12 @@
                     "cycleInterval": 10
                 }
             ],
-            "owner": "045b9aa6d926ec41ff941acf",
-            "id": "94a6a5d24137315c5443e56c",
+            "owner": "1f7755558d14a53b93302cd6",
+            "id": "5cc9189614d76833e8373e2b",
             "modelKey": "liveview"
         },
         {
-            "name": "Cgsse Urm",
+            "name": "Rmfv Cmw",
             "isDefault": false,
             "isGlobal": true,
             "layout": 1,
@@ -3306,15 +3306,15 @@
                     "cycleInterval": 10
                 }
             ],
-            "owner": "e83b22ac04e1f6ca503457d5",
-            "id": "d79c32553b10ab3cc2fa0970",
+            "owner": "fc88e5f467152adbe9fab9a9",
+            "id": "145b8ac233ef916bc368cb90",
             "modelKey": "liveview"
         }
     ],
     "nvr": {
-        "mac": "44BF3223B07F",
-        "host": "192.168.7.18",
-        "name": "Bvk Qyosd",
+        "mac": "B5CF822617F8",
+        "host": "192.168.141.138",
+        "name": "Vhw Hwb",
         "canAutoUpdate": true,
         "isStatsGatheringEnabled": true,
         "timezone": "America/New_York",
@@ -3344,8 +3344,8 @@
             "ucore": 11081,
             "discoveryClient": 0
         },
-        "uptime": 113742000,
-        "lastSeen": 1630354206069,
+        "uptime": 352187000,
+        "lastSeen": 1630592651586,
         "isUpdating": false,
         "lastUpdateAt": 1611221151200,
         "isStation": false,
@@ -3355,21 +3355,21 @@
         "errorCode": null,
         "releaseChannel": "release",
         "hosts": [
-            "192.168.7.18",
-            "192.168.147.33",
-            "192.168.135.3",
-            "192.168.128.127",
-            "192.168.26.172",
-            "192.168.188.127",
-            "192.168.252.188",
-            "192.168.28.114",
-            "192.168.14.238",
-            "192.168.82.140",
-            "192.168.79.22",
-            "192.168.123.194"
+            "192.168.141.138",
+            "192.168.226.83",
+            "192.168.46.202",
+            "192.168.73.188",
+            "192.168.205.128",
+            "192.168.63.34",
+            "192.168.7.9",
+            "192.168.100.155",
+            "192.168.218.234",
+            "192.168.22.173",
+            "192.168.59.183",
+            "192.168.192.223"
         ],
         "enableBridgeAutoAdoption": true,
-        "hardwareId": "250f901b-4ef4-44e5-96bb-9a29f2687914",
+        "hardwareId": "462a0e61-093d-488c-889b-039d4b913c14",
         "hardwareRevision": "113-00723-10",
         "hostType": 59925,
         "hostShortname": "UDMPRO",
@@ -3381,34 +3381,34 @@
         "enableCrashReporting": true,
         "disableAudio": false,
         "analyticsData": "anonymous",
-        "anonymousDeviceId": "447c21a4-ecae-4295-b800-9f384ba78f34",
-        "cameraUtilization": 10,
+        "anonymousDeviceId": "51009086-4ef3-4e6d-a095-fbe5c916e460",
+        "cameraUtilization": 5,
         "isRecycling": false,
         "avgMotions": [
+            1.43,
             0.86,
-            10.86,
-            11.57,
-            3.86,
-            0.43,
-            3.14,
-            0.86,
-            0.71,
-            0.86,
-            0.43,
-            0.57,
-            0.57,
-            3.57,
-            0.86,
-            3.29,
-            2.43,
-            2.14,
-            1.57,
-            1.57,
+            0.29,
             0.14,
-            6.43,
-            8.71,
-            6.57,
-            2.29
+            0.86,
+            2.86,
+            1.71,
+            0.86,
+            0.14,
+            0.57,
+            0.57,
+            1,
+            1.57,
+            2.14,
+            5.43,
+            2.29,
+            1.43,
+            2.57,
+            1.71,
+            0.43,
+            6.29,
+            8.57,
+            4.86,
+            3
         ],
         "wifiSettings": {
             "useThirdPartyWifi": false,
@@ -3429,19 +3429,19 @@
         "systemInfo": {
             "cpu": {
                 "averageLoad": 11,
-                "temperature": 45.75
+                "temperature": 46
             },
             "memory": {
-                "available": 1226452,
-                "free": 110696,
+                "available": 1179028,
+                "free": 346004,
                 "total": 4041264
             },
             "storage": {
-                "available": 6401103593472,
+                "available": 6379624505344,
                 "isRecycling": false,
                 "size": 7937399177216,
                 "type": "hdd",
-                "used": 1456263188480,
+                "used": 1477742276608,
                 "devices": [
                     {
                         "model": "ST8000VN0022-2EL112",
@@ -3451,9 +3451,9 @@
                 ]
             },
             "tmpfs": {
-                "available": 255332,
+                "available": 259176,
                 "total": 262144,
-                "used": 6812,
+                "used": 2968,
                 "path": "/var/opt/unifi-protect/tmp"
             }
         },
@@ -3477,21 +3477,21 @@
             "lastUpdateAt": 1606964227734
         },
         "storageStats": {
-            "utilization": 18.50714394069396,
-            "capacity": 7180239172,
-            "remainingCapacity": 5851381973,
+            "utilization": 18.78004114573193,
+            "capacity": 7221411317,
+            "remainingCapacity": 5865227300,
             "recordingSpace": {
                 "total": 7868679700480,
-                "used": 1456267878400,
-                "available": 6412411822080
+                "used": 1477741285376,
+                "available": 6390938415104
             }
         },
-        "id": "a1353050edfd0a580832139d",
+        "id": "83326ffaec17a42a913196c7",
         "isAway": true,
         "isSetup": true,
         "network": "Ethernet",
         "type": "UDM-PRO",
-        "upSince": 1630240464355,
+        "upSince": 1630240463738,
         "isRecordingDisabled": false,
         "isRecordingMotionOnly": false,
         "maxCameraCapacity": {
@@ -3501,19 +3501,19 @@
         "modelKey": "nvr"
     },
     "legacyUFVs": [],
-    "lastUpdateId": "a0eeae93-20ee-4642-8bfd-06c894100f15",
+    "lastUpdateId": "eda336db-fe0c-4abc-973a-8eb8a26a3e28",
     "viewers": [
         {
-            "mac": "9433A4786651",
-            "host": "192.168.212.66",
-            "connectionHost": "192.168.14.238",
+            "mac": "18A03F5A5261",
+            "host": "192.168.12.29",
+            "connectionHost": "192.168.218.234",
             "type": "UFP Viewport",
-            "name": "Ydjzv Fsuif",
-            "upSince": 1630351496014,
-            "uptime": 2659,
-            "lastSeen": 1630354155014,
-            "connectedSince": 1630351550042,
-            "state": "CONNECTED",
+            "name": "Kgaxr Oww",
+            "upSince": 1630351496265,
+            "uptime": 4099,
+            "lastSeen": 1630355625397,
+            "connectedSince": null,
+            "state": "DISCONNECTED",
             "hardwareRevision": null,
             "firmwareVersion": "1.2.38",
             "latestFirmwareVersion": "1.2.38",
@@ -3532,25 +3532,25 @@
             "wiredConnectionState": {
                 "phyRate": 1000
             },
-            "liveview": "d79c32553b10ab3cc2fa0970",
-            "id": "a7cc4b770667d1e3e1042d59",
-            "isConnected": true,
+            "liveview": "145b8ac233ef916bc368cb90",
+            "id": "47e4eeb40c8e1e660dd95558",
+            "isConnected": false,
             "modelKey": "viewer"
         }
     ],
     "displays": [],
     "lights": [
         {
-            "mac": "6F18AE6673CE",
-            "host": "192.168.17.59",
-            "connectionHost": "192.168.7.18",
+            "mac": "BE9391E3EDDD",
+            "host": "192.168.29.32",
+            "connectionHost": "192.168.141.138",
             "type": "UP FloodLight",
-            "name": "Eiqzhcf Tklgngv",
-            "upSince": 1629580303294,
-            "uptime": null,
-            "lastSeen": 1629580367271,
-            "connectedSince": null,
-            "state": "DISCONNECTED",
+            "name": "Fdunwwu Kwkvjh",
+            "upSince": 1630591322427,
+            "uptime": 1319,
+            "lastSeen": 1630592641427,
+            "connectedSince": 1630591347352,
+            "state": "CONNECTED",
             "hardwareRevision": null,
             "firmwareVersion": "1.6.4",
             "latestFirmwareVersion": "1.6.4",
@@ -3565,12 +3565,12 @@
             "canAdopt": false,
             "isAttemptingToConnect": false,
             "isPirMotionDetected": false,
-            "lastMotion": null,
-            "isDark": false,
+            "lastMotion": 1630591653341,
+            "isDark": true,
             "isLightOn": false,
             "isLocating": false,
             "wiredConnectionState": {
-                "phyRate": null
+                "phyRate": 100
             },
             "lightDeviceSettings": {
                 "isIndicatorEnabled": true,
@@ -3587,8 +3587,8 @@
                 "enableAt": "fulltime"
             },
             "camera": null,
-            "id": "882323263fd4ebe38a2a9bd5",
-            "isConnected": false,
+            "id": "c32b358cac1307adcbc2a1b7",
+            "isConnected": true,
             "isCameraPaired": false,
             "modelKey": "light"
         }

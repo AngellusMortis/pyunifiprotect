@@ -1,14 +1,14 @@
 {
-    "mac": "6F18AE6673CE",
-    "host": "192.168.17.59",
-    "connectionHost": "192.168.7.18",
+    "mac": "BE9391E3EDDD",
+    "host": "192.168.29.32",
+    "connectionHost": "192.168.141.138",
     "type": "UP FloodLight",
-    "name": "Tjnt Ukm",
-    "upSince": 1629580303294,
-    "uptime": null,
-    "lastSeen": 1629580367271,
-    "connectedSince": null,
-    "state": "DISCONNECTED",
+    "name": "Rym Llxgla",
+    "upSince": 1630591322427,
+    "uptime": 1319,
+    "lastSeen": 1630592641427,
+    "connectedSince": 1630591347352,
+    "state": "CONNECTED",
     "hardwareRevision": null,
     "firmwareVersion": "1.6.4",
     "latestFirmwareVersion": "1.6.4",
@@ -23,12 +23,12 @@
     "canAdopt": false,
     "isAttemptingToConnect": false,
     "isPirMotionDetected": false,
-    "lastMotion": null,
-    "isDark": false,
+    "lastMotion": 1630592659171,
+    "isDark": true,
     "isLightOn": false,
     "isLocating": false,
     "wiredConnectionState": {
-        "phyRate": null
+        "phyRate": 100
     },
     "lightDeviceSettings": {
         "isIndicatorEnabled": true,
@@ -45,8 +45,8 @@
         "enableAt": "fulltime"
     },
     "camera": null,
-    "id": "882323263fd4ebe38a2a9bd5",
-    "isConnected": false,
+    "id": "c32b358cac1307adcbc2a1b7",
+    "isConnected": true,
     "isCameraPaired": false,
     "modelKey": "light"
 }

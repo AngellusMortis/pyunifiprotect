@@ -1,7 +1,7 @@
 """Unifi Protect Server Wrapper."""
 
 import asyncio
-import datetime
+from datetime import datetime, timedelta
 import json as pjson
 import logging
 import time
@@ -566,8 +566,8 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
     async def get_raw_events(self, lookback: int = 86400) -> dict:
         """Load the Event Log and return the Raw Data - Used for debugging only."""
 
-        event_start = datetime.datetime.now() - datetime.timedelta(seconds=lookback)
-        event_end = datetime.datetime.now() + datetime.timedelta(seconds=10)
+        event_start = datetime.now() - timedelta(seconds=lookback)
+        event_end = datetime.now() + timedelta(seconds=10)
         start_time = int(time.mktime(event_start.timetuple())) * 1000
         end_time = int(time.mktime(event_end.timetuple())) * 1000
 
@@ -616,7 +616,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
     ) -> bytes:
         """Returns a Snapshot image of a recording event."""
 
-        time_since = int(time.mktime(datetime.datetime.now().timetuple())) * 1000
+        time_since = int(time.mktime(datetime.now().timetuple())) * 1000
         cam = self._processed_data[camera_id]
         image_width = width or cam.get("image_width") or DEFAULT_SNAPSHOT_WIDTH
         image_height = height or cam.get("image_height") or DEFAULT_SNAPSHOT_HEIGHT
@@ -910,8 +910,8 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
         # Calculate ResetAt time
         if duration is not None:
-            now = datetime.datetime.now()
-            now_plus_duration = now + datetime.timedelta(minutes=int(duration))
+            now = datetime.now()
+            now_plus_duration = now + timedelta(minutes=int(duration))
             duration = int(now_plus_duration.timestamp() * 1000)
 
         # resetAt is Unix timestam in the future

@@ -1,0 +1,22 @@
+{
+    "server_name": "Vhw Hwb",
+    "server_id": "B5CF822617F8",
+    "server_version": "1.19.0",
+    "last_update_id": "eda336db-fe0c-4abc-973a-8eb8a26a3e28",
+    "user_id": "fc88e5f467152adbe9fab9a9",
+    "counts": {
+        "camera": 6,
+        "user": 7,
+        "group": 2,
+        "liveview": 2,
+        "viewer": 1,
+        "display": 0,
+        "light": 1,
+        "bridge": 0,
+        "sensor": 0,
+        "doorlock": 0
+    },
+    "time": "2021-09-02T14:24:38.180330",
+    "event_count": 103,
+    "camera_thumbnail": "e-cc73ee8c6262168178ba5582"
+}

@@ -21,14 +21,46 @@ _LOGGER = logging.getLogger(__name__)
 
 CHIME_DISABLED = [0]
 
-DEVICE_MODEL_CAMERA = "camera"
-DEVICE_MODEL_LIGHT = "light"
 
-EVENT_SMART_DETECT_ZONE = "smartDetectZone"
-EVENT_MOTION = "motion"
-EVENT_RING = "ring"
-EVENT_DISCONNECT = "disconnect"
-EVENT_PROVISION = "provision"
+class ModelType(str, Enum):
+    CAMERA = "camera"
+    CLOUD_IDENTITY = "cloudIdentity"
+    EVENT = "event"
+    GROUP = "group"
+    LIGHT = "light"
+    LIVEVIEW = "liveview"
+    NVR = "nvr"
+    USER = "user"
+    USER_LOCATION = "userLocation"
+    VIEWPORT = "viewer"
+    DISPLAYS = "display"
+    BRIDGE = "bridge"
+    SENSOR = "sensor"
+    DOORLOCK = "doorlock"
+
+
+class EventType(str, Enum):
+    SMART_DETECT = "smartDetectZone"
+    MOTION = "motion"
+    RING = "ring"
+    DISCONNECT = "disconnect"
+    PROVISION = "provision"
+    ACCESS = "access"
+
+
+class StateType(str, Enum):
+    CONNECTED = "CONNECTED"
+    DISCONNECTED = "DISCONNECTED"
+
+
+DEVICE_MODEL_CAMERA = ModelType.CAMERA.value
+DEVICE_MODEL_LIGHT = ModelType.LIGHT.value
+
+EVENT_SMART_DETECT_ZONE = EventType.SMART_DETECT.value
+EVENT_MOTION = EventType.MOTION.value
+EVENT_RING = EventType.RING.value
+EVENT_DISCONNECT = EventType.DISCONNECT.value
+EVENT_PROVISION = EventType.PROVISION.value
 
 EVENT_LENGTH_PRECISION = 3
 
@@ -776,19 +808,6 @@ class FixSizeOrderedDict(OrderedDict):
         if self._max_size > 0:
             if len(self) > self._max_size:
                 self.popitem(False)
-
-
-class ModelType(str, Enum):
-    CAMERA = "camera"
-    CLOUD_IDENTITY = "cloudIdentity"
-    EVENT = "event"
-    GROUP = "group"
-    LIGHT = "light"
-    LIVEVIEW = "liveview"
-    NVR = "nvr"
-    USER = "user"
-    USER_LOCATION = "userLocation"
-    VIEWPORT = "viewer"
 
 
 @dataclass

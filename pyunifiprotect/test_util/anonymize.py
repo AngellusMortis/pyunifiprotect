@@ -60,9 +60,7 @@ def anonymize_user(user_dict: dict) -> dict:
 
 def anonymize_value(value: Any, name: Optional[str] = None):
     if isinstance(value, str):
-        if name == "authUserId":
-            value = random_hex(24)
-        elif name == "accessKey":
+        if name == "accessKey":
             value = f"{random_number(13)}:{random_hex(24)}:{random_hex(128)}"
         elif name in ("host", "connectionHost", "bindAddr"):
             value = anonymize_ip(value)
@@ -74,7 +72,7 @@ def anonymize_value(value: Any, name: Optional[str] = None):
             value = anonymize_peristent_string(value, random_hex(12).upper())
         elif name == "name" and value != "Default":
             value = f"{random_word()} {random_word()}".title()
-        elif name in ("owner", "user", "camera", "liveview"):
+        elif name in ("owner", "user", "camera", "liveview", "authUserId"):
             value = anonymize_object_id(value)
         elif name == "rtsp":
             value = anonymize_rstp_url(value)
