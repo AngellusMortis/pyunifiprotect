@@ -370,7 +370,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
     async def update(self, force_camera_update=False) -> dict:
         """Updates the status of devices."""
 
-        current_time = time.time()
+        current_time = time.monotonic()
         device_update = False
         if (
             not self.ws_connection
