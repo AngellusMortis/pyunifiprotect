@@ -44,6 +44,7 @@ from .unifi_data import (
     sensor_update_from_ws_frames,
 )
 
+NEVER_RAN = -1000
 DEVICE_UPDATE_INTERVAL_SECONDS = 60
 WEBSOCKET_CHECK_INTERVAL_SECONDS = 120
 LIGHT_MODES = ["off", "motion", "always"]
@@ -345,8 +346,8 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
     _event_state_machine: ProtectEventStateMachine = ProtectEventStateMachine()
     _device_state_machine: ProtectDeviceStateMachine = ProtectDeviceStateMachine()
     _processed_data: Dict[str, dict] = {}
-    _last_websocket_check: float = -WEBSOCKET_CHECK_INTERVAL_SECONDS
-    _last_device_update_time: float = -DEVICE_UPDATE_INTERVAL_SECONDS
+    _last_websocket_check: float = NEVER_RAN
+    _last_device_update_time: float = NEVER_RAN
     _ws_subscriptions: List[Callable[[Dict[str, dict]], None]] = []
     _is_first_update: bool = True
 
