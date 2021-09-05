@@ -26,6 +26,12 @@ exclude = '''
 )
 '''
 
+[tool.coverage.run]
+omit = [
+    ".tox/*",
+    "tests/*",
+]
+
 [tool.isort]
 # https://github.com/PyCQA/isort/wiki/isort-Settings
 profile = "black"
@@ -138,7 +144,9 @@ testpaths = [
 norecursedirs = [
     ".git",
     "testing_config",
+    ".tox",
 ]
+addopts = "--cov=pyunifiprotect --cov-append"
 
 [tool.flake8]
 exclude = ".eggs, .git, .tox, dist"
