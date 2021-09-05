@@ -51,7 +51,11 @@ OPTION_VERIFY = typer.Option(True, "--verify", "-v", help="Verify SSL", envvar="
 OPTION_ANON = typer.Option(True, "--actual", help="Do not anonymize test data")
 OPTION_WAIT = typer.Option(30, "--wait", "-w", help="Time to wait for Websocket messages")
 OPTION_OUTPUT = typer.Option(
-    None, "--output", "-o", help="Output folder, defaults to `tests` folder one level above this file"
+    None,
+    "--output",
+    "-o",
+    help="Output folder, defaults to `tests` folder one level above this file",
+    envvar="UFP_SAMPLE_DIR",
 )
 OPTION_WS_FILE = typer.Option(None, "--file", "-f", help="Path or raw binary Websocket message")
 ARG_WS_DATA = typer.Argument(None, help="base64 encoded Websocket message")
@@ -80,6 +84,26 @@ def _call_unifi(protect, method, *args, repeat=1):
 
         # Close the Session
         await protect.req.close()
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(callback())
+
+
+def _listen_to_ws(protect):
+    async def callback():
+        await protect.ensure_authenticated()
+        await protect.update()
+
+        typer.echo("Listening websocket...")
+        unsub = protect.subscribe_websocket(lambda u: typer.echo(f"Subscription: updated={u}"))
+
+        for _ in range(15000):
+            await asyncio.sleep(1)
+
+        # Close the Session
+        await protect.req.close()
+        await protect.async_disconnect_ws()
+        unsub()
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(callback())
@@ -120,6 +144,18 @@ def event_data(
 ):
     protect = _get_server(username, password, address, port, verify)
     _call_unifi(protect, "get_raw_events", 10, repeat=seconds)
+
+
+@app.command()
+def websocket_data(
+    username: str = OPTION_USERNAME,
+    password: str = OPTION_PASSWORD,
+    address: str = OPTION_ADDRESS,
+    port: int = OPTION_PORT,
+    verify: bool = OPTION_VERIFY,
+):
+    protect = _get_server(username, password, address, port, verify)
+    _listen_to_ws(protect)
 
 
 @app.command()
