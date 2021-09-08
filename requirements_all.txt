@@ -38,7 +38,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==8.3.1
+pillow==8.3.2
     # via pyunifiprotect (setup.cfg)
 prompt-toolkit==3.0.20
     # via ipython
