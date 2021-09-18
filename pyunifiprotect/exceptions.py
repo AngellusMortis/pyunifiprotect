@@ -2,6 +2,10 @@ class UnifiProtectError(Exception):
     """Base class for all other Unifi Protect errors"""
 
 
+class DataDecodeError(UnifiProtectError):
+    """Exception raised when trying to decode a Unifi Protect object"""
+
+
 class WSDecodeError(UnifiProtectError):
     """Exception raised when decoding Websocket packet"""
 

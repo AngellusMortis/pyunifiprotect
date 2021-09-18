@@ -10,15 +10,10 @@ from PIL import Image
 import aiohttp
 import typer
 
+from ..data import WSJSONPacketFrame, WSPacket
 from ..exceptions import NvrError
 from ..test_util.anonymize import anonymize_data, anonymize_prefixed_event_id
-from ..unifi_data import (
-    EVENT_MOTION,
-    EVENT_SMART_DETECT_ZONE,
-    LIVE_RING_FROM_WEBSOCKET,
-    WSJSONPacketFrame,
-    WSPacket,
-)
+from ..unifi_data import EVENT_MOTION, EVENT_SMART_DETECT_ZONE, LIVE_RING_FROM_WEBSOCKET
 from ..unifi_protect_server import UpvServer
 
 SLEEP_INTERVAL = 2
@@ -269,6 +264,7 @@ class SampleDataGenerator:
             if self.anonymize:
                 packet.action_frame.data = anonymize_data(packet.action_frame.data)
                 packet.data_frame.data = anonymize_data(packet.data_frame.data)
+                packet.pack_frames()
 
             self._record_ws_messages[str(time_offset)] = {
                 "raw": packet.raw_base64,

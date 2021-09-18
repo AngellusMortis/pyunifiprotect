@@ -1,23 +1,5 @@
 [
     {
-        "name": "Yxb Knjhdz",
-        "isDefault": false,
-        "isGlobal": true,
-        "layout": 1,
-        "slots": [
-            {
-                "cameras": [
-                    "5fcaeae80232780387000f80"
-                ],
-                "cycleMode": "time",
-                "cycleInterval": 10
-            }
-        ],
-        "owner": "fc88e5f467152adbe9fab9a9",
-        "id": "145b8ac233ef916bc368cb90",
-        "modelKey": "liveview"
-    },
-    {
         "name": "Default",
         "isDefault": true,
         "isGlobal": true,
@@ -25,49 +7,67 @@
         "slots": [
             {
                 "cameras": [
-                    "5fcaeae80232780387000f80"
+                    "7c9557df62c5a32bd7ecf3fe"
                 ],
                 "cycleMode": "time",
                 "cycleInterval": 10
             },
             {
                 "cameras": [
-                    "6101c9ac0245de0387003bc3"
+                    "ff0dd976f0cd52778f8987e9"
                 ],
                 "cycleMode": "time",
                 "cycleInterval": 10
             },
             {
                 "cameras": [
-                    "6102cc41003cde038700439d"
+                    "923d3e258e7f80f28c841a87"
                 ],
                 "cycleMode": "time",
                 "cycleInterval": 10
             },
             {
                 "cameras": [
-                    "6102ced5021cde03870043ba"
+                    "737d170c0b260de7ed3a655f"
                 ],
                 "cycleMode": "time",
                 "cycleInterval": 10
             },
             {
                 "cameras": [
-                    "6102d0790379de03870043dc"
+                    "807af4ffaa5e44c124072589"
                 ],
                 "cycleMode": "time",
                 "cycleInterval": 10
             },
             {
                 "cameras": [
-                    "6101cf1100acde0387003c11"
+                    "43e3a82e623f23ce12e1797a"
                 ],
                 "cycleMode": "time",
                 "cycleInterval": 10
             }
         ],
-        "owner": "1f7755558d14a53b93302cd6",
-        "id": "5cc9189614d76833e8373e2b",
+        "owner": "ed4a01aa0afc010ff073e797",
+        "id": "0a91c0e9cf4391c37359873f",
+        "modelKey": "liveview"
+    },
+    {
+        "name": "Vngdbg Tcg",
+        "isDefault": false,
+        "isGlobal": true,
+        "layout": 1,
+        "slots": [
+            {
+                "cameras": [
+                    "7c9557df62c5a32bd7ecf3fe"
+                ],
+                "cycleMode": "time",
+                "cycleInterval": 10
+            }
+        ],
+        "owner": "548d497b8d4f7538603a1845",
+        "id": "f7afa7a8f08769d435f33593",
         "modelKey": "liveview"
     }
 ]

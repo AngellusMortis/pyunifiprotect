@@ -4,6 +4,7 @@ import base64
 import json
 from unittest.mock import patch
 
+from pyunifiprotect.data import EventType, ProtectWSPayloadFormat
 from pyunifiprotect.test_util.data import (
     legacy_process_camera,
     legacy_process_event,
@@ -12,8 +13,6 @@ from pyunifiprotect.test_util.data import (
 )
 from pyunifiprotect.unifi_data import (
     LIVE_RING_FROM_WEBSOCKET,
-    EventType,
-    ProtectWSPayloadFormat,
     decode_ws_frame,
     process_camera,
     process_event,

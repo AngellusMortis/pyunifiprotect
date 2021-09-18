@@ -40,9 +40,9 @@ def anonymize_user(user_dict: dict) -> dict:
         user_dict["cloudAccount"]["lastName"] = user_dict["lastName"]
         user_dict["cloudAccount"]["name"] = user_dict["name"]
         user_dict["cloudAccount"]["email"] = user_dict["email"]
-        user_dict["cloudAccount"]["user"] = random_hex(24)
-        user_dict["cloudAccount"]["id"] = anonymize_object_id(user_dict["cloudAccount"]["id"])
-        user_dict["cloudAccount"]["cloudId"] = random_identifier()
+        user_dict["cloudAccount"]["user"] = anonymize_object_id(user_dict["cloudAccount"]["user"])
+        user_dict["cloudAccount"]["id"] = anonymize_uuid(user_dict["cloudAccount"]["id"])
+        user_dict["cloudAccount"]["cloudId"] = anonymize_uuid(user_dict["cloudAccount"]["cloudId"])
 
     camera_order = (user_dict.get("settings") or {}).get("cameraOrder")
     if camera_order is not None:
@@ -114,13 +114,13 @@ def anonymize_list(items: List, name: Optional[str] = None) -> List:
     for index, value in enumerate(items):
         handled = False
 
-        if isinstance(value, str) and name in ("hosts", "smartDetectEvents", "camera"):
+        if isinstance(value, str) and name in ("hosts", "smartDetectEvents", "camera", "cameras"):
             handled = True
             if name == "hosts":
                 items[index] = anonymize_ip(items[index])
             elif name == "smartDetectEvents":
                 items[index] = anonymize_object_id(value)
-            elif name == "camera":
+            elif name in ("camera", "cameras"):
                 items[index] = anonymize_object_id(value)
 
         if not handled:
@@ -143,6 +143,10 @@ def anonymize_ip(ip: Any):
         return ip
 
     return anonymize_peristent_string(ip, random_ip(ip))
+
+
+def anonymize_uuid(uuid_str: str) -> str:
+    return anonymize_peristent_string(uuid_str, random_identifier())
 
 
 def anonymize_object_id(obj_id: str) -> str:

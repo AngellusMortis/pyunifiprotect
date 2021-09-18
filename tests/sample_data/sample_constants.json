@@ -1,9 +1,9 @@
 {
-    "server_name": "Vhw Hwb",
-    "server_id": "B5CF822617F8",
-    "server_version": "1.19.0",
-    "last_update_id": "eda336db-fe0c-4abc-973a-8eb8a26a3e28",
-    "user_id": "fc88e5f467152adbe9fab9a9",
+    "server_name": "Luy Pggazf",
+    "server_id": "A251980C0649",
+    "server_version": "1.19.1",
+    "last_update_id": "2d6c8ba9-1017-483d-b82d-c24eda802fa4",
+    "user_id": "548d497b8d4f7538603a1845",
     "counts": {
         "camera": 6,
         "user": 7,
@@ -16,7 +16,7 @@
         "sensor": 0,
         "doorlock": 0
     },
-    "time": "2021-09-02T14:24:38.180330",
-    "event_count": 103,
-    "camera_thumbnail": "e-cc73ee8c6262168178ba5582"
+    "time": "2021-09-20T02:56:52.177410",
+    "event_count": 120,
+    "camera_thumbnail": "e-0da4f9245fc2d9d25e554b64"
 }

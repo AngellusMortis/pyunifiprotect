@@ -15,6 +15,7 @@ import jwt
 from yarl import URL
 
 from .const import SERVER_ID, SERVER_NAME
+from .data import Bootstrap, ProtectWSPayloadFormat
 from .exceptions import NotAuthorized, NvrError
 from .unifi_data import (
     DEVICE_MODEL_LIGHT,
@@ -28,7 +29,6 @@ from .unifi_data import (
     ZONE_NAME,
     ProtectDeviceStateMachine,
     ProtectEventStateMachine,
-    ProtectWSPayloadFormat,
     camera_event_from_ws_frames,
     camera_update_from_ws_frames,
     decode_ws_frame,
@@ -78,12 +78,12 @@ class BaseApiClient:
 
     def __init__(
         self,
-        session: Optional[aiohttp.ClientSession],
         host: str,
         port: int,
         username: str,
         password: str,
-        verify_ssl: bool,
+        verify_ssl: bool = True,
+        session: Optional[aiohttp.ClientSession] = None,
     ):
         self._host = host
         self._port = port
@@ -361,7 +361,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         verify_ssl: bool = False,
         minimum_score: int = 0,
     ):
-        super().__init__(session, host, port, username, password, verify_ssl)
+        super().__init__(host, port, username, password, verify_ssl, session=session)
 
         self._minimum_score = minimum_score
 
@@ -1100,3 +1100,23 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
     def _update_device(self, device_id, processed_update):
         """Update internal state of a device."""
         self._processed_data.setdefault(device_id, {}).update(processed_update)
+
+
+class ProtectApiClient(BaseApiClient):
+    """WIP new API Client class that enforces uses actual Python objects and enforces strict typing"""
+
+    _bootstrap: Optional[Bootstrap] = None
+
+    async def update(self, force=False) -> Bootstrap:
+        if self._bootstrap is None or force:
+            data = await self.api_request("bootstrap")
+            self._bootstrap = Bootstrap(**data, api=self)
+
+        return self._bootstrap
+
+    @property
+    def bootstrap(self) -> Bootstrap:
+        if self._bootstrap is None:
+            raise NvrError("Client not initalized, run `update` first")
+
+        return self._bootstrap

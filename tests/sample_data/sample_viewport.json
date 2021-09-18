@@ -1,14 +1,14 @@
 {
-    "mac": "18A03F5A5261",
-    "host": "192.168.12.29",
-    "connectionHost": "192.168.218.234",
+    "mac": "285F5266F41E",
+    "host": "192.168.71.65",
+    "connectionHost": "192.168.208.43",
     "type": "UFP Viewport",
-    "name": "Bsfvk Mhrhzm",
-    "upSince": 1630351496265,
-    "uptime": 4099,
-    "lastSeen": 1630355625397,
-    "connectedSince": null,
-    "state": "DISCONNECTED",
+    "name": "Suihpxt Awxmtk",
+    "upSince": 1632105950058,
+    "uptime": 608,
+    "lastSeen": 1632106558058,
+    "connectedSince": 1632106003662,
+    "state": "CONNECTED",
     "hardwareRevision": null,
     "firmwareVersion": "1.2.38",
     "latestFirmwareVersion": "1.2.38",
@@ -27,8 +27,8 @@
     "wiredConnectionState": {
         "phyRate": 1000
     },
-    "liveview": "145b8ac233ef916bc368cb90",
-    "id": "47e4eeb40c8e1e660dd95558",
-    "isConnected": false,
+    "liveview": "f7afa7a8f08769d435f33593",
+    "id": "3c6055cb1333f8a82f37dfcb",
+    "isConnected": true,
     "modelKey": "viewer"
 }

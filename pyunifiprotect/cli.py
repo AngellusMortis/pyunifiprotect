@@ -4,14 +4,13 @@ import json
 import logging
 from pathlib import Path
 import sys
-from typing import Optional
+from typing import Optional, Union
 
-from aiohttp import ClientSession, CookieJar
 import typer
 
+from .data import WSPacket
 from .test_util import SampleDataGenerator
-from .unifi_data import WSPacket
-from .unifi_protect_server import _LOGGER, UpvServer
+from .unifi_protect_server import _LOGGER, ProtectApiClient, UpvServer
 
 try:
     from IPython import embed  # type: ignore
@@ -57,6 +56,7 @@ OPTION_OUTPUT = typer.Option(
     help="Output folder, defaults to `tests` folder one level above this file",
     envvar="UFP_SAMPLE_DIR",
 )
+OPTION_NEW = typer.Option(False, "--new-client", "-n", help="New Beta API Client")
 OPTION_WS_FILE = typer.Option(None, "--file", "-f", help="Path or raw binary Websocket message")
 ARG_WS_DATA = typer.Argument(None, help="base64 encoded Websocket message")
 
@@ -64,11 +64,13 @@ ARG_WS_DATA = typer.Argument(None, help="base64 encoded Websocket message")
 app = typer.Typer()
 
 
-def _get_server(username, password, address, port, verify):
-    session = ClientSession(cookie_jar=CookieJar(unsafe=True))
-
-    # Log in to Unifi Protect
-    protect = UpvServer(session, address, port, username, password, verify_ssl=verify)
+def _get_server(username, password, address, port, verify, new: bool = False):
+    if new:
+        protect: Union[ProtectApiClient, UpvServer] = ProtectApiClient(
+            address, port, username, password, verify_ssl=verify
+        )
+    else:
+        protect = UpvServer(None, address, port, username, password, verify_ssl=verify)
 
     return protect
 
@@ -165,12 +167,13 @@ def shell(
     address: str = OPTION_ADDRESS,
     port: int = OPTION_PORT,
     verify: bool = OPTION_VERIFY,
+    new: bool = OPTION_NEW,
 ):
     if embed is None or colored is None:
         typer.echo("ipython and termcolor required for shell subcommand")
         sys.exit(1)
 
-    protect = _get_server(username, password, address, port, verify)
+    protect = _get_server(username, password, address, port, verify, new=new)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(protect.update(True))
 
@@ -179,9 +182,13 @@ def shell(
     _LOGGER.setLevel(logging.DEBUG)
     _LOGGER.addHandler(console_handler)
 
+    klass = "UpvServer"
+    if new:
+        klass = "ProtectApiClient"
+
     c = get_config()
     c.InteractiveShellEmbed.colors = "Linux"
-    embed(header=colored("protect = UpvServer(*args)", "green"), config=c, using="asyncio")
+    embed(header=colored(f"protect = {klass}(*args)", "green"), config=c, using="asyncio")
 
 
 @app.command()

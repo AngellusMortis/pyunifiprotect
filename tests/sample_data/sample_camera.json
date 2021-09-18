@@ -1,14 +1,14 @@
 {
     "isDeleting": false,
-    "mac": "0CD50DE2E61A",
-    "host": "192.168.184.56",
-    "connectionHost": "192.168.218.234",
+    "mac": "1C2881976FBC",
+    "host": "192.168.210.60",
+    "connectionHost": "192.168.208.43",
     "type": "UVC G4 Doorbell",
-    "name": "Dzm Fsnmpi",
-    "upSince": 1630240422428,
-    "uptime": 352219,
-    "lastSeen": 1630592641428,
-    "connectedSince": 1630464690894,
+    "name": "Cxeyzr Xdzc",
+    "upSince": 1631760717058,
+    "uptime": 345841,
+    "lastSeen": 1632106558058,
+    "connectedSince": 1632105430578,
     "state": "CONNECTED",
     "hardwareRevision": "21",
     "firmwareVersion": "4.41.16",
@@ -23,7 +23,7 @@
     "isSshEnabled": false,
     "canAdopt": false,
     "isAttemptingToConnect": false,
-    "lastMotion": 1630592686900,
+    "lastMotion": 1632106610755,
     "micVolume": 100,
     "isMicEnabled": true,
     "isRecording": true,
@@ -38,49 +38,49 @@
     "chimeDuration": 300,
     "isDark": false,
     "lastPrivacyZonePositionId": null,
-    "lastRing": 1630592674077,
+    "lastRing": 1632106606652,
     "isLiveHeatmapEnabled": false,
-    "anonymousDeviceId": "7d6a74ab-0635-443c-b51b-531af1e4be1e",
+    "anonymousDeviceId": "d39d1191-6564-4bb2-9915-711459e598e8",
     "eventStats": {
         "motion": {
-            "today": 7,
-            "average": 51,
+            "today": 42,
+            "average": 50,
             "lastDays": [
-                65,
-                67,
-                47,
-                33,
+                78,
+                94,
+                46,
+                34,
                 25,
-                71,
-                50
+                32,
+                46
             ],
             "recentHours": [
                 3,
+                4,
+                3,
                 0,
+                1,
                 0,
                 0,
                 1,
                 2,
+                2,
+                0,
                 1,
-                0,
-                0,
-                0,
-                0,
-                3,
-                3
+                1
             ]
         },
         "smart": {
-            "today": 0,
-            "average": 3,
+            "today": 6,
+            "average": 7,
             "lastDays": [
-                0,
-                0,
-                0,
-                0,
+                4,
+                6,
+                1,
+                12,
                 5,
-                11,
-                10
+                2,
+                20
             ]
         }
     },
@@ -91,10 +91,10 @@
         {
             "id": 0,
             "videoId": "video1",
-            "name": "Usndp Hfhx",
+            "name": "Oeovc Iuiml",
             "enabled": true,
             "isRtspEnabled": true,
-            "rtspAlias": "9LhM8IgV1yUARAGZ",
+            "rtspAlias": "FHClENKvh7RMbFOO",
             "width": 1600,
             "height": 1200,
             "fps": 45,
@@ -113,7 +113,7 @@
         {
             "id": 1,
             "videoId": "video3",
-            "name": "Upl Dlrd",
+            "name": "Bcinhww Tiiuzs",
             "enabled": true,
             "isRtspEnabled": false,
             "rtspAlias": null,
@@ -133,7 +133,7 @@
         {
             "id": 2,
             "videoId": "video2",
-            "name": "Xhbuug Ummfho",
+            "name": "Qxiiy Tbbafij",
             "enabled": true,
             "isRtspEnabled": false,
             "rtspAlias": null,
@@ -297,7 +297,7 @@
         },
         {
             "id": 2,
-            "name": "Jlmh Llwpu",
+            "name": "Fqn Llr",
             "color": "#FF0075",
             "points": [
                 [
@@ -341,14 +341,14 @@
     ],
     "smartDetectLines": [],
     "stats": {
-        "rxBytes": 3161080541,
-        "txBytes": 149063245227,
+        "rxBytes": 3097452904,
+        "txBytes": 149221754122,
         "wifi": {
-            "channel": 104,
-            "frequency": 5520,
+            "channel": 100,
+            "frequency": 5500,
             "linkSpeedMbps": null,
-            "signalQuality": 94,
-            "signalStrength": -67
+            "signalQuality": 100,
+            "signalStrength": -63
         },
         "battery": {
             "percentage": null,
@@ -356,21 +356,21 @@
             "sleepState": "disconnected"
         },
         "video": {
-            "recordingStart": 1628000655284,
-            "recordingEnd": 1630592679305,
-            "recordingStartLQ": 1627995943582,
-            "recordingEndLQ": 1630592679289,
-            "timelapseStart": 1628000655284,
-            "timelapseEnd": 1630592430838,
+            "recordingStart": 1629514560194,
+            "recordingEnd": 1632106610499,
+            "recordingStartLQ": 1629513497151,
+            "recordingEndLQ": 1632106610486,
+            "timelapseStart": 1629514560194,
+            "timelapseEnd": 1632106354220,
             "timelapseStartLQ": 1614499304836,
-            "timelapseEndLQ": 1630592446744
+            "timelapseEndLQ": 1632106515260
         },
         "storage": {
-            "used": 942745321472,
-            "rate": 782.62045320754
+            "used": 1032939634688,
+            "rate": 774.815978799665
         },
-        "wifiQuality": 94,
-        "wifiStrength": -67
+        "wifiQuality": 100,
+        "wifiStrength": -63
     },
     "featureFlags": {
         "canAdjustIrLedLevel": false,
@@ -481,13 +481,13 @@
         "resetAt": null
     },
     "wifiConnectionState": {
-        "channel": 104,
-        "frequency": 5520,
+        "channel": 100,
+        "frequency": 5500,
         "phyRate": 86,
-        "signalQuality": 94,
-        "signalStrength": -67
+        "signalQuality": 100,
+        "signalStrength": -63
     },
-    "id": "4201f72dd2820333bf325eae",
+    "id": "7c9557df62c5a32bd7ecf3fe",
     "isConnected": true,
     "platform": "s5l",
     "hasSpeaker": true,
