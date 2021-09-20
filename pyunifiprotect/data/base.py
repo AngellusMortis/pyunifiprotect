@@ -56,14 +56,18 @@ class ProtectModel(ProtectBaseObject):
 
     @staticmethod
     def klass_from_dict(data: Dict[str, Any]) -> Type[ProtectModel]:
-        from .devices import Camera, Light, Viewer  # pylint: disable=import-outside-toplevel
+        from .devices import (  # pylint: disable=import-outside-toplevel
+            Camera,
+            Light,
+            Viewer,
+        )
         from .nvr import (  # pylint: disable=import-outside-toplevel
             NVR,
             CloudAccount,
             Event,
             Group,
-            User,
             Liveview,
+            User,
             UserLocation,
         )
 
