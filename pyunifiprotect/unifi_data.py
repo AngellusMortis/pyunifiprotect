@@ -7,7 +7,7 @@ import logging
 import time
 from typing import Any, Dict
 
-from pyunifiprotect.data import EventType, ModelType, WSRawPacketFrame
+from .data import EventType, ModelType, WSRawPacketFrame
 
 _LOGGER = logging.getLogger(__name__)
 

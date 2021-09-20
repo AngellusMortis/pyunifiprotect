@@ -16,8 +16,8 @@ from pydantic import BaseModel
 from pydantic.fields import PrivateAttr
 import pytz
 
-from pyunifiprotect.exceptions import DataDecodeError, NvrError, WSDecodeError
-from pyunifiprotect.utils import (
+from .exceptions import DataDecodeError, NvrError, WSDecodeError
+from .utils import (
     process_datetime,
     to_camel_case_dict,
     to_js_time,
@@ -27,7 +27,7 @@ from pyunifiprotect.utils import (
 )
 
 if TYPE_CHECKING:
-    from pyunifiprotect.unifi_protect_server import ProtectApiClient
+    from .unifi_protect_server import ProtectApiClient
 
 WS_HEADER_SIZE = 8
 SUPPORTED_PROTECT_MODELS = ["cameras", "users", "groups", "liveviews", "viewers", "lights"]
