@@ -506,7 +506,7 @@ class Event(ProtectModelWithId):
         if self._api is None:
             raise NvrError("API Client not initialized")
 
-        return self._api.bootstrap.users[self.user_id]
+        return self._api.bootstrap.users.get(self.user_id)
 
 
 class Group(ProtectModelWithId):
@@ -1064,11 +1064,17 @@ class Liveview(ProtectModelWithId):
         return data
 
     @property
-    def owner(self):
+    def owner(self) -> Optional[User]:
+        """
+        Owner of liveview.
+
+        Will be none if the user only had read only access and it was not made by their user.
+        """
+
         if self._api is None:
             raise NvrError("API Client not initialized")
 
-        return self._api.bootstrap.users[self.owner_id]
+        return self._api.bootstrap.users.get(self.owner_id)
 
 
 class Viewer(ProtectAdoptableDeviceModel):

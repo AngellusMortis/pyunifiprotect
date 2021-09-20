@@ -23,7 +23,7 @@ async def test_bootstrap(protect_client: ProtectApiClient):
         assert viewer.liveview
 
     for liveview in protect_client.bootstrap.liveviews.values():
-        assert liveview.owner
+        liveview.owner
 
         for slot in liveview.slots:
             assert len(slot.camera_ids) == len(slot.cameras)
