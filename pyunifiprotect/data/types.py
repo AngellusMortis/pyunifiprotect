@@ -74,6 +74,20 @@ class LightModeType(str, enum.Enum):
     MANUAL = "off"
 
 
+@enum.unique
+class VideoMode(str, enum.Enum):
+    DEFAULT = "default"
+    HIGH_FPS = "highFps"
+
+
+@enum.unique
+class RecordingMode(str, enum.Enum):
+    ALWAYS = "always"
+    NEVER = "never"
+    MOTION_EVENTS = "motion"
+    SMART_DETECTIONS = "smartDetect"
+
+
 class LEDLevel(ConstrainedInt):
     ge = 1
     le = 6
