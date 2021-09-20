@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from decimal import Decimal
 from ipaddress import IPv4Address
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 from uuid import UUID
+
+from pydantic.color import Color
 
 from ..exceptions import NvrError
 from ..utils import process_datetime, to_js_time, to_ms, to_s
@@ -18,7 +21,8 @@ from .types import (
     LEDLevel,
     LightModeEnableType,
     LightModeType,
-    PercentLevel,
+    Percent,
+    PercentInt,
     RecordingMode,
     SmartDetectObjectType,
     VideoMode,
@@ -36,7 +40,7 @@ class LightDeviceSettings(ProtectBaseObject):
     # unknown
     lux_sensitivity: str
     pir_duration: timedelta
-    pir_sensitivity: PercentLevel
+    pir_sensitivity: PercentInt
 
     def __init__(self, **kwargs):
         kwargs["pir_duration"] = timedelta(milliseconds=kwargs.pop("pirDuration"))
@@ -193,7 +197,7 @@ class SpeakerSettings(ProtectBaseObject):
     is_enabled: bool
     # Status Sounds
     are_system_sounds_enabled: bool
-    volume: PercentLevel
+    volume: PercentInt
 
 
 class RecordingSettings(ProtectBaseObject):
@@ -290,12 +294,12 @@ class WifiStats(ProtectBaseObject):
     channel: Optional[int]
     frequency: Optional[int]
     link_speed_mbps: Optional[str]
-    signal_quality: PercentLevel
+    signal_quality: PercentInt
     signal_strength: int
 
 
 class BatteryStats(ProtectBaseObject):
-    percentage: Optional[PercentLevel]
+    percentage: Optional[PercentInt]
     is_charging: bool
     sleep_state: str
 
@@ -348,7 +352,7 @@ class CameraStats(ProtectBaseObject):
     battery: BatteryStats
     video: VideoStats
     storage: Optional[StorageStats]
-    wifi_quality: PercentLevel
+    wifi_quality: PercentInt
     wifi_strength: int
 
     def __init__(self, **kwargs):
@@ -369,10 +373,43 @@ class CameraStats(ProtectBaseObject):
         return data
 
 
+class CameraZone(ProtectBaseObject):
+    id: int
+    name: str
+    color: Color
+    points: List[Tuple[Percent, Percent]]
+
+    def _serialize_coord(self, coord: Percent) -> Union[int, float]:
+        if coord in (Decimal(1), Decimal(0)):
+            return int(coord)
+        return float(coord)
+
+    def _serialize_point(self, point: Tuple[Percent, Percent]) -> List[Union[int, float]]:
+        return [
+            self._serialize_coord(point[0]),
+            self._serialize_coord(point[1]),
+        ]
+
+    def unifi_dict(self):
+        data = super().unifi_dict()
+        data["color"] = self.color.as_hex().upper()
+        data["points"] = [self._serialize_point(p) for p in self.points]
+
+        return data
+
+
+class MotionZone(CameraZone):
+    sensitivity: PercentInt
+
+
+class SmartMotionZone(MotionZone):
+    object_types: List[SmartDetectObjectType]
+
+
 class Camera(ProtectMotionDeviceModel):
     is_deleting: bool
     # Microphone Sensitivity
-    mic_volume: PercentLevel
+    mic_volume: PercentInt
     is_mic_enabled: bool
     is_recording: bool
     is_motion_detected: bool
@@ -394,6 +431,9 @@ class Camera(ProtectMotionDeviceModel):
     speaker_settings: SpeakerSettings
     recording_settings: RecordingSettings
     smart_detect_settings: SmartDetectSettings
+    motion_zones: List[MotionZone]
+    privacy_zones: List[CameraZone]
+    smart_detect_zones: List[SmartMotionZone]
     stats: CameraStats
     pir_settings: PIRSettings
     lcd_message: Optional[LCDMessage]
@@ -433,6 +473,9 @@ class Camera(ProtectMotionDeviceModel):
         data["talkbackSettings"] = self.talkback_settings.unifi_dict()
         data["channels"] = [c.unifi_dict() for c in self.channels]
         data["stats"] = self.stats.unifi_dict()
+        data["motionZones"] = [z.unifi_dict() for z in self.motion_zones]
+        data["privacyZones"] = [z.unifi_dict() for z in self.privacy_zones]
+        data["smartDetectZones"] = [z.unifi_dict() for z in self.smart_detect_zones]
 
         if self.lcd_message is None:
             data["lcdMessage"] = {}

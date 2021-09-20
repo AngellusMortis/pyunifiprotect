@@ -1,6 +1,6 @@
 import enum
 
-from pydantic import ConstrainedInt
+from pydantic import ConstrainedDecimal, ConstrainedInt
 
 
 @enum.unique
@@ -93,6 +93,13 @@ class LEDLevel(ConstrainedInt):
     le = 6
 
 
-class PercentLevel(ConstrainedInt):
+class PercentInt(ConstrainedInt):
     ge = 0
     le = 100
+
+
+class Percent(ConstrainedDecimal):
+    ge = 0
+    le = 1
+    max_digits = 4
+    decimal_places = 3
