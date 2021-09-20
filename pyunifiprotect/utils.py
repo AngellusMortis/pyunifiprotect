@@ -1,8 +1,11 @@
 from datetime import datetime
+from decimal import Decimal
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic.utils import to_camel
+
+from .data.types import Percent
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -75,3 +78,16 @@ def to_camel_case_dict(data):
         data[to_camel_case(key)] = value
 
     return data
+
+
+def serialize_coord(coord: Percent) -> Union[int, float]:
+    if coord in (Decimal(1), Decimal(0)):
+        return int(coord)
+    return float(coord)
+
+
+def serialize_point(point: Tuple[Percent, Percent]) -> List[Union[int, float]]:
+    return [
+        serialize_coord(point[0]),
+        serialize_coord(point[1]),
+    ]

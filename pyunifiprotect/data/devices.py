@@ -2,15 +2,14 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from decimal import Decimal
 from ipaddress import IPv4Address
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Tuple
 from uuid import UUID
 
 from pydantic.color import Color
 
 from ..exceptions import NvrError
-from ..utils import process_datetime, to_js_time, to_ms, to_s
+from ..utils import process_datetime, serialize_point, to_js_time, to_ms, to_s
 from .base import (
     ProtectAdoptableDeviceModel,
     ProtectBaseObject,
@@ -379,21 +378,10 @@ class CameraZone(ProtectBaseObject):
     color: Color
     points: List[Tuple[Percent, Percent]]
 
-    def _serialize_coord(self, coord: Percent) -> Union[int, float]:
-        if coord in (Decimal(1), Decimal(0)):
-            return int(coord)
-        return float(coord)
-
-    def _serialize_point(self, point: Tuple[Percent, Percent]) -> List[Union[int, float]]:
-        return [
-            self._serialize_coord(point[0]),
-            self._serialize_coord(point[1]),
-        ]
-
     def unifi_dict(self):
         data = super().unifi_dict()
         data["color"] = self.color.as_hex().upper()
-        data["points"] = [self._serialize_point(p) for p in self.points]
+        data["points"] = [serialize_point(p) for p in self.points]
 
         return data
 
