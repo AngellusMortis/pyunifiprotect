@@ -67,7 +67,7 @@
             "request": "test",
             "console": "integratedTerminal",
             "env": {
-                "PYTEST_ADDOPTS": "--no-cov"
+                "PYTEST_ADDOPTS": "--no-cov -vv"
             }
         }
     ]

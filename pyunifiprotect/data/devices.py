@@ -62,12 +62,6 @@ class LightModeSettings(ProtectBaseObject):
     mode: LightModeType
     enable_at: LightModeEnableType
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["mode"] = data["mode"].value
-        data["enableAt"] = data["enableAt"].value
-        return data
-
 
 class Light(ProtectMotionDeviceModel):
     is_pir_motion_detected: bool
@@ -229,7 +223,6 @@ class RecordingSettings(ProtectBaseObject):
         data["postPaddingSecs"] = to_s(data.pop("postPadding"))
         data["minMotionEventTrigger"] = to_s(data.pop("minMotionEventTrigger"))
         data["endMotionEventDelay"] = to_s(data.pop("endMotionEventDelay"))
-        data["mode"] = data["mode"].value
 
         return data
 
@@ -394,6 +387,64 @@ class SmartMotionZone(MotionZone):
     object_types: List[SmartDetectObjectType]
 
 
+class PrivacyMaskCapability(ProtectBaseObject):
+    max_masks: int
+    rectangle_only: bool
+
+
+class FeatureFlags(ProtectBaseObject):
+    can_adjust_ir_led_level: bool
+    can_magic_zoom: bool
+    can_optical_zoom: bool
+    can_touch_focus: bool
+    has_accelerometer: bool
+    has_aec: bool
+    has_battery: bool
+    has_bluetooth: bool
+    has_chime: bool
+    has_external_ir: bool
+    has_icr_sensitivity: bool
+    privacy_mask_capability: PrivacyMaskCapability
+    has_ldc: bool
+    has_led_ir: bool
+    has_led_status: bool
+    has_line_in: bool
+    has_mic: bool
+    has_privacy_mask: bool
+    has_rtc: bool
+    has_sd_card: bool
+    has_speaker: bool
+    has_wifi: bool
+    has_hdr: bool
+    has_auto_icr_only: bool
+    video_modes: List[VideoMode]
+    video_mode_max_fps: List[int]
+    has_motion_zones: bool
+    has_lcd_screen: bool
+    smart_detect_types: List[SmartDetectObjectType]
+    motion_algorithms: List[str]
+    has_square_event_thumbnail: bool
+    has_smart_detect: bool
+
+    # TODO:
+    # mountPositions
+    # focus
+    # pan
+    # tilt
+    # zoom
+
+    def __init__(self, **kwargs):
+        kwargs["has_auto_icr_only"] = kwargs["hasAutoICROnly"]
+
+        super().__init__(**kwargs)
+
+    def unifi_dict(self):
+        data = super().unifi_dict()
+        data["hasAutoICROnly"] = data.pop("hasAutoIcrOnly")
+
+        return data
+
+
 class Camera(ProtectMotionDeviceModel):
     is_deleting: bool
     # Microphone Sensitivity
@@ -423,6 +474,7 @@ class Camera(ProtectMotionDeviceModel):
     privacy_zones: List[CameraZone]
     smart_detect_zones: List[SmartMotionZone]
     stats: CameraStats
+    feature_flags: FeatureFlags
     pir_settings: PIRSettings
     lcd_message: Optional[LCDMessage]
     platform: str
@@ -438,11 +490,7 @@ class Camera(ProtectMotionDeviceModel):
     # elementInfo
     # lastPrivacyZonePositionId
     # recordingSchedule
-    # motionZones
-    # privacyZones
-    # smartDetectZones
     # smartDetectLines
-    # featureFlags
 
     def __init__(self, **kwargs):
         # LCD messages comes back as empty dict {}
@@ -453,7 +501,6 @@ class Camera(ProtectMotionDeviceModel):
 
     def unifi_dict(self):
         data = super().unifi_dict()
-        data["videoMode"] = data["videoMode"].value
         data["lastRing"] = to_js_time(data["lastRing"])
         data["anonymousDeviceId"] = str(data["anonymousDeviceId"])
         data["recordingSettings"] = self.recording_settings.unifi_dict()
@@ -464,9 +511,13 @@ class Camera(ProtectMotionDeviceModel):
         data["motionZones"] = [z.unifi_dict() for z in self.motion_zones]
         data["privacyZones"] = [z.unifi_dict() for z in self.privacy_zones]
         data["smartDetectZones"] = [z.unifi_dict() for z in self.smart_detect_zones]
+        data["smartDetectSettings"] = self.smart_detect_settings.unifi_dict()
+        data["featureFlags"] = self.feature_flags.unifi_dict()
 
         if self.lcd_message is None:
             data["lcdMessage"] = {}
+        else:
+            data["lcdMessage"] = self.lcd_message.unifi_dict()
 
         return data
 

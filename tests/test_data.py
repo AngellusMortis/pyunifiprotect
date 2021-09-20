@@ -84,7 +84,11 @@ def compare_objs(obj_type, expected, actual):
         del expected["lastPrivacyZonePositionId"]
         del expected["recordingSchedule"]
         del expected["smartDetectLines"]
-        del expected["featureFlags"]
+        del expected["featureFlags"]["mountPositions"]
+        del expected["featureFlags"]["focus"]
+        del expected["featureFlags"]["pan"]
+        del expected["featureFlags"]["tilt"]
+        del expected["featureFlags"]["zoom"]
         del expected["ispSettings"]["mountPosition"]
     elif obj_type == ModelType.USER.value:
         del expected["settings"]
