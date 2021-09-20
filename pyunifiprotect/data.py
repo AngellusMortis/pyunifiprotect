@@ -604,13 +604,19 @@ class User(ProtectModelWithId):
 
     @property
     def groups(self) -> List[Group]:
+        """
+        Groups the user is in
+
+        Will always be empty if the user only has read only access.
+        """
+
         if self._groups is not None:
             return self._groups
 
         if self._api is None:
             raise NvrError("API Client not initialized")
 
-        self._groups = [self._api.bootstrap.groups[g] for g in self.group_ids]
+        self._groups = [self._api.bootstrap.groups[g] for g in self.group_ids if g in self._api.bootstrap.groups]
         return self._groups
 
 
@@ -1068,7 +1074,7 @@ class Liveview(ProtectModelWithId):
         """
         Owner of liveview.
 
-        Will be none if the user only had read only access and it was not made by their user.
+        Will be none if the user only has read only access and it was not made by their user.
         """
 
         if self._api is None:

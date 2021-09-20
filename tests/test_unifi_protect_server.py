@@ -29,7 +29,7 @@ async def test_bootstrap(protect_client: ProtectApiClient):
             assert len(slot.camera_ids) == len(slot.cameras)
 
     for user in protect_client.bootstrap.users.values():
-        assert len(user.group_ids) == len(user.groups)
+        user.groups
 
         if user.cloud_account is not None:
             assert user.cloud_account.user == user
