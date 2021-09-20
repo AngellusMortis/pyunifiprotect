@@ -52,6 +52,7 @@ class SampleDataGenerator:
         loop.run_until_complete(self.async_generate())
 
     async def async_generate(self, close_session=True):
+        typer.echo(f"Output folder: {self.output_folder}")
         self.output_folder.mkdir(parents=True, exist_ok=True)
         self.client.ws_callback = self._handle_ws_message
 

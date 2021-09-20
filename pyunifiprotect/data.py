@@ -14,7 +14,9 @@ import zlib
 
 from pydantic import BaseModel
 from pydantic.fields import PrivateAttr
+from pydantic.types import conint
 import pytz
+from typer.params import Option
 
 from .exceptions import DataDecodeError, NvrError, WSDecodeError
 from .utils import (
@@ -88,6 +90,20 @@ class SmartDetectObjectType(str, enum.Enum):
 class DoorbellMessageType(str, enum.Enum):
     LEAVE_PACKAGE_AT_DOOR = "LEAVE_PACKAGE_AT_DOOR"
     DO_NOT_DISTURB = "DO_NOT_DISTURB"
+    CUSTOM_MESSAGE = "CUSTOM_MESSAGE"
+
+
+@enum.unique
+class LightModeEnableType(str, enum.Enum):
+    DARK = "dark"
+    ALWAYS = "fulltime"
+
+
+@enum.unique
+class LightModeType(str, enum.Enum):
+    MOTION = "motion"
+    WHEN_DARK = "always"
+    MANUAL = "off"
 
 
 class WSPacketFrameHeader(BaseModel):
@@ -736,6 +752,11 @@ class StorageStats(ProtectBaseObject):
     recording_space: StorageSpace
 
 
+class NVRFeatureFlags(ProtectBaseObject):
+    beta: bool
+    dev: bool
+
+
 class NVR(ProtectDeviceModel):
     can_auto_update: bool
     is_stats_gathering_enabled: bool
@@ -768,6 +789,7 @@ class NVR(ProtectDeviceModel):
     avg_motions: List[float]
     disable_auto_link: bool
     location_settings: NVRLocation
+    feature_flags: NVRFeatureFlags
     system_info: SystemInfo
     doorbell_settings: DoorbellSettings
     storage_stats: StorageStats
@@ -782,7 +804,6 @@ class NVR(ProtectDeviceModel):
     # uiVersion
     # errorCode
     # wifiSettings
-    # featureFlags
     # smartDetectAgreement
 
     def __init__(self, **kwargs):
@@ -811,17 +832,76 @@ class NVR(ProtectDeviceModel):
         return data
 
 
+class LightDeviceSettings(ProtectBaseObject):
+    # Status LED
+    is_indicator_enabled: bool
+    # Brightness
+    led_level: conint(ge=1, le=6)
+    # unknown
+    lux_sensitivity: str
+    pir_duration: timedelta
+    pir_sensitivity: conint(ge=0, le=100)
+
+    def __init__(self, **kwargs):
+        kwargs["pir_duration"] = timedelta(milliseconds=kwargs.pop("pirDuration"))
+
+        super().__init__(**kwargs)
+
+    def unifi_dict(self):
+        data = super().unifi_dict()
+        data["pirDuration"] = to_ms(self.pir_duration)
+        return data
+
+
+class LightOnSettings(ProtectBaseObject):
+    # Manual toggle in UI
+    is_led_force_on: bool
+
+
+class LightModeSettings(ProtectBaseObject):
+    # main "Lighting" settings
+    mode: LightModeType
+    enable_at: LightModeEnableType
+
+    def unifi_dict(self):
+        data = super().unifi_dict()
+        data["mode"] = data["mode"].value
+        data["enableAt"] = data["enableAt"].value
+        return data
+
+
 class Light(ProtectMotionDeviceModel):
     is_pir_motion_detected: bool
     is_light_on: bool
     is_locating: bool
+    light_device_settings: LightDeviceSettings
+    light_on_settings: LightOnSettings
+    light_mode_settings: LightModeSettings
+    camera_id: Optional[str]
     is_camera_paired: bool
 
-    # TODO:
-    # lightDeviceSettings
-    # lightOnSettings
-    # lightModeSettings
-    # camera
+    def __init__(self, **kwargs):
+        kwargs["camera_id"] = kwargs.pop("camera")
+
+        super().__init__(**kwargs)
+
+    def unifi_dict(self):
+        data = super().unifi_dict()
+        data["camera"] = data.pop("cameraId")
+        data["lightDeviceSettings"] = self.light_device_settings.unifi_dict()
+        return data
+
+    @property
+    def camera(self) -> Optional[Camera]:
+        """Paired Camera will always be none if no camera is paired"""
+
+        if self.camera_id is None:
+            return None
+
+        if self._api is None:
+            raise NvrError("API Client not initialized")
+
+        return self._api.bootstrap.cameras[self.camera_id]
 
 
 class EventStats(ProtectBaseObject):
@@ -958,6 +1038,31 @@ class PIRSettings(ProtectBaseObject):
     timelapse_transfer_interval: int
 
 
+class LCDMessage(ProtectBaseObject):
+    type: DoorbellMessageType
+    text: str
+    reset_at: Optional[datetime] = None
+
+    def __init__(self, **kwargs):
+        kwargs["resetAt"] = process_datetime(kwargs, "resetAt")
+
+        super().__init__(**kwargs)
+
+        self._fix_text()
+
+    def _fix_text(self):
+        if self.type != DoorbellMessageType.CUSTOM_MESSAGE:
+            self.text = self.type.value.replace("_", " ")
+
+    def unifi_dict(self):
+        self._fix_text()
+
+        data = super().unifi_dict()
+        data["resetAt"] = to_js_time(data["resetAt"])
+
+        return data
+
+
 class Camera(ProtectMotionDeviceModel):
     is_deleting: bool
     mic_volume: int
@@ -981,6 +1086,7 @@ class Camera(ProtectMotionDeviceModel):
     recording_settings: RecordingSettings
     smart_detect_settings: SmartDetectSettings
     pir_settings: PIRSettings
+    lcd_message: Optional[LCDMessage]
     platform: str
     has_speaker: bool
     has_wifi: bool
@@ -1001,7 +1107,13 @@ class Camera(ProtectMotionDeviceModel):
     # smartDetectLines
     # stats
     # featureFlags
-    # lcdMessage
+
+    def __init__(self, **kwargs):
+        # LCD messages comes back as empty dict {}
+        if "lcdMessage" in kwargs and len(kwargs["lcdMessage"].keys()) == 0:
+            del kwargs["lcdMessage"]
+
+        super().__init__(**kwargs)
 
     def unifi_dict(self):
         data = super().unifi_dict()
@@ -1010,6 +1122,9 @@ class Camera(ProtectMotionDeviceModel):
         data["recordingSettings"] = self.recording_settings.unifi_dict()
         data["eventStats"] = self.event_stats.unifi_dict()
         data["channels"] = [c.unifi_dict() for c in self.channels]
+
+        if self.lcd_message is None:
+            data["lcdMessage"] = {}
 
         return data
 

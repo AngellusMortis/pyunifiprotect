@@ -19,6 +19,9 @@ async def test_bootstrap(protect_client: ProtectApiClient):
 
     assert protect_client.bootstrap.auth_user
 
+    for light in protect_client.bootstrap.lights.values():
+        light.camera
+
     for viewer in protect_client.bootstrap.viewers.values():
         assert viewer.liveview
 

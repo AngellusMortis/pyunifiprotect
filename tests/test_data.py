@@ -77,12 +77,7 @@ def test_packet_raw_setter():
 
 def compare_objs(obj_type, expected, actual):
     # TODO: fields not supported yet
-    if obj_type == ModelType.LIGHT.value:
-        del expected["camera"]
-        del expected["lightDeviceSettings"]
-        del expected["lightModeSettings"]
-        del expected["lightOnSettings"]
-    elif obj_type == ModelType.CAMERA.value:
+    if obj_type == ModelType.CAMERA.value:
         del expected["apMac"]
         del expected["apRssi"]
         del expected["elementInfo"]
@@ -95,7 +90,6 @@ def compare_objs(obj_type, expected, actual):
         del expected["smartDetectLines"]
         del expected["stats"]
         del expected["featureFlags"]
-        del expected["lcdMessage"]
         del expected["ispSettings"]["mountPosition"]
     elif obj_type == ModelType.USER.value:
         del expected["settings"]
@@ -157,7 +151,6 @@ def test_bootstrap(bootstrap):
     del bootstrap["nvr"]["uiVersion"]
     del bootstrap["nvr"]["errorCode"]
     del bootstrap["nvr"]["wifiSettings"]
-    del bootstrap["nvr"]["featureFlags"]
     del bootstrap["nvr"]["smartDetectAgreement"]
     del bootstrap["nvr"]["doorbellSettings"]["customMessages"]
 
