@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from ipaddress import IPv4Address
 from typing import TYPE_CHECKING, List, Optional
 from uuid import UUID
-from ipaddress import IPv4Address
 
 from ..exceptions import NvrError
 from ..utils import process_datetime, to_js_time, to_ms, to_s
@@ -19,8 +19,8 @@ from .types import (
     LightModeEnableType,
     LightModeType,
     PercentLevel,
-    SmartDetectObjectType,
     RecordingMode,
+    SmartDetectObjectType,
     VideoMode,
 )
 
