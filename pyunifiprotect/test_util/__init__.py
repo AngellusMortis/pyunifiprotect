@@ -128,7 +128,11 @@ class SampleDataGenerator:
 
         return data
 
-    def write_image_file(self, name: str, raw: bytes):
+    def write_image_file(self, name: str, raw: Optional[bytes]):
+        if raw is None:
+            typer.echo(f"No image data, skipping {name}...")
+            return
+
         typer.echo(f"Writing {name}...")
         with open(self.output_folder / f"{name}.png", "wb") as f:
             f.write(raw)

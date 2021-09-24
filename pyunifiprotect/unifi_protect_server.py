@@ -157,6 +157,20 @@ class BaseApiClient:
         except client_exceptions.ClientError as err:
             raise NvrError(f"Error requesting data from {self._host}: {err}") from None
 
+    async def _get_reason(self, response: aiohttp.ClientResponse) -> str:
+        reason = str(response.reason)
+
+        try:
+            json = await response.json()
+            reason = json.get("error", str(json))
+        except Exception:  # pylint: disable=broad-except
+            try:
+                reason = await response.text()
+            except Exception:  # pylint: disable=broad-except
+                pass
+
+        return reason
+
     async def api_request(
         self,
         url,
@@ -186,10 +200,11 @@ class BaseApiClient:
 
         try:
             if response.status != 200:
+                reason = await self._get_reason(response)
                 msg = "Request failed: %s - Status: %s - Reason: %s"
                 if raise_exception:
-                    raise NvrError(msg % (url, response.status, response.reason))
-                _LOGGER.warning(msg, url, response.status, response.reason)
+                    raise NvrError(msg % (url, response.status, reason))
+                _LOGGER.warning(msg, url, response.status, reason)
                 return None
 
             data: Optional[Union[bytes, dict]] = None
