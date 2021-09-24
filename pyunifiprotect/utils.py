@@ -15,10 +15,8 @@ async def get_response_reason(response: ClientResponse) -> str:
         json = await response.json()
         reason = json.get("error", str(json))
     except Exception:  # pylint: disable=broad-except
-        try:
+        with contextlib.suppress(Exception):  # pylint: disable=broad-except
             reason = await response.text()
-        except Exception:  # pylint: disable=broad-except
-            pass
 
     return reason
 
