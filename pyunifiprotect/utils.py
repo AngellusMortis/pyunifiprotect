@@ -1,3 +1,4 @@
+import contextlib
 from datetime import datetime
 from typing import Any, Dict, Optional
 
@@ -15,7 +16,7 @@ async def get_response_reason(response: ClientResponse) -> str:
         json = await response.json()
         reason = json.get("error", str(json))
     except Exception:  # pylint: disable=broad-except
-        with contextlib.suppress(Exception):  # pylint: disable=broad-except
+        with contextlib.suppress(Exception):
             reason = await response.text()
 
     return reason
