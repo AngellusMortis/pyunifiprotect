@@ -87,6 +87,8 @@ good-names = [
 # inconsistent-return-statements - doesn't handle raise
 # too-many-ancestors - it's too strict.
 # wrong-import-order - isort guards this
+# no-member - mypy handles this better
+# unsupported-membership-test - mypy handles this better
 disable = [
     "format",
     "abstract-class-little-used",
@@ -113,11 +115,14 @@ disable = [
     "empty-docstring",
     "invalid-name",
     "fixme",
+    "no-member",
+    "unsupported-membership-test",
 ]
 enable = [
     #"useless-suppression",  # temporarily every now and then to clean them up
     "use-symbolic-message-instead",
 ]
+extension-pkg-whitelist = "pydantic"
 
 [tool.pylint.REPORTS]
 score = false
