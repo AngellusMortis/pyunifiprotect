@@ -2,7 +2,6 @@ from .base import ProtectModel
 from .devices import Camera, Light, Viewer
 from .nvr import (
     NVR,
-    SUPPORTED_PROTECT_MODELS,
     Bootstrap,
     CloudAccount,
     Event,
@@ -49,7 +48,6 @@ __all__ = [
     "ProtectWSPayloadFormat",
     "SmartDetectObjectType",
     "StateType",
-    "SUPPORTED_PROTECT_MODELS",
     "User",
     "UserLocation",
     "Viewer",

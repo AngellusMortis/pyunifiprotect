@@ -3,43 +3,83 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from ipaddress import IPv4Address
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Optional, Type, TypeVar
 
 from pydantic import BaseModel
 from pydantic.fields import PrivateAttr
 
 from ..exceptions import DataDecodeError
-from ..utils import (
-    process_datetime,
-    to_camel_case_dict,
-    to_js_time,
-    to_ms,
-    to_snake_case,
-)
+from ..utils import process_datetime, serialize_unifi_obj, to_snake_case
 from .types import ModelType, StateType
 
 if TYPE_CHECKING:
     from ..unifi_protect_server import ProtectApiClient
 
-SUPPORTED_PROTECT_MODELS = ["cameras", "users", "groups", "liveviews", "viewers", "lights"]
+
+T = TypeVar("T", bound="ProtectModel")
 
 
 class ProtectBaseObject(BaseModel):
     _api: Optional[ProtectApiClient] = PrivateAttr(None)
+    _initial_data: Dict[str, Any] = PrivateAttr()
+
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {}
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {}
 
     class Config:
         arbitrary_types_allowed = True
 
     def __init__(self, api=None, **data: Any) -> None:
-        for key in list(data.keys()):
-            data[to_snake_case(key)] = data.pop(key)
-
+        data["api"] = api
+        data = self.clean_unifi_dict(data)
         super().__init__(**data)
 
         self._api = api
 
-    def unifi_dict(self):
-        data = to_camel_case_dict(self.dict())
+    def _get_api(self, data: Dict[str, Any]) -> Optional[ProtectApiClient]:
+        api = data.get("api")
+
+        if api is None and hasattr(self, "_api"):
+            api = self._api
+
+        return api
+
+    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        for from_key, to_key in self.UNIFI_REMAP.items():
+            if from_key in data:
+                data[to_key] = data.pop(from_key)
+
+        for key, klass in self.PROTECT_OBJ_FIELDS.items():
+            if key in data and isinstance(data[key], dict):
+                obj_dict = data[key]
+                data[key] = klass(**obj_dict, api=self._get_api(data))
+
+        for key in list(data.keys()):
+            data[to_snake_case(key)] = data.pop(key)
+
+        if "api" in data:
+            del data["api"]
+
+        return data
+
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        if data is None:
+            data = self.dict()
+
+        for key in self.PROTECT_OBJ_FIELDS:
+            key = to_snake_case(key)
+            key = self.UNIFI_REMAP.get(key, key)
+
+            if key in data:
+                unifi_obj: Optional[ProtectBaseObject] = getattr(self, key)
+                if unifi_obj is not None:
+                    data[key] = unifi_obj.unifi_dict(data=data[key])
+
+        data: Dict[str, Any] = serialize_unifi_obj(data)
+
+        for to_key, from_key in self.UNIFI_REMAP.items():
+            if from_key in data:
+                data[to_key] = data.pop(from_key)
 
         return data
 
@@ -47,12 +87,7 @@ class ProtectBaseObject(BaseModel):
 class ProtectModel(ProtectBaseObject):
     model: Optional[ModelType]
 
-    def __init__(self, **kwargs):
-        model_key = kwargs.pop("modelKey", None)
-        if model_key is not None:
-            kwargs["model"] = ModelType(model_key)
-
-        super().__init__(**kwargs)
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {"modelKey": "model"}
 
     @staticmethod
     def klass_from_dict(data: Dict[str, Any]) -> Type[ProtectModel]:
@@ -116,15 +151,18 @@ class ProtectModel(ProtectBaseObject):
 
         return klass(**data, api=api)
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data)
 
-        if data["model"] is None:
-            del data["model"]
-        else:
-            data["modelKey"] = data.pop("model").value
+        if "modelKey" in data and data["modelKey"] is None:
+            del data["modelKey"]
 
         return data
+
+    def update_from_unifi_dict(self: T, data: Dict[str, Any]) -> T:
+        data = self.clean_unifi_dict(data)
+
+        return self.copy(update=data)
 
 
 class ProtectModelWithId(ProtectModel):
@@ -144,25 +182,15 @@ class ProtectDeviceModel(ProtectModelWithId):
     is_updating: bool
     is_ssh_enabled: bool
 
-    def __init__(self, **kwargs):
-        kwargs["lastSeen"] = process_datetime(kwargs, "lastSeen")
+    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "lastSeen" in data:
+            data["lastSeen"] = process_datetime(data, "lastSeen")
+        if "upSince" in data and data["upSince"] is not None:
+            data["upSince"] = process_datetime(data, "upSince")
+        if "uptime" in data and data["uptime"] is not None:
+            data["uptime"] = timedelta(milliseconds=data["uptime"])
 
-        if kwargs["upSince"] is not None:
-            kwargs["upSince"] = process_datetime(kwargs, "upSince")
-
-        if kwargs["uptime"] is not None:
-            kwargs["uptime"] = timedelta(milliseconds=kwargs["uptime"])
-
-        super().__init__(**kwargs)
-
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["lastSeen"] = to_js_time(data["lastSeen"])
-        data["upSince"] = to_js_time(data["upSince"])
-        data["host"] = str(data["host"])
-        data["uptime"] = to_ms(data["uptime"])
-
-        return data
+        return super().clean_unifi_dict(data)
 
 
 class WiredConnectionState(ProtectBaseObject):
@@ -194,15 +222,12 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     wired_connection_state: Optional[WiredConnectionState] = None
     wifi_connection_state: Optional[WifiConnectionState] = None
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["connectionHost"] = str(data["connectionHost"])
-        data["connectedSince"] = to_js_time(data["connectedSince"])
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data)
 
-        if data["wiredConnectionState"] is None:
+        if "wiredConnectionState" in data and data["wiredConnectionState"] is None:
             del data["wiredConnectionState"]
-
-        if data["wifiConnectionState"] is None:
+        if "wifiConnectionState" in data and data["wifiConnectionState"] is None:
             del data["wifiConnectionState"]
 
         return data
@@ -212,13 +237,16 @@ class ProtectMotionDeviceModel(ProtectAdoptableDeviceModel):
     last_motion: Optional[datetime]
     is_dark: bool
 
-    def __init__(self, **kwargs):
-        kwargs["lastMotion"] = process_datetime(kwargs, "lastMotion")
+    # not directly from Unifi
+    last_thumbnail_id: Optional[str] = None
+    last_heatmap_id: Optional[str] = None
 
-        super().__init__(**kwargs)
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data)
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["lastMotion"] = to_js_time(data["lastMotion"])
+        if "lastHeatmapId" in data:
+            del data["lastHeatmapId"]
+        if "lastThumbnailId" in data:
+            del data["lastThumbnailId"]
 
         return data

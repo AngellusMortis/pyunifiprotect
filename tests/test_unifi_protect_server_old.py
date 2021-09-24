@@ -59,9 +59,6 @@ async def test_server_info(old_protect_client: UpvServer):
 @pytest.mark.asyncio
 @patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
 async def test_get_raw_events(old_protect_client: UpvServer, now: datetime):
-    all_event_types = [e.value for e in EventType]
-    all_model_types = [e.value for e in ModelType]
-
     events = await old_protect_client.get_raw_events()
 
     old_protect_client.api_request.assert_called_with(  # type: ignore
@@ -73,8 +70,8 @@ async def test_get_raw_events(old_protect_client: UpvServer, now: datetime):
     )
     assert len(events) == CONSTANTS["event_count"]
     for event in events:
-        assert event["type"] in all_event_types
-        assert event["modelKey"] in all_model_types
+        assert event["type"] in EventType.values()
+        assert event["modelKey"] in ModelType.values()
 
 
 @pytest.mark.asyncio

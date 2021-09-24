@@ -1,10 +1,21 @@
 import enum
+from typing import List, Optional
 
 from pydantic import ConstrainedDecimal, ConstrainedInt
 
 
+class ValuesEnumMixin:
+    _values: Optional[List[str]] = None
+
+    @classmethod
+    def values(cls) -> List[str]:
+        if cls._values is None:
+            cls._values = [e.value for e in cls]  # type: ignore
+        return cls._values
+
+
 @enum.unique
-class ModelType(str, enum.Enum):
+class ModelType(str, ValuesEnumMixin, enum.Enum):
     CAMERA = "camera"
     CLOUD_IDENTITY = "cloudIdentity"
     EVENT = "event"
@@ -20,9 +31,27 @@ class ModelType(str, enum.Enum):
     SENSOR = "sensor"
     DOORLOCK = "doorlock"
 
+    @staticmethod
+    def bootstrap_models() -> List[str]:
+        # TODO:
+        # legacyUFV
+        # display
+        # bridge
+        # sensor
+        # doorlock
+
+        return [
+            ModelType.CAMERA.value,
+            ModelType.USER.value,
+            ModelType.GROUP.value,
+            ModelType.LIVEVIEW.value,
+            ModelType.VIEWPORT.value,
+            ModelType.LIGHT.value,
+        ]
+
 
 @enum.unique
-class EventType(str, enum.Enum):
+class EventType(str, ValuesEnumMixin, enum.Enum):
     SMART_DETECT = "smartDetectZone"
     MOTION = "motion"
     RING = "ring"
@@ -31,6 +60,10 @@ class EventType(str, enum.Enum):
     ACCESS = "access"
     OFFLINE = "offline"
     OFF = "off"
+
+    @staticmethod
+    def device_events() -> List[str]:
+        return [EventType.MOTION.value, EventType.RING.value, EventType.SMART_DETECT.value]
 
 
 @enum.unique

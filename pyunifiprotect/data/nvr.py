@@ -3,15 +3,16 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, tzinfo
 from ipaddress import IPv4Address
+import logging
 from pathlib import Path
-from typing import Dict, List, Literal, Optional
+from typing import Any, Callable, ClassVar, Dict, List, Literal, Optional
 from uuid import UUID
 
 from pydantic.fields import PrivateAttr
 import pytz
 
 from ..exceptions import NvrError
-from ..utils import process_datetime, to_js_time, to_ms
+from ..utils import process_datetime
 from .base import (
     ProtectBaseObject,
     ProtectDeviceModel,
@@ -20,8 +21,9 @@ from .base import (
 )
 from .devices import Camera, Light, Viewer
 from .types import DoorbellMessageType, EventType, ModelType, SmartDetectObjectType
+from .websocket import WSJSONPacketFrame, WSPacket
 
-SUPPORTED_PROTECT_MODELS = ["cameras", "users", "groups", "liveviews", "viewers", "lights"]
+_LOGGER = logging.getLogger(__name__)
 
 
 class Event(ProtectModelWithId):
@@ -40,30 +42,24 @@ class Event(ProtectModelWithId):
     # metadata
     # partition
 
-    def __init__(self, **kwargs):
-        kwargs["type"] = EventType(kwargs["type"])
-        kwargs["start"] = process_datetime(kwargs, "start")
-        kwargs["end"] = process_datetime(kwargs, "end")
-        kwargs["heatmap_id"] = kwargs.pop("heatmap")
-        kwargs["camera_id"] = kwargs.pop("camera")
-        kwargs["smart_detect_events_ids"] = kwargs.pop("smartDetectEvents")
-        kwargs["thumbnail_id"] = kwargs.pop("thumbnail")
-        kwargs["user_id"] = kwargs.pop("user")
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {
+        **ProtectModelWithId.UNIFI_REMAP,
+        **{
+            "heatmap": "heatmapId",
+            "camera": "cameraId",
+            "smartDetectEvents": "smartDetectEventsIds",
+            "thumbnail": "thumbnailId",
+            "user": "userId",
+        },
+    }
 
-        super().__init__(**kwargs)
+    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "start" in data:
+            data["start"] = process_datetime(data, "start")
+        if "start" in data:
+            data["end"] = process_datetime(data, "end")
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["type"] = data["type"].value
-        data["start"] = to_js_time(data["start"])
-        data["end"] = to_js_time(data["end"])
-        data["heatmap"] = data.pop("heatmapId")
-        data["camera"] = data.pop("cameraId")
-        data["smartDetectEvents"] = data.pop("smartDetectEventsIds")
-        data["thumbnail"] = data.pop("thumbnailId")
-        data["user"] = data.pop("userId")
-
-        return data
+        return super().clean_unifi_dict(data)
 
     @property
     def camera(self) -> Optional[Camera]:
@@ -112,20 +108,24 @@ class CloudAccount(ProtectModelWithId):
     user_id: str
     name: str
     location: UserLocation
+
     # TODO:
     # profileImg
 
-    def __init__(self, **kwargs):
-        kwargs["location"] = UserLocation(**kwargs["location"], api=kwargs["api"])
-        kwargs["user_id"] = kwargs.pop("user")
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {
+        **ProtectModelWithId.UNIFI_REMAP,
+        **{
+            "user": "userId",
+        },
+    }
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {"location": UserLocation}
 
-        super().__init__(**kwargs)
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data)
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["location"] = self.location.unifi_dict()
-        data["user"] = data.pop("userId")
-        data["cloudId"] = data["id"]
+        # id and cloud ID are always the same
+        if "id" in data:
+            data["cloudId"] = data["id"]
 
         return data
 
@@ -153,31 +153,18 @@ class User(ProtectModelWithId):
     local_username: str
     group_ids: List[str]
     cloud_account: Optional[CloudAccount]
+
     # TODO:
     # settings
     # alertRules
 
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectModelWithId.UNIFI_REMAP, **{"groups": "groupIds"}}
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+        "location": UserLocation,
+        "cloudAccount": CloudAccount,
+    }
+
     _groups: Optional[List[Group]] = PrivateAttr(None)
-
-    def __init__(self, **kwargs):
-        if kwargs["cloudAccount"] is not None:
-            kwargs["cloudAccount"] = CloudAccount(**kwargs["cloudAccount"], api=kwargs["api"])
-
-        kwargs["group_ids"] = kwargs.pop("groups")
-        kwargs["location"] = UserLocation(**kwargs["location"], api=kwargs["api"])
-
-        super().__init__(**kwargs)
-
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["lastLoginIp"] = None if data["lastLoginIp"] is None else str(data["lastLoginIp"])
-        data["lastLoginTime"] = to_js_time(data["lastLoginTime"])
-        data["groups"] = data.pop("groupIds")
-        data["location"] = self.location.unifi_dict()
-        if self.cloud_account is not None:
-            data["cloudAccount"] = self.cloud_account.unifi_dict()
-
-        return data
 
     @property
     def groups(self) -> List[Group]:
@@ -218,11 +205,10 @@ class PortConfig(ProtectBaseObject):
     ucore: int
     discovery_client: int
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["emsCLI"] = data.pop("emsCli")
-        data["emsLiveFLV"] = data.pop("emsLiveFlv")
-        return data
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {
+        "emsCLI": "emsCli",
+        "emsLiveFLV": "emsLiveFlv",
+    }
 
 
 class CPUInfo(ProtectBaseObject):
@@ -263,11 +249,6 @@ class TMPFSInfo(ProtectBaseObject):
     used: int
     path: Path
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["path"] = str(data["path"])
-        return data
-
 
 class SystemInfo(ProtectBaseObject):
     cpu: CPUInfo
@@ -275,10 +256,11 @@ class SystemInfo(ProtectBaseObject):
     storage: StorageInfo
     tmpfs: TMPFSInfo
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["tmpfs"] = self.tmpfs.unifi_dict()
-        return data
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+        "memory": MemoryInfo,
+        "storage": StorageInfo,
+        "tmpfs": TMPFSInfo,
+    }
 
 
 class DoorbellMessage(ProtectBaseObject):
@@ -294,16 +276,12 @@ class DoorbellSettings(ProtectBaseObject):
     # TODO
     # customMessages
 
-    def __init__(self, **kwargs):
-        kwargs["default_message_reset_timeout"] = timedelta(milliseconds=kwargs.pop("defaultMessageResetTimeoutMs"))
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {"defaultMessageResetTimeoutMs": "defaultMessageResetTimeout"}
 
-        super().__init__(**kwargs)
+    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        data["defaultMessageResetTimeout"] = timedelta(milliseconds=data.pop("defaultMessageResetTimeoutMs"))
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["defaultMessageResetTimeoutMs"] = to_ms(data.pop("defaultMessageResetTimeout"))
-
-        return data
+        return super().clean_unifi_dict(data)
 
 
 class StorageStats(ProtectBaseObject):
@@ -311,6 +289,10 @@ class StorageStats(ProtectBaseObject):
     capacity: int
     remaining_capacity: int
     recording_space: StorageSpace
+
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+        "recordingSpace": StorageSpace,
+    }
 
 
 class NVRFeatureFlags(ProtectBaseObject):
@@ -367,28 +349,28 @@ class NVR(ProtectDeviceModel):
     # wifiSettings
     # smartDetectAgreement
 
-    def __init__(self, **kwargs):
-        kwargs["lastUpdateAt"] = process_datetime(kwargs, "lastUpdateAt")
-        kwargs["recording_retention_duration"] = timedelta(milliseconds=kwargs.pop("recordingRetentionDurationMs"))
-        kwargs["timezone"] = pytz.timezone(kwargs["timezone"])
-        kwargs["locationSettings"] = NVRLocation(**kwargs["locationSettings"], api=kwargs["api"])
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {
+        **ProtectDeviceModel.UNIFI_REMAP,
+        **{"recordingRetentionDurationMs": "recordingRetentionDuration"},
+    }
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+        "ports": PortConfig,
+        "locationSettings": NVRLocation,
+        "featureFlags": NVRFeatureFlags,
+        "systemInfo": SystemInfo,
+        "doorbellSettings": DoorbellSettings,
+        "storageStats": StorageStats,
+    }
 
-        super().__init__(**kwargs)
+    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "lastUpdateAt" in data:
+            data["lastUpdateAt"] = process_datetime(data, "lastUpdateAt")
+        if "recordingRetentionDurationMs" in data:
+            data["recordingRetentionDuration"] = timedelta(milliseconds=data.pop("recordingRetentionDurationMs"))
+        if "timezone" in data:
+            data["timezone"] = pytz.timezone(data["timezone"])
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["timezone"] = str(data["timezone"])
-        data["ports"] = self.ports.unifi_dict()
-        data["lastUpdateAt"] = to_js_time(data["lastUpdateAt"])
-        data["hosts"] = [str(i) for i in self.hosts]
-        data["hardwareId"] = str(data["hardwareId"])
-        data["recordingRetentionDurationMs"] = to_ms(data.pop("recordingRetentionDuration"))
-        data["anonymousDeviceId"] = str(data["anonymousDeviceId"])
-        data["locationSettings"] = self.location_settings.unifi_dict()
-        data["systemInfo"] = self.system_info.unifi_dict()
-        data["doorbellSettings"] = self.doorbell_settings.unifi_dict()
-        data["storageStats"] = self.storage_stats.unifi_dict()
-        data["maxCameraCapacity"] = {"4K": data["maxCameraCapacity"]["4k"], "HD": data["maxCameraCapacity"]["hd"]}
+        data = super().clean_unifi_dict(data)
 
         return data
 
@@ -400,16 +382,7 @@ class LiveviewSlot(ProtectBaseObject):
 
     _cameras: Optional[List[Camera]] = PrivateAttr(None)
 
-    def __init__(self, **kwargs):
-        kwargs["camera_ids"] = kwargs.pop("cameras")
-
-        super().__init__(**kwargs)
-
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["cameras"] = data.pop("cameraIds")
-
-        return data
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {"cameras": "cameraIds"}
 
     @property
     def cameras(self) -> List[Camera]:
@@ -431,22 +404,23 @@ class Liveview(ProtectModelWithId):
     slots: List[LiveviewSlot]
     owner_id: str
 
-    def __init__(self, **kwargs):
-        kwargs["owner_id"] = kwargs.pop("owner")
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectModelWithId.UNIFI_REMAP, **{"owner": "ownerId"}}
 
-        slots: List[LiveviewSlot] = []
-        for slot in kwargs["slots"]:
-            slots.append(LiveviewSlot(**slot, api=kwargs["api"]))
-        kwargs["slots"] = slots
+    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "slots" in data:
+            slots: List[LiveviewSlot] = []
+            for slot in data["slots"]:
+                slots.append(LiveviewSlot(**slot, api=self._get_api(data)))
+            data["slots"] = slots
 
-        super().__init__(**kwargs)
+        return super().clean_unifi_dict(data)
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["owner"] = data.pop("ownerId")
-        data["slots"] = [o.unifi_dict() for o in self.slots]
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        if data is None:
+            data = self.dict()
+            data["slots"] = [o.unifi_dict() for o in self.slots]
 
-        return data
+        return super().unifi_dict(data=data)
 
     @property
     def owner(self) -> Optional[User]:
@@ -481,29 +455,31 @@ class Bootstrap(ProtectBaseObject):
     # sensors
     # doorlocks
 
-    def __init__(self, **kwargs):
-        kwargs["nvr"] = NVR(**kwargs["nvr"], api=kwargs.get("api"))
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+        "nvr": NVR,
+    }
 
-        for key in SUPPORTED_PROTECT_MODELS:
-            items: Dict[str, ProtectModelWithId] = {}
-            for item in kwargs[key]:
-                items[item["id"]] = ProtectModel.from_unifi_dict(item, api=kwargs.get("api"))
-            kwargs[key] = items
+    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        for model_type in ModelType.bootstrap_models():
+            key = model_type + "s"
+            items: Dict[str, ProtectModel] = {}
+            for item in data[key]:
+                items[item["id"]] = ProtectModel.from_unifi_dict(item, api=data.get("api"))
+            data[key] = items
 
-        super().__init__(**kwargs)
+        return super().clean_unifi_dict(data)
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["lastUpdateId"] = str(data["lastUpdateId"])
-        data["cameras"] = [o.unifi_dict() for o in self.cameras.values()]
-        data["users"] = [o.unifi_dict() for o in self.users.values()]
-        data["groups"] = [o.unifi_dict() for o in self.groups.values()]
-        data["liveviews"] = [o.unifi_dict() for o in self.liveviews.values()]
-        data["viewers"] = [o.unifi_dict() for o in self.viewers.values()]
-        data["lights"] = [o.unifi_dict() for o in self.lights.values()]
-        data["nvr"] = self.nvr.unifi_dict()
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        if data is None:
+            data = self.dict()
+            data["cameras"] = self.cameras.values()
+            data["users"] = self.users.values()
+            data["groups"] = self.groups.values()
+            data["liveviews"] = self.liveviews.values()
+            data["viewers"] = self.viewers.values()
+            data["lights"] = self.lights.values()
 
-        return data
+        return super().unifi_dict(data=data)
 
     @property
     def auth_user(self) -> User:
@@ -511,3 +487,69 @@ class Bootstrap(ProtectBaseObject):
             raise NvrError("API Client not initialized")
 
         return self._api.bootstrap.users[self.auth_user_id]
+
+    def process_event(self, event: Event):  # pylint: disable=no-self-use
+        if event.camera is None:
+            return
+
+        if event.type in (EventType.MOTION, EventType.SMART_DETECT):
+            if event.end is None:
+                event.camera.is_motion_detected = True
+
+                if event.type == EventType.SMART_DETECT:
+                    event.camera.motion_smart_type = event.smart_detect_types[0]
+            else:
+                event.camera.is_motion_detected = False
+                event.camera.motion_smart_type = None
+                event.camera.last_motion = event.end
+
+                if event.type == EventType.MOTION:
+                    event.camera.last_motion_smart_type = None
+                else:
+                    event.camera.last_motion_smart_type = event.smart_detect_types[0]
+        elif event.type == EventType.RING:
+            event.camera.last_ring = event.start
+
+        if event.thumbnail_id is not None:
+            event.camera.last_thumbnail_id = event.thumbnail_id
+
+        if event.heatmap_id is not None:
+            event.camera.last_heatmap_id = event.heatmap_id
+
+    def process_ws_packet(self, packet: WSPacket):
+        if not isinstance(packet.action_frame, WSJSONPacketFrame):
+            _LOGGER.debug("Unexpected action frame format: %s", packet.action_frame.payload_format)
+
+        if not isinstance(packet.data_frame, WSJSONPacketFrame):
+            _LOGGER.debug("Unexpected data frame format: %s", packet.data_frame.payload_format)
+
+        action: dict = packet.action_frame.data  # type: ignore
+        data: dict = packet.data_frame.data  # type: ignore
+        self.last_update_id = UUID(action["newUpdateId"])
+
+        if action["modelKey"] not in ModelType.values():
+            _LOGGER.debug("Unknown model type: %s", action["modelKey"])
+            return
+
+        if action["action"] == "add":
+            obj = ProtectModel.from_unifi_dict(data, api=self._api)
+
+            if isinstance(obj, Event):
+                self.process_event(obj)
+            elif (
+                isinstance(obj, ProtectModelWithId)
+                and obj.model is not None
+                and obj.model.value in ModelType.bootstrap_models()
+            ):
+                key = obj.model.value + "s"
+                getattr(self, key)[obj.id] = obj
+            else:
+                _LOGGER.debug("Unexpected bootstrap model type for add: %s", obj.model)
+        elif action["action"] == "update":
+            model_type = action["modelKey"]
+            if model_type in ModelType.bootstrap_models():
+                key = model_type + "s"
+                obj: ProtectModel = getattr(self, key)[action["id"]]
+                obj.update_from_unifi_dict(data)
+            else:
+                _LOGGER.debug("Unexpected bootstrap model type for update: %s", model_type)

@@ -3,7 +3,6 @@
 import base64
 
 from pyunifiprotect.data import (
-    SUPPORTED_PROTECT_MODELS,
     Bootstrap,
     Camera,
     Event,
@@ -153,7 +152,8 @@ def test_bootstrap(bootstrap):
     del bootstrap["nvr"]["smartDetectAgreement"]
     del bootstrap["nvr"]["doorbellSettings"]["customMessages"]
 
-    for key in SUPPORTED_PROTECT_MODELS:
+    for model_type in ModelType.bootstrap_models():
+        key = model_type + "s"
         expected_data = bootstrap.pop(key)
         actual_data = obj_dict.pop(key)
 
@@ -161,6 +161,6 @@ def test_bootstrap(bootstrap):
 
         for index, expected in enumerate(expected_data):
             actual = actual_data[index]
-            compare_objs(actual["modelKey"], expected, actual)
+            compare_objs(expected["modelKey"], expected, actual)
 
     assert bootstrap == obj_dict

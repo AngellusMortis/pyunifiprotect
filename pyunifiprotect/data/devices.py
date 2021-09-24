@@ -3,13 +3,13 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from ipaddress import IPv4Address
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional, Tuple
 from uuid import UUID
 
 from pydantic.color import Color
 
 from ..exceptions import NvrError
-from ..utils import process_datetime, serialize_point, to_js_time, to_ms, to_s
+from ..utils import process_datetime, serialize_point, to_js_time, to_ms
 from .base import (
     ProtectAdoptableDeviceModel,
     ProtectBaseObject,
@@ -46,9 +46,12 @@ class LightDeviceSettings(ProtectBaseObject):
 
         super().__init__(**kwargs)
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["pirDuration"] = to_ms(self.pir_duration)
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data)
+
+        if "pirDuration" in data:
+            data["pirDuration"] = to_ms(self.pir_duration)
+
         return data
 
 
@@ -73,16 +76,12 @@ class Light(ProtectMotionDeviceModel):
     camera_id: Optional[str]
     is_camera_paired: bool
 
-    def __init__(self, **kwargs):
-        kwargs["camera_id"] = kwargs.pop("camera")
-
-        super().__init__(**kwargs)
-
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["camera"] = data.pop("cameraId")
-        data["lightDeviceSettings"] = self.light_device_settings.unifi_dict()
-        return data
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectMotionDeviceModel.UNIFI_REMAP, **{"camera": "cameraId"}}
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+        "lightDeviceSettings": LightDeviceSettings,
+        "lightOnSettings": LightOnSettings,
+        "lightModeSettings": LightModeSettings,
+    }
 
     @property
     def camera(self) -> Optional[Camera]:
@@ -103,9 +102,10 @@ class EventStats(ProtectBaseObject):
     last_days: List[int]
     recent_hours: List[int] = []
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        if len(data["recentHours"]) == 0:
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data)
+
+        if "recentHours" in data and len(data["recentHours"]) == 0:
             del data["recentHours"]
 
         return data
@@ -115,8 +115,10 @@ class CameraEventStats(ProtectBaseObject):
     motion: EventStats
     smart: EventStats
 
-    def unifi_dict(self):
-        return {"motion": self.motion.unifi_dict(), "smart": self.smart.unifi_dict()}
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+        "motion": EventStats,
+        "smart": EventStats,
+    }
 
 
 class CameraChannel(ProtectBaseObject):
@@ -209,20 +211,29 @@ class RecordingSettings(ProtectBaseObject):
     enable_pir_timelapse: bool
     use_new_motion_algorithm: bool
 
-    def __init__(self, **kwargs):
-        kwargs["pre_padding"] = timedelta(seconds=kwargs.pop("prePaddingSecs"))
-        kwargs["post_padding"] = timedelta(seconds=kwargs.pop("postPaddingSecs"))
-        kwargs["min_motion_event_trigger"] = timedelta(seconds=kwargs.pop("minMotionEventTrigger"))
-        kwargs["end_motion_event_delay"] = timedelta(seconds=kwargs.pop("endMotionEventDelay"))
+    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "prePaddingSecs" in data:
+            data["prePadding"] = timedelta(seconds=data.pop("prePaddingSecs"))
+        if "postPaddingSecs" in data:
+            data["postPadding"] = timedelta(seconds=data.pop("postPaddingSecs"))
+        if "minMotionEventTrigger" in data:
+            data["minMotionEventTrigger"] = timedelta(seconds=data.pop("minMotionEventTrigger"))
+        if "endMotionEventDelay" in data:
+            data["endMotionEventDelay"] = timedelta(seconds=data.pop("endMotionEventDelay"))
 
-        super().__init__(**kwargs)
+        return super().clean_unifi_dict(data)
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["prePaddingSecs"] = to_s(data.pop("prePadding"))
-        data["postPaddingSecs"] = to_s(data.pop("postPadding"))
-        data["minMotionEventTrigger"] = to_s(data.pop("minMotionEventTrigger"))
-        data["endMotionEventDelay"] = to_s(data.pop("endMotionEventDelay"))
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data)
+
+        if "prePadding" in data:
+            data["prePaddingSecs"] = data.pop("prePadding") // 1000
+        if "postPadding" in data:
+            data["postPaddingSecs"] = data.pop("postPadding") // 1000
+        if "minMotionEventTrigger" in data:
+            data["minMotionEventTrigger"] = data.pop("minMotionEventTrigger") // 1000
+        if "endMotionEventDelay" in data:
+            data["endMotionEventDelay"] = data.pop("endMotionEventDelay") // 1000
 
         return data
 
@@ -243,22 +254,30 @@ class LCDMessage(ProtectBaseObject):
     text: str
     reset_at: Optional[datetime] = None
 
-    def __init__(self, **kwargs):
-        kwargs["resetAt"] = process_datetime(kwargs, "resetAt")
+    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "resetAt" in data:
+            data["resetAt"] = process_datetime(data, "resetAt")
+        if "text" in data:
+            data["text"] = self._fix_text(data["text"], data.get("type"))
 
-        super().__init__(**kwargs)
+        return super().clean_unifi_dict(data)
 
-        self._fix_text()
+    def _fix_text(self, text: str, text_type: Optional[str]) -> str:
+        if text_type is None:
+            text_type = self.type.value
 
-    def _fix_text(self):
-        if self.type != DoorbellMessageType.CUSTOM_MESSAGE:
-            self.text = self.type.value.replace("_", " ")
+        if text_type != DoorbellMessageType.CUSTOM_MESSAGE.value:
+            text = text_type.replace("_", " ")
 
-    def unifi_dict(self):
-        self._fix_text()
+        return text
 
-        data = super().unifi_dict()
-        data["resetAt"] = to_js_time(data["resetAt"])
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data)
+
+        if "text" in data:
+            data["text"] = self._fix_text(data["text"], data.get("type", self.type.value))
+        if "resetAt" in data:
+            data["resetAt"] = to_js_time(data["resetAt"])
 
         return data
 
@@ -274,12 +293,6 @@ class TalkbackSettings(ProtectBaseObject):
     sampling_rate: int
     bits_per_sample: int
     quality: int
-
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["bindAddr"] = str(data["bindAddr"])
-
-        return data
 
 
 class WifiStats(ProtectBaseObject):
@@ -306,30 +319,32 @@ class VideoStats(ProtectBaseObject):
     timelapse_start_lq: Optional[datetime]
     timelapse_end_lq: Optional[datetime]
 
-    def __init__(self, **kwargs):
-        kwargs["recordingStart"] = process_datetime(kwargs, "recordingStart")
-        kwargs["recordingEnd"] = process_datetime(kwargs, "recordingEnd")
-        kwargs["recordingStartLQ"] = process_datetime(kwargs, "recordingStartLQ")
-        kwargs["recordingEndLQ"] = process_datetime(kwargs, "recordingEndLQ")
-        kwargs["timelapseStart"] = process_datetime(kwargs, "timelapseStart")
-        kwargs["timelapseEnd"] = process_datetime(kwargs, "timelapseEnd")
-        kwargs["timelapseStartLQ"] = process_datetime(kwargs, "timelapseStartLQ")
-        kwargs["timelapseEndLQ"] = process_datetime(kwargs, "timelapseEndLQ")
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {
+        "recordingStartLQ": "recordingStartLq",
+        "recordingEndLQ": "recordingEndLq",
+        "timelapseStartLQ": "timelapseStartLq",
+        "timelapseEndLQ": "timelapseEndLq",
+    }
 
-        super().__init__(**kwargs)
+    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "recordingStart" in data:
+            data["recordingStart"] = process_datetime(data, "recordingStart")
+        if "recordingEnd" in data:
+            data["recordingEnd"] = process_datetime(data, "recordingEnd")
+        if "recordingStartLQ" in data:
+            data["recordingStartLQ"] = process_datetime(data, "recordingStartLQ")
+        if "recordingEndLQ" in data:
+            data["recordingEndLQ"] = process_datetime(data, "recordingEndLQ")
+        if "timelapseStart" in data:
+            data["timelapseStart"] = process_datetime(data, "timelapseStart")
+        if "timelapseEnd" in data:
+            data["timelapseEnd"] = process_datetime(data, "timelapseEnd")
+        if "timelapseStartLQ" in data:
+            data["timelapseStartLQ"] = process_datetime(data, "timelapseStartLQ")
+        if "timelapseEndLQ" in data:
+            data["timelapseEndLQ"] = process_datetime(data, "timelapseEndLQ")
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["recordingStart"] = to_js_time(data["recordingStart"])
-        data["recordingEnd"] = to_js_time(data["recordingEnd"])
-        data["recordingStartLQ"] = to_js_time(data.pop("recordingStartLq"))
-        data["recordingEndLQ"] = to_js_time(data.pop("recordingEndLq"))
-        data["timelapseStart"] = to_js_time(data["timelapseStart"])
-        data["timelapseEnd"] = to_js_time(data["timelapseEnd"])
-        data["timelapseStartLQ"] = to_js_time(data.pop("timelapseStartLq"))
-        data["timelapseEndLQ"] = to_js_time(data.pop("timelapseEndLq"))
-
-        return data
+        return super().clean_unifi_dict(data)
 
 
 class StorageStats(ProtectBaseObject):
@@ -347,19 +362,23 @@ class CameraStats(ProtectBaseObject):
     wifi_quality: PercentInt
     wifi_strength: int
 
-    def __init__(self, **kwargs):
-        if kwargs["storage"] == {}:
-            del kwargs["storage"]
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+        "wifi": WifiStats,
+        "battery": BatteryStats,
+        "video": VideoStats,
+        "storage": StorageStats,
+    }
 
-        super().__init__(**kwargs)
+    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "storage" in data and data["storage"] == {}:
+            del data["storage"]
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["wifi"] = self.wifi.unifi_dict()
-        data["battery"] = self.battery.unifi_dict()
-        data["video"] = self.video.unifi_dict()
+        return super().clean_unifi_dict(data)
 
-        if data["storage"] is None:
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data)
+
+        if "storage" in data and data["storage"] is None:
             data["storage"] = {}
 
         return data
@@ -371,10 +390,11 @@ class CameraZone(ProtectBaseObject):
     color: Color
     points: List[Tuple[Percent, Percent]]
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["color"] = self.color.as_hex().upper()
-        data["points"] = [serialize_point(p) for p in self.points]
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data)
+
+        if "points" in data:
+            data["points"] = [serialize_point(p) for p in data["points"]]
 
         return data
 
@@ -433,16 +453,8 @@ class FeatureFlags(ProtectBaseObject):
     # tilt
     # zoom
 
-    def __init__(self, **kwargs):
-        kwargs["has_auto_icr_only"] = kwargs["hasAutoICROnly"]
-
-        super().__init__(**kwargs)
-
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["hasAutoICROnly"] = data.pop("hasAutoIcrOnly")
-
-        return data
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {"hasAutoICROnly": "hasAutoIcrOnly"}
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {"privacyMaskCapability": PrivacyMaskCapability}
 
 
 class Camera(ProtectMotionDeviceModel):
@@ -492,32 +504,47 @@ class Camera(ProtectMotionDeviceModel):
     # recordingSchedule
     # smartDetectLines
 
-    def __init__(self, **kwargs):
+    # not directly from Unifi
+    motion_smart_type: Optional[SmartDetectObjectType] = None
+    last_motion_smart_type: Optional[SmartDetectObjectType] = None
+
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+        "eventStats": CameraEventStats,
+        "ispSettings": ISPSettings,
+        "talkbackSettings": TalkbackSettings,
+        "osdSettings": OSDSettings,
+        "ledSettings": LEDSettings,
+        "speakerSettings": SpeakerSettings,
+        "recordingSettings": RecordingSettings,
+        "smartDetectSettings": SmartDetectSettings,
+        "stats": CameraStats,
+        "featureFlags": FeatureFlags,
+        "pirSettings": PIRSettings,
+        "lcdMessage": LCDMessage,
+    }
+
+    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
         # LCD messages comes back as empty dict {}
-        if "lcdMessage" in kwargs and len(kwargs["lcdMessage"].keys()) == 0:
-            del kwargs["lcdMessage"]
+        if "lcdMessage" in data and len(data["lcdMessage"].keys()) == 0:
+            del data["lcdMessage"]
 
-        super().__init__(**kwargs)
+        return super().clean_unifi_dict(data)
 
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["lastRing"] = to_js_time(data["lastRing"])
-        data["anonymousDeviceId"] = str(data["anonymousDeviceId"])
-        data["recordingSettings"] = self.recording_settings.unifi_dict()
-        data["eventStats"] = self.event_stats.unifi_dict()
-        data["talkbackSettings"] = self.talkback_settings.unifi_dict()
-        data["channels"] = [c.unifi_dict() for c in self.channels]
-        data["stats"] = self.stats.unifi_dict()
-        data["motionZones"] = [z.unifi_dict() for z in self.motion_zones]
-        data["privacyZones"] = [z.unifi_dict() for z in self.privacy_zones]
-        data["smartDetectZones"] = [z.unifi_dict() for z in self.smart_detect_zones]
-        data["smartDetectSettings"] = self.smart_detect_settings.unifi_dict()
-        data["featureFlags"] = self.feature_flags.unifi_dict()
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        if data is None:
+            data = self.dict()
+            data["motion_zones"] = [o.unifi_dict() for o in self.motion_zones]
+            data["privacy_zones"] = [o.unifi_dict() for o in self.privacy_zones]
+            data["smart_detect_zones"] = [o.unifi_dict() for o in self.smart_detect_zones]
 
-        if self.lcd_message is None:
+        data = super().unifi_dict(data=data)
+
+        if "motionSmartType" in data:
+            del data["motionSmartType"]
+        if "lastMotionSmartType" in data:
+            del data["lastMotionSmartType"]
+        if "lcdMessage" in data and data["lcdMessage"] is None:
             data["lcdMessage"] = {}
-        else:
-            data["lcdMessage"] = self.lcd_message.unifi_dict()
 
         return data
 
@@ -527,16 +554,7 @@ class Viewer(ProtectAdoptableDeviceModel):
     software_version: str
     liveview_id: str
 
-    def __init__(self, **kwargs):
-        kwargs["liveview_id"] = kwargs.pop("liveview")
-
-        super().__init__(**kwargs)
-
-    def unifi_dict(self):
-        data = super().unifi_dict()
-        data["liveview"] = data.pop("liveviewId")
-
-        return data
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectAdoptableDeviceModel.UNIFI_REMAP, **{"liveview": "liveviewId"}}
 
     @property
     def liveview(self) -> Liveview:
