@@ -54,6 +54,7 @@ LIGHT_DURATIONS = [15000, 30000, 60000, 300000, 900000]
 
 DEFAULT_SNAPSHOT_WIDTH = 1920
 DEFAULT_SNAPSHOT_HEIGHT = 1080
+WEBSOCKET_ERROR_GRACE_PERIOD = timedelta(seconds=60)
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -69,6 +70,7 @@ class BaseApiClient:
     _is_authenticated: bool = False
     _is_unifi_os: Optional[bool] = None
     _websocket_failures: int = 0
+    _websocket_error_start: Optional[datetime] = None
 
     req: aiohttp.ClientSession
     headers: Optional[dict] = None
@@ -322,6 +324,10 @@ class BaseApiClient:
         self.ws_connection = await self.ws_session.ws_connect(url, ssl=self._verify_ssl, headers=self.headers)
         try:
             async for msg in self.ws_connection:
+                # reset Websocket error markers
+                self._websocket_failures = 0
+                self._websocket_error_start = None
+
                 if self.ws_callback is not None:
                     self.ws_callback(msg)  # pylint: disable=not-callable
 
@@ -332,18 +338,21 @@ class BaseApiClient:
                         _LOGGER.exception("Error processing websocket message")
                         return
                 elif msg.type == aiohttp.WSMsgType.ERROR:
+                    _LOGGER.exception("Error from Websocket: %s", msg.data)
                     break
         finally:
             _LOGGER.debug("websocket disconnected")
             self.ws_connection = None
 
     def _log_websocket_failure(self):
+        now = datetime.now()
+        if self._websocket_error_start is None:
+            self._websocket_error_start = now
+
         self._websocket_failures += 1
         log = _LOGGER.warning
-        # default polling interval is every 2 seconds
-        # wait until 1 minute before reporting the errors
-        # as warnings
-        if self._websocket_failures < 30:
+
+        if self._websocket_failures < 10 or (now - self._websocket_error_start) < WEBSOCKET_ERROR_GRACE_PERIOD:
             log = _LOGGER.info
         log("Unifi OS: Websocket connection not active, failing back to polling")
 
