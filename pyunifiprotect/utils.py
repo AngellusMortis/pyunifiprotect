@@ -1,3 +1,4 @@
+import contextlib
 from datetime import datetime, timedelta, tzinfo
 from decimal import Decimal
 from enum import Enum
@@ -7,6 +8,7 @@ import re
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from uuid import UUID
 
+from aiohttp import ClientResponse
 from pydantic.color import Color
 from pydantic.utils import to_camel
 
@@ -14,6 +16,19 @@ from .data.types import Percent
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 CoordType = Union[Percent, int, float]
+
+
+async def get_response_reason(response: ClientResponse) -> str:
+    reason = str(response.reason)
+
+    try:
+        json = await response.json()
+        reason = json.get("error", str(json))
+    except Exception:  # pylint: disable=broad-except
+        with contextlib.suppress(Exception):
+            reason = await response.text()
+
+    return reason
 
 
 def to_js_time(dt: Optional[datetime]) -> Optional[int]:
@@ -77,7 +92,7 @@ def to_camel_case(name: str) -> str:
     return name
 
 
-def serialize_unifi_obj(value: Any, force_lower: bool = True) -> Any:
+def serialize_unifi_obj(value: Any) -> Any:
     from .data.base import ProtectModel  # pylint: disable=import-outside-toplevel
 
     if isinstance(value, ProtectModel):
