@@ -68,6 +68,7 @@ class BaseApiClient:
     _verify_ssl: bool
     _is_authenticated: bool = False
     _is_unifi_os: Optional[bool] = None
+    _websocket_failures: int = 0
 
     req: aiohttp.ClientSession
     headers: Optional[dict] = None
@@ -336,6 +337,16 @@ class BaseApiClient:
             _LOGGER.debug("websocket disconnected")
             self.ws_connection = None
 
+    def _log_websocket_failure(self):
+        self._websocket_failures += 1
+        log = _LOGGER.warning
+        # default polling interval is every 2 seconds
+        # wait until 1 minute before reporting the errors
+        # as warnings
+        if self._websocket_failures < 30:
+            log = _LOGGER.info
+        log("Unifi OS: Websocket connection not active, failing back to polling")
+
     def _process_ws_message(self, msg):
         raise NotImplementedError()
 
@@ -400,7 +411,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
             return self._processed_data if device_update else {}
 
         if self.is_unifi_os:
-            _LOGGER.warning("Unifi OS: Websocket connection not active, failing back to polling")
+            self._log_websocket_failure()
 
         self._reset_device_events()
         updates = await self._get_events(lookback=10)
