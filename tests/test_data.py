@@ -1,6 +1,7 @@
 """Tests for pyunifiprotect.data"""
 
 import base64
+from copy import deepcopy
 
 from pyunifiprotect.data import (
     Bootstrap,
@@ -12,6 +13,7 @@ from pyunifiprotect.data import (
     Viewer,
     WSPacket,
 )
+from tests.conftest import compare_objs
 
 PACKET_B64 = "AQEBAAAAAHR4nB2MQQrCMBBFr1JmbSDNpJnRG4hrDzBNZqCgqUiriHh3SZb/Pd7/guRtWSucBtgfRTaFwwBV39c+zqUJskQW1DufUVwkJsfFxDGLyRFj0dSz+1r0dtFPa+rr2dDSD8YsyceUpskQxzjjHIIQMvz+hMoj/AIBAQAAAAA1eJyrViotKMnMTVWyUjA0MjawMLQ0MDDQUVDKSSwuCU5NzQOJmxkbACUszE0sLQ1rAVU/DPU="
 PACKET_ACTION = {
@@ -74,32 +76,8 @@ def test_packet_raw_setter():
     assert packet.data_frame.data == PACKET2_DATA
 
 
-def compare_objs(obj_type, expected, actual):
-    # TODO: fields not supported yet
-    if obj_type == ModelType.CAMERA.value:
-        del expected["apMac"]
-        del expected["apRssi"]
-        del expected["elementInfo"]
-        del expected["lastPrivacyZonePositionId"]
-        del expected["recordingSchedule"]
-        del expected["smartDetectLines"]
-        del expected["featureFlags"]["mountPositions"]
-        del expected["featureFlags"]["focus"]
-        del expected["featureFlags"]["pan"]
-        del expected["featureFlags"]["tilt"]
-        del expected["featureFlags"]["zoom"]
-        del expected["ispSettings"]["mountPosition"]
-    elif obj_type == ModelType.USER.value:
-        del expected["settings"]
-        del expected["alertRules"]
-        if expected["cloudAccount"] is not None:
-            del expected["cloudAccount"]["profileImg"]
-
-    assert expected == actual
-
-
 def test_viewport(viewport):
-    obj: Viewer = ProtectModel.from_unifi_dict(viewport)
+    obj: Viewer = ProtectModel.from_unifi_dict(deepcopy(viewport))
 
     obj_dict = obj.unifi_dict()
 
@@ -107,7 +85,7 @@ def test_viewport(viewport):
 
 
 def test_light(light):
-    obj: Light = ProtectModel.from_unifi_dict(light)
+    obj: Light = ProtectModel.from_unifi_dict(deepcopy(light))
 
     obj_dict = obj.unifi_dict()
 
@@ -115,7 +93,7 @@ def test_light(light):
 
 
 def test_camera(camera):
-    obj: Camera = ProtectModel.from_unifi_dict(camera)
+    obj: Camera = ProtectModel.from_unifi_dict(deepcopy(camera))
 
     obj_dict = obj.unifi_dict()
 
@@ -124,19 +102,15 @@ def test_camera(camera):
 
 def test_events(raw_events):
     for event in raw_events:
-        obj: Event = ProtectModel.from_unifi_dict(event)
+        obj: Event = ProtectModel.from_unifi_dict(deepcopy(event))
 
         obj_dict = obj.unifi_dict()
 
-        # TODO:
-        event.pop("metadata")
-        event.pop("partition")
-
-        assert event == obj_dict
+        compare_objs(obj.model.value, event, obj_dict)
 
 
 def test_bootstrap(bootstrap):
-    obj = Bootstrap(**bootstrap)
+    obj = Bootstrap(**deepcopy(bootstrap))
 
     obj_dict = obj.unifi_dict()
 

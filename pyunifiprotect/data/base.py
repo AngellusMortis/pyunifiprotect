@@ -8,15 +8,16 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Optional, Type,
 from pydantic import BaseModel
 from pydantic.fields import PrivateAttr
 
-from ..exceptions import DataDecodeError
+from ..exceptions import BadRequest, DataDecodeError
 from ..utils import process_datetime, serialize_unifi_obj, to_snake_case
 from .types import ModelType, StateType
 
 if TYPE_CHECKING:
     from ..unifi_protect_server import ProtectApiClient
+    from .nvr import Event
 
 
-T = TypeVar("T", bound="ProtectModel")
+T = TypeVar("T", bound="ProtectBaseObject ")
 
 
 class ProtectBaseObject(BaseModel):
@@ -36,29 +37,29 @@ class ProtectBaseObject(BaseModel):
 
         self._api = api
 
-    def _get_api(self, data: Dict[str, Any]) -> Optional[ProtectApiClient]:
+    @classmethod
+    def _get_api(cls, data: Dict[str, Any]) -> Optional[ProtectApiClient]:
         api = data.get("api")
 
-        if api is None and hasattr(self, "_api"):
-            api = self._api
+        if api is None and hasattr(cls, "_api"):
+            api = cls._api
 
         return api
 
-    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        for from_key, to_key in self.UNIFI_REMAP.items():
+    @classmethod
+    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        for from_key, to_key in cls.UNIFI_REMAP.items():
             if from_key in data:
                 data[to_key] = data.pop(from_key)
 
-        for key, klass in self.PROTECT_OBJ_FIELDS.items():
+        for key, klass in cls.PROTECT_OBJ_FIELDS.items():
             if key in data and isinstance(data[key], dict):
                 obj_dict = data[key]
-                data[key] = klass(**obj_dict, api=self._get_api(data))
+                obj_dict["api"] = cls._get_api(data)
+                data[key] = klass.clean_unifi_dict(data=obj_dict)  # type: ignore
 
         for key in list(data.keys()):
             data[to_snake_case(key)] = data.pop(key)
-
-        if "api" in data:
-            del data["api"]
 
         return data
 
@@ -71,8 +72,8 @@ class ProtectBaseObject(BaseModel):
             key = self.UNIFI_REMAP.get(key, key)
 
             if key in data:
-                unifi_obj: Optional[ProtectBaseObject] = getattr(self, key)
-                if unifi_obj is not None:
+                unifi_obj: Optional[Any] = getattr(self, key)
+                if unifi_obj is not None and isinstance(unifi_obj, ProtectBaseObject):
                     data[key] = unifi_obj.unifi_dict(data=data[key])
 
         data: Dict[str, Any] = serialize_unifi_obj(data)
@@ -81,7 +82,36 @@ class ProtectBaseObject(BaseModel):
             if from_key in data:
                 data[to_key] = data.pop(from_key)
 
+        if "api" in data:
+            del data["api"]
+
         return data
+
+    def update_from_dict(self: T, data: Dict[str, Any]) -> T:
+        for key in self.PROTECT_OBJ_FIELDS:
+            key = to_snake_case(key)
+            key = self.UNIFI_REMAP.get(key, key)
+
+            if key in data:
+                unifi_obj: Optional[Any] = getattr(self, key)
+                if unifi_obj is not None and isinstance(unifi_obj, ProtectBaseObject):
+                    setattr(self, key, unifi_obj.update_from_dict(data.pop(key)))
+
+        if "api" in data:
+            del data["api"]
+
+        return self.copy(update=data)
+
+    def update_from_unifi_dict(self: T, data: Dict[str, Any]) -> T:
+        data = self.clean_unifi_dict(data)
+        return self.update_from_dict(data)
+
+    @property
+    def api(self) -> ProtectApiClient:
+        if self._api is None:
+            raise BadRequest("API Client not initialized")
+
+        return self._api
 
 
 class ProtectModel(ProtectBaseObject):
@@ -159,11 +189,6 @@ class ProtectModel(ProtectBaseObject):
 
         return data
 
-    def update_from_unifi_dict(self: T, data: Dict[str, Any]) -> T:
-        data = self.clean_unifi_dict(data)
-
-        return self.copy(update=data)
-
 
 class ProtectModelWithId(ProtectModel):
     id: str
@@ -182,12 +207,13 @@ class ProtectDeviceModel(ProtectModelWithId):
     is_updating: bool
     is_ssh_enabled: bool
 
-    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    @classmethod
+    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "lastSeen" in data:
             data["lastSeen"] = process_datetime(data, "lastSeen")
         if "upSince" in data and data["upSince"] is not None:
             data["upSince"] = process_datetime(data, "upSince")
-        if "uptime" in data and data["uptime"] is not None:
+        if "uptime" in data and data["uptime"] is not None and not isinstance(data["uptime"], timedelta):
             data["uptime"] = timedelta(milliseconds=data["uptime"])
 
         return super().clean_unifi_dict(data)
@@ -238,15 +264,19 @@ class ProtectMotionDeviceModel(ProtectAdoptableDeviceModel):
     is_dark: bool
 
     # not directly from Unifi
-    last_thumbnail_id: Optional[str] = None
-    last_heatmap_id: Optional[str] = None
+    last_motion_event_id: Optional[str] = None
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data)
 
-        if "lastHeatmapId" in data:
-            del data["lastHeatmapId"]
-        if "lastThumbnailId" in data:
-            del data["lastThumbnailId"]
+        if "lastMotionEventId" in data:
+            del data["lastMotionEventId"]
 
         return data
+
+    @property
+    def last_motion_event(self) -> Optional[Event]:
+        if self.last_motion_event_id is None:
+            return None
+
+        return self.api.bootstrap.events.get(self.last_motion_event_id)

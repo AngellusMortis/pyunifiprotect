@@ -14,6 +14,10 @@ class ClientError(UnifiProtectError):
     """Base Class for all other Unifi Protect client errors"""
 
 
+class BadRequest(ClientError):
+    """Invalid request from API Client"""
+
+
 class Invalid(ClientError):
     """Invalid return from Authorization Request."""
 

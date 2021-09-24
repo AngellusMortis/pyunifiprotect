@@ -14,6 +14,7 @@ from .nvr import (
 from .types import (
     DoorbellMessageType,
     EventType,
+    FixSizeOrderedDict,
     LightModeEnableType,
     LightModeType,
     ModelType,
@@ -36,6 +37,7 @@ __all__ = [
     "DoorbellMessageType",
     "Event",
     "EventType",
+    "FixSizeOrderedDict",
     "Group",
     "Light",
     "LightModeEnableType",

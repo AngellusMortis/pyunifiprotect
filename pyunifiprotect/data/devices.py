@@ -8,8 +8,7 @@ from uuid import UUID
 
 from pydantic.color import Color
 
-from ..exceptions import NvrError
-from ..utils import process_datetime, serialize_point, to_js_time, to_ms
+from ..utils import process_datetime, serialize_point, to_js_time
 from .base import (
     ProtectAdoptableDeviceModel,
     ProtectBaseObject,
@@ -28,7 +27,7 @@ from .types import (
 )
 
 if TYPE_CHECKING:
-    from .nvr import Liveview
+    from .nvr import Event, Liveview
 
 
 class LightDeviceSettings(ProtectBaseObject):
@@ -41,18 +40,12 @@ class LightDeviceSettings(ProtectBaseObject):
     pir_duration: timedelta
     pir_sensitivity: PercentInt
 
-    def __init__(self, **kwargs):
-        kwargs["pir_duration"] = timedelta(milliseconds=kwargs.pop("pirDuration"))
+    @classmethod
+    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "pirDuration" in data and not isinstance(data["pirDuration"], timedelta):
+            data["pirDuration"] = timedelta(milliseconds=data["pirDuration"])
 
-        super().__init__(**kwargs)
-
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        data = super().unifi_dict(data=data)
-
-        if "pirDuration" in data:
-            data["pirDuration"] = to_ms(self.pir_duration)
-
-        return data
+        return super().clean_unifi_dict(data)
 
 
 class LightOnSettings(ProtectBaseObject):
@@ -90,10 +83,7 @@ class Light(ProtectMotionDeviceModel):
         if self.camera_id is None:
             return None
 
-        if self._api is None:
-            raise NvrError("API Client not initialized")
-
-        return self._api.bootstrap.cameras[self.camera_id]
+        return self.api.bootstrap.cameras[self.camera_id]
 
 
 class EventStats(ProtectBaseObject):
@@ -211,15 +201,16 @@ class RecordingSettings(ProtectBaseObject):
     enable_pir_timelapse: bool
     use_new_motion_algorithm: bool
 
-    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    @classmethod
+    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "prePaddingSecs" in data:
             data["prePadding"] = timedelta(seconds=data.pop("prePaddingSecs"))
         if "postPaddingSecs" in data:
             data["postPadding"] = timedelta(seconds=data.pop("postPaddingSecs"))
-        if "minMotionEventTrigger" in data:
-            data["minMotionEventTrigger"] = timedelta(seconds=data.pop("minMotionEventTrigger"))
-        if "endMotionEventDelay" in data:
-            data["endMotionEventDelay"] = timedelta(seconds=data.pop("endMotionEventDelay"))
+        if "minMotionEventTrigger" in data and not isinstance(data["minMotionEventTrigger"], timedelta):
+            data["minMotionEventTrigger"] = timedelta(seconds=data["minMotionEventTrigger"])
+        if "endMotionEventDelay" in data and not isinstance(data["endMotionEventDelay"], timedelta):
+            data["endMotionEventDelay"] = timedelta(seconds=data["endMotionEventDelay"])
 
         return super().clean_unifi_dict(data)
 
@@ -254,17 +245,19 @@ class LCDMessage(ProtectBaseObject):
     text: str
     reset_at: Optional[datetime] = None
 
-    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    @classmethod
+    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "resetAt" in data:
             data["resetAt"] = process_datetime(data, "resetAt")
         if "text" in data:
-            data["text"] = self._fix_text(data["text"], data.get("type"))
+            data["text"] = cls._fix_text(data["text"], data.get("type"))
 
         return super().clean_unifi_dict(data)
 
-    def _fix_text(self, text: str, text_type: Optional[str]) -> str:
+    @classmethod
+    def _fix_text(cls, text: str, text_type: Optional[str]) -> str:
         if text_type is None:
-            text_type = self.type.value
+            text_type = cls.type.value
 
         if text_type != DoorbellMessageType.CUSTOM_MESSAGE.value:
             text = text_type.replace("_", " ")
@@ -326,7 +319,8 @@ class VideoStats(ProtectBaseObject):
         "timelapseEndLQ": "timelapseEndLq",
     }
 
-    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    @classmethod
+    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "recordingStart" in data:
             data["recordingStart"] = process_datetime(data, "recordingStart")
         if "recordingEnd" in data:
@@ -369,7 +363,8 @@ class CameraStats(ProtectBaseObject):
         "storage": StorageStats,
     }
 
-    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    @classmethod
+    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "storage" in data and data["storage"] == {}:
             del data["storage"]
 
@@ -505,8 +500,9 @@ class Camera(ProtectMotionDeviceModel):
     # smartDetectLines
 
     # not directly from Unifi
-    motion_smart_type: Optional[SmartDetectObjectType] = None
-    last_motion_smart_type: Optional[SmartDetectObjectType] = None
+    last_ring_event_id: Optional[str] = None
+    last_smart_detect: Optional[datetime] = None
+    last_smart_detect_event_id: Optional[str] = None
 
     PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
         "eventStats": CameraEventStats,
@@ -523,7 +519,8 @@ class Camera(ProtectMotionDeviceModel):
         "lcdMessage": LCDMessage,
     }
 
-    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    @classmethod
+    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         # LCD messages comes back as empty dict {}
         if "lcdMessage" in data and len(data["lcdMessage"].keys()) == 0:
             del data["lcdMessage"]
@@ -539,14 +536,30 @@ class Camera(ProtectMotionDeviceModel):
 
         data = super().unifi_dict(data=data)
 
-        if "motionSmartType" in data:
-            del data["motionSmartType"]
-        if "lastMotionSmartType" in data:
-            del data["lastMotionSmartType"]
+        if "lastRingEventId" in data:
+            del data["lastRingEventId"]
+        if "lastSmartDetect" in data:
+            del data["lastSmartDetect"]
+        if "lastSmartDetectEventId" in data:
+            del data["lastSmartDetectEventId"]
         if "lcdMessage" in data and data["lcdMessage"] is None:
             data["lcdMessage"] = {}
 
         return data
+
+    @property
+    def last_ring_event(self) -> Optional[Event]:
+        if self.last_ring_event_id is None:
+            return None
+
+        return self.api.bootstrap.events.get(self.last_ring_event_id)
+
+    @property
+    def last_smart_detect_event(self) -> Optional[Event]:
+        if self.last_smart_detect_event_id is None:
+            return None
+
+        return self.api.bootstrap.events.get(self.last_smart_detect_event_id)
 
 
 class Viewer(ProtectAdoptableDeviceModel):
@@ -558,7 +571,4 @@ class Viewer(ProtectAdoptableDeviceModel):
 
     @property
     def liveview(self) -> Liveview:
-        if self._api is None:
-            raise NvrError("API Client not initialized")
-
-        return self._api.bootstrap.liveviews[self.liveview_id]
+        return self.api.bootstrap.liveviews[self.liveview_id]
