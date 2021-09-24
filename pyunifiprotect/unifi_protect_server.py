@@ -43,6 +43,7 @@ from .unifi_data import (
     sensor_event_from_ws_frames,
     sensor_update_from_ws_frames,
 )
+from .utils import get_response_reason
 
 NEVER_RAN = -1000
 DEVICE_UPDATE_INTERVAL_SECONDS = 60
@@ -157,20 +158,6 @@ class BaseApiClient:
         except client_exceptions.ClientError as err:
             raise NvrError(f"Error requesting data from {self._host}: {err}") from None
 
-    async def _get_reason(self, response: aiohttp.ClientResponse) -> str:
-        reason = str(response.reason)
-
-        try:
-            json = await response.json()
-            reason = json.get("error", str(json))
-        except Exception:  # pylint: disable=broad-except
-            try:
-                reason = await response.text()
-            except Exception:  # pylint: disable=broad-except
-                pass
-
-        return reason
-
     async def api_request(
         self,
         url,
@@ -200,7 +187,7 @@ class BaseApiClient:
 
         try:
             if response.status != 200:
-                reason = await self._get_reason(response)
+                reason = await get_response_reason(response)
                 msg = "Request failed: %s - Status: %s - Reason: %s"
                 if raise_exception:
                     raise NvrError(msg % (url, response.status, reason))
