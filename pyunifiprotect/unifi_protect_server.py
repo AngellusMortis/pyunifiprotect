@@ -353,7 +353,7 @@ class BaseApiClient:
         log = _LOGGER.warning
 
         if self._websocket_failures < 10 or (now - self._websocket_error_start) < WEBSOCKET_ERROR_GRACE_PERIOD:
-            log = _LOGGER.info
+            log = _LOGGER.debug
         log("Unifi OS: Websocket connection not active, failing back to polling")
 
     def _process_ws_message(self, msg):
