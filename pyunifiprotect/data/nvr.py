@@ -11,7 +11,6 @@ from uuid import UUID
 from pydantic.fields import PrivateAttr
 import pytz
 
-from ..exceptions import NvrError
 from ..utils import process_datetime
 from .base import (
     ProtectBaseObject,
@@ -20,10 +19,19 @@ from .base import (
     ProtectModelWithId,
 )
 from .devices import Camera, Light, Viewer
-from .types import DoorbellMessageType, EventType, ModelType, SmartDetectObjectType
+from .types import (
+    DoorbellMessageType,
+    EventType,
+    FixSizeOrderedDict,
+    ModelType,
+    SmartDetectObjectType,
+)
 from .websocket import WSJSONPacketFrame, WSPacket
 
 _LOGGER = logging.getLogger(__name__)
+
+MAX_SUPPORTED_CAMERAS = 256
+MAX_EVENT_HISTORY_IN_STATE_MACHINE = MAX_SUPPORTED_CAMERAS * 2
 
 
 class Event(ProtectModelWithId):
@@ -42,6 +50,8 @@ class Event(ProtectModelWithId):
     # metadata
     # partition
 
+    _smart_detect_events: Optional[List[Event]] = PrivateAttr(None)
+
     UNIFI_REMAP: ClassVar[Dict[str, str]] = {
         **ProtectModelWithId.UNIFI_REMAP,
         **{
@@ -53,10 +63,11 @@ class Event(ProtectModelWithId):
         },
     }
 
-    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    @classmethod
+    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "start" in data:
             data["start"] = process_datetime(data, "start")
-        if "start" in data:
+        if "end" in data:
             data["end"] = process_datetime(data, "end")
 
         return super().clean_unifi_dict(data)
@@ -66,20 +77,24 @@ class Event(ProtectModelWithId):
         if self.camera_id is None:
             return None
 
-        if self._api is None:
-            raise NvrError("API Client not initialized")
-
-        return self._api.bootstrap.cameras[self.camera_id]
+        return self.api.bootstrap.cameras[self.camera_id]
 
     @property
     def user(self) -> Optional[User]:
         if self.user_id is None:
             return None
 
-        if self._api is None:
-            raise NvrError("API Client not initialized")
+        return self.api.bootstrap.users.get(self.user_id)
 
-        return self._api.bootstrap.users.get(self.user_id)
+    @property
+    def smart_detect_events(self) -> List[Event]:
+        if self._smart_detect_events is not None:
+            return self._smart_detect_events
+
+        self._smart_detect_events = [
+            self.api.bootstrap.events[g] for g in self.smart_detect_events_ids if g in self.api.bootstrap.events
+        ]
+        return self._smart_detect_events
 
 
 class Group(ProtectModelWithId):
@@ -131,10 +146,7 @@ class CloudAccount(ProtectModelWithId):
 
     @property
     def user(self) -> User:
-        if self._api is None:
-            raise NvrError("API Client not initialized")
-
-        return self._api.bootstrap.users[self.user_id]
+        return self.api.bootstrap.users[self.user_id]
 
 
 class User(ProtectModelWithId):
@@ -177,10 +189,7 @@ class User(ProtectModelWithId):
         if self._groups is not None:
             return self._groups
 
-        if self._api is None:
-            raise NvrError("API Client not initialized")
-
-        self._groups = [self._api.bootstrap.groups[g] for g in self.group_ids if g in self._api.bootstrap.groups]
+        self._groups = [self.api.bootstrap.groups[g] for g in self.group_ids if g in self.api.bootstrap.groups]
         return self._groups
 
 
@@ -278,8 +287,10 @@ class DoorbellSettings(ProtectBaseObject):
 
     UNIFI_REMAP: ClassVar[Dict[str, str]] = {"defaultMessageResetTimeoutMs": "defaultMessageResetTimeout"}
 
-    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        data["defaultMessageResetTimeout"] = timedelta(milliseconds=data.pop("defaultMessageResetTimeoutMs"))
+    @classmethod
+    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "defaultMessageResetTimeoutMs" in data:
+            data["defaultMessageResetTimeout"] = timedelta(milliseconds=data.pop("defaultMessageResetTimeoutMs"))
 
         return super().clean_unifi_dict(data)
 
@@ -362,12 +373,13 @@ class NVR(ProtectDeviceModel):
         "storageStats": StorageStats,
     }
 
-    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    @classmethod
+    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "lastUpdateAt" in data:
             data["lastUpdateAt"] = process_datetime(data, "lastUpdateAt")
         if "recordingRetentionDurationMs" in data:
             data["recordingRetentionDuration"] = timedelta(milliseconds=data.pop("recordingRetentionDurationMs"))
-        if "timezone" in data:
+        if "timezone" in data and not isinstance(data["timezone"], tzinfo):
             data["timezone"] = pytz.timezone(data["timezone"])
 
         data = super().clean_unifi_dict(data)
@@ -389,10 +401,7 @@ class LiveviewSlot(ProtectBaseObject):
         if self._cameras is not None:
             return self._cameras
 
-        if self._api is None:
-            raise NvrError("API Client not initialized")
-
-        self._cameras = [self._api.bootstrap.cameras[g] for g in self.camera_ids]
+        self._cameras = [self.api.bootstrap.cameras[g] for g in self.camera_ids]
         return self._cameras
 
 
@@ -406,11 +415,13 @@ class Liveview(ProtectModelWithId):
 
     UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectModelWithId.UNIFI_REMAP, **{"owner": "ownerId"}}
 
-    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    @classmethod
+    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "slots" in data:
-            slots: List[LiveviewSlot] = []
+            slots: List[Dict[str, Any]] = []
             for slot in data["slots"]:
-                slots.append(LiveviewSlot(**slot, api=self._get_api(data)))
+                slot["api"] = cls._get_api(data)
+                slots.append(LiveviewSlot.clean_unifi_dict(data=slot))
             data["slots"] = slots
 
         return super().clean_unifi_dict(data)
@@ -430,10 +441,7 @@ class Liveview(ProtectModelWithId):
         Will be none if the user only has read only access and it was not made by their user.
         """
 
-        if self._api is None:
-            raise NvrError("API Client not initialized")
-
-        return self._api.bootstrap.users.get(self.owner_id)
+        return self.api.bootstrap.users.get(self.owner_id)
 
 
 class Bootstrap(ProtectBaseObject):
@@ -459,7 +467,11 @@ class Bootstrap(ProtectBaseObject):
         "nvr": NVR,
     }
 
-    def clean_unifi_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    # not directly from Unifi
+    events: Dict[str, Event] = FixSizeOrderedDict()
+
+    @classmethod
+    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         for model_type in ModelType.bootstrap_models():
             key = model_type + "s"
             items: Dict[str, ProtectModel] = {}
@@ -479,42 +491,36 @@ class Bootstrap(ProtectBaseObject):
             data["viewers"] = self.viewers.values()
             data["lights"] = self.lights.values()
 
+        if "events" in data:
+            del data["events"]
+
         return super().unifi_dict(data=data)
 
     @property
     def auth_user(self) -> User:
-        if self._api is None:
-            raise NvrError("API Client not initialized")
-
         return self._api.bootstrap.users[self.auth_user_id]
 
-    def process_event(self, event: Event):  # pylint: disable=no-self-use
+    def process_event(self, event: Event):
         if event.camera is None:
             return
 
-        if event.type in (EventType.MOTION, EventType.SMART_DETECT):
+        if event.type == EventType.MOTION:
             if event.end is None:
                 event.camera.is_motion_detected = True
-
-                if event.type == EventType.SMART_DETECT:
-                    event.camera.motion_smart_type = event.smart_detect_types[0]
             else:
                 event.camera.is_motion_detected = False
-                event.camera.motion_smart_type = None
-                event.camera.last_motion = event.end
 
-                if event.type == EventType.MOTION:
-                    event.camera.last_motion_smart_type = None
-                else:
-                    event.camera.last_motion_smart_type = event.smart_detect_types[0]
+                event.camera.last_motion = event.end
+                event.camera.last_motion_event_id = event.id
+        elif event.type == EventType.SMART_DETECT:
+            if event.end is not None:
+                event.camera.last_smart_detect = event.end
+                event.camera.last_smart_detect_event_id = event.id
         elif event.type == EventType.RING:
             event.camera.last_ring = event.start
+            event.camera.last_ring_event_id = event.id
 
-        if event.thumbnail_id is not None:
-            event.camera.last_thumbnail_id = event.thumbnail_id
-
-        if event.heatmap_id is not None:
-            event.camera.last_heatmap_id = event.heatmap_id
+        self.events[event.id] = event
 
     def process_ws_packet(self, packet: WSPacket):
         if not isinstance(packet.action_frame, WSJSONPacketFrame):
@@ -547,9 +553,19 @@ class Bootstrap(ProtectBaseObject):
                 _LOGGER.debug("Unexpected bootstrap model type for add: %s", obj.model)
         elif action["action"] == "update":
             model_type = action["modelKey"]
-            if model_type in ModelType.bootstrap_models():
+            if model_type in ModelType.bootstrap_models() or model_type == ModelType.EVENT.value:
                 key = model_type + "s"
-                obj: ProtectModel = getattr(self, key)[action["id"]]
-                obj.update_from_unifi_dict(data)
+                devices = getattr(self, key)
+                if action["id"] in devices:
+                    obj: ProtectModel = devices[action["id"]]
+                    obj = obj.update_from_unifi_dict(data)
+
+                    if isinstance(obj, Event):
+                        self.process_event(obj)
+
+                    devices[action["id"]] = obj
+                # ignore updates to events that phase out
+                elif model_type != ModelType.EVENT.value:
+                    _LOGGER.debug("Unexpected %s: %s", key, action["id"])
             else:
                 _LOGGER.debug("Unexpected bootstrap model type for update: %s", model_type)

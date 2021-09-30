@@ -4,6 +4,22 @@ from typing import List, Optional
 from pydantic import ConstrainedDecimal, ConstrainedInt
 
 
+class FixSizeOrderedDict(dict):
+    """A fixed size ordered dict."""
+
+    def __init__(self, *args, max_size=0, **kwargs):
+        """Create the FixSizeOrderedDict."""
+        self._max_size = max_size
+        super().__init__(*args, **kwargs)
+
+    def __setitem__(self, key, value):
+        """Set an update up to the max size."""
+        dict.__setitem__(self, key, value)
+        if self._max_size > 0:
+            if len(self) > self._max_size:
+                self.popitem(False)
+
+
 class ValuesEnumMixin:
     _values: Optional[List[str]] = None
 

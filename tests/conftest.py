@@ -11,6 +11,7 @@ import aiohttp
 import pytest
 
 from pyunifiprotect import ProtectApiClient, UpvServer
+from pyunifiprotect.data import ModelType
 from tests.sample_data.constants import CONSTANTS
 
 UFP_SAMPLE_DIR = os.environ.get("UFP_SAMPLE_DIR")
@@ -115,6 +116,19 @@ async def old_protect_client():
 @pytest.mark.asyncio
 async def protect_client():
     client = ProtectApiClient("127.0.0.1", 0, "username", "password")
+    client.is_unifi_os = False
+    client.api_request = AsyncMock(side_effect=mock_api_request)
+    client.ensure_authenticated = AsyncMock()
+
+    await client.update(True)
+
+    yield client
+
+
+@pytest.fixture
+@pytest.mark.asyncio
+async def protect_client_ws():
+    client = ProtectApiClient("127.0.0.1", 0, "username", "password")
     client.is_unifi_os = True
     client.api_request = AsyncMock(side_effect=mock_api_request)
     client.ensure_authenticated = AsyncMock()
@@ -174,3 +188,30 @@ def bootstrap():
 @pytest.fixture
 def now():
     return get_now()
+
+
+def compare_objs(obj_type, expected, actual):
+    # TODO: fields not supported yet
+    if obj_type == ModelType.CAMERA.value:
+        del expected["apMac"]
+        del expected["apRssi"]
+        del expected["elementInfo"]
+        del expected["lastPrivacyZonePositionId"]
+        del expected["recordingSchedule"]
+        del expected["smartDetectLines"]
+        del expected["featureFlags"]["mountPositions"]
+        del expected["featureFlags"]["focus"]
+        del expected["featureFlags"]["pan"]
+        del expected["featureFlags"]["tilt"]
+        del expected["featureFlags"]["zoom"]
+        del expected["ispSettings"]["mountPosition"]
+    elif obj_type == ModelType.USER.value:
+        del expected["settings"]
+        del expected["alertRules"]
+        if expected["cloudAccount"] is not None:
+            del expected["cloudAccount"]["profileImg"]
+    elif obj_type == ModelType.EVENT.value:
+        del expected["metadata"]
+        del expected["partition"]
+
+    assert expected == actual

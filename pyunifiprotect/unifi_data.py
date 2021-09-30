@@ -1,13 +1,12 @@
 """Unifi Protect Data."""
 from __future__ import annotations
 
-from collections import OrderedDict
 import datetime
 import logging
 import time
 from typing import Any, Dict
 
-from .data import EventType, ModelType, WSRawPacketFrame
+from .data import EventType, FixSizeOrderedDict, ModelType, WSRawPacketFrame
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -743,19 +742,3 @@ class ProtectEventStateMachine:
             return None
         event_json.update(new_event_json)
         return event_json
-
-
-class FixSizeOrderedDict(OrderedDict):
-    """A fixed size ordered dict."""
-
-    def __init__(self, *args, max_size=0, **kwargs):
-        """Create the FixSizeOrderedDict."""
-        self._max_size = max_size
-        super().__init__(*args, **kwargs)
-
-    def __setitem__(self, key, value):
-        """Set an update up to the max size."""
-        OrderedDict.__setitem__(self, key, value)
-        if self._max_size > 0:
-            if len(self) > self._max_size:
-                self.popitem(False)

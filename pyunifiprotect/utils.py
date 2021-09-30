@@ -49,8 +49,11 @@ def to_ms(duration: Optional[timedelta]) -> Optional[int]:
     return int(duration.total_seconds() * 1000)
 
 
-def from_js_time(num: Union[int, float, str]) -> datetime:
+def from_js_time(num: Union[int, float, str, datetime]) -> datetime:
     """Converts Javascript timestamp to Python datetime"""
+
+    if isinstance(num, datetime):
+        return num
 
     return datetime.fromtimestamp(int(num) / 1000)
 
@@ -79,7 +82,7 @@ def is_doorbell(data: Dict[str, Any]) -> bool:
 
 def to_snake_case(name: str) -> str:
     name = re.sub("(.)([A-Z0-9][a-z]+)", r"\1_\2", name)
-    name = re.sub("__([A-Z])", r"_\1", name)
+    name = re.sub("__([A-Z0-9])", r"_\1", name)
     name = re.sub("([a-z0-9])([A-Z])", r"\1_\2", name)
     return name.lower()
 
