@@ -117,6 +117,7 @@ async def test_get_thumbnail(old_protect_client: UpvServer, camera):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not CONSTANTS.get("camera_online"), reason="No online camera in test data")
 @patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
 async def test_get_snapshot(old_protect_client: UpvServer, now, camera):
     data = await old_protect_client.get_snapshot_image(camera_id=camera["id"])

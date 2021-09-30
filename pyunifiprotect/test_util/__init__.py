@@ -163,7 +163,8 @@ class SampleDataGenerator:
             if item["type"] in ("camera", "doorbell") and not has_heatmap:
                 use_camera = False
                 # prefer cameras with a heatmap first
-                if item["event_heatmap"] is not None:
+                if is_camera_online and item["event_heatmap"] is not None:
+                    is_camera_online = True
                     use_camera = True
                     has_heatmap = True
                 # then prefer cameras that are online
@@ -212,6 +213,7 @@ class SampleDataGenerator:
             if img is not None:
                 self.write_image_file(filename, img)
         self.constants["camera_thumbnail"] = thumbnail
+        self.constants["camera_online"] = self.client.devices[camera_id]["online"]
 
         filename = "sample_camera_snapshot"
         if self.anonymize:
