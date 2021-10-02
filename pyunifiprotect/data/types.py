@@ -76,6 +76,7 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     ACCESS = "access"
     OFFLINE = "offline"
     OFF = "off"
+    UPDATE = "update"
 
     @staticmethod
     def device_events() -> List[str]:
