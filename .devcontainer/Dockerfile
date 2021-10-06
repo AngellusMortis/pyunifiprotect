@@ -1,4 +1,4 @@
-FROM python:3.9.6-slim-buster
+FROM python:3.10-slim-bullseye
 
 RUN apt-get update \
     && apt-get install -y git build-essential vim procps curl jq \
