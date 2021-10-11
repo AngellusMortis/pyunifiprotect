@@ -77,6 +77,7 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     OFFLINE = "offline"
     OFF = "off"
     UPDATE = "update"
+    CAMERA_POWER_CYCLE = "cameraPowerCycling"
 
     @staticmethod
     def device_events() -> List[str]:
