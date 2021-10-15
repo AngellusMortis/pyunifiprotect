@@ -1,5 +1,5 @@
-import enum
 from collections import OrderedDict
+import enum
 from typing import List, Optional
 
 from pydantic import ConstrainedDecimal, ConstrainedInt
