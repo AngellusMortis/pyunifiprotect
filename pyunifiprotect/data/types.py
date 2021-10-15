@@ -1,10 +1,11 @@
 import enum
+from collections import OrderedDict
 from typing import List, Optional
 
 from pydantic import ConstrainedDecimal, ConstrainedInt
 
 
-class FixSizeOrderedDict(dict):
+class FixSizeOrderedDict(OrderedDict):
     """A fixed size ordered dict."""
 
     def __init__(self, *args, max_size=0, **kwargs):
