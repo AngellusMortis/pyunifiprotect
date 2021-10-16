@@ -681,10 +681,8 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
     async def set_camera_recording(self, camera_id: str, mode: str) -> bool:
         """Sets the camera recoding mode to what is supplied with 'mode'.
-        Valid inputs for mode: never, motion, always, smartDetect
+        Valid inputs for mode: never, detections and always
         """
-        if "smart" in mode:
-            mode = "smartDetect"
 
         data = {
             "recordingSettings": {

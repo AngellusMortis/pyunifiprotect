@@ -335,7 +335,7 @@ def process_camera(server_id, host, camera, include_events):
         image_width = channel.get("width")
         image_height = channel.get("height")
         if channel["isRtspEnabled"]:
-            rtsp = f"rtsp://{host}:7447/{channel['rtspAlias']}"
+            rtsp = f"rtsps://{host}:7441/{channel['rtspAlias']}"
             break
 
     camera_update = {
