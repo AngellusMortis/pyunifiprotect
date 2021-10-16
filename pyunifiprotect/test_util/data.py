@@ -114,7 +114,7 @@ def legacy_process_camera(data: Dict[str, Any], host: str, server_id: Optional[s
         image_width = channel.get("width")
         image_height = channel.get("height")
         if channel["isRtspEnabled"]:
-            rtsp = f"rtsp://{host}:7447/{channel['rtspAlias']}"
+            rtsp = f"rtsps://{host}:7441/{channel['rtspAlias']}"
             break
 
     processed_data.update(
