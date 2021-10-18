@@ -579,4 +579,5 @@ class Viewer(ProtectAdoptableDeviceModel):
 
 
 class Bridge(ProtectAdoptableDeviceModel):
+    hardware_revision: int
     platform: str
