@@ -1,18 +1,18 @@
 {
-    "mac": "BA833BA19111",
-    "host": "192.168.93.157",
-    "connectionHost": "192.168.230.234",
+    "mac": "068EFC1D6A4A",
+    "host": "192.168.55.166",
+    "connectionHost": "192.168.188.156",
     "type": "UP FloodLight",
-    "name": "Cvrx Opqaz",
-    "upSince": 1632106288057,
-    "uptime": 270,
-    "lastSeen": 1632106558057,
-    "connectedSince": 1632106329798,
+    "name": "Yrdlw Sla",
+    "upSince": 1633183966493,
+    "uptime": 1331617,
+    "lastSeen": 1634515583493,
+    "connectedSince": 1634510668190,
     "state": "CONNECTED",
     "hardwareRevision": null,
-    "firmwareVersion": "1.6.4",
+    "firmwareVersion": "1.8.0",
     "latestFirmwareVersion": "1.8.0",
-    "firmwareBuild": "gdc4ce68.210308.352",
+    "firmwareBuild": "g74861dc.210813.606",
     "isUpdating": false,
     "isAdopting": false,
     "isAdopted": true,
@@ -23,16 +23,16 @@
     "canAdopt": false,
     "isAttemptingToConnect": false,
     "isPirMotionDetected": false,
-    "lastMotion": 1632106592529,
-    "isDark": false,
-    "isLightOn": true,
+    "lastMotion": 1634515639750,
+    "isDark": true,
+    "isLightOn": false,
     "isLocating": false,
     "wiredConnectionState": {
         "phyRate": 100
     },
     "lightDeviceSettings": {
         "isIndicatorEnabled": true,
-        "ledLevel": 3,
+        "ledLevel": 6,
         "luxSensitivity": "medium",
         "pirDuration": 60000,
         "pirSensitivity": 88
@@ -41,12 +41,12 @@
         "isLedForceOn": false
     },
     "lightModeSettings": {
-        "mode": "motion",
-        "enableAt": "fulltime"
+        "mode": "off",
+        "enableAt": "dark"
     },
-    "camera": null,
-    "id": "e9c5dab193261c119f157269",
+    "camera": "c8f8edacbdb67893dcd57179",
+    "id": "48bbb8e7451ee6c96cf67230",
     "isConnected": true,
-    "isCameraPaired": false,
+    "isCameraPaired": true,
     "modelKey": "light"
 }

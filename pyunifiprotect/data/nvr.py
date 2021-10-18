@@ -18,7 +18,7 @@ from .base import (
     ProtectModel,
     ProtectModelWithId,
 )
-from .devices import Camera, Light, Viewer
+from .devices import Bridge, Camera, Light, Viewer
 from .types import (
     DoorbellMessageType,
     EventType,
@@ -149,6 +149,10 @@ class CloudAccount(ProtectModelWithId):
         return self.api.bootstrap.users[self.user_id]
 
 
+class UserFeatureFlags(ProtectBaseObject):
+    notifications_v2: bool
+
+
 class User(ProtectModelWithId):
     permissions: List[str]
     last_login_ip: Optional[str]
@@ -165,10 +169,12 @@ class User(ProtectModelWithId):
     local_username: str
     group_ids: List[str]
     cloud_account: Optional[CloudAccount]
+    feature_flags: UserFeatureFlags
 
     # TODO:
     # settings
     # alertRules
+    # notificationsV2
 
     UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectModelWithId.UNIFI_REMAP, **{"groups": "groupIds"}}
     PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
@@ -295,11 +301,29 @@ class DoorbellSettings(ProtectBaseObject):
         return super().clean_unifi_dict(data)
 
 
+class RecordingTypeDistribution(ProtectBaseObject):
+    recording_type: str
+    size: int
+    percentage: float
+
+
+class ResolutionDistribution(ProtectBaseObject):
+    resolution: str
+    size: int
+    percentage: float
+
+
+class StorageDistribution(ProtectBaseObject):
+    recording_type_distributions: List[RecordingTypeDistribution]
+    resolution_distributions: List[ResolutionDistribution]
+
+
 class StorageStats(ProtectBaseObject):
     utilization: float
     capacity: int
     remaining_capacity: int
     recording_space: StorageSpace
+    storage_distribution: StorageDistribution
 
     PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
         "recordingSpace": StorageSpace,
@@ -309,6 +333,7 @@ class StorageStats(ProtectBaseObject):
 class NVRFeatureFlags(ProtectBaseObject):
     beta: bool
     dev: bool
+    notifications_v2: bool
 
 
 class NVR(ProtectDeviceModel):
@@ -342,6 +367,7 @@ class NVR(ProtectDeviceModel):
     is_recycling: bool
     avg_motions: List[float]
     disable_auto_link: bool
+    skip_firmware_update: bool
     location_settings: NVRLocation
     feature_flags: NVRFeatureFlags
     system_info: SystemInfo
@@ -359,6 +385,7 @@ class NVR(ProtectDeviceModel):
     # errorCode
     # wifiSettings
     # smartDetectAgreement
+    # ssoChannel
 
     UNIFI_REMAP: ClassVar[Dict[str, str]] = {
         **ProtectDeviceModel.UNIFI_REMAP,
@@ -454,14 +481,16 @@ class Bootstrap(ProtectBaseObject):
     nvr: NVR
     viewers: Dict[str, Viewer]
     lights: Dict[str, Light]
+    bridges: Dict[str, Bridge]
     last_update_id: UUID
 
     # TODO:
     # legacyUFVs
     # displays
-    # bridges
     # sensors
     # doorlocks
+    # chimes
+    # schedules
 
     PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
         "nvr": NVR,
@@ -484,12 +513,9 @@ class Bootstrap(ProtectBaseObject):
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         if data is None:
             data = self.dict()
-            data["cameras"] = self.cameras.values()
-            data["users"] = self.users.values()
-            data["groups"] = self.groups.values()
-            data["liveviews"] = self.liveviews.values()
-            data["viewers"] = self.viewers.values()
-            data["lights"] = self.lights.values()
+            for model_type in ModelType.bootstrap_models():
+                attr = model_type + "s"
+                data[attr] = getattr(self, attr).values()
 
         if "events" in data:
             del data["events"]

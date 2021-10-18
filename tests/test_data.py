@@ -117,12 +117,14 @@ def test_bootstrap(bootstrap):
     # TODO:
     del bootstrap["legacyUFVs"]
     del bootstrap["displays"]
-    del bootstrap["bridges"]
     del bootstrap["sensors"]
     del bootstrap["doorlocks"]
+    del bootstrap["chimes"]
+    del bootstrap["schedules"]
     del bootstrap["nvr"]["uiVersion"]
     del bootstrap["nvr"]["errorCode"]
     del bootstrap["nvr"]["wifiSettings"]
+    del bootstrap["nvr"]["ssoChannel"]
     del bootstrap["nvr"]["smartDetectAgreement"]
     del bootstrap["nvr"]["doorbellSettings"]["customMessages"]
 

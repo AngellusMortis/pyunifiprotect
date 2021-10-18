@@ -1,23 +1,25 @@
 {
-    "server_name": "Luy Pggazf",
-    "server_id": "A251980C0649",
-    "server_version": "1.19.1",
-    "last_update_id": "2d6c8ba9-1017-483d-b82d-c24eda802fa4",
-    "user_id": "548d497b8d4f7538603a1845",
+    "server_name": "Polj Epivng",
+    "server_id": "7A2C27B2FC2E",
+    "server_version": "1.20.0-beta.2",
+    "last_update_id": "6189fbad-41c9-4188-aa37-b7f06a8780cd",
+    "user_id": "33f52405dd7909da4a4de5b7",
     "counts": {
         "camera": 6,
         "user": 7,
         "group": 2,
-        "liveview": 2,
+        "liveview": 8,
         "viewer": 1,
         "display": 0,
         "light": 1,
-        "bridge": 0,
+        "bridge": 2,
         "sensor": 0,
-        "doorlock": 0
+        "doorlock": 0,
+        "chime": 0,
+        "schedule": 0
     },
-    "time": "2021-09-20T02:56:52.177410",
-    "event_count": 120,
-    "camera_thumbnail": "e-0da4f9245fc2d9d25e554b64",
+    "time": "2021-10-18T00:07:17.748398",
+    "event_count": 785,
+    "camera_thumbnail": "e-ed92bd8337974040dd4711d2",
     "camera_online": true
 }

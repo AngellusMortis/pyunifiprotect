@@ -3,7 +3,17 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from ipaddress import IPv4Address
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Optional, Type, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from pydantic import BaseModel
 from pydantic.fields import PrivateAttr
@@ -122,6 +132,7 @@ class ProtectModel(ProtectBaseObject):
     @staticmethod
     def klass_from_dict(data: Dict[str, Any]) -> Type[ProtectModel]:
         from .devices import (  # pylint: disable=import-outside-toplevel
+            Bridge,
             Camera,
             Light,
             Viewer,
@@ -163,6 +174,8 @@ class ProtectModel(ProtectBaseObject):
             klass = Liveview
         elif model == ModelType.VIEWPORT:
             klass = Viewer
+        elif model == ModelType.BRIDGE:
+            klass = Bridge
 
         if klass is None:
             raise DataDecodeError("Unknown modelKey")
@@ -202,7 +215,7 @@ class ProtectDeviceModel(ProtectModelWithId):
     up_since: Optional[datetime]
     uptime: Optional[timedelta]
     last_seen: datetime
-    hardware_revision: Optional[str]
+    hardware_revision: Optional[Union[str, int]]
     firmware_version: str
     is_updating: bool
     is_ssh_enabled: bool
@@ -228,14 +241,15 @@ class WifiConnectionState(WiredConnectionState):
     frequency: Optional[int]
     signal_quality: Optional[int]
     signal_strength: Optional[int]
+    ssid: Optional[str]
 
 
 class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     state: StateType
     connection_host: IPv4Address
     connected_since: Optional[datetime]
-    latest_firmware_version: str
-    firmware_build: str
+    latest_firmware_version: Optional[str]
+    firmware_build: Optional[str]
     is_adopting: bool
     is_adopted: bool
     is_adopted_by_other: bool

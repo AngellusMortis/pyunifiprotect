@@ -77,6 +77,8 @@ class SampleDataGenerator:
             "bridge": len(data["bridges"]),
             "sensor": len(data["sensors"]),
             "doorlock": len(data["doorlocks"]),
+            "chime": len(data["chimes"]),
+            "schedule": len(data["schedules"]),
         }
 
         data = await self.client.api_request("liveviews")

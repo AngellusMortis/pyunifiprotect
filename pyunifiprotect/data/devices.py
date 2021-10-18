@@ -419,7 +419,6 @@ class FeatureFlags(ProtectBaseObject):
     has_chime: bool
     has_external_ir: bool
     has_icr_sensitivity: bool
-    privacy_mask_capability: PrivacyMaskCapability
     has_ldc: bool
     has_led_ir: bool
     has_led_status: bool
@@ -439,6 +438,8 @@ class FeatureFlags(ProtectBaseObject):
     smart_detect_types: List[SmartDetectObjectType]
     motion_algorithms: List[str]
     has_square_event_thumbnail: bool
+    has_package_camera: bool
+    privacy_mask_capability: PrivacyMaskCapability
     has_smart_detect: bool
 
     # TODO:
@@ -459,6 +460,7 @@ class Camera(ProtectMotionDeviceModel):
     is_mic_enabled: bool
     is_recording: bool
     is_motion_detected: bool
+    is_smart_detected: bool
     phy_rate: int
     hdr_mode: bool
     # Recording Quality -> High Frame
@@ -469,6 +471,7 @@ class Camera(ProtectMotionDeviceModel):
     is_live_heatmap_enabled: bool
     anonymous_device_id: UUID
     event_stats: CameraEventStats
+    video_reconfiguration_in_progress: bool
     channels: List[CameraChannel]
     isp_settings: ISPSettings
     talkback_settings: TalkbackSettings
@@ -498,6 +501,7 @@ class Camera(ProtectMotionDeviceModel):
     # lastPrivacyZonePositionId
     # recordingSchedule
     # smartDetectLines
+    # lenses
 
     # not directly from Unifi
     last_ring_event_id: Optional[str] = None
@@ -572,3 +576,7 @@ class Viewer(ProtectAdoptableDeviceModel):
     @property
     def liveview(self) -> Liveview:
         return self.api.bootstrap.liveviews[self.liveview_id]
+
+
+class Bridge(ProtectAdoptableDeviceModel):
+    platform: str

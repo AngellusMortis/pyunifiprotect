@@ -47,6 +47,8 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
     BRIDGE = "bridge"
     SENSOR = "sensor"
     DOORLOCK = "doorlock"
+    SCHEDULE = "schedule"
+    CHIME = "chime"
 
     @staticmethod
     def bootstrap_models() -> List[str]:
@@ -64,6 +66,7 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
             ModelType.LIVEVIEW.value,
             ModelType.VIEWPORT.value,
             ModelType.LIGHT.value,
+            ModelType.BRIDGE.value,
         ]
 
 
@@ -136,8 +139,7 @@ class VideoMode(str, enum.Enum):
 class RecordingMode(str, enum.Enum):
     ALWAYS = "always"
     NEVER = "never"
-    MOTION_EVENTS = "motion"
-    SMART_DETECTIONS = "smartDetect"
+    DETECTIONS = "detections"
 
 
 class LEDLevel(ConstrainedInt):

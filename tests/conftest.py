@@ -197,8 +197,9 @@ def compare_objs(obj_type, expected, actual):
         del expected["apRssi"]
         del expected["elementInfo"]
         del expected["lastPrivacyZonePositionId"]
-        del expected["recordingSchedule"]
+        del expected["recordingSchedules"]
         del expected["smartDetectLines"]
+        del expected["lenses"]
         del expected["featureFlags"]["mountPositions"]
         del expected["featureFlags"]["focus"]
         del expected["featureFlags"]["pan"]
@@ -208,6 +209,7 @@ def compare_objs(obj_type, expected, actual):
     elif obj_type == ModelType.USER.value:
         del expected["settings"]
         del expected["alertRules"]
+        del expected["notificationsV2"]
         if expected["cloudAccount"] is not None:
             del expected["cloudAccount"]["profileImg"]
     elif obj_type == ModelType.EVENT.value:
