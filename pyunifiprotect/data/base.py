@@ -227,7 +227,7 @@ class ProtectDeviceModel(ProtectModelWithId):
         if "upSince" in data and data["upSince"] is not None:
             data["upSince"] = process_datetime(data, "upSince")
         if "uptime" in data and data["uptime"] is not None and not isinstance(data["uptime"], timedelta):
-            data["uptime"] = timedelta(milliseconds=data["uptime"])
+            data["uptime"] = timedelta(milliseconds=int(data["uptime"]))
 
         return super().clean_unifi_dict(data)
 

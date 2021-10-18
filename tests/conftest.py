@@ -216,4 +216,8 @@ def compare_objs(obj_type, expected, actual):
         del expected["metadata"]
         del expected["partition"]
 
+    # sometimes uptime comes back as a str...
+    if "uptime" in expected:
+        expected["uptime"] = int(expected["uptime"])
+
     assert expected == actual
