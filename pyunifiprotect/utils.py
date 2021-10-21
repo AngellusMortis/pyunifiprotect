@@ -46,7 +46,7 @@ def to_ms(duration: Optional[timedelta]) -> Optional[int]:
     if duration is None:
         return None
 
-    return int(duration.total_seconds() * 1000)
+    return int(round(duration.total_seconds() * 1000))
 
 
 def from_js_time(num: Union[int, float, str, datetime]) -> datetime:

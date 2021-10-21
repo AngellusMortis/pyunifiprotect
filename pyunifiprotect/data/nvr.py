@@ -378,7 +378,7 @@ class NVR(ProtectDeviceModel):
     network: str
     is_recording_disabled: bool
     is_recording_motion_only: bool
-    max_camera_capacity: Dict[Literal["4K", "HD"], int]
+    max_camera_capacity: Dict[Literal["4K", "2K", "HD"], int]
 
     # TODO:
     # uiVersion
