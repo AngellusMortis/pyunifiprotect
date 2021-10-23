@@ -42,7 +42,9 @@ def format_datetime(dt: Optional[datetime], default: Optional[str] = None):
 
 
 def is_online(data: Dict[str, Any]):
-    from pyunifiprotect.unifi_data import StateType  # pylint: disable=import-outside-toplevel
+    from pyunifiprotect.unifi_data import (  # pylint: disable=import-outside-toplevel
+        StateType,
+    )
 
     return data["state"] == StateType.CONNECTED.value
 

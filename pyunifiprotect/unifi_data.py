@@ -21,8 +21,8 @@ from .utils import (
     is_doorbell,
     is_online,
     process_datetime,
-    round_event_duration,
     round_event,
+    round_event_duration,
 )
 
 WS_HEADER_SIZE = 8

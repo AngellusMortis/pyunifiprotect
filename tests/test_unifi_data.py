@@ -3,10 +3,7 @@
 import base64
 import json
 
-from pyunifiprotect.unifi_data import (
-    ProtectWSPayloadFormat,
-    decode_ws_frame,
-)
+from pyunifiprotect.unifi_data import ProtectWSPayloadFormat, decode_ws_frame
 
 PACKET_B64 = b"AQEBAAAAAHR4nB2MQQrCMBBFr1JmbSDNpJnRG4hrDzBNZqCgqUiriHh3SZb/Pd7/guRtWSucBtgfRTaFwwBV39c+zqUJskQW1DufUVwkJsfFxDGLyRFj0dSz+1r0dtFPa+rr2dDSD8YsyceUpskQxzjjHIIQMvz+hMoj/AIBAQAAAAA1eJyrViotKMnMTVWyUjA0MjawMLQ0MDDQUVDKSSwuCU5NzQOJmxkbACUszE0sLQ1rAVU/DPU="
 PACKET_ACTION = {
