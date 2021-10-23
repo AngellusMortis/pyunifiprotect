@@ -15,6 +15,15 @@ from typing import Any, Dict, Optional, Type
 import zlib
 
 from .exceptions import WSDecodeError
+from .utils import (
+    format_datetime,
+    from_js_time,
+    is_doorbell,
+    is_online,
+    process_datetime,
+    round_event_duration,
+    round_event,
+)
 
 WS_HEADER_SIZE = 8
 _LOGGER = logging.getLogger(__name__)
@@ -61,8 +70,6 @@ EVENT_MOTION = EventType.MOTION.value
 EVENT_RING = EventType.RING.value
 EVENT_DISCONNECT = EventType.DISCONNECT.value
 EVENT_PROVISION = EventType.PROVISION.value
-
-EVENT_LENGTH_PRECISION = 3
 
 TYPE_MOTION_OFF = "off"
 TYPE_RECORD_NEVER = "never"
@@ -156,94 +163,69 @@ def decode_ws_frame(frame, position):
     return frame_obj.data, frame_obj.payload_format, position + frame_obj.length
 
 
-def process_viewport(server_id, viewport, include_events):
+def process_common(data: Dict[str, Any], server_id: Optional[str] = None, has_motion: bool = False) -> Dict[str, Any]:
+    """Processes common data from adoptable devices"""
+
+    processed_data = {
+        "name": str(data["name"]),
+        "type": data["modelKey"],
+        "model": str(data["type"]),
+        "mac": str(data["mac"]),
+        "ip_address": str(data["host"]),
+        "firmware_version": str(data["firmwareVersion"]),
+        "up_since": format_datetime(process_datetime(data, "upSince"), "Offline"),
+        "online": is_online(data),
+    }
+
+    if has_motion:
+        processed_data.update({"last_motion": format_datetime(process_datetime(data, "lastMotion"))})
+
+    if server_id is not None:
+        processed_data["server_id"] = server_id
+
+    return processed_data
+
+
+def process_viewport(
+    data: Dict[str, Any], server_id: Optional[str] = None, include_events: bool = False
+) -> Dict[str, Any]:
     """Process the viewport json."""
 
-    # Get if Viewport is Online
-    online = viewport["state"] == "CONNECTED"
-    # Get when the Viewport came online
-    upsince = (
-        "Offline"
-        if viewport["upSince"] is None
-        else datetime.datetime.fromtimestamp(int(viewport["upSince"]) / 1000).strftime("%Y-%m-%d %H:%M:%S")
+    processed_data = process_common(data, server_id=server_id, has_motion=include_events)
+
+    processed_data.update(
+        {
+            "liveview": str(data["liveview"]),
+        }
     )
 
-    viewport_update = {
-        "name": str(viewport["name"]),
-        "type": viewport["modelKey"],
-        "model": str(viewport["type"]),
-        "mac": str(viewport["mac"]),
-        "ip_address": str(viewport["host"]),
-        "firmware_version": str(viewport["firmwareVersion"]),
-        "up_since": upsince,
-        "online": online,
-        "liveview": str(viewport["liveview"]),
-    }
-
-    if server_id is not None:
-        viewport_update["server_id"] = server_id
-
-    return viewport_update
+    return processed_data
 
 
-def process_light(server_id, light, include_events):
+def process_light(
+    data: Dict[str, Any], server_id: Optional[str] = None, include_events: bool = False
+) -> Dict[str, Any]:
     """Process the light json."""
 
-    # Get if Light is Online
-    online = light["state"] == "CONNECTED"
-    # Get if Light is On
-    is_on = light["isLightOn"]
-    # Get Firmware Version
-    firmware_version = str(light["firmwareVersion"])
-    # Get when the light came online
-    upsince = (
-        "Offline"
-        if light["upSince"] is None
-        else datetime.datetime.fromtimestamp(int(light["upSince"]) / 1000).strftime("%Y-%m-%d %H:%M:%S")
+    processed_data = process_common(data, server_id=server_id, has_motion=include_events)
+
+    light_mode_settings = data.get("lightModeSettings", {})
+    device_settings = data.get("lightDeviceSettings", {})
+
+    processed_data.update(
+        {
+            "motion_mode": light_mode_settings.get("mode"),
+            "motion_mode_enabled_at": light_mode_settings.get("enableAt"),
+            "is_on": data["isLightOn"],
+            "brightness": int(device_settings.get("ledLevel")),
+            "lux_sensitivity": device_settings.get("luxSensitivity"),
+            "pir_duration": device_settings.get("pirDuration"),
+            "pir_sensitivity": device_settings.get("pirSensitivity"),
+            "status_light": device_settings.get("isIndicatorEnabled"),
+        }
     )
-    # Get Light Mode Settings
-    lightmodesettings = light.get("lightModeSettings")
-    motion_mode = lightmodesettings.get("mode")
-    motion_mode_enabled_at = lightmodesettings.get("enableAt")
-    # Get Light Device Setting
-    device_type = light["modelKey"]
-    lightdevicesettings = light.get("lightDeviceSettings")
-    brightness = lightdevicesettings.get("ledLevel")
-    lux_sensitivity = lightdevicesettings.get("luxSensitivity")
-    pir_duration = lightdevicesettings.get("pirDuration")
-    pir_sensitivity = lightdevicesettings.get("pirSensitivity")
-    status_light = lightdevicesettings.get("isIndicatorEnabled")
 
-    light_update = {
-        "name": str(light["name"]),
-        "type": device_type,
-        "model": str(light["type"]),
-        "mac": str(light["mac"]),
-        "ip_address": str(light["host"]),
-        "firmware_version": firmware_version,
-        "motion_mode": motion_mode,
-        "motion_mode_enabled_at": motion_mode_enabled_at,
-        "up_since": upsince,
-        "online": online,
-        "is_on": is_on,
-        "brightness": brightness,
-        "lux_sensitivity": lux_sensitivity,
-        "pir_duration": pir_duration,
-        "pir_sensitivity": pir_sensitivity,
-        "status_light": status_light,
-    }
-
-    if server_id is not None:
-        light_update["server_id"] = server_id
-
-    if include_events:
-        # Get the last time motion occured
-        light_update["last_motion"] = (
-            None
-            if light["lastMotion"] is None
-            else datetime.datetime.fromtimestamp(int(light["lastMotion"]) / 1000).strftime("%Y-%m-%d %H:%M:%S")
-        )
-    return light_update
+    return processed_data
 
 
 def process_sensor(server_id, sensor, include_events):
@@ -319,70 +301,26 @@ def process_sensor(server_id, sensor, include_events):
     return sensor_update
 
 
-def process_camera(server_id, host, camera, include_events):
+def process_camera(
+    data: Dict[str, Any], host: str, server_id: Optional[str] = None, include_events: bool = False
+) -> Dict[str, Any]:
     """Process the camera json."""
 
-    # If addtional keys are checked, update CAMERA_KEYS
+    processed_data = process_common(data, server_id=server_id, has_motion=include_events)
 
-    # Get if camera is online
-    online = camera["state"] == "CONNECTED"
-    # Get Recording Mode
-    recording_mode = str(camera["recordingSettings"]["mode"])
-    # Get Infrared Mode
-    ir_mode = str(camera["ispSettings"]["irLedMode"])
-    # Get Status Light Setting
-    status_light = camera["ledSettings"]["isEnabled"]
+    feature_flags = data.get("featureFlags", {})
 
-    # Get when the camera came online
-    upsince = (
-        "Offline"
-        if camera["upSince"] is None
-        else datetime.datetime.fromtimestamp(int(camera["upSince"]) / 1000).strftime("%Y-%m-%d %H:%M:%S")
-    )
-    # Check if Regular Camera or Doorbell
-    device_type = "camera" if "doorbell" not in str(camera["type"]).lower() else "doorbell"
-    # Get Firmware Version
-    firmware_version = str(camera["firmwareVersion"])
-
-    # Get High FPS Video Mode
-    featureflags = camera.get("featureFlags")
-    has_highfps = "highFps" in featureflags.get("videoModes", "")
-    video_mode = camera.get("videoMode") or "default"
-    # Get HDR Mode
-    has_hdr = featureflags.get("hasHdr")
-    hdr_mode = camera.get("hdrMode") or False
-    # Doorbell Chime
-    has_chime = featureflags.get("hasChime")
-    chime_enabled = camera.get("chimeDuration") not in CHIME_DISABLED
-    chime_duration = camera.get("chimeDuration")
-    # Get Microphone Volume
-    mic_volume = camera.get("micVolume") or 0
-    # Get SmartDetect capabilities
-    has_smartdetect = featureflags.get("hasSmartDetect")
-    # Can we switch LED on/off
-    has_ledstatus = featureflags.get("hasLedStatus")
-    # Get if soroundings are Dark
-    is_dark = camera.get("isDark") or False
-    # Get Optical Zom capabilities
-    has_opticalzoom = featureflags.get("canOpticalZoom")
-    zoom_position = str(camera["ispSettings"]["zoomPosition"])
-    # Wide Dynamic Range
-    wdr = str(camera["ispSettings"]["wdr"])
-    # Get Privacy Mode
-    privacyzones = camera.get("privacyZones")
     privacy_on = False
-    for row in privacyzones:
+    for row in data.get("privacyZones", []):
         if row["name"] == ZONE_NAME:
             privacy_on = row["points"] == PRIVACY_ON
             break
 
-    # Add rtsp streaming url if enabled
     rtsp = None
     image_width = None
     image_height = None
-    channels = camera["channels"]
     stream_sources = []
-    for channel in channels:
+    for channel in data["channels"]:
         if channel["isRtspEnabled"]:
             channel_width = channel.get("width")
             channel_height = channel.get("height")
@@ -411,56 +349,38 @@ def process_camera(server_id, host, camera, include_events):
                 }
             )
 
-    camera_update = {
-        "name": str(camera["name"]),
-        "type": device_type,
-        "model": str(camera["type"]),
-        "mac": str(camera["mac"]),
-        "ip_address": str(camera["host"]),
-        "firmware_version": firmware_version,
-        "recording_mode": recording_mode,
-        "ir_mode": ir_mode,
-        "status_light": status_light,
-        "rtsp": rtsp,
-        "image_width": image_width,
-        "image_height": image_height,
-        "up_since": upsince,
-        "online": online,
-        "has_highfps": has_highfps,
-        "has_hdr": has_hdr,
-        "video_mode": video_mode,
-        "hdr_mode": hdr_mode,
-        "mic_volume": mic_volume,
-        "has_smartdetect": has_smartdetect,
-        "has_ledstatus": has_ledstatus,
-        "is_dark": is_dark,
-        "privacy_on": privacy_on,
-        "has_opticalzoom": has_opticalzoom,
-        "zoom_position": zoom_position,
-        "wdr": wdr,
-        "has_chime": has_chime,
-        "chime_enabled": chime_enabled,
-        "chime_duration": chime_duration,
-        "stream_source": stream_sources,
-    }
+    processed_data.update(
+        {
+            "type": "doorbell" if is_doorbell(data) else "camera",
+            "recording_mode": str(data["recordingSettings"]["mode"]),
+            "ir_mode": str(data["ispSettings"]["irLedMode"]),
+            "status_light": data["ledSettings"]["isEnabled"],
+            "rtsp": rtsp,
+            "image_width": image_width,
+            "image_height": image_height,
+            "has_highfps": "highFps" in feature_flags.get("videoModes", ""),
+            "has_hdr": feature_flags.get("hasHdr"),
+            "video_mode": data.get("videoMode") or "default",
+            "hdr_mode": bool(data.get("hdrMode")),
+            "mic_volume": data.get("micVolume") or 0,
+            "has_smartdetect": feature_flags.get("hasSmartDetect"),
+            "has_ledstatus": feature_flags.get("hasLedStatus"),
+            "is_dark": bool(data.get("isDark")),
+            "privacy_on": privacy_on,
+            "has_opticalzoom": feature_flags.get("canOpticalZoom"),
+            "zoom_position": str(data["ispSettings"]["zoomPosition"]),
+            "wdr": str(data["ispSettings"]["wdr"]),
+            "has_chime": feature_flags.get("hasChime"),
+            "chime_enabled": data.get("chimeDuration") not in CHIME_DISABLED,
+            "chime_duration": data.get("chimeDuration"),
+            "stream_source": stream_sources,
+        }
+    )
 
-    if server_id is not None:
-        camera_update["server_id"] = server_id
     if include_events:
-        # Get the last time motion occured
-        camera_update["last_motion"] = (
-            None
-            if camera["lastMotion"] is None
-            else datetime.datetime.fromtimestamp(int(camera["lastMotion"]) / 1000).strftime("%Y-%m-%d %H:%M:%S")
-        )
-        # Get the last time doorbell was ringing
-        camera_update["last_ring"] = (
-            None
-            if camera.get("lastRing") is None
-            else datetime.datetime.fromtimestamp(int(camera["lastRing"]) / 1000).strftime("%Y-%m-%d %H:%M:%S")
-        )
+        processed_data["last_ring"] = format_datetime(process_datetime(data, "lastRing"))
 
-    return camera_update
+    return processed_data
 
 
 def event_from_ws_frames(state_machine, minimum_score, action_json, data_json):
@@ -536,7 +456,7 @@ def sensor_update_from_ws_frames(state_machine, action_json, data_json):
         return None, None
 
     _LOGGER.debug("Processing sensor: %s", sensor)
-    processed_sensor = process_light(None, sensor, True)
+    processed_sensor = process_light(sensor, include_events=True)
 
     return sensor_id, processed_sensor
 
@@ -560,7 +480,7 @@ def light_update_from_ws_frames(state_machine, action_json, data_json):
         return None, None
 
     _LOGGER.debug("Processing light: %s", light)
-    processed_light = process_light(None, light, True)
+    processed_light = process_light(light, include_events=True)
 
     return light_id, processed_light
 
@@ -584,7 +504,7 @@ def camera_update_from_ws_frames(state_machine, host, action_json, data_json):
         return None, None
 
     _LOGGER.debug("Processing camera: %s", camera)
-    processed_camera = process_camera(None, host, camera, True)
+    processed_camera = process_camera(camera, host=host, include_events=True)
 
     return camera_id, processed_camera
 
@@ -618,7 +538,7 @@ def camera_event_from_ws_frames(state_machine, action_json, data_json):
                 last_motion = round(time.time() * 1000)
 
     if start_time is not None and last_motion is not None:
-        event_length = round((float(last_motion) - float(start_time)) / 1000, EVENT_LENGTH_PRECISION)
+        event_length = round_event(last_motion, start_time)
 
     return {
         "event_on": event_on,
@@ -659,7 +579,7 @@ def light_event_from_ws_frames(state_machine, action_json, data_json):
                 last_motion = round(time.time() * 1000)
 
     if start_time is not None and last_motion is not None:
-        event_length = round((float(last_motion) - float(start_time)) / 1000, EVENT_LENGTH_PRECISION)
+        event_length = round_event(last_motion, start_time)
 
     return {
         "event_on": event_on,
@@ -700,7 +620,7 @@ def sensor_event_from_ws_frames(state_machine, action_json, data_json):
                 last_motion = round(time.time() * 1000)
 
     if start_time is not None and last_motion is not None:
-        event_length = round((float(last_motion) - float(start_time)) / 1000, EVENT_LENGTH_PRECISION)
+        event_length = round_event(last_motion, start_time)
 
     return {
         "event_on": event_on,
@@ -711,27 +631,24 @@ def sensor_event_from_ws_frames(state_machine, action_json, data_json):
     }
 
 
-def process_event(event, minimum_score, ring_interval):
+def process_event(event: Dict[str, Any], minimum_score: int, ring_interval: int) -> Dict[str, Any]:
     """Convert an event to our format."""
-    start = event.get("start")
-    end = event.get("end")
+
+    start = process_datetime(event, "start")
+    end = process_datetime(event, "end")
     event_type = event.get("type")
     score = event.get("score")
 
-    event_length = 0
-    start_time = None
-
-    if start:
-        start_time = _process_timestamp(start)
-    if end:
-        event_length = round((float(end) / 1000) - (float(start) / 1000), EVENT_LENGTH_PRECISION)
+    duration = datetime.timedelta(seconds=0)
+    if start and end:
+        duration = end - start
 
     processed_event = {
         "event_on": False,
         "event_ring_on": False,
         "event_type": event_type,
-        "event_start": start_time,
-        "event_length": event_length,
+        "event_start": format_datetime(start),
+        "event_length": round_event_duration(duration),
         "event_score": score,
     }
 
@@ -742,20 +659,19 @@ def process_event(event, minimum_score, ring_interval):
         # is not set in the followup motion event
         processed_event["event_object"] = None
 
-    if event_type in (EVENT_MOTION, EVENT_SMART_DETECT_ZONE):
-        processed_event["last_motion"] = start_time
+    if event_type in [EventType.MOTION.value, EventType.SMART_DETECT.value]:
+        processed_event["last_motion"] = processed_event["event_start"]
+
         if score is not None and int(score) >= minimum_score and not end:
             processed_event["event_on"] = True
     elif event_type == EVENT_RING:
-        processed_event["last_ring"] = start_time
+        processed_event["last_ring"] = processed_event["event_start"]
+
+        ring_cuttoff = from_js_time(ring_interval)
         if ring_interval == LIVE_RING_FROM_WEBSOCKET or not end:
-            _LOGGER.debug("EVENT: DOORBELL IS RINGING")
             processed_event["event_ring_on"] = True
-        elif start >= ring_interval and end >= ring_interval:
-            _LOGGER.debug("EVENT: DOORBELL HAS RUNG IN LAST 3 SECONDS!")
+        elif start and end and start >= ring_cuttoff and end >= ring_cuttoff:
             processed_event["event_ring_on"] = True
-        else:
-            _LOGGER.debug("EVENT: DOORBELL WAS NOT RUNG IN LAST 3 SECONDS")
 
     thumbail = event.get("thumbnail")
     if thumbail is not None:  # Only update if there is a new Motion Event
@@ -766,10 +682,6 @@ def process_event(event, minimum_score, ring_interval):
         processed_event["event_heatmap"] = heatmap
 
     return processed_event
-
-
-def _process_timestamp(time_stamp):
-    return datetime.datetime.fromtimestamp(int(time_stamp) / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
 class ProtectDeviceStateMachine:

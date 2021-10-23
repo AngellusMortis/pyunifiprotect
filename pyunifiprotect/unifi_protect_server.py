@@ -481,10 +481,10 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
             self._update_device(
                 camera_id,
                 process_camera(
-                    server_id,
-                    self._host,
                     camera,
-                    include_events or self._is_first_update,
+                    host=self._host,
+                    server_id=server_id,
+                    include_events=include_events or self._is_first_update,
                 ),
             )
 
@@ -504,7 +504,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
             self._update_device(
                 light_id,
-                process_light(server_id, light, include_events or self._is_first_update),
+                process_light(light, server_id=server_id, include_events=include_events or self._is_first_update),
             )
 
     def _process_sensors_json(self, json_response, server_id, include_events):
@@ -542,7 +542,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
             self._update_device(
                 viewport_id,
-                process_viewport(server_id, viewport, include_events or self._is_first_update),
+                process_viewport(viewport, server_id=server_id, include_events=include_events or self._is_first_update),
             )
 
     def _reset_device_events(self) -> None:
