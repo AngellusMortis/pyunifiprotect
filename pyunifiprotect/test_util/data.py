@@ -110,12 +110,35 @@ def legacy_process_camera(data: Dict[str, Any], host: str, server_id: Optional[s
     rtsp = None
     image_width = None
     image_height = None
+    stream_sources = []
     for channel in data["channels"]:
-        image_width = channel.get("width")
-        image_height = channel.get("height")
         if channel["isRtspEnabled"]:
-            rtsp = f"rtsps://{host}:7441/{channel['rtspAlias']}"
-            break
+            channel_width = channel.get("width")
+            channel_height = channel.get("height")
+            rtsp_url = f"rtsps://{host}:7441/{channel['rtspAlias']}?enableSrtp"
+
+            # ensure image_width/image_height is not None
+            if image_width is None:
+                image_width = channel_width
+                image_height = channel_height
+
+            # Always Return the Highest Default Resolution
+            # and make sure image_width/image_height comes from the same channel
+            if rtsp is None:
+                image_width = channel_width
+                image_height = channel_height
+                rtsp = rtsp_url
+
+            stream_sources.append(
+                {
+                    "name": channel.get("name"),
+                    "id": channel.get("id"),
+                    "video_id": channel.get("videoId"),
+                    "rtsp": rtsp_url,
+                    "image_width": channel_width,
+                    "image_height": channel_height,
+                }
+            )
 
     processed_data.update(
         {
@@ -142,6 +165,7 @@ def legacy_process_camera(data: Dict[str, Any], host: str, server_id: Optional[s
             "has_chime": feature_flags.get("hasChime"),
             "chime_enabled": data.get("chimeDuration") not in CHIME_DISABLED,
             "chime_duration": data.get("chimeDuration"),
+            "stream_source": stream_sources,
         }
     )
 

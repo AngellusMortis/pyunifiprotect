@@ -331,12 +331,35 @@ def process_camera(server_id, host, camera, include_events):
     image_width = None
     image_height = None
     channels = camera["channels"]
+    stream_sources = []
     for channel in channels:
-        image_width = channel.get("width")
-        image_height = channel.get("height")
         if channel["isRtspEnabled"]:
-            rtsp = f"rtsps://{host}:7441/{channel['rtspAlias']}"
-            break
+            channel_width = channel.get("width")
+            channel_height = channel.get("height")
+            rtsp_url = f"rtsps://{host}:7441/{channel['rtspAlias']}?enableSrtp"
+
+            # ensure image_width/image_height is not None
+            if image_width is None:
+                image_width = channel_width
+                image_height = channel_height
+
+            # Always Return the Highest Default Resolution
+            # and make sure image_width/image_height comes from the same channel
+            if rtsp is None:
+                image_width = channel_width
+                image_height = channel_height
+                rtsp = rtsp_url
+
+            stream_sources.append(
+                {
+                    "name": channel.get("name"),
+                    "id": channel.get("id"),
+                    "video_id": channel.get("videoId"),
+                    "rtsp": rtsp_url,
+                    "image_width": channel_width,
+                    "image_height": channel_height,
+                }
+            )
 
     camera_update = {
         "name": str(camera["name"]),
@@ -368,6 +391,7 @@ def process_camera(server_id, host, camera, include_events):
         "has_chime": has_chime,
         "chime_enabled": chime_enabled,
         "chime_duration": chime_duration,
+        "stream_source": stream_sources,
     }
 
     if server_id is not None:
