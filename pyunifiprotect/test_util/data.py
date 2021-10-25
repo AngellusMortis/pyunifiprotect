@@ -108,9 +108,8 @@ def legacy_process_camera(data: Dict[str, Any], host: str, server_id: Optional[s
         doorbell_text = lcdmessage.get("text")
 
     # Get Privacy Mode
-    privacyzones = data.get("privacyZones")
     privacy_on = False
-    for row in privacyzones:
+    for row in data.get("privacyZones", []):
         if row["name"] == ZONE_NAME:
             privacy_on = row["points"] == PRIVACY_ON
             break

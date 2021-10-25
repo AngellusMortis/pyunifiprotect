@@ -374,9 +374,8 @@ def process_camera(server_id, host, camera, include_events):
     if lcdmessage is not None:
         doorbell_text = lcdmessage.get("text")
     # Get Privacy Mode
-    privacyzones = camera.get("privacyZones")
     privacy_on = False
-    for row in privacyzones:
+    for row in camera.get("privacyZones", []):
         if row["name"] == ZONE_NAME:
             privacy_on = row["points"] == PRIVACY_ON
             break
