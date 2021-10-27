@@ -11,22 +11,22 @@ from uuid import UUID
 from pydantic.fields import PrivateAttr
 import pytz
 
-from ..utils import process_datetime
-from .base import (
+from pyunifiprotect.data.base import (
     ProtectBaseObject,
     ProtectDeviceModel,
     ProtectModel,
     ProtectModelWithId,
 )
-from .devices import Bridge, Camera, Light, Viewer
-from .types import (
+from pyunifiprotect.data.devices import Bridge, Camera, Light, Viewer
+from pyunifiprotect.data.types import (
     DoorbellMessageType,
     EventType,
     FixSizeOrderedDict,
     ModelType,
     SmartDetectObjectType,
 )
-from .websocket import WSJSONPacketFrame, WSPacket
+from pyunifiprotect.data.websocket import WSJSONPacketFrame, WSPacket
+from pyunifiprotect.utils import process_datetime
 
 _LOGGER = logging.getLogger(__name__)
 

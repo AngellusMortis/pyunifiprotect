@@ -15,8 +15,8 @@ from aiohttp.client import _WSRequestContextManager
 import jwt
 from yarl import URL
 
-from .const import SERVER_ID, SERVER_NAME
-from .data import (
+from pyunifiprotect.const import SERVER_ID, SERVER_NAME
+from pyunifiprotect.data import (
     Bootstrap,
     Event,
     EventType,
@@ -24,8 +24,8 @@ from .data import (
     ProtectWSPayloadFormat,
     WSPacket,
 )
-from .exceptions import BadRequest, NotAuthorized, NvrError
-from .unifi_data import (
+from pyunifiprotect.exceptions import BadRequest, NotAuthorized, NvrError
+from pyunifiprotect.unifi_data import (
     DEVICE_MODEL_LIGHT,
     EVENT_MOTION,
     EVENT_RING,
@@ -51,7 +51,7 @@ from .unifi_data import (
     sensor_event_from_ws_frames,
     sensor_update_from_ws_frames,
 )
-from .utils import get_response_reason, to_js_time
+from pyunifiprotect.utils import get_response_reason, to_js_time
 
 NEVER_RAN = -1000
 DEVICE_UPDATE_INTERVAL_SECONDS = 60

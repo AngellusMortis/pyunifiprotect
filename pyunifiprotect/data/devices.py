@@ -8,13 +8,12 @@ from uuid import UUID
 
 from pydantic.color import Color
 
-from ..utils import process_datetime, serialize_point, to_js_time
-from .base import (
+from pyunifiprotect.data.base import (
     ProtectAdoptableDeviceModel,
     ProtectBaseObject,
     ProtectMotionDeviceModel,
 )
-from .types import (
+from pyunifiprotect.data.types import (
     DoorbellMessageType,
     LEDLevel,
     LightModeEnableType,
@@ -25,9 +24,10 @@ from .types import (
     SmartDetectObjectType,
     VideoMode,
 )
+from pyunifiprotect.utils import process_datetime, serialize_point, to_js_time
 
 if TYPE_CHECKING:
-    from .nvr import Event, Liveview
+    from pyunifiprotect.data.nvr import Event, Liveview
 
 
 class LightDeviceSettings(ProtectBaseObject):

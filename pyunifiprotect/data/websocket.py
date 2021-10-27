@@ -2,20 +2,20 @@
 from __future__ import annotations
 
 import base64
+from dataclasses import dataclass
 import json
 import struct
 from typing import Optional, Type
 import zlib
 
-from pydantic import BaseModel
-
-from ..exceptions import WSDecodeError
-from .types import ProtectWSPayloadFormat
+from pyunifiprotect.data.types import ProtectWSPayloadFormat
+from pyunifiprotect.exceptions import WSDecodeError
 
 WS_HEADER_SIZE = 8
 
 
-class WSPacketFrameHeader(BaseModel):
+@dataclass
+class WSPacketFrameHeader:
     packet_type: int
     payload_format: int
     deflated: int

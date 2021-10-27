@@ -88,6 +88,10 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     def device_events() -> List[str]:
         return [EventType.MOTION.value, EventType.RING.value, EventType.SMART_DETECT.value]
 
+    @staticmethod
+    def motion_events() -> List[str]:
+        return [EventType.MOTION.value, EventType.SMART_DETECT.value]
+
 
 @enum.unique
 class StateType(str, enum.Enum):

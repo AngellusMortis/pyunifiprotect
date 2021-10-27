@@ -10,11 +10,14 @@ from PIL import Image
 import aiohttp
 import typer
 
-from ..data import WSJSONPacketFrame, WSPacket
-from ..exceptions import NvrError
-from ..test_util.anonymize import anonymize_data, anonymize_prefixed_event_id
-from ..unifi_data import EVENT_MOTION, EVENT_SMART_DETECT_ZONE, LIVE_RING_FROM_WEBSOCKET
-from ..unifi_protect_server import UpvServer
+from pyunifiprotect.data import EventType, WSJSONPacketFrame, WSPacket
+from pyunifiprotect.exceptions import NvrError
+from pyunifiprotect.test_util.anonymize import (
+    anonymize_data,
+    anonymize_prefixed_event_id,
+)
+from pyunifiprotect.unifi_data import LIVE_RING_FROM_WEBSOCKET
+from pyunifiprotect.unifi_protect_server import UpvServer
 
 SLEEP_INTERVAL = 2
 
@@ -139,7 +142,7 @@ class SampleDataGenerator:
         data = await self.client.get_raw_events()
         heatmap_event = None
         for event in data:
-            if event.get("heatmap") is not None and event.get("type") in (EVENT_MOTION, EVENT_SMART_DETECT_ZONE):
+            if event.get("heatmap") is not None and event.get("type") in EventType.motion_events():
                 heatmap_event = event
 
         data = self.write_json_file("sample_raw_events", data)

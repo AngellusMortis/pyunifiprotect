@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Any, Dict, Optional
 
-from ..unifi_data import (
+from pyunifiprotect.unifi_data import (
     CHIME_DISABLED,
     EVENT_LENGTH_PRECISION,
     EVENT_RING,
@@ -10,7 +10,7 @@ from ..unifi_data import (
     ZONE_NAME,
     EventType,
 )
-from ..utils import (
+from pyunifiprotect.utils import (
     format_datetime,
     from_js_time,
     is_doorbell,

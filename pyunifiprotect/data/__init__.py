@@ -1,6 +1,6 @@
-from .base import ProtectModel
-from .devices import Camera, Light, Viewer
-from .nvr import (
+from pyunifiprotect.data.base import ProtectModel
+from pyunifiprotect.data.devices import Camera, Light, Viewer
+from pyunifiprotect.data.nvr import (
     NVR,
     Bootstrap,
     CloudAccount,
@@ -11,7 +11,7 @@ from .nvr import (
     User,
     UserLocation,
 )
-from .types import (
+from pyunifiprotect.data.types import (
     DoorbellMessageType,
     EventType,
     FixSizeOrderedDict,
@@ -22,7 +22,7 @@ from .types import (
     SmartDetectObjectType,
     StateType,
 )
-from .websocket import (
+from pyunifiprotect.data.websocket import (
     WS_HEADER_SIZE,
     WSJSONPacketFrame,
     WSPacket,

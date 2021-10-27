@@ -12,7 +12,7 @@ from aiohttp import ClientResponse
 from pydantic.color import Color
 from pydantic.utils import to_camel
 
-from .data.types import Percent
+from pyunifiprotect.data.types import Percent
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 CoordType = Union[Percent, int, float]
@@ -96,7 +96,9 @@ def to_camel_case(name: str) -> str:
 
 
 def serialize_unifi_obj(value: Any) -> Any:
-    from .data.base import ProtectModel  # pylint: disable=import-outside-toplevel
+    from pyunifiprotect.data.base import (  # pylint: disable=import-outside-toplevel
+        ProtectModel,
+    )
 
     if isinstance(value, ProtectModel):
         value = value.unifi_dict()

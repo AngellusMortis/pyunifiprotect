@@ -18,13 +18,13 @@ from typing import (
 from pydantic import BaseModel
 from pydantic.fields import PrivateAttr
 
-from ..exceptions import BadRequest, DataDecodeError
-from ..utils import process_datetime, serialize_unifi_obj, to_snake_case
-from .types import ModelType, StateType
+from pyunifiprotect.data.types import ModelType, StateType
+from pyunifiprotect.exceptions import BadRequest, DataDecodeError
+from pyunifiprotect.utils import process_datetime, serialize_unifi_obj, to_snake_case
 
 if TYPE_CHECKING:
-    from ..unifi_protect_server import ProtectApiClient
-    from .nvr import Event
+    from pyunifiprotect.data.nvr import Event
+    from pyunifiprotect.unifi_protect_server import ProtectApiClient
 
 
 T = TypeVar("T", bound="ProtectBaseObject ")
@@ -131,13 +131,13 @@ class ProtectModel(ProtectBaseObject):
 
     @staticmethod
     def klass_from_dict(data: Dict[str, Any]) -> Type[ProtectModel]:
-        from .devices import (  # pylint: disable=import-outside-toplevel
+        from pyunifiprotect.data.devices import (  # pylint: disable=import-outside-toplevel
             Bridge,
             Camera,
             Light,
             Viewer,
         )
-        from .nvr import (  # pylint: disable=import-outside-toplevel
+        from pyunifiprotect.data.nvr import (  # pylint: disable=import-outside-toplevel
             NVR,
             CloudAccount,
             Event,

@@ -8,9 +8,9 @@ from typing import Optional, Union
 
 import typer
 
-from .data import WSPacket
-from .test_util import SampleDataGenerator
-from .unifi_protect_server import _LOGGER, ProtectApiClient, UpvServer
+from pyunifiprotect.data import WSPacket
+from pyunifiprotect.test_util import SampleDataGenerator
+from pyunifiprotect.unifi_protect_server import _LOGGER, ProtectApiClient, UpvServer
 
 try:
     from IPython import embed  # type: ignore

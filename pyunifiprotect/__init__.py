@@ -1,6 +1,6 @@
 """Python Wrapper for Unifi Protect."""
-from .exceptions import Invalid, NotAuthorized, NvrError
-from .unifi_protect_server import ProtectApiClient, UpvServer
+from pyunifiprotect.exceptions import Invalid, NotAuthorized, NvrError
+from pyunifiprotect.unifi_protect_server import ProtectApiClient, UpvServer
 
 __all__ = [
     "Invalid",

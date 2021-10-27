@@ -6,7 +6,7 @@ import uuid
 
 import typer
 
-from ..unifi_data import ModelType
+from pyunifiprotect.unifi_data import ModelType
 
 object_id_mapping: Dict[str, str] = {}
 
