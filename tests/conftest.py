@@ -4,7 +4,7 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
-from typing import List
+from typing import Any, Dict
 from unittest.mock import AsyncMock, Mock
 
 import aiohttp
@@ -35,20 +35,20 @@ def get_now():
     return datetime.fromisoformat(CONSTANTS["time"]).replace(microsecond=0)
 
 
-async def mock_api_request(path: str, raw: bool = False, *args, **kwargs):
+async def mock_api_request_raw(url: str, *args, **kwargs):
+    if url.startswith("thumbnails/"):
+        return read_binary_file("sample_camera_thumbnail")
+    elif url.startswith("cameras/"):
+        return read_binary_file("sample_camera_snapshot")
+    return b""
 
-    if raw:
-        if path.startswith("thumbnails/"):
-            return read_binary_file("sample_camera_thumbnail")
-        elif path.startswith("cameras/"):
-            return read_binary_file("sample_camera_snapshot")
-        return b""
 
-    if path == "bootstrap":
+async def mock_api_request(url: str, *args, **kwargs):
+    if url == "bootstrap":
         return read_json_file("sample_bootstrap")
-    elif path == "events":
+    elif url == "events":
         return read_json_file("sample_raw_events")
-    elif path == "liveviews":
+    elif url == "liveviews":
         return read_json_file("sample_liveviews")
 
     return {}
@@ -57,7 +57,7 @@ async def mock_api_request(path: str, raw: bool = False, *args, **kwargs):
 class MockWebsocket:
     is_closed: bool = False
     now: float = 0
-    events: List[dict]
+    events: Dict[str, Any]
     count = 0
 
     def __init__(self):
@@ -92,6 +92,7 @@ MockDatetime.now.return_value = get_now()
 async def old_protect_client():
     client = UpvServer(None, "127.0.0.1", 0, "username", "password")
     client.api_request = AsyncMock(side_effect=mock_api_request)
+    client.api_request_raw = AsyncMock(side_effect=mock_api_request_raw)
     client.ensure_authenticated = AsyncMock()
     client.ws_session = AsyncMock()
     client.ws_session.ws_connect = AsyncMock(return_value=MockWebsocket())
@@ -117,6 +118,7 @@ async def protect_client():
     client = ProtectApiClient("127.0.0.1", 0, "username", "password")
     client.is_unifi_os = False
     client.api_request = AsyncMock(side_effect=mock_api_request)
+    client.api_request_raw = AsyncMock(side_effect=mock_api_request_raw)
     client.ensure_authenticated = AsyncMock()
 
     await client.update(True)
@@ -145,7 +147,7 @@ async def protect_client_ws():
         client.ws_task.cancel()
 
     # empty out websockets
-    while client.ws_connection is not None and not client.ws_task.done():
+    while client.ws_connection is not None and client.ws_task is not None and not client.ws_task.done():
         await asyncio.sleep(0.1)
 
 

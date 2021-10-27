@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from pyunifiprotect.unifi_protect_server import ProtectApiClient
 
 
-T = TypeVar("T", bound="ProtectBaseObject ")
+T = TypeVar("T", bound="ProtectBaseObject")
 
 
 class ProtectBaseObject(BaseModel):
@@ -35,12 +35,12 @@ class ProtectBaseObject(BaseModel):
     _initial_data: Dict[str, Any] = PrivateAttr()
 
     UNIFI_REMAP: ClassVar[Dict[str, str]] = {}
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {}
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {}  # type: ignore
 
     class Config:
         arbitrary_types_allowed = True
 
-    def __init__(self, api=None, **data: Any) -> None:
+    def __init__(self, api: Optional[ProtectApiClient] = None, **data: Any) -> None:
         data["api"] = api
         data = self.clean_unifi_dict(data)
         super().__init__(**data)

@@ -5,11 +5,11 @@ import base64
 from dataclasses import dataclass
 import json
 import struct
-from typing import Optional, Type
+from typing import Any, Dict, Optional, Type
 import zlib
 
 from pyunifiprotect.data.types import ProtectWSPayloadFormat
-from pyunifiprotect.exceptions import WSDecodeError
+from pyunifiprotect.exceptions import WSDecodeError, WSEncodeError
 
 WS_HEADER_SIZE = 8
 
@@ -23,28 +23,24 @@ class WSPacketFrameHeader:
     payload_size: int
 
 
-class WSRawPacketFrame:
-    data: bytes = b""
+class BaseWSPacketFrame:
+    data: Any
     position: int = 0
     header: Optional[WSPacketFrameHeader] = None
     payload_format: ProtectWSPayloadFormat = ProtectWSPayloadFormat.NodeBuffer
     is_deflated: bool = False
     length: int = 0
 
-    def set_data_from_binary(self, data: bytes):
+    def set_data_from_binary(self, data: bytes) -> None:
         self.data = data
         if self.header is not None and self.header.deflated:
             self.data = zlib.decompress(self.data)
 
     def get_binary_from_data(self) -> bytes:
-        data = self.data
-        if self.is_deflated:
-            data = zlib.compress(data)
-
-        return data
+        raise NotImplementedError()
 
     @staticmethod
-    def klass_from_format(format_raw=bytes):
+    def klass_from_format(format_raw: int) -> Type[BaseWSPacketFrame]:
         payload_format = ProtectWSPayloadFormat(format_raw)
 
         if payload_format == ProtectWSPayloadFormat.JSON:
@@ -53,7 +49,9 @@ class WSRawPacketFrame:
         return WSRawPacketFrame
 
     @staticmethod
-    def from_binary(data: bytes, position: int = 0, klass: Optional[Type[WSRawPacketFrame]] = None) -> WSRawPacketFrame:
+    def from_binary(
+        data: bytes, position: int = 0, klass: Optional[Type[WSRawPacketFrame]] = None
+    ) -> BaseWSPacketFrame:
         """Decode a unifi updates websocket frame."""
         # The format of the frame is
         # b: packet_type
@@ -92,7 +90,10 @@ class WSRawPacketFrame:
         return frame
 
     @property
-    def packed(self):
+    def packed(self) -> bytes:
+        if self.header is None:
+            raise WSEncodeError("No header to encode")
+
         data = self.get_binary_from_data()
         header = struct.pack(
             "!bbbbi",
@@ -106,11 +107,22 @@ class WSRawPacketFrame:
         return header + data
 
 
-class WSJSONPacketFrame(WSRawPacketFrame):
-    data: dict = {}  # type: ignore
+class WSRawPacketFrame(BaseWSPacketFrame):
+    data: bytes = b""
+
+    def get_binary_from_data(self) -> bytes:
+        data = self.data
+        if self.is_deflated:
+            data = zlib.compress(data)
+
+        return data
+
+
+class WSJSONPacketFrame(BaseWSPacketFrame):
+    data: Dict[str, Any] = {}
     payload_format: ProtectWSPayloadFormat = ProtectWSPayloadFormat.NodeBuffer
 
-    def set_data_from_binary(self, data: bytes):
+    def set_data_from_binary(self, data: bytes) -> None:
         if self.header is not None and self.header.deflated:
             data = zlib.decompress(data)
 
@@ -132,18 +144,18 @@ class WSPacket:
     _raw: bytes
     _raw_encoded: Optional[str] = None
 
-    _action_frame: Optional[WSRawPacketFrame] = None
-    _data_frame: Optional[WSRawPacketFrame] = None
+    _action_frame: Optional[BaseWSPacketFrame] = None
+    _data_frame: Optional[BaseWSPacketFrame] = None
 
     def __init__(self, data: bytes):
         self._raw = data
 
-    def decode(self):
+    def decode(self) -> None:
         self._action_frame = WSRawPacketFrame.from_binary(self._raw)
         self._data_frame = WSRawPacketFrame.from_binary(self._raw, self._action_frame.length)
 
     @property
-    def action_frame(self) -> WSRawPacketFrame:
+    def action_frame(self) -> BaseWSPacketFrame:
         if self._action_frame is None:
             self.decode()
 
@@ -153,7 +165,7 @@ class WSPacket:
         return self._action_frame
 
     @property
-    def data_frame(self) -> WSRawPacketFrame:
+    def data_frame(self) -> BaseWSPacketFrame:
         if self._data_frame is None:
             self.decode()
 
@@ -167,7 +179,7 @@ class WSPacket:
         return self._raw
 
     @raw.setter
-    def raw(self, data: bytes):
+    def raw(self, data: bytes) -> None:
         self._raw = data
         self._action_frame = None
         self._data_frame = None

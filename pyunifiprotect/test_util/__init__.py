@@ -4,7 +4,7 @@ import asyncio
 from datetime import datetime
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from PIL import Image
 import aiohttp
@@ -22,7 +22,7 @@ from pyunifiprotect.unifi_protect_server import UpvServer
 SLEEP_INTERVAL = 2
 
 
-def placeholder_image(output_path: Path, width: int, height: Optional[int] = None):
+def placeholder_image(output_path: Path, width: int, height: Optional[int] = None) -> None:
     if height is None:
         height = width
 
@@ -36,25 +36,25 @@ class SampleDataGenerator:
     _record_num_ws: int = 0
     _record_ws_start_time: datetime = datetime.now()
     _record_listen_for_events: bool = False
-    _record_ws_messages: Dict[str, dict] = {}
+    _record_ws_messages: Dict[str, Dict[str, Any]] = {}
 
-    constants: dict = {}
+    constants: Dict[str, Any] = {}
     client: UpvServer
     output_folder: Path
     anonymize: bool
     wait_time: int
 
-    def __init__(self, client: UpvServer, output: Path, anonymize: bool, wait_time: int):
+    def __init__(self, client: UpvServer, output: Path, anonymize: bool, wait_time: int) -> None:
         self.client = client
         self.output_folder = output
         self.anonymize = anonymize
         self.wait_time = wait_time
 
-    def generate(self):
+    def generate(self) -> None:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(self.async_generate())
 
-    async def async_generate(self, close_session=True):
+    async def async_generate(self, close_session: bool = True) -> None:
         typer.echo(f"Output folder: {self.output_folder}")
         self.output_folder.mkdir(parents=True, exist_ok=True)
         self.client.ws_callback = self._handle_ws_message
@@ -62,31 +62,30 @@ class SampleDataGenerator:
         typer.echo("Updating devices...")
         await self.client.update(True)
 
-        data = await self.client.api_request("bootstrap")
-        data = self.write_json_file("sample_bootstrap", data)
-        self.constants["server_name"] = data["nvr"]["name"]
-        self.constants["server_id"] = data["nvr"]["mac"]
-        self.constants["server_version"] = data["nvr"]["version"]
-        self.constants["server_ip"] = data["nvr"]["host"]
-        self.constants["last_update_id"] = data["lastUpdateId"]
-        self.constants["user_id"] = data["authUserId"]
+        bootstrap: Dict[str, Any] = await self.client.api_request_obj("bootstrap")
+        bootstrap = self.write_json_file("sample_bootstrap", bootstrap)  # type: ignore
+        self.constants["server_name"] = bootstrap["nvr"]["name"]
+        self.constants["server_id"] = bootstrap["nvr"]["mac"]
+        self.constants["server_version"] = bootstrap["nvr"]["version"]
+        self.constants["last_update_id"] = bootstrap["lastUpdateId"]
+        self.constants["user_id"] = bootstrap["authUserId"]
         self.constants["counts"] = {
-            "camera": len(data["cameras"]),
-            "user": len(data["users"]),
-            "group": len(data["groups"]),
-            "liveview": len(data["liveviews"]),
-            "viewer": len(data["viewers"]),
-            "display": len(data["displays"]),
-            "light": len(data["lights"]),
-            "bridge": len(data["bridges"]),
-            "sensor": len(data["sensors"]),
-            "doorlock": len(data["doorlocks"]),
-            "chime": len(data["chimes"]),
-            "schedule": len(data["schedules"]),
+            "camera": len(bootstrap["cameras"]),
+            "user": len(bootstrap["users"]),
+            "group": len(bootstrap["groups"]),
+            "liveview": len(bootstrap["liveviews"]),
+            "viewer": len(bootstrap["viewers"]),
+            "display": len(bootstrap["displays"]),
+            "light": len(bootstrap["lights"]),
+            "bridge": len(bootstrap["bridges"]),
+            "sensor": len(bootstrap["sensors"]),
+            "doorlock": len(bootstrap["doorlocks"]),
+            "chime": len(bootstrap["chimes"]),
+            "schedule": len(bootstrap["schedules"]),
         }
 
-        data = await self.client.api_request("liveviews")
-        data = self.write_json_file("sample_liveviews", data)
+        liveviews: List[Any] = await self.client.api_request_list("liveviews")
+        liveviews = self.write_json_file("sample_liveviews", liveviews)  # type: ignore
 
         await self.record_ws_events()
         heatmap_event = await self.generate_event_data()
@@ -97,7 +96,7 @@ class SampleDataGenerator:
 
         self.write_json_file("sample_constants", self.constants, anonymize=False)
 
-    async def record_ws_events(self):
+    async def record_ws_events(self) -> None:
         if self.wait_time <= 0:
             typer.echo("Skipping recording Websocket messages...")
             return
@@ -116,7 +115,9 @@ class SampleDataGenerator:
         await self.client.async_disconnect_ws()
         self.write_json_file("sample_ws_messages", self._record_ws_messages, anonymize=False)
 
-    def write_json_file(self, name: str, data: dict, anonymize: Optional[bool] = None):
+    def write_json_file(
+        self, name: str, data: Union[List[Any], Dict[str, Any]], anonymize: Optional[bool] = None
+    ) -> Union[List[Any], Dict[str, Any]]:
         if anonymize is None:
             anonymize = self.anonymize
 
@@ -130,7 +131,7 @@ class SampleDataGenerator:
 
         return data
 
-    def write_image_file(self, name: str, raw: Optional[bytes]):
+    def write_image_file(self, name: str, raw: Optional[bytes]) -> None:
         if raw is None:
             typer.echo(f"No image data, skipping {name}...")
             return
@@ -139,14 +140,14 @@ class SampleDataGenerator:
         with open(self.output_folder / f"{name}.png", "wb") as f:
             f.write(raw)
 
-    async def generate_event_data(self):
+    async def generate_event_data(self) -> Optional[Dict[str, Any]]:
         data = await self.client.get_raw_events()
         heatmap_event = None
         for event in data:
             if event.get("heatmap") is not None and event.get("type") in EventType.motion_events():
-                heatmap_event = event
+                heatmap_event: Dict[str, Any] = event
 
-        data = self.write_json_file("sample_raw_events", data)
+        data = self.write_json_file("sample_raw_events", data)  # type: ignore
         self.constants["time"] = datetime.now().isoformat()
         self.constants["event_count"] = len(data)
 
@@ -154,7 +155,7 @@ class SampleDataGenerator:
         await self.client._get_events()
         return heatmap_event
 
-    async def generate_device_data(self, camera_heatmap_event: Optional[Dict[str, Any]]):
+    async def generate_device_data(self, camera_heatmap_event: Optional[Dict[str, Any]]) -> None:
         has_heatmap = False
         is_camera_online = False
         camera_id: Optional[str] = None
@@ -205,7 +206,7 @@ class SampleDataGenerator:
         else:
             await self.generate_viewport_data(viewport_id)
 
-    async def generate_camera_data(self, camera_id: str, heatmap_event: Optional[Dict[str, Any]]):
+    async def generate_camera_data(self, camera_id: str, heatmap_event: Optional[Dict[str, Any]]) -> None:
         filename = "sample_camera_thumbnail"
         thumbnail = self.client.devices[camera_id]["event_thumbnail"]
         if thumbnail is None:
@@ -230,7 +231,7 @@ class SampleDataGenerator:
             self.write_image_file(filename, await self.client.get_snapshot_image(camera_id=camera_id))
 
         data = await self.client._get_camera_detail(camera_id=camera_id)
-        data = self.write_json_file("sample_camera", data)
+        data = self.write_json_file("sample_camera", data)  # type: ignore
 
         if heatmap_event is not None:
             self.client._process_events([heatmap_event], LIVE_RING_FROM_WEBSOCKET)
@@ -247,15 +248,15 @@ class SampleDataGenerator:
             if img is not None:
                 self.write_image_file("sample_camera_heatmap", img)
 
-    async def generate_light_data(self, light_id: str):
+    async def generate_light_data(self, light_id: str) -> None:
         data = await self.client._get_light_detail(light_id=light_id)
-        data = self.write_json_file("sample_light", data)
+        data = self.write_json_file("sample_light", data)  # type: ignore
 
-    async def generate_viewport_data(self, viewport_id: str):
+    async def generate_viewport_data(self, viewport_id: str) -> None:
         data = await self.client._get_viewport_detail(viewport_id=viewport_id)
-        data = self.write_json_file("sample_viewport", data)
+        data = self.write_json_file("sample_viewport", data)  # type: ignore
 
-    def _handle_ws_message(self, msg: aiohttp.WSMessage):
+    def _handle_ws_message(self, msg: aiohttp.WSMessage) -> None:
         if not self._record_listen_for_events:
             return
 

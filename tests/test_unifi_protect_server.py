@@ -63,7 +63,10 @@ async def test_get_events_raw_default(protect_client: ProtectApiClient, now: dat
     end = now + timedelta(seconds=10)
 
     protect_client.api_request.assert_called_with(  # type: ignore
-        "events",
+        url="events",
+        method="get",
+        require_auth=True,
+        raise_exception=True,
         params={
             "start": to_js_time(end - timedelta(hours=24)),
             "end": to_js_time(end),
@@ -80,7 +83,10 @@ async def test_get_events_raw_limit(protect_client: ProtectApiClient):
     await protect_client.get_events_raw(limit=10)
 
     protect_client.api_request.assert_called_with(  # type: ignore
-        "events",
+        url="events",
+        method="get",
+        require_auth=True,
+        raise_exception=True,
         params={"limit": 10},
     )
 
@@ -90,7 +96,10 @@ async def test_get_events_raw_cameras(protect_client: ProtectApiClient):
     await protect_client.get_events_raw(limit=10, camera_ids=["test1", "test2"])
 
     protect_client.api_request.assert_called_with(  # type: ignore
-        "events",
+        url="events",
+        method="get",
+        require_auth=True,
+        raise_exception=True,
         params={"limit": 10, "cameras": "test1,test2"},
     )
 

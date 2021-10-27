@@ -72,7 +72,7 @@ def format_datetime(dt: Optional[datetime], default: Optional[str] = None) -> Op
 
 def is_online(data: Dict[str, Any]) -> bool:
 
-    return data["state"] == "CONNECTED"
+    return bool(data["state"] == "CONNECTED")
 
 
 def is_doorbell(data: Dict[str, Any]) -> bool:
@@ -120,7 +120,7 @@ def serialize_unifi_obj(value: Any) -> Any:
     return value
 
 
-def serialize_dict(data: Dict[str, Any]):
+def serialize_dict(data: Dict[str, Any]) -> Dict[str, Any]:
     for key in list(data.keys()):
         data[to_camel_case(key)] = serialize_unifi_obj(data.pop(key))
 

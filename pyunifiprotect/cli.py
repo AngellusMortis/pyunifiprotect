@@ -4,7 +4,7 @@ import json
 import logging
 from pathlib import Path
 import sys
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import typer
 
@@ -64,19 +64,8 @@ ARG_WS_DATA = typer.Argument(None, help="base64 encoded Websocket message")
 app = typer.Typer()
 
 
-def _get_server(username, password, address, port, verify, new: bool = False):
-    if new:
-        protect: Union[ProtectApiClient, UpvServer] = ProtectApiClient(
-            address, port, username, password, verify_ssl=verify
-        )
-    else:
-        protect = UpvServer(None, address, port, username, password, verify_ssl=verify)
-
-    return protect
-
-
-def _call_unifi(protect, method, *args, repeat=1):
-    async def callback():
+def _call_unifi(protect: Union[UpvServer, ProtectApiClient], method: str, *args: Any, repeat: int = 1) -> None:
+    async def callback() -> None:
         for _ in range(repeat):
             res = await getattr(protect, method)(*args)
             typer.echo(json.dumps(res, indent=2))
@@ -91,8 +80,8 @@ def _call_unifi(protect, method, *args, repeat=1):
     loop.run_until_complete(callback())
 
 
-def _listen_to_ws(protect):
-    async def callback():
+def _listen_to_ws(protect: UpvServer) -> None:
+    async def callback() -> None:
         await protect.ensure_authenticated()
         await protect.update()
 
@@ -118,8 +107,8 @@ def sensor(
     address: str = OPTION_ADDRESS,
     port: int = OPTION_PORT,
     verify: bool = OPTION_VERIFY,
-):
-    protect = _get_server(username, password, address, port, verify)
+) -> None:
+    protect = UpvServer(None, address, port, username, password, verify_ssl=verify)
     _call_unifi(protect, "update", True)
 
 
@@ -130,8 +119,8 @@ def raw_data(
     address: str = OPTION_ADDRESS,
     port: int = OPTION_PORT,
     verify: bool = OPTION_VERIFY,
-):
-    protect = _get_server(username, password, address, port, verify)
+) -> None:
+    protect = UpvServer(None, address, port, username, password, verify_ssl=verify)
     _call_unifi(protect, "get_raw_device_info")
 
 
@@ -143,8 +132,8 @@ def event_data(
     port: int = OPTION_PORT,
     verify: bool = OPTION_VERIFY,
     seconds: int = OPTION_SECONDS,
-):
-    protect = _get_server(username, password, address, port, verify)
+) -> None:
+    protect = UpvServer(None, address, port, username, password, verify_ssl=verify)
     _call_unifi(protect, "get_raw_events", 10, repeat=seconds)
 
 
@@ -155,8 +144,8 @@ def websocket_data(
     address: str = OPTION_ADDRESS,
     port: int = OPTION_PORT,
     verify: bool = OPTION_VERIFY,
-):
-    protect = _get_server(username, password, address, port, verify)
+) -> None:
+    protect = UpvServer(None, address, port, username, password, verify_ssl=verify)
     _listen_to_ws(protect)
 
 
@@ -168,12 +157,17 @@ def shell(
     port: int = OPTION_PORT,
     verify: bool = OPTION_VERIFY,
     new: bool = OPTION_NEW,
-):
+) -> None:
     if embed is None or colored is None:
         typer.echo("ipython and termcolor required for shell subcommand")
         sys.exit(1)
 
-    protect = _get_server(username, password, address, port, verify, new=new)
+    if new:
+        protect: Union[UpvServer, ProtectApiClient] = ProtectApiClient(
+            address, port, username, password, verify_ssl=verify
+        )
+    else:
+        protect = UpvServer(None, address, port, username, password, verify_ssl=verify)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(protect.update(True))
 
@@ -201,7 +195,7 @@ def generate_sample_data(
     anonymize: bool = OPTION_ANON,
     wait_type: int = OPTION_WAIT,
     output_folder: Optional[Path] = OPTION_OUTPUT,
-):
+) -> None:
     if output_folder is None:
         tests_folder = Path(__file__).parent.parent / "tests"
 
@@ -210,12 +204,12 @@ def generate_sample_data(
             sys.exit(1)
         output_folder = (tests_folder / "sample_data").absolute()
 
-    protect = _get_server(username, password, address, port, verify)
+    protect = UpvServer(None, address, port, username, password, verify_ssl=verify)
     SampleDataGenerator(protect, output_folder, anonymize, wait_type).generate()
 
 
 @app.command()
-def decode_ws_msg(ws_file: typer.FileBinaryRead = OPTION_WS_FILE, ws_data=ARG_WS_DATA):
+def decode_ws_msg(ws_file: typer.FileBinaryRead = OPTION_WS_FILE, ws_data: Optional[str] = ARG_WS_DATA) -> None:
     if ws_file is None and ws_data is None:
         typer.secho("Websocket data required", fg="red")
         sys.exit(1)

@@ -11,7 +11,7 @@ from pyunifiprotect.unifi_data import ModelType
 object_id_mapping: Dict[str, str] = {}
 
 
-def anonymize_data(value: Any, name: Optional[str] = None):
+def anonymize_data(value: Any, name: Optional[str] = None) -> Any:
     if isinstance(value, list):
         value = anonymize_list(value, name=name)
     elif isinstance(value, dict):
@@ -22,7 +22,7 @@ def anonymize_data(value: Any, name: Optional[str] = None):
     return value
 
 
-def anonymize_user(user_dict: dict) -> dict:
+def anonymize_user(user_dict: Dict[str, Any]) -> Dict[str, Any]:
     for index, group_id in enumerate(user_dict.get("groups", [])):
         user_dict["groups"][index] = anonymize_object_id(group_id)
 
@@ -58,7 +58,7 @@ def anonymize_user(user_dict: dict) -> dict:
     return user_dict
 
 
-def anonymize_value(value: Any, name: Optional[str] = None):
+def anonymize_value(value: Any, name: Optional[str] = None) -> Any:
     if isinstance(value, str):
         if name == "accessKey":
             value = f"{random_number(13)}:{random_hex(24)}:{random_hex(128)}"
@@ -83,7 +83,7 @@ def anonymize_value(value: Any, name: Optional[str] = None):
     return value
 
 
-def anonymize_dict(obj: dict, name: Optional[str] = None) -> dict:
+def anonymize_dict(obj: Dict[str, Any], name: Optional[str] = None) -> Dict[str, Any]:
     obj_type = None
     if "modelKey" in obj:
         if obj["modelKey"] in [m.value for m in ModelType]:
@@ -110,7 +110,7 @@ def anonymize_dict(obj: dict, name: Optional[str] = None) -> dict:
     return obj
 
 
-def anonymize_list(items: List, name: Optional[str] = None) -> List:
+def anonymize_list(items: List[Any], name: Optional[str] = None) -> List[Any]:
     for index, value in enumerate(items):
         handled = False
 
@@ -135,7 +135,7 @@ def anonymize_prefixed_event_id(event_id: str) -> str:
     return f"e-{anonymize_object_id(event_id)}"
 
 
-def anonymize_ip(ip: Any):
+def anonymize_ip(ip: Any) -> Any:
     if not isinstance(ip, str):
         return ip
 
@@ -153,7 +153,7 @@ def anonymize_object_id(obj_id: str) -> str:
     return anonymize_peristent_string(obj_id, random_hex(24))
 
 
-def anonymize_peristent_string(value: str, default: str):
+def anonymize_peristent_string(value: str, default: str) -> str:
     if value not in object_id_mapping:
         object_id_mapping[value] = default
 

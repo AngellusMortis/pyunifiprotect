@@ -70,7 +70,7 @@ class Light(ProtectMotionDeviceModel):
     is_camera_paired: bool
 
     UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectMotionDeviceModel.UNIFI_REMAP, **{"camera": "cameraId"}}
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
         "lightDeviceSettings": LightDeviceSettings,
         "lightOnSettings": LightOnSettings,
         "lightModeSettings": LightModeSettings,
@@ -105,7 +105,7 @@ class CameraEventStats(ProtectBaseObject):
     motion: EventStats
     smart: EventStats
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
         "motion": EventStats,
         "smart": EventStats,
     }
@@ -356,7 +356,7 @@ class CameraStats(ProtectBaseObject):
     wifi_quality: PercentInt
     wifi_strength: int
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
         "wifi": WifiStats,
         "battery": BatteryStats,
         "video": VideoStats,
@@ -450,7 +450,7 @@ class FeatureFlags(ProtectBaseObject):
     # zoom
 
     UNIFI_REMAP: ClassVar[Dict[str, str]] = {"hasAutoICROnly": "hasAutoIcrOnly"}
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {"privacyMaskCapability": PrivacyMaskCapability}
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {"privacyMaskCapability": PrivacyMaskCapability}  # type: ignore
 
 
 class Camera(ProtectMotionDeviceModel):
@@ -508,7 +508,7 @@ class Camera(ProtectMotionDeviceModel):
     last_smart_detect: Optional[datetime] = None
     last_smart_detect_event_id: Optional[str] = None
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
         "eventStats": CameraEventStats,
         "ispSettings": ISPSettings,
         "talkbackSettings": TalkbackSettings,

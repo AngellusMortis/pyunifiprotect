@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 
 UFP_SAMPLE_DIR = os.environ.get("UFP_SAMPLE_DIR")
 if UFP_SAMPLE_DIR:
@@ -11,7 +11,7 @@ else:
 
 
 class ConstantData:
-    _data: Optional[dict] = None
+    _data: Optional[Dict[str, Any]] = None
 
     def __getitem__(self, key):
         return self.data().__getitem__(key)

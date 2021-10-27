@@ -6,7 +6,7 @@ import asyncio
 import base64
 from copy import deepcopy
 from datetime import timedelta
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -27,7 +27,7 @@ def packet():
 
 
 @pytest.mark.asyncio
-async def test_ws_all(protect_client_ws: ProtectApiClient, ws_messages: Dict[str, dict]):
+async def test_ws_all(protect_client_ws: ProtectApiClient, ws_messages: Dict[str, Dict[str, Any]]):
     # wait for ws connection
     for _ in range(60):
         if protect_client_ws.ws_connection is not None:

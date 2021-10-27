@@ -4,7 +4,7 @@ from __future__ import annotations
 import datetime
 import logging
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Tuple, Union
 
 from pyunifiprotect.data import (
     EventType,
@@ -12,6 +12,7 @@ from pyunifiprotect.data import (
     ModelType,
     WSRawPacketFrame,
 )
+from pyunifiprotect.data.types import ProtectWSPayloadFormat
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -105,14 +106,14 @@ SENSOR_KEYS = {
 VIEWPORT_KEYS = {"liveview", "online"}
 
 
-def decode_ws_frame(frame, position):
+def decode_ws_frame(frame: bytes, position: int) -> Tuple[bytes, ProtectWSPayloadFormat, int]:
     """Decode a unifi updates websocket frame."""
 
     frame_obj = WSRawPacketFrame.from_binary(frame, position, klass=WSRawPacketFrame)
     return frame_obj.data, frame_obj.payload_format, position + frame_obj.length
 
 
-def process_viewport(server_id, viewport, include_events):
+def process_viewport(server_id: Optional[str], viewport: Dict[str, Any], include_events: bool) -> Dict[str, Any]:
     """Process the viewport json."""
 
     # Get if Viewport is Online
@@ -142,7 +143,7 @@ def process_viewport(server_id, viewport, include_events):
     return viewport_update
 
 
-def process_light(server_id, light, include_events):
+def process_light(server_id: Optional[str], light: Dict[str, Any], include_events: bool) -> Dict[str, Any]:
     """Process the light json."""
 
     # Get if Light is Online
@@ -158,12 +159,12 @@ def process_light(server_id, light, include_events):
         else datetime.datetime.fromtimestamp(int(light["upSince"]) / 1000).strftime("%Y-%m-%d %H:%M:%S")
     )
     # Get Light Mode Settings
-    lightmodesettings = light.get("lightModeSettings")
+    lightmodesettings = light.get("lightModeSettings", {})
     motion_mode = lightmodesettings.get("mode")
     motion_mode_enabled_at = lightmodesettings.get("enableAt")
     # Get Light Device Setting
     device_type = light["modelKey"]
-    lightdevicesettings = light.get("lightDeviceSettings")
+    lightdevicesettings = light.get("lightDeviceSettings", {})
     brightness = lightdevicesettings.get("ledLevel")
     lux_sensitivity = lightdevicesettings.get("luxSensitivity")
     pir_duration = lightdevicesettings.get("pirDuration")
@@ -202,7 +203,7 @@ def process_light(server_id, light, include_events):
     return light_update
 
 
-def process_sensor(server_id, sensor, include_events):
+def process_sensor(server_id: Optional[str], sensor: Dict[str, Any], include_events: bool) -> Dict[str, Any]:
     """Process the sensor json."""
 
     device_type = sensor["modelKey"]
@@ -217,7 +218,7 @@ def process_sensor(server_id, sensor, include_events):
         else datetime.datetime.fromtimestamp(int(sensor["upSince"]) / 1000).strftime("%Y-%m-%d %H:%M:%S")
     )
     # Get Sensor Status
-    stats = sensor.get("stats")
+    stats = sensor.get("stats", {})
     light_value = stats["light"]["value"]
     humidity_value = stats["humidity"]["value"]
     temperature_value = stats["temperature"]["value"]
@@ -275,7 +276,7 @@ def process_sensor(server_id, sensor, include_events):
     return sensor_update
 
 
-def process_camera(server_id, host, camera, include_events):
+def process_camera(server_id: Optional[str], host: str, camera: Dict[str, Any], include_events: bool) -> Dict[str, Any]:
     """Process the camera json."""
 
     # If addtional keys are checked, update CAMERA_KEYS
@@ -301,7 +302,7 @@ def process_camera(server_id, host, camera, include_events):
     firmware_version = str(camera["firmwareVersion"])
 
     # Get High FPS Video Mode
-    featureflags = camera.get("featureFlags")
+    featureflags = camera.get("featureFlags", {})
     has_highfps = "highFps" in featureflags.get("videoModes", "")
     video_mode = camera.get("videoMode") or "default"
     # Get HDR Mode
@@ -420,7 +421,9 @@ def process_camera(server_id, host, camera, include_events):
     return camera_update
 
 
-def event_from_ws_frames(state_machine, minimum_score, action_json, data_json):
+def event_from_ws_frames(
+    state_machine: ProtectEventStateMachine, minimum_score: int, action_json: Dict[str, Any], data_json: Dict[str, Any]
+) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
     """Convert a websocket frame to internal format.
 
     Smart Detect Event Add:
@@ -459,7 +462,7 @@ def event_from_ws_frames(state_machine, minimum_score, action_json, data_json):
         if device_id is None:
             return None, None
         state_machine.add(event_id, data_json)
-        event = data_json
+        event: Optional[Dict[str, Any]] = data_json
     elif action == "update":
         event = state_machine.update(event_id, data_json)
         if not event:
@@ -469,12 +472,16 @@ def event_from_ws_frames(state_machine, minimum_score, action_json, data_json):
         raise ValueError("The action must be add or update")
 
     _LOGGER.debug("Processing event: %s", event)
-    processed_event = process_event(event, minimum_score, LIVE_RING_FROM_WEBSOCKET)
+    processed_event: Optional[Dict[str, Any]] = None
+    if event is not None:
+        processed_event = process_event(event, minimum_score, LIVE_RING_FROM_WEBSOCKET)
 
     return device_id, processed_event
 
 
-def sensor_update_from_ws_frames(state_machine, action_json, data_json):
+def sensor_update_from_ws_frames(
+    state_machine: ProtectDeviceStateMachine, action_json: Dict[str, Any], data_json: Dict[str, Any]
+) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
     """Convert a websocket frame to internal format."""
 
     if action_json["modelKey"] != "sensor":
@@ -498,7 +505,9 @@ def sensor_update_from_ws_frames(state_machine, action_json, data_json):
     return sensor_id, processed_sensor
 
 
-def light_update_from_ws_frames(state_machine, action_json, data_json):
+def light_update_from_ws_frames(
+    state_machine: ProtectDeviceStateMachine, action_json: Dict[str, Any], data_json: Dict[str, Any]
+) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
     """Convert a websocket frame to internal format."""
 
     if action_json["modelKey"] != "light":
@@ -522,7 +531,9 @@ def light_update_from_ws_frames(state_machine, action_json, data_json):
     return light_id, processed_light
 
 
-def camera_update_from_ws_frames(state_machine, host, action_json, data_json):
+def camera_update_from_ws_frames(
+    state_machine: ProtectDeviceStateMachine, host: str, action_json: Dict[str, Any], data_json: Dict[str, Any]
+) -> Tuple[Optional[str], Optional[Dict[str, Any]]]:
     """Convert a websocket frame to internal format."""
 
     if action_json["modelKey"] != "camera":
@@ -546,15 +557,17 @@ def camera_update_from_ws_frames(state_machine, host, action_json, data_json):
     return camera_id, processed_camera
 
 
-def camera_event_from_ws_frames(state_machine, action_json, data_json):
+def camera_event_from_ws_frames(
+    state_machine: ProtectDeviceStateMachine, action_json: Dict[str, Any], data_json: Dict[str, Any]
+) -> Optional[Dict[str, Any]]:
     """Create processed events from the camera model."""
 
     if "isMotionDetected" not in data_json and "lastMotion" not in data_json:
         return None
 
     camera_id = action_json["id"]
-    start_time = None
-    event_length = 0
+    start_time: Optional[Union[str, int]] = None
+    event_length: float = 0
     event_on = False
 
     last_motion = data_json.get("lastMotion")
@@ -586,7 +599,9 @@ def camera_event_from_ws_frames(state_machine, action_json, data_json):
     }
 
 
-def light_event_from_ws_frames(state_machine, action_json, data_json):
+def light_event_from_ws_frames(
+    state_machine: ProtectDeviceStateMachine, action_json: Dict[str, Any], data_json: Dict[str, Any]
+) -> Optional[Dict[str, Any]]:
     """Create processed events from the light model."""
 
     if "isPirMotionDetected" not in data_json and "lastMotion" not in data_json:
@@ -594,7 +609,7 @@ def light_event_from_ws_frames(state_machine, action_json, data_json):
 
     light_id = action_json["id"]
     start_time = None
-    event_length = 0
+    event_length: float = 0
     event_on = False
     _LOGGER.debug("Processed light event: %s", data_json)
 
@@ -627,7 +642,9 @@ def light_event_from_ws_frames(state_machine, action_json, data_json):
     }
 
 
-def sensor_event_from_ws_frames(state_machine, action_json, data_json):
+def sensor_event_from_ws_frames(
+    state_machine: ProtectDeviceStateMachine, action_json: Dict[str, Any], data_json: Dict[str, Any]
+) -> Optional[Dict[str, Any]]:
     """Create processed events from the sensor model."""
     # TODO: Add the events that can occur (Motion and Door Open/Close)
     if "isPirMotionDetected" not in data_json and "lastMotion" not in data_json:
@@ -635,7 +652,7 @@ def sensor_event_from_ws_frames(state_machine, action_json, data_json):
 
     light_id = action_json["id"]
     start_time = None
-    event_length = 0
+    event_length: float = 0
     event_on = False
     _LOGGER.debug("Processed light event: %s", data_json)
 
@@ -668,14 +685,14 @@ def sensor_event_from_ws_frames(state_machine, action_json, data_json):
     }
 
 
-def process_event(event, minimum_score, ring_interval):
+def process_event(event: Dict[str, Any], minimum_score: int, ring_interval: int) -> Dict[str, Any]:
     """Convert an event to our format."""
     start = event.get("start")
     end = event.get("end")
     event_type = event.get("type")
     score = event.get("score")
 
-    event_length = 0
+    event_length: float = 0
     start_time = None
 
     if start:
@@ -725,32 +742,35 @@ def process_event(event, minimum_score, ring_interval):
     return processed_event
 
 
-def _process_timestamp(time_stamp):
+def _process_timestamp(time_stamp: Union[str, int]) -> str:
     return datetime.datetime.fromtimestamp(int(time_stamp) / 1000).strftime("%Y-%m-%d %H:%M:%S")
 
 
 class ProtectDeviceStateMachine:
     """A simple state machine for events."""
 
-    def __init__(self):
+    _devices: Dict[str, Dict[str, Any]]
+    _motion_detected_time: Dict[str, Optional[Union[str, int]]]
+
+    def __init__(self) -> None:
         """Init the state machine."""
         self._devices = {}
         self._motion_detected_time = {}
 
-    def has_device(self, device_id):
+    def has_device(self, device_id: str) -> bool:
         """Check to see if a device id is in the state machine."""
         return device_id in self._devices
 
-    def update(self, device_id, new_json):
+    def update(self, device_id: str, new_json: Dict[str, Any]) -> Dict[str, Any]:
         """Update an device in the state machine."""
         self._devices.setdefault(device_id, {}).update(new_json)
         return self._devices[device_id]
 
-    def set_motion_detected_time(self, device_id, timestamp):
+    def set_motion_detected_time(self, device_id: str, timestamp: Optional[Union[str, int]]) -> None:
         """Set device motion start detected time."""
         self._motion_detected_time[device_id] = timestamp
 
-    def get_motion_detected_time(self, device_id):
+    def get_motion_detected_time(self, device_id: str) -> Optional[Union[str, int]]:
         """Get device motion start detected time."""
         return self._motion_detected_time.get(device_id)
 
@@ -758,15 +778,17 @@ class ProtectDeviceStateMachine:
 class ProtectEventStateMachine:
     """A simple state machine for cameras."""
 
-    def __init__(self):
+    _events: FixSizeOrderedDict[str, Dict[str, Any]]
+
+    def __init__(self) -> None:
         """Init the state machine."""
         self._events = FixSizeOrderedDict(max_size=MAX_EVENT_HISTORY_IN_STATE_MACHINE)
 
-    def add(self, event_id, event_json):
+    def add(self, event_id: str, event_json: Dict[str, Any]) -> None:
         """Add an event to the state machine."""
         self._events[event_id] = event_json
 
-    def update(self, event_id, new_event_json):
+    def update(self, event_id: str, new_event_json: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Update an event in the state machine and return the merged event."""
         event_json = self._events.get(event_id)
         if event_json is None:

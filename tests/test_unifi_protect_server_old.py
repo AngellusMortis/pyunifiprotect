@@ -3,7 +3,7 @@
 import asyncio
 from datetime import datetime, timedelta
 from io import BytesIO
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from unittest.mock import patch
 
 from PIL import Image
@@ -25,7 +25,7 @@ async def test_upvserver_creation():
 
 
 @pytest.mark.asyncio
-async def test_websocket(old_protect_client: UpvServer, ws_messages: Dict[str, dict]):
+async def test_websocket(old_protect_client: UpvServer, ws_messages: Dict[str, Dict[str, Any]]):
     # wait for ws connection
     for _ in range(60):
         if old_protect_client.ws_connection is not None:
@@ -46,7 +46,12 @@ async def test_websocket(old_protect_client: UpvServer, ws_messages: Dict[str, d
 async def test_server_info(old_protect_client: UpvServer):
     data = await old_protect_client.server_information()
 
-    old_protect_client.api_request.assert_called_with("bootstrap")  # type: ignore
+    old_protect_client.api_request.assert_called_with(  # type: ignore
+        url="bootstrap",
+        method="get",
+        require_auth=True,
+        raise_exception=True,
+    )
     assert data == {
         "server_id": CONSTANTS["server_id"],
         "server_model": "UDM-PRO",
@@ -62,7 +67,10 @@ async def test_get_raw_events(old_protect_client: UpvServer, now: datetime):
     events = await old_protect_client.get_raw_events()
 
     old_protect_client.api_request.assert_called_with(  # type: ignore
-        "events",
+        url="events",
+        method="get",
+        require_auth=True,
+        raise_exception=True,
         params={
             "end": str(to_js_time(now + timedelta(seconds=10))),
             "start": str(to_js_time(now - timedelta(seconds=86400))),
@@ -70,8 +78,11 @@ async def test_get_raw_events(old_protect_client: UpvServer, now: datetime):
     )
     assert len(events) == CONSTANTS["event_count"]
     for event in events:
-        assert event["type"] in EventType.values()
-        assert event["modelKey"] in ModelType.values()
+        event_type: str = event["type"]
+        model_type: str = event["modelKey"]
+
+        assert event_type in EventType.values()
+        assert model_type in ModelType.values()
 
 
 @pytest.mark.asyncio
@@ -80,7 +91,12 @@ async def test_raw_devices(old_protect_client: UpvServer):
 
     data = await old_protect_client.get_raw_device_info()
 
-    old_protect_client.api_request.assert_called_with("bootstrap")  # type: ignore
+    old_protect_client.api_request.assert_called_with(  # type: ignore
+        url="bootstrap",
+        method="get",
+        require_auth=True,
+        raise_exception=True,
+    )
     assert data.pop("authUserId") == CONSTANTS["user_id"]
     assert data.pop("lastUpdateId") == CONSTANTS["last_update_id"]
     data.pop("accessKey")
@@ -99,14 +115,12 @@ async def test_raw_devices(old_protect_client: UpvServer):
 async def test_get_thumbnail(old_protect_client: UpvServer, camera):
     data = await old_protect_client.get_thumbnail(camera_id=camera["id"])
 
-    assert old_protect_client.api_request.call_count == 3  # type: ignore
-    old_protect_client.api_request.assert_called_with(  # type: ignore
+    old_protect_client.api_request_raw.assert_called_with(  # type: ignore
         f"thumbnails/{CONSTANTS['camera_thumbnail']}",
         params={
             "h": "360.0",
             "w": "640",
         },
-        raw=True,
     )
 
     assert data is not None
@@ -120,11 +134,13 @@ async def test_get_thumbnail(old_protect_client: UpvServer, camera):
 @patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
 async def test_get_snapshot(old_protect_client: UpvServer, now, camera):
     data = await old_protect_client.get_snapshot_image(camera_id=camera["id"])
+    if data is None:
+        return
 
     height = old_protect_client.devices[camera["id"]].get("image_height")
     width = old_protect_client.devices[camera["id"]].get("image_width")
 
-    old_protect_client.api_request.assert_called_with(  # type: ignore
+    old_protect_client.api_request_raw.assert_called_with(  # type: ignore
         f"cameras/{camera['id']}/snapshot",
         params={
             "h": height,
@@ -133,7 +149,6 @@ async def test_get_snapshot(old_protect_client: UpvServer, now, camera):
             "w": width,
         },
         raise_exception=False,
-        raw=True,
     )
 
     img = Image.open(BytesIO(data))
@@ -142,10 +157,15 @@ async def test_get_snapshot(old_protect_client: UpvServer, now, camera):
 
 
 @pytest.mark.asyncio
-async def test_get_live_views(old_protect_client: UpvServer, liveviews: List[dict]):
+async def test_get_live_views(old_protect_client: UpvServer, liveviews: List[Dict[str, Any]]):
     data = await old_protect_client.get_live_views()
 
-    old_protect_client.api_request.assert_called_with("liveviews")  # type: ignore
+    old_protect_client.api_request.assert_called_with(  # type: ignore
+        url="liveviews",
+        method="get",
+        require_auth=True,
+        raise_exception=True,
+    )
 
     assert len(data) == CONSTANTS["counts"]["liveview"]
     for view in data:

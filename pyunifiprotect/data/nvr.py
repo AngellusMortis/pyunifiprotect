@@ -133,7 +133,7 @@ class CloudAccount(ProtectModelWithId):
             "user": "userId",
         },
     }
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {"location": UserLocation}
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {"location": UserLocation}  # type: ignore
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data)
@@ -177,7 +177,7 @@ class User(ProtectModelWithId):
     # notificationsV2
 
     UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectModelWithId.UNIFI_REMAP, **{"groups": "groupIds"}}
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
         "location": UserLocation,
         "cloudAccount": CloudAccount,
     }
@@ -271,7 +271,7 @@ class SystemInfo(ProtectBaseObject):
     storage: StorageInfo
     tmpfs: TMPFSInfo
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
         "memory": MemoryInfo,
         "storage": StorageInfo,
         "tmpfs": TMPFSInfo,
@@ -325,7 +325,7 @@ class StorageStats(ProtectBaseObject):
     recording_space: StorageSpace
     storage_distribution: StorageDistribution
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
         "recordingSpace": StorageSpace,
     }
 
@@ -391,7 +391,7 @@ class NVR(ProtectDeviceModel):
         **ProtectDeviceModel.UNIFI_REMAP,
         **{"recordingRetentionDurationMs": "recordingRetentionDuration"},
     }
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
         "ports": PortConfig,
         "locationSettings": NVRLocation,
         "featureFlags": NVRFeatureFlags,
@@ -492,7 +492,7 @@ class Bootstrap(ProtectBaseObject):
     # chimes
     # schedules
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
         "nvr": NVR,
     }
 
@@ -524,9 +524,10 @@ class Bootstrap(ProtectBaseObject):
 
     @property
     def auth_user(self) -> User:
-        return self._api.bootstrap.users[self.auth_user_id]
+        user: User = self._api.bootstrap.users[self.auth_user_id]
+        return user
 
-    def process_event(self, event: Event):
+    def process_event(self, event: Event) -> None:
         if event.camera is None:
             return
 
@@ -548,7 +549,7 @@ class Bootstrap(ProtectBaseObject):
 
         self.events[event.id] = event
 
-    def process_ws_packet(self, packet: WSPacket):
+    def process_ws_packet(self, packet: WSPacket) -> None:
         if not isinstance(packet.action_frame, WSJSONPacketFrame):
             _LOGGER.debug("Unexpected action frame format: %s", packet.action_frame.payload_format)
 

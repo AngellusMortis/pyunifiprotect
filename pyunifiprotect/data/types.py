@@ -1,18 +1,21 @@
 import enum
-from typing import List, Optional
+from typing import Any, List, Optional, TypeVar
 
 from pydantic import ConstrainedDecimal, ConstrainedInt
 
+KT = TypeVar("KT")
+VT = TypeVar("VT")
 
-class FixSizeOrderedDict(dict):
+
+class FixSizeOrderedDict(dict[KT, VT]):
     """A fixed size ordered dict."""
 
-    def __init__(self, *args, max_size=0, **kwargs):
+    def __init__(self, *args: Any, max_size: int = 0, **kwargs: Any) -> None:
         """Create the FixSizeOrderedDict."""
         self._max_size = max_size
         super().__init__(*args, **kwargs)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: KT, value: VT) -> None:
         """Set an update up to the max size."""
         dict.__setitem__(self, key, value)
         if self._max_size > 0 and len(self) > 0 and len(self) > self._max_size:

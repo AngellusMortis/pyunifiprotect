@@ -10,6 +10,10 @@ class WSDecodeError(UnifiProtectError):
     """Exception raised when decoding Websocket packet"""
 
 
+class WSEncodeError(UnifiProtectError):
+    """Exception raised when encoding Websocket packet"""
+
+
 class ClientError(UnifiProtectError):
     """Base Class for all other Unifi Protect client errors"""
 

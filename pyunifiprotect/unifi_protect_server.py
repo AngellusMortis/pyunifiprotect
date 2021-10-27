@@ -5,13 +5,12 @@ from datetime import datetime, timedelta
 import json as pjson
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Union
 from urllib.parse import urljoin
 from uuid import UUID
 
 import aiohttp
 from aiohttp import client_exceptions
-from aiohttp.client import _WSRequestContextManager
 import jwt
 from yarl import URL
 
@@ -82,11 +81,11 @@ class BaseApiClient:
     _websocket_error_start: Optional[datetime] = None
 
     req: aiohttp.ClientSession
-    headers: Optional[dict] = None
+    headers: Optional[Dict[str, str]] = None
     last_update_id: Optional[UUID] = None
     ws_session: Optional[aiohttp.ClientSession] = None
-    ws_connection: Optional[_WSRequestContextManager] = None
-    ws_task: Optional[asyncio.Task] = None
+    ws_connection: Optional[aiohttp.ClientWebSocketResponse] = None
+    ws_task: Optional[asyncio.Task[None]] = None
     ws_callback: Optional[Callable[[aiohttp.WSMessage], None]] = None
 
     def __init__(
@@ -97,7 +96,7 @@ class BaseApiClient:
         password: str,
         verify_ssl: bool = True,
         session: Optional[aiohttp.ClientSession] = None,
-    ):
+    ) -> None:
         self._host = host
         self._port = port
         self._base_url = f"https://{host}:{port}"
@@ -112,14 +111,16 @@ class BaseApiClient:
         self.req = session
 
     @property
-    def api_path(self):
+    def api_path(self) -> str:
         return "/proxy/protect/api/"
 
     @property
-    def ws_path(self):
+    def ws_path(self) -> str:
         return "/proxy/protect/ws/"
 
-    async def request(self, method, url, require_auth=False, auto_close=True, **kwargs):
+    async def request(
+        self, method: str, url: str, require_auth: bool = False, auto_close: bool = True, **kwargs: Any
+    ) -> aiohttp.ClientResponse:
         """Make a request to Unifi Protect"""
 
         if require_auth:
@@ -158,15 +159,15 @@ class BaseApiClient:
         except client_exceptions.ClientError as err:
             raise NvrError(f"Error requesting data from {self._host}: {err}") from None
 
-    async def api_request(
+    async def api_request_raw(
         self,
-        url,
-        method="get",
-        raw=False,
-        require_auth=True,
-        raise_exception=True,
-        **kwargs,
-    ):
+        url: str,
+        method: str = "get",
+        raw: bool = False,
+        require_auth: bool = True,
+        raise_exception: bool = True,
+        **kwargs: Any,
+    ) -> Optional[bytes]:
         """Make a request to Unifi Protect API"""
 
         if require_auth:
@@ -184,11 +185,7 @@ class BaseApiClient:
                 _LOGGER.warning(msg, url, response.status, reason)
                 return None
 
-            data: Optional[Union[bytes, dict]] = None
-            if raw:
-                data = await response.read()
-            else:
-                data = await response.json()
+            data: Optional[bytes] = await response.read()
             response.release()
 
             return data
@@ -198,12 +195,63 @@ class BaseApiClient:
             # re-raise exception
             raise
 
-    async def ensure_authenticated(self):
+    async def api_request(
+        self,
+        url: str,
+        method: str = "get",
+        require_auth: bool = True,
+        raise_exception: bool = True,
+        **kwargs: Any,
+    ) -> Optional[Union[List[Any], Dict[str, Any]]]:
+        data = await self.api_request_raw(
+            url=url, method=method, require_auth=require_auth, raise_exception=raise_exception, **kwargs
+        )
+
+        if data is not None:
+            json_data: Union[List[Any], Dict[str, Any]] = pjson.loads(data)
+            return json_data
+        return None
+
+    async def api_request_obj(
+        self,
+        url: str,
+        method: str = "get",
+        require_auth: bool = True,
+        raise_exception: bool = True,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        data = await self.api_request(
+            url=url, method=method, require_auth=require_auth, raise_exception=raise_exception, **kwargs
+        )
+
+        if not isinstance(data, dict):
+            raise NvrError(f"Could not decode object from {url}")
+
+        return data
+
+    async def api_request_list(
+        self,
+        url: str,
+        method: str = "get",
+        require_auth: bool = True,
+        raise_exception: bool = True,
+        **kwargs: Any,
+    ) -> List[Any]:
+        data = await self.api_request(
+            url=url, method=method, require_auth=require_auth, raise_exception=raise_exception, **kwargs
+        )
+
+        if not isinstance(data, list):
+            raise NvrError(f"Could not decode list from {url}")
+
+        return data
+
+    async def ensure_authenticated(self) -> None:
         """Ensure we are authenticated."""
         if self.is_authenticated() is False:
             await self.authenticate()
 
-    async def authenticate(self):
+    async def authenticate(self) -> None:
         """Authenticate and get a token."""
 
         url = "/api/auth/login"
@@ -249,7 +297,7 @@ class BaseApiClient:
 
         return self._is_authenticated
 
-    def disconnect_ws(self):
+    def disconnect_ws(self) -> None:
         """Disconnects from the websocket if already connected."""
         if self.ws_connection is not None:
             return
@@ -261,7 +309,7 @@ class BaseApiClient:
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Could not cancel ws_task")
 
-    async def async_connect_ws(self):
+    async def async_connect_ws(self) -> None:
         """Connect the websocket."""
         if self.ws_connection is not None:
             return
@@ -269,15 +317,16 @@ class BaseApiClient:
         self.disconnect_ws()
         self.ws_task = asyncio.ensure_future(self._setup_websocket())
 
-    async def async_disconnect_ws(self):
+    async def async_disconnect_ws(self) -> None:
         """Disconnect the websocket."""
         if self.ws_connection is None:
             return
 
         await self.ws_connection.close()
-        await self.ws_session.close()
+        if self.ws_session is not None:
+            await self.ws_session.close()
 
-    async def _setup_websocket(self):
+    async def _setup_websocket(self) -> None:
         await self.ensure_authenticated()
 
         url = urljoin(f"{self._base_ws_url}{self.ws_path}", "updates")
@@ -311,7 +360,7 @@ class BaseApiClient:
             _LOGGER.debug("websocket disconnected")
             self.ws_connection = None
 
-    def _log_websocket_failure(self):
+    def _log_websocket_failure(self) -> None:
         now = datetime.now()
         if self._websocket_error_start is None:
             self._websocket_error_start = now
@@ -323,7 +372,7 @@ class BaseApiClient:
             log = _LOGGER.debug
         log("Unifi OS: Websocket connection not active, failing back to polling")
 
-    def _process_ws_message(self, msg: aiohttp.WSMessage):
+    def _process_ws_message(self, msg: aiohttp.WSMessage) -> None:
         raise NotImplementedError()
 
 
@@ -334,10 +383,10 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
     _event_state_machine: ProtectEventStateMachine = ProtectEventStateMachine()
     _device_state_machine: ProtectDeviceStateMachine = ProtectDeviceStateMachine()
-    _processed_data: Dict[str, dict] = {}
+    _processed_data: Dict[str, Dict[str, Any]] = {}
     _last_websocket_check: float = NEVER_RAN
     _last_device_update_time: float = NEVER_RAN
-    _ws_subscriptions: List[Callable[[Dict[str, dict]], None]] = []
+    _ws_subscriptions: List[Callable[[Dict[str, Dict[str, Any]]], None]] = []
     _is_first_update: bool = True
 
     def __init__(
@@ -349,17 +398,17 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         password: str,
         verify_ssl: bool = False,
         minimum_score: int = 0,
-    ):
+    ) -> None:
         super().__init__(host, port, username, password, verify_ssl, session=session)
 
         self._minimum_score = minimum_score
 
     @property
-    def devices(self):
+    def devices(self) -> Dict[str, Dict[str, Any]]:
         """Returns a JSON formatted list of Devices."""
         return self._processed_data
 
-    async def update(self, force_camera_update=False) -> dict:
+    async def update(self, force_camera_update: bool = False) -> Dict[str, Any]:
         """Updates the status of devices."""
 
         current_time = time.monotonic()
@@ -392,20 +441,21 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
         return self._processed_data if device_update else updates
 
-    async def server_information(self):
+    async def server_information(self) -> Dict[str, Any]:
         """Returns a Server Information for this NVR."""
         return await self._get_server_info()
 
     async def _get_unique_id(self) -> str:
         """Get a Unique ID for this NVR."""
 
-        return (await self._get_server_info())[SERVER_ID]
+        server_id: str = (await self._get_server_info())[SERVER_ID]
+        return server_id
 
-    async def _get_server_info(self) -> dict:
+    async def _get_server_info(self) -> Dict[str, Any]:
         """Get Server Information for this NVR."""
 
-        data = await self.api_request("bootstrap")
-        nvr_data = data["nvr"]
+        data = await self.api_request_obj("bootstrap")
+        nvr_data: Dict[str, Any] = data["nvr"]
 
         return {
             SERVER_NAME: nvr_data["name"],
@@ -415,11 +465,11 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
             "server_ip": nvr_data["host"],
         }
 
-    async def _get_device_list(self, include_events) -> None:
+    async def _get_device_list(self, include_events: bool) -> None:
         """Get a list of devices connected to the NVR."""
 
-        data = await self.api_request("bootstrap")
-        server_id = data["nvr"]["mac"]
+        data = await self.api_request_obj("bootstrap")
+        server_id: str = data["nvr"]["mac"]
         if not self.ws_connection and "lastUpdateId" in data:
             self.last_update_id = UUID(data["lastUpdateId"])
 
@@ -430,7 +480,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
         self._is_first_update = False
 
-    def _process_cameras_json(self, json_response, server_id, include_events):
+    def _process_cameras_json(self, json_response: Dict[str, Any], server_id: str, include_events: bool) -> None:
         for camera in json_response["cameras"]:
 
             # Ignore cameras adopted by another controller on the same network
@@ -453,7 +503,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
                 ),
             )
 
-    def _process_lights_json(self, json_response, server_id, include_events):
+    def _process_lights_json(self, json_response: Dict[str, Any], server_id: str, include_events: bool) -> None:
         for light in json_response["lights"]:
 
             # Ignore lights adopted by another controller on the same network
@@ -472,7 +522,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
                 process_light(server_id, light, include_events or self._is_first_update),
             )
 
-    def _process_sensors_json(self, json_response, server_id, include_events):
+    def _process_sensors_json(self, json_response: Dict[str, Any], server_id: str, include_events: bool) -> None:
         for sensor in json_response["sensors"]:
 
             # Ignore lights adopted by another controller on the same network
@@ -491,7 +541,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
                 process_sensor(server_id, sensor, include_events or self._is_first_update),
             )
 
-    def _process_viewports_json(self, json_response, server_id, include_events):
+    def _process_viewports_json(self, json_response: Dict[str, Any], server_id: str, include_events: bool) -> None:
         for viewport in json_response["viewers"]:
 
             # Ignore viewports adopted by another controller on the same network
@@ -515,7 +565,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         for device_id in self._processed_data:
             self._update_device(device_id, PROCESSED_EVENT_EMPTY)
 
-    def _process_events(self, events: List[dict], ring_interval: int) -> dict:
+    def _process_events(self, events: List[Dict[str, Any]], ring_interval: int) -> Dict[str, Any]:
         updated = {}
         for event in events:
             if event["type"] not in (EVENT_MOTION, EVENT_RING, EVENT_SMART_DETECT_ZONE):
@@ -530,7 +580,13 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
         return updated
 
-    async def _get_events(self, lookback: int = 86400, camera=None, start_time=None, end_time=None) -> dict:
+    async def _get_events(
+        self,
+        lookback: int = 86400,
+        camera: Optional[str] = None,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
+    ) -> Dict[str, Any]:
         """Load the Event Log and loop through items to find motion events."""
 
         now = int(time.time() * 1000)
@@ -548,9 +604,12 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
             params["cameras"] = camera
         data = await self.api_request("events", params=params)
 
+        if not isinstance(data, list):
+            raise NvrError("Could not decode events")
+
         return self._process_events(data, event_ring_check_converted)
 
-    async def get_raw_events(self, lookback: int = 86400) -> dict:
+    async def get_raw_events(self, lookback: int = 86400) -> List[Any]:
         """Load the Event Log and return the Raw Data - Used for debugging only."""
 
         event_start = datetime.now() - timedelta(seconds=lookback)
@@ -562,14 +621,15 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
             "end": str(end_time),
             "start": str(start_time),
         }
-        return await self.api_request("events", params=params)
 
-    async def get_raw_device_info(self) -> dict:
+        return await self.api_request_list("events", params=params)
+
+    async def get_raw_device_info(self) -> Dict[str, Any]:
         """Return the RAW JSON data from this NVR.
         Used for debugging purposes only.
         """
 
-        return await self.api_request("bootstrap")
+        return await self.api_request_obj("bootstrap")
 
     async def get_thumbnail(self, camera_id: str, width: int = 640) -> Optional[bytes]:
         """Returns the last recorded Thumbnail, based on Camera ID."""
@@ -585,7 +645,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
             "h": str(height),
             "w": str(width),
         }
-        return await self.api_request(f"thumbnails/{thumbnail_id}", params=params, raw=True)
+        return await self.api_request_raw(f"thumbnails/{thumbnail_id}", params=params)
 
     async def get_heatmap(self, camera_id: str) -> Optional[bytes]:
         """Returns the last recorded Heatmap, based on Camera ID."""
@@ -596,11 +656,11 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         if heatmap_id is None:
             return None
 
-        return await self.api_request(f"heatmaps/{heatmap_id}", raw=True)
+        return await self.api_request_raw(f"heatmaps/{heatmap_id}")
 
     async def get_snapshot_image(
         self, camera_id: str, width: Optional[int] = None, height: Optional[int] = None
-    ) -> bytes:
+    ) -> Optional[bytes]:
         """Returns a Snapshot image of a recording event."""
 
         time_since = int(time.mktime(datetime.now().timetuple())) * 1000
@@ -614,7 +674,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
             "force": "true",
             "w": image_width,
         }
-        return await self.api_request(f"cameras/{camera_id}/snapshot", params=params, raise_exception=False, raw=True)
+        return await self.api_request_raw(f"cameras/{camera_id}/snapshot", params=params, raise_exception=False)
 
     async def get_snapshot_image_direct(self, camera_id: str) -> bytes:
         """Returns a Snapshot image of a recording event.
@@ -660,7 +720,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
         if device_model == DEVICE_MODEL_LIGHT:
             uri = f"lights/{device_id}"
-            data: Dict[str, dict] = {"lightDeviceSettings": {"isIndicatorEnabled": mode}}
+            data: Dict[str, Dict[str, Any]] = {"lightDeviceSettings": {"isIndicatorEnabled": mode}}
         else:
             uri = f"cameras/{device_id}"
             data = {"ledSettings": {"isEnabled": mode, "blinkRate": 0}}
@@ -755,13 +815,13 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         self._processed_data[camera_id]["mic_volume"] = level
         return True
 
-    async def set_light_on_off(self, light_id: str, turn_on: bool, led_level=None) -> bool:
+    async def set_light_on_off(self, light_id: str, turn_on: bool, led_level: Optional[int] = None) -> bool:
         """Sets the light on or off.
         turn_on can be: true or false.
         led_level: must be between 1 and 6 or None
         """
 
-        data = {"lightOnSettings": {"isLedForceOn": turn_on}}
+        data: Dict[str, Any] = {"lightOnSettings": {"isLedForceOn": turn_on}}
         if led_level is not None:
             data["lightDeviceSettings"] = {"ledLevel": led_level}
 
@@ -773,7 +833,14 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
             processed_light["brightness"] = led_level
         return True
 
-    async def light_settings(self, light_id: str, mode: str, enable_at=None, duration=None, sensitivity=None) -> bool:
+    async def light_settings(
+        self,
+        light_id: str,
+        mode: str,
+        enable_at: Optional[Literal["dark", "fulltime"]] = None,
+        duration: Optional[int] = None,
+        sensitivity: Optional[int] = None,
+    ) -> bool:
         """Sets PIR settings for a Light Device.
         mode can be: off, motion or always
         enableAt can be: dark, fulltime
@@ -785,9 +852,9 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         if mode not in LIGHT_MODES:
             mode = "motion"
 
-        data = {"lightModeSettings": {"mode": mode}}
+        data: Dict[str, Any] = {"lightModeSettings": {"mode": mode}}
         if enable_at is not None:
-            setting = data["lightModeSettings"]
+            setting: Dict[str, Any] = data["lightModeSettings"]
             setting["enableAt"] = enable_at
         if duration is not None:
             if data.get("lightDeviceSettings"):
@@ -814,7 +881,9 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
             processed_light["pir_sensitivity"] = sensitivity
         return True
 
-    async def set_privacy_mode(self, camera_id: str, mode: bool, mic_level=-1, recording_mode="notset") -> bool:
+    async def set_privacy_mode(
+        self, camera_id: str, mode: bool, mic_level: int = -1, recording_mode: str = "notset"
+    ) -> bool:
         """Sets the camera privacy mode.
         When True, creates a privacy zone that fills the camera
         When False, removes the Privacy Zone
@@ -856,28 +925,30 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         self._processed_data[camera_id]["privacy_on"] = mode
         return True
 
-    async def _get_camera_detail(self, camera_id: str) -> dict:
+    async def _get_camera_detail(self, camera_id: str) -> Dict[str, Any]:
         """Return the RAW JSON data for Camera.
         Used for debugging only.
         """
 
-        return await self.api_request(f"cameras/{camera_id}")
+        return await self.api_request_obj(f"cameras/{camera_id}")
 
-    async def _get_viewport_detail(self, viewport_id: str) -> dict:
+    async def _get_viewport_detail(self, viewport_id: str) -> Dict[str, Any]:
         """Return the RAW JSON data for a Viewport.
         Used for debugging only.
         """
 
-        return await self.api_request(f"viewers/{viewport_id}")
+        return await self.api_request_obj(f"viewers/{viewport_id}")
 
-    async def _get_light_detail(self, light_id: str) -> dict:
+    async def _get_light_detail(self, light_id: str) -> Dict[str, Any]:
         """Return the RAW JSON data for a Light.
         Used for debugging only.
         """
 
-        return await self.api_request(f"lights/{light_id}")
+        return await self.api_request_obj(f"lights/{light_id}")
 
-    async def set_doorbell_lcd_text(self, camera_id: str, text_type: str, text_display: str, duration=None) -> bool:
+    async def set_doorbell_lcd_text(
+        self, camera_id: str, text_type: str, text_display: str, duration: Optional[int] = None
+    ) -> bool:
         """Sets a Text string for the Doorbell LCD'."""
 
         # Truncate text to max 30 characters, as this is what is supported
@@ -907,17 +978,19 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
         data = {"liveview": view_id}
         await self.api_request(f"viewers/{viewport_id}", method="patch", json=data)
+
         self._device_state_machine.update(viewport_id, data)
         processed_viewport = self._processed_data[viewport_id]
         processed_viewport["liveview"] = view_id
         return True
 
-    async def get_live_views(self) -> List[Dict[str, dict]]:
+    async def get_live_views(self) -> List[Dict[str, Dict[str, Any]]]:
         """Returns a list of all defined Live Views."""
 
-        data = await self.api_request("liveviews")
+        liveviews = await self.api_request_list("liveviews")
+
         views = []
-        for view in data:
+        for view in liveviews:
             item = {
                 "name": view.get("name"),
                 "id": view.get("id"),
@@ -925,20 +998,20 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
             views.append(item)
         return views
 
-    def subscribe_websocket(self, ws_callback):
+    def subscribe_websocket(self, ws_callback: Callable[[Dict[str, Dict[str, Any]]], None]) -> Callable[[], None]:
         """Subscribe to websocket events.
 
         Returns a callback that will unsubscribe.
         """
 
-        def _unsub_ws_callback():
+        def _unsub_ws_callback() -> None:
             self._ws_subscriptions.remove(ws_callback)
 
         _LOGGER.debug("Adding subscription: %s", ws_callback)
         self._ws_subscriptions.append(ws_callback)
         return _unsub_ws_callback
 
-    def _process_ws_message(self, msg: aiohttp.WSMessage):
+    def _process_ws_message(self, msg: aiohttp.WSMessage) -> None:
         """Process websocket messages."""
         action_frame, action_frame_payload_format, position = decode_ws_frame(msg.data, 0)
 
@@ -982,13 +1055,13 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
         raise ValueError(f"Unexpected model key: {model_key}")
 
-    def _process_camera_ws_message(self, action_json, data_json):
+    def _process_camera_ws_message(self, action_json: Dict[str, Any], data_json: Dict[str, Any]) -> None:
         """Process a decoded camera websocket message."""
         camera_id, processed_camera = camera_update_from_ws_frames(
             self._device_state_machine, self._host, action_json, data_json
         )
 
-        if camera_id is None:
+        if camera_id is None or processed_camera is None:
             return
         _LOGGER.debug("Processed camera: %s", processed_camera)
 
@@ -1000,11 +1073,11 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
         self.fire_event(camera_id, processed_camera)
 
-    def _process_light_ws_message(self, action_json, data_json):
+    def _process_light_ws_message(self, action_json: Dict[str, Any], data_json: Dict[str, Any]) -> None:
         """Process a decoded light websocket message."""
         light_id, processed_light = light_update_from_ws_frames(self._device_state_machine, action_json, data_json)
 
-        if light_id is None:
+        if light_id is None or processed_light is None:
             return
         _LOGGER.debug("Processed light: %s %s", processed_light["motion_mode"], processed_light)
 
@@ -1016,11 +1089,11 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
         self.fire_event(light_id, processed_light)
 
-    def _process_sensor_ws_message(self, action_json, data_json):
+    def _process_sensor_ws_message(self, action_json: Dict[str, Any], data_json: Dict[str, Any]) -> None:
         """Process a decoded sensor websocket message."""
         sensor_id, processed_sensor = sensor_update_from_ws_frames(self._device_state_machine, action_json, data_json)
 
-        if sensor_id is None:
+        if sensor_id is None or processed_sensor is None:
             return
         _LOGGER.debug(
             "Processed sensor: %s %s",
@@ -1036,13 +1109,13 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
         self.fire_event(sensor_id, processed_sensor)
 
-    def _process_event_ws_message(self, action_json, data_json):
+    def _process_event_ws_message(self, action_json: Dict[str, Any], data_json: Dict[str, Any]) -> None:
         """Process a decoded event websocket message."""
         device_id, processed_event = event_from_ws_frames(
             self._event_state_machine, self._minimum_score, action_json, data_json
         )
 
-        if device_id is None:
+        if device_id is None or processed_event is None:
             return
 
         _LOGGER.debug("Procesed event: %s", processed_event)
@@ -1056,14 +1129,14 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
             processed_event["event_ring_on"] = False
             self.fire_event(device_id, processed_event)
 
-    def fire_event(self, device_id, processed_event):
+    def fire_event(self, device_id: str, processed_event: Dict[str, Any]) -> None:
         """Callback and event to the subscribers and update data."""
         self._update_device(device_id, processed_event)
 
         for subscriber in self._ws_subscriptions:
             subscriber({device_id: self._processed_data[device_id]})
 
-    def _update_device(self, device_id, processed_update):
+    def _update_device(self, device_id: str, processed_update: Dict[str, Any]) -> None:
         """Update internal state of a device."""
         self._processed_data.setdefault(device_id, {}).update(processed_update)
 
@@ -1077,12 +1150,12 @@ class ProtectApiClient(BaseApiClient):
     _last_websocket_check: Optional[datetime] = None
     _websocket_failures: int = 0
 
-    def __init__(self, *args, minimum_score: int = 0, **kwargs):
+    def __init__(self, *args: Any, minimum_score: int = 0, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self._minimum_score = minimum_score
 
-    async def update(self, force=False) -> Union[Bootstrap, List[Event]]:
+    async def update(self, force: bool = False) -> Union[Bootstrap, List[Event]]:
         now = datetime.now()
 
         if force and self.ws_connection is not None:
@@ -1096,7 +1169,7 @@ class ProtectApiClient(BaseApiClient):
             or now - self._last_update > DEVICE_UPDATE_INTERVAL
         ):
             self._last_update = now
-            data = await self.api_request("bootstrap")
+            data = await self.api_request_obj("bootstrap")
             self._bootstrap = Bootstrap(**data, api=self)
 
         if self._last_websocket_check is None or now - self._last_websocket_check > WEBSOCKET_CHECK_INTERVAL:
@@ -1118,7 +1191,7 @@ class ProtectApiClient(BaseApiClient):
         self._last_update = now
         return events
 
-    def _process_ws_message(self, msg: aiohttp.WSMessage):
+    def _process_ws_message(self, msg: aiohttp.WSMessage) -> None:
         packet = WSPacket(msg.data)
         self.bootstrap.process_ws_packet(packet)
 
@@ -1170,7 +1243,7 @@ class ProtectApiClient(BaseApiClient):
         if camera_ids is not None:
             params["cameras"] = ",".join(camera_ids)
 
-        return await self.api_request("events", params=params)
+        return await self.api_request_list("events", params=params)
 
     async def get_events(
         self,
