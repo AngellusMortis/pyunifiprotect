@@ -101,6 +101,13 @@ def legacy_process_camera(data: Dict[str, Any], host: str, server_id: Optional[s
 
     feature_flags = data.get("featureFlags", {})
 
+    # Doorbell LCD Text
+    lcdmessage = data.get("lcdMessage")
+    doorbell_text = None
+    if lcdmessage is not None:
+        doorbell_text = lcdmessage.get("text")
+
+    # Get Privacy Mode
     privacy_on = False
     for row in data.get("privacyZones", []):
         if row["name"] == ZONE_NAME:
@@ -166,6 +173,7 @@ def legacy_process_camera(data: Dict[str, Any], host: str, server_id: Optional[s
             "chime_enabled": data.get("chimeDuration") not in CHIME_DISABLED,
             "chime_duration": data.get("chimeDuration"),
             "stream_source": stream_sources,
+            "doorbell_text": doorbell_text,
         }
     )
 

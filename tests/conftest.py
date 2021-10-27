@@ -91,7 +91,6 @@ MockDatetime.now.return_value = get_now()
 @pytest.mark.asyncio
 async def old_protect_client():
     client = UpvServer(None, "127.0.0.1", 0, "username", "password")
-    client.is_unifi_os = True
     client.api_request = AsyncMock(side_effect=mock_api_request)
     client.ensure_authenticated = AsyncMock()
     client.ws_session = AsyncMock()
