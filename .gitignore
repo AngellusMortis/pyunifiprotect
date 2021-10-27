@@ -1,5 +1,7 @@
+# settings.json is user-specific overrides for devcontainer.json
 .vscode/settings.json
 test-data
+ufp-data
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -4,13 +4,18 @@ This module communicates with Unifi Protect Surveillance software installed on e
 
 The API is not documented by Ubiquiti, so there might be misses and/or frequent changes in this module, as Ubiquiti evolves the software.
 
-The module is written for the sole purpose as being used in Home Assistant for the Custom Integration called *unifiprotect* but might be used for other purposes also.
+The module is written for the sole purpose as being used in Home Assistant for the Custom Integration called `unifiprotect` but might be used for other purposes also.
 
 ## Development
 
 ### Setup
 
-This project is primarily designed to developed using [VS Code](https://code.visualstudio.com/) using the [Remote Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers). This also requires [Docker](https://docs.docker.com/get-docker/).
+Development with this project is designed to be done via VS Code + Docker. It is a pretty standard Python package, so feel free to use anything else, but all documentation assumes you are using VS Code.
+
+* [VS Code](https://code.visualstudio.com/) + [Remote Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+* [Docker](https://docs.docker.com/get-docker/)
+    * If you are using Linux, you need Docker Engine 19.0 or newer and you need to enable [Docker Buildkit](https://docs.docker.com/develop/develop-images/build_enhancements/)
+    * If you are using Docker Desktop on MacOS or Winows, you will need Docker Desktop 3.2.0 or newer
 
 Once you have all three setup,
 
@@ -79,13 +84,13 @@ Tests can also be ran directly from within VS Code using the testing side panel.
 You can also generate and run tests against real non-anonymized data to help troubleshoot issues and see real results. You can also increase the gather time for events to give you more time to generate events for testing as well.
 
 ```
-export UFP_SAMPLE_DIR=/workspaces/test-data
+export UFP_SAMPLE_DIR=/workspaces/pyunifiprotect/test-data
 unifi-protect generate-sample-data -w 300 --actual
 ```
 
 You can then make `pytest` use this real data as well:
 
 ```
-export UFP_SAMPLE_DIR=/workspaces/test-data
+export UFP_SAMPLE_DIR=/workspaces/pyunifiprotect/test-data
 pytest
 ```

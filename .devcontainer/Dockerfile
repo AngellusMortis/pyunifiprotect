@@ -7,8 +7,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements_all.txt requirements_test.txt /
-RUN pip install --no-cache-dir -U pip \
-    && pip install --no-cache-dir -r /requirements_all.txt -r /requirements_test.txt \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip pip install -U pip \
+    && pip install -r /requirements_all.txt -r /requirements_test.txt \
     && rm /requirements_all.txt /requirements_test.txt \
     && echo 'export PS1="\[$(tput setaf 6)\]\w \[$(tput setaf 7)\]\\$ \[$(tput sgr0)\]"' >> /root/.bashrc
 

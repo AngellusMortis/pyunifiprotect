@@ -1,21 +1,38 @@
-**Dumping Event Log data**
+# Generating Sample Data to help with Testing/Features
 
-Do the following:
+## Setup Python
 
-1. Ensure Python 3.8 or 3.9 is installed
+### With Home Assistant (via the `unifiprotect` integration)
+
+This requires at least `v0.10` of the `unifiprotect` integration to work.
+
+1. Make sure you have the _Community_ [SSH & Web Terminal Add-On](https://github.com/hassio-addons/addon-ssh) install
+2. Open an SSH or Web terminal to the add-on
+3. Run
+
+   ```bash
+   docker exec -it homeassistant bash
+   ```
+
+Use `/config/ufp-data` for your `-o` argument below.
+
+### Without Home Assistant
+
+1. Ensure Python 3.8+ is installed
 2. Install pyunifiprotect by issuing this command: `pip3 install pyunifiprotect`
-3. Make sure that you are visible to one of your Cameras, and that motion detection is enabled on that camera
-4. Create a `.env` file in your current directory with the following (replacing any values as nessecary):
 
-   ```
-   UFP_USERNAME=YOUR_USERNAME_HERE
-   UFP_PASSWORD=YOUR_PASSWORD_HERE
-   UFP_ADDRESS=YOUR_IP_ADDRESS
-   UFP_PORT=443
-   UFP_SSL_VERIFY=True
-   ```
+Use `./ufp-data` for your `-o` argument below.
 
-5. Now run the program you downloaded by issuing this command: `unifi-protect event-data > events.log`
-6. While the program is running, make sure you move, so that the Camera detects some motion
+## Generate Data
 
-There is now a file called `events.log`in your current directory. Please send this to me.
+Inside of the Python environment from above, run the following command. If you are using Home Assistant, use `-o /config/ufp-data` so it will output data in your config folder to make it easy to get off of your HA instance.
+
+```bash
+unifi-protect generate-sample-data -o /path/to/ufp-data --actual -w 300 -v -U your-unifi-protect-username -P your-unifi-protect-password -a ip-address-to-unifi-protect
+```
+
+This will generate a ton of data from your Unifi Protect instance for 5 minutes. During this time, go do stuff with your sensor to trigger events. When it is all done, you will have a bunch of json files in `/path/to/ufp-data`. Download those and zip them up and send them to us.
+
+It is recommended that you _do not_ post these files publically as they do have some senstive data in them related to your Unifi Network. If you would like you manually clean out the senstive data from these files, feel free.
+
+The most cirtical data for you do remove are the `authUserId`, `accessKey`, and `users` keys from the `sample_bootstrap.json` file.
