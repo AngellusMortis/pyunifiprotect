@@ -55,7 +55,6 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
         # TODO:
         # legacyUFV
         # display
-        # bridge
         # sensor
         # doorlock
 
