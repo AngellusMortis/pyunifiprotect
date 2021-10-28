@@ -24,6 +24,8 @@ base36==0.1.1
     # via pyunifiprotect (setup.cfg)
 black==21.9b0
     # via pyunifiprotect (setup.cfg)
+build==0.7.0
+    # via pyunifiprotect (setup.cfg)
 chardet==4.0.0
     # via aiohttp
 click==8.0.3
@@ -80,6 +82,7 @@ mypy-extensions==0.4.3
     #   mypy
 packaging==21.0
     # via
+    #   build
     #   pytest
     #   pytest-sugar
     #   tox
@@ -88,7 +91,9 @@ parso==0.8.2
 pathspec==0.9.0
     # via black
 pep517==0.12.0
-    # via pip-tools
+    # via
+    #   build
+    #   pip-tools
 pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
@@ -175,6 +180,7 @@ toml==0.10.2
 tomli==1.2.2
     # via
     #   black
+    #   build
     #   coverage
     #   pep517
 tox==3.24.4

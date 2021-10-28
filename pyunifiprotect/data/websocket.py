@@ -8,8 +8,8 @@ import struct
 from typing import Optional, Type
 import zlib
 
-from ..exceptions import WSDecodeError
-from .types import ProtectWSPayloadFormat
+from pyunifiprotect.data.types import ProtectWSPayloadFormat
+from pyunifiprotect.exceptions import WSDecodeError
 
 WS_HEADER_SIZE = 8
 

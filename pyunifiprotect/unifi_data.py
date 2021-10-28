@@ -13,11 +13,9 @@ from pyunifiprotect.data import (
     WSRawPacketFrame,
 )
 
-WS_HEADER_SIZE = 8
 _LOGGER = logging.getLogger(__name__)
 
 CHIME_DISABLED = [0]
-
 
 DEVICE_MODEL_CAMERA = ModelType.CAMERA.value
 DEVICE_MODEL_LIGHT = ModelType.LIGHT.value
