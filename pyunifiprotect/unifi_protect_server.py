@@ -55,7 +55,7 @@ from pyunifiprotect.utils import get_response_reason, to_js_time
 
 NEVER_RAN = -1000
 DEVICE_UPDATE_INTERVAL_SECONDS = 60
-DEVICE_UPDATE_INTERVAL = timedelta(seconds=300)
+DEVICE_UPDATE_INTERVAL = timedelta(seconds=DEVICE_UPDATE_INTERVAL_SECONDS)
 WEBSOCKET_CHECK_INTERVAL_SECONDS = 120
 WEBSOCKET_CHECK_INTERVAL = timedelta(seconds=WEBSOCKET_CHECK_INTERVAL_SECONDS)
 LIGHT_MODES = ["off", "motion", "always"]
