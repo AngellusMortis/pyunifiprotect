@@ -40,7 +40,7 @@ pickleshare==0.7.5
     # via ipython
 pillow==8.4.0
     # via pyunifiprotect (setup.cfg)
-prompt-toolkit==3.0.20
+prompt-toolkit==3.0.21
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -56,7 +56,7 @@ pytz==2021.3
     # via pyunifiprotect (setup.cfg)
 termcolor==1.1.0
     # via pyunifiprotect (setup.cfg)
-traitlets==5.1.0
+traitlets==5.1.1
     # via
     #   ipython
     #   matplotlib-inline

@@ -6,7 +6,7 @@
 #
 aiohttp==3.7.4.post0
     # via pyunifiprotect (setup.cfg)
-astroid==2.8.3
+astroid==2.8.4
     # via pylint
 async-timeout==3.0.1
     # via aiohttp
@@ -90,7 +90,7 @@ parso==0.8.2
     # via jedi
 pathspec==0.9.0
     # via black
-pep517==0.11.1
+pep517==0.12.0
     # via
     #   build
     #   pip-tools
@@ -111,7 +111,7 @@ pluggy==1.0.0
     # via
     #   pytest
     #   tox
-prompt-toolkit==3.0.20
+prompt-toolkit==3.0.21
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -139,7 +139,7 @@ pylint==2.11.1
     #   pyunifiprotect (setup.cfg)
 pylint-strict-informational==0.1
     # via pyunifiprotect (setup.cfg)
-pyparsing==2.4.7
+pyparsing==3.0.3
     # via packaging
 pyproject-flake8==0.0.1a2
     # via pyunifiprotect (setup.cfg)
@@ -162,7 +162,7 @@ python-dotenv==0.19.1
     # via pyunifiprotect (setup.cfg)
 pytz==2021.3
     # via pyunifiprotect (setup.cfg)
-regex==2021.10.8
+regex==2021.10.23
     # via black
 six==1.16.0
     # via
@@ -181,7 +181,7 @@ toml==0.10.2
     #   pyproject-flake8
     #   pytest
     #   tox
-tomli==1.2.1
+tomli==1.2.2
     # via
     #   black
     #   build
@@ -189,7 +189,7 @@ tomli==1.2.1
     #   pep517
 tox==3.24.4
     # via pyunifiprotect (setup.cfg)
-traitlets==5.1.0
+traitlets==5.1.1
     # via
     #   ipython
     #   matplotlib-inline
@@ -207,7 +207,7 @@ typing-extensions==3.10.0.2
     #   black
     #   mypy
     #   pydantic
-virtualenv==20.8.1
+virtualenv==20.9.0
     # via tox
 wcwidth==0.2.5
     # via prompt-toolkit
