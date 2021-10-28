@@ -408,6 +408,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
             "server_version": nvr_data["version"],
             SERVER_ID: nvr_data["mac"],
             "server_model": nvr_data["type"],
+            "server_ip": nvr_data["host"],
         }
 
     async def _get_device_list(self, include_events) -> None:
