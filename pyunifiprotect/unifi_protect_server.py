@@ -7,6 +7,7 @@ import logging
 import time
 from typing import Callable, Dict, List, Optional, Union
 from urllib.parse import urljoin
+from uuid import UUID
 
 import aiohttp
 from aiohttp import client_exceptions
@@ -73,7 +74,7 @@ class BaseApiClient:
 
     req: aiohttp.ClientSession
     headers: Optional[dict] = None
-    last_update_id: Optional[str] = None
+    last_update_id: Optional[UUID] = None
     ws_session: Optional[aiohttp.ClientSession] = None
     ws_connection: Optional[_WSRequestContextManager] = None
     ws_task: Optional[asyncio.Task] = None
@@ -81,12 +82,12 @@ class BaseApiClient:
 
     def __init__(
         self,
-        session: Optional[aiohttp.ClientSession],
         host: str,
         port: int,
         username: str,
         password: str,
-        verify_ssl: bool,
+        verify_ssl: bool = True,
+        session: Optional[aiohttp.ClientSession] = None,
     ):
         self._host = host
         self._port = port
@@ -235,8 +236,8 @@ class BaseApiClient:
 
         return self._is_authenticated
 
-    async def async_connect_ws(self):
-        """Connect the websocket."""
+    def disconnect_ws(self):
+        """Disconnects from the websocket if already connected."""
         if self.ws_connection is not None:
             return
 
@@ -246,6 +247,13 @@ class BaseApiClient:
                 self.ws_connection = None
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Could not cancel ws_task")
+
+    async def async_connect_ws(self):
+        """Connect the websocket."""
+        if self.ws_connection is not None:
+            return
+
+        self.disconnect_ws()
         self.ws_task = asyncio.ensure_future(self._setup_websocket())
 
     async def async_disconnect_ws(self):
@@ -302,7 +310,7 @@ class BaseApiClient:
             log = _LOGGER.debug
         log("Unifi OS: Websocket connection not active, failing back to polling")
 
-    def _process_ws_message(self, msg):
+    def _process_ws_message(self, msg: aiohttp.WSMessage):
         raise NotImplementedError()
 
 
@@ -329,7 +337,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         verify_ssl: bool = False,
         minimum_score: int = 0,
     ):
-        super().__init__(session, host, port, username, password, verify_ssl)
+        super().__init__(host, port, username, password, verify_ssl, session=session)
 
         self._minimum_score = minimum_score
 
@@ -400,7 +408,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         data = await self.api_request("bootstrap")
         server_id = data["nvr"]["mac"]
         if not self.ws_connection and "lastUpdateId" in data:
-            self.last_update_id = data["lastUpdateId"]
+            self.last_update_id = UUID(data["lastUpdateId"])
 
         self._process_cameras_json(data, server_id, include_events)
         self._process_lights_json(data, server_id, include_events)
@@ -916,7 +924,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         self._ws_subscriptions.append(ws_callback)
         return _unsub_ws_callback
 
-    def _process_ws_message(self, msg):
+    def _process_ws_message(self, msg: aiohttp.WSMessage):
         """Process websocket messages."""
         action_frame, action_frame_payload_format, position = decode_ws_frame(msg.data, 0)
 
