@@ -67,6 +67,7 @@ class SampleDataGenerator:
         self.constants["server_name"] = data["nvr"]["name"]
         self.constants["server_id"] = data["nvr"]["mac"]
         self.constants["server_version"] = data["nvr"]["version"]
+        self.constants["server_ip"] = data["nvr"]["host"]
         self.constants["last_update_id"] = data["lastUpdateId"]
         self.constants["user_id"] = data["authUserId"]
         self.constants["counts"] = {
