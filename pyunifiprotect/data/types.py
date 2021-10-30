@@ -12,7 +12,7 @@ VT = TypeVar("VT")
 # TODO: Remove when 3.8 support is dropped
 if TYPE_CHECKING:
 
-    class FixSizeOrderedDictBase(dict[KT, VT]):  # pylint: disable=unsubscriptable-object
+    class FixSizeOrderedDictBase(dict[KT, VT]):
         pass
 
 

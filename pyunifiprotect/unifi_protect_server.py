@@ -71,7 +71,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # TODO: Remove when 3.8 support is dropped
 if TYPE_CHECKING:
-    TaskClass = asyncio.Task[None]  # pylint: disable=unsubscriptable-object
+    TaskClass = asyncio.Task[None]
 else:
     TaskClass = asyncio.Task
 

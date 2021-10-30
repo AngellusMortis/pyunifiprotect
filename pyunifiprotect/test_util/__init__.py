@@ -4,7 +4,7 @@ import asyncio
 from datetime import datetime
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, overload
 
 from PIL import Image
 import aiohttp
@@ -63,7 +63,7 @@ class SampleDataGenerator:
         await self.client.update(True)
 
         bootstrap: Dict[str, Any] = await self.client.api_request_obj("bootstrap")
-        bootstrap = self.write_json_file("sample_bootstrap", bootstrap)  # type: ignore
+        bootstrap = self.write_json_file("sample_bootstrap", bootstrap)
         self.constants["server_name"] = bootstrap["nvr"]["name"]
         self.constants["server_id"] = bootstrap["nvr"]["mac"]
         self.constants["server_version"] = bootstrap["nvr"]["version"]
@@ -85,7 +85,7 @@ class SampleDataGenerator:
         }
 
         liveviews: List[Any] = await self.client.api_request_list("liveviews")
-        liveviews = self.write_json_file("sample_liveviews", liveviews)  # type: ignore
+        liveviews = self.write_json_file("sample_liveviews", liveviews)
 
         await self.record_ws_events()
         heatmap_event = await self.generate_event_data()
@@ -115,9 +115,12 @@ class SampleDataGenerator:
         await self.client.async_disconnect_ws()
         self.write_json_file("sample_ws_messages", self._record_ws_messages, anonymize=False)
 
-    def write_json_file(
-        self, name: str, data: Union[List[Any], Dict[str, Any]], anonymize: Optional[bool] = None
-    ) -> Union[List[Any], Dict[str, Any]]:
+    @overload
+    def write_json_file(self, name: str, data: List[Any], anonymize: Optional[bool] = None) -> List[Any]:
+        ...
+
+    @overload
+    def write_json_file(self, name: str, data: Dict[str, Any], anonymize: Optional[bool] = None) -> Dict[str, Any]:
         if anonymize is None:
             anonymize = self.anonymize
 
@@ -147,7 +150,7 @@ class SampleDataGenerator:
             if event.get("heatmap") is not None and event.get("type") in EventType.motion_events():
                 heatmap_event: Dict[str, Any] = event
 
-        data = self.write_json_file("sample_raw_events", data)  # type: ignore
+        data = self.write_json_file("sample_raw_events", data)
         self.constants["time"] = datetime.now().isoformat()
         self.constants["event_count"] = len(data)
 
@@ -231,7 +234,7 @@ class SampleDataGenerator:
             self.write_image_file(filename, await self.client.get_snapshot_image(camera_id=camera_id))
 
         data = await self.client._get_camera_detail(camera_id=camera_id)
-        data = self.write_json_file("sample_camera", data)  # type: ignore
+        data = self.write_json_file("sample_camera", data)
 
         if heatmap_event is not None:
             self.client._process_events([heatmap_event], LIVE_RING_FROM_WEBSOCKET)
@@ -250,11 +253,11 @@ class SampleDataGenerator:
 
     async def generate_light_data(self, light_id: str) -> None:
         data = await self.client._get_light_detail(light_id=light_id)
-        data = self.write_json_file("sample_light", data)  # type: ignore
+        data = self.write_json_file("sample_light", data)
 
     async def generate_viewport_data(self, viewport_id: str) -> None:
         data = await self.client._get_viewport_detail(viewport_id=viewport_id)
-        data = self.write_json_file("sample_viewport", data)  # type: ignore
+        data = self.write_json_file("sample_viewport", data)
 
     def _handle_ws_message(self, msg: aiohttp.WSMessage) -> None:
         if not self._record_listen_for_events:
