@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import json as pjson
 import logging
 import time
-from typing import Any, Callable, Dict, List, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Optional, Union
 from urllib.parse import urljoin
 from uuid import UUID
 
@@ -69,6 +69,13 @@ WEBSOCKET_ERROR_GRACE_PERIOD = timedelta(seconds=60)
 _LOGGER = logging.getLogger(__name__)
 
 
+# TODO: Remove when 3.8 support is dropped
+if TYPE_CHECKING:
+    TaskClass = asyncio.Task[None]  # pylint: disable=unsubscriptable-object
+else:
+    TaskClass = asyncio.Task
+
+
 class BaseApiClient:
     _host: str
     _port: int
@@ -85,7 +92,7 @@ class BaseApiClient:
     last_update_id: Optional[UUID] = None
     ws_session: Optional[aiohttp.ClientSession] = None
     ws_connection: Optional[aiohttp.ClientWebSocketResponse] = None
-    ws_task: Optional[asyncio.Task[None]] = None
+    ws_task: Optional[TaskClass] = None
     ws_callback: Optional[Callable[[aiohttp.WSMessage], None]] = None
 
     def __init__(
@@ -265,7 +272,7 @@ class BaseApiClient:
 
         response = await self.request("post", url=url, json=auth)
         self.headers = {
-            "cookie": response.headers.get("set-cookie"),
+            "cookie": response.headers.get("set-cookie", ""),
         }
 
         csrf_token = response.headers.get("x-csrf-token")
