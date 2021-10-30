@@ -4,7 +4,7 @@ import asyncio
 from datetime import datetime
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, overload
+from typing import Any, Dict, List, Optional, Union, overload
 
 from PIL import Image
 import aiohttp
@@ -121,6 +121,11 @@ class SampleDataGenerator:
 
     @overload
     def write_json_file(self, name: str, data: Dict[str, Any], anonymize: Optional[bool] = None) -> Dict[str, Any]:
+        ...
+
+    def write_json_file(
+        self, name: str, data: Union[List[Any], Dict[str, Any]], anonymize: Optional[bool] = None
+    ) -> Union[List[Any], Dict[str, Any]]:
         if anonymize is None:
             anonymize = self.anonymize
 
