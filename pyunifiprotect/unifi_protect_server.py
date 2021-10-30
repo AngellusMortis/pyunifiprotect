@@ -170,7 +170,6 @@ class BaseApiClient:
         self,
         url: str,
         method: str = "get",
-        raw: bool = False,
         require_auth: bool = True,
         raise_exception: bool = True,
         **kwargs: Any,
