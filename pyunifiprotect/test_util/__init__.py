@@ -67,6 +67,7 @@ class SampleDataGenerator:
         self.constants["server_name"] = bootstrap["nvr"]["name"]
         self.constants["server_id"] = bootstrap["nvr"]["mac"]
         self.constants["server_version"] = bootstrap["nvr"]["version"]
+        self.constants["server_ip"] = bootstrap["nvr"]["host"]
         self.constants["last_update_id"] = bootstrap["lastUpdateId"]
         self.constants["user_id"] = bootstrap["authUserId"]
         self.constants["counts"] = {
