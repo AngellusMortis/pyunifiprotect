@@ -22,7 +22,7 @@ decorator==5.1.0
     # via ipython
 idna==3.3
     # via yarl
-ipython==7.28.0
+ipython==7.29.0
     # via pyunifiprotect (setup.cfg)
 jedi==0.18.0
     # via ipython

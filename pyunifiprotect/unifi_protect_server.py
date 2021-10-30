@@ -217,9 +217,13 @@ class BaseApiClient:
 
         response = await self.request("post", url=url, json=auth)
         self.headers = {
-            "x-csrf-token": response.headers.get("x-csrf-token"),
             "cookie": response.headers.get("set-cookie"),
         }
+
+        csrf_token = response.headers.get("x-csrf-token")
+        if csrf_token is not None:
+            self.headers["x-csrf-token"] = csrf_token
+
         self._is_authenticated = True
         _LOGGER.debug("Authenticated successfully!")
 
@@ -849,6 +853,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         # Update the Privacy Mode
         data = {"privacyZones": items}
         await self.api_request(f"cameras/{camera_id}", method="patch", json=data)
+        self._processed_data[camera_id]["privacy_on"] = mode
         return True
 
     async def _get_camera_detail(self, camera_id: str) -> dict:

@@ -73,6 +73,7 @@ CAMERA_KEYS = {
     "isMotionDetected",
     "zoomPosition",
     "chimeDuration",
+    "privacyZones",
 }
 
 LIGHT_KEYS = {
@@ -329,12 +330,8 @@ def process_camera(server_id, host, camera, include_events):
     if lcdmessage is not None:
         doorbell_text = lcdmessage.get("text")
     # Get Privacy Mode
-    privacy_on = False
-    for row in camera.get("privacyZones", []):
-        if row["name"] == ZONE_NAME:
-            privacy_on = row["points"] == PRIVACY_ON
-            break
-
+    priv_zones = next((sub for sub in camera.get("privacyZones", []) if sub["name"] == ZONE_NAME), None)
+    privacy_on = bool(priv_zones is not None and priv_zones["points"] == PRIVACY_ON)
     # Add rtsp streaming url if enabled
     rtsp = None
     image_width = None
