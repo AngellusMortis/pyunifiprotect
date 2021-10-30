@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 else:
 
-    class FixSizeOrderedDictBase(Generic[KT, VT], OrderedDict):
+    class FixSizeOrderedDictBase(Generic[KT, VT], dict):
         pass
 
 
