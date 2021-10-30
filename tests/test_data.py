@@ -3,6 +3,8 @@
 import base64
 from copy import deepcopy
 
+import pytest
+
 from pyunifiprotect.data import (
     Bootstrap,
     Camera,
