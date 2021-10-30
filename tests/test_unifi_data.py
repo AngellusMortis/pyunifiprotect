@@ -3,7 +3,9 @@
 import base64
 import json
 
-from pyunifiprotect.data import ProtectWSPayloadFormat
+import pytest
+
+from pyunifiprotect.data import FixSizeOrderedDict, ProtectWSPayloadFormat
 from pyunifiprotect.unifi_data import decode_ws_frame
 
 PACKET_B64 = b"AQEBAAAAAHR4nB2MQQrCMBBFr1JmbSDNpJnRG4hrDzBNZqCgqUiriHh3SZb/Pd7/guRtWSucBtgfRTaFwwBV39c+zqUJskQW1DufUVwkJsfFxDGLyRFj0dSz+1r0dtFPa+rr2dDSD8YsyceUpskQxzjjHIIQMvz+hMoj/AIBAQAAAAA1eJyrViotKMnMTVWyUjA0MjawMLQ0MDDQUVDKSSwuCU5NzQOJmxkbACUszE0sLQ1rAVU/DPU="
@@ -30,3 +32,37 @@ def test_decode_frame():
     assert json.loads(raw_data) == PACKET_DATA
     assert payload_format == ProtectWSPayloadFormat.JSON
     assert position == 185
+
+
+def test_fix_order_size_dict_no_max():
+    d = FixSizeOrderedDict()
+    d["test"] = 1
+    d["test2"] = 2
+    d["test3"] = 3
+
+    del d["test2"]
+
+    assert d == {"test": 1, "test3": 3}
+
+
+def test_fix_order_size_dict_max():
+    d = FixSizeOrderedDict(max_size=1)
+    d["test"] = 1
+    d["test2"] = 2
+    d["test3"] = 3
+
+    with pytest.raises(KeyError):
+        del d["test2"]
+
+    assert d == {"test3": 3}
+
+
+def test_fix_order_size_dict_negative_max():
+    d = FixSizeOrderedDict(max_size=-1)
+    d["test"] = 1
+    d["test2"] = 2
+    d["test3"] = 3
+
+    del d["test2"]
+
+    assert d == {"test": 1, "test3": 3}

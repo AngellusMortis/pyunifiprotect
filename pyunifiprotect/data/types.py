@@ -1,11 +1,10 @@
-from collections import OrderedDict
 import enum
 from typing import List, Optional
 
 from pydantic import ConstrainedDecimal, ConstrainedInt
 
 
-class FixSizeOrderedDict(OrderedDict):
+class FixSizeOrderedDict(dict):
     """A fixed size ordered dict."""
 
     def __init__(self, *args, max_size=0, **kwargs):
@@ -16,9 +15,8 @@ class FixSizeOrderedDict(OrderedDict):
     def __setitem__(self, key, value):
         """Set an update up to the max size."""
         dict.__setitem__(self, key, value)
-        if self._max_size > 0:
-            if len(self) > self._max_size:
-                self.popitem(False)
+        if self._max_size > 0 and len(self) > 0 and len(self) > self._max_size:
+            del self[list(self.keys())[0]]
 
 
 class ValuesEnumMixin:
