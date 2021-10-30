@@ -207,9 +207,13 @@ class BaseApiClient:
 
         response = await self.request("post", url=url, json=auth)
         self.headers = {
-            "x-csrf-token": response.headers.get("x-csrf-token"),
             "cookie": response.headers.get("set-cookie"),
         }
+
+        csrf_token = response.headers.get("x-csrf-token")
+        if csrf_token is not None:
+            self.headers["x-csrf-token"] = csrf_token
+
         self._is_authenticated = True
         _LOGGER.debug("Authenticated successfully!")
 
