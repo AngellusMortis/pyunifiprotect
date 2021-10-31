@@ -190,10 +190,10 @@ class ProtectBaseObject(BaseModel):
             return value
 
         items: Dict[Any, Any] = {}
-        for key, obj in value.items():
+        for obj_key, obj in value.items():
             if isinstance(obj, ProtectBaseObject):
                 obj = obj.unifi_dict()
-            items[key] = obj
+            items[obj_key] = obj
 
         return items
 
