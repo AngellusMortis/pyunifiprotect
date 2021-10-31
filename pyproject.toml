@@ -87,9 +87,9 @@ good-names = [
 # inconsistent-return-statements - doesn't handle raise
 # too-many-ancestors - it's too strict.
 # wrong-import-order - isort guards this
-# no-member - mypy handles this better
-# unsupported-membership-test - mypy handles this better
-# unsubscriptable-object - mypy handles this better
+
+# handled by mypy:
+# no-member, unsupported-membership-test, unsupported-assignment-operation, unsubscriptable-object
 disable = [
     "format",
     "abstract-class-little-used",
@@ -118,7 +118,11 @@ disable = [
     "fixme",
     "no-member",
     "unsupported-membership-test",
+<<<<<<< HEAD
     "unsubscriptable-object",
+=======
+    "unsupported-assignment-operation",
+>>>>>>> fba4dc3 (Makes nested Protect Objects smarter)
 ]
 enable = [
     #"useless-suppression",  # temporarily every now and then to clean them up
