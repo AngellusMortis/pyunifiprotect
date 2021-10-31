@@ -9,12 +9,12 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    List,
     Optional,
     Set,
     Type,
     TypeVar,
     Union,
-    List,
 )
 
 from pydantic import BaseModel
