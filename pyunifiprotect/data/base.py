@@ -14,6 +14,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    List,
 )
 
 from pydantic import BaseModel
@@ -105,6 +106,32 @@ class ProtectBaseObject(BaseModel):
         return api
 
     @classmethod
+    def _clean_project_obj(cls, data: Any, klass: Type[ProtectBaseObject], api: Optional[ProtectApiClient]) -> Any:
+        if isinstance(data, dict):
+            if api is not None:
+                data["api"] = api
+            return klass.clean_unifi_dict(data=data)
+        return data
+
+    @classmethod
+    def _clean_project_obj_list(
+        cls, items: List[Any], klass: Type[ProtectBaseObject], api: Optional[ProtectApiClient]
+    ) -> List[Any]:
+        cleaned_items: List[Any] = []
+        for item in items:
+            cleaned_items.append(cls._clean_project_obj(item, klass, api))
+        return cleaned_items
+
+    @classmethod
+    def _clean_project_obj_dict(
+        cls, items: Dict[Any, Any], klass: Type[ProtectBaseObject], api: Optional[ProtectApiClient]
+    ) -> Dict[Any, Any]:
+        cleaned_items: Dict[Any, Any] = {}
+        for key, value in items.items():
+            cleaned_items[key] = cls._clean_project_obj(value, klass, api)
+        return cleaned_items
+
+    @classmethod
     def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         for from_key, to_key in cls.UNIFI_REMAP.items():
             if from_key in data:
@@ -113,37 +140,62 @@ class ProtectBaseObject(BaseModel):
         for key in list(data.keys()):
             data[to_snake_case(key)] = data.pop(key)
 
+        api = cls._get_api(data)
         for key, klass in cls._get_protect_objs().items():
-            if key in data and isinstance(data[key], dict):
-                obj_dict = data[key]
-                api = cls._get_api(data)
-                if api is not None:
-                    obj_dict["api"] = api
-                data[key] = klass.clean_unifi_dict(data=obj_dict)
+            if key in data:
+                data[key] = cls._clean_project_obj(data[key], klass, api)
 
         for key, klass in cls._get_protect_lists().items():
             if key in data and isinstance(data[key], list):
-                obj_list = data[key]
-                api = cls._get_api(data)
-                cleaned_items = []
-                for obj in obj_list:
-                    if api is not None:
-                        obj["api"] = api
-                    cleaned_items.append(klass.clean_unifi_dict(data=obj))
-                data[key] = cleaned_items
+                data[key] = cls._clean_project_obj_list(data[key], klass, api)
 
         for key, klass in cls._get_protect_dicts().items():
             if key in data and isinstance(data[key], dict):
-                obj_dict = data[key]
-                api = cls._get_api(data)
-                cleaned_dict = {}
-                for obj_key, value in obj_dict.items():
-                    if api is not None:
-                        value["api"] = api
-                    cleaned_dict[obj_key] = klass.clean_unifi_dict(data=value)
-                data[key] = cleaned_dict
+                data[key] = cls._clean_project_obj_dict(data[key], klass, api)
 
         return data
+
+    def _unifi_dict_protect_obj(self, data: Dict[str, Any], key: str, use_obj: bool) -> Any:
+        value: Optional[Any] = data.get(key)
+        if use_obj:
+            value = getattr(self, key)
+
+        if isinstance(value, ProtectBaseObject):
+            value = value.unifi_dict()
+
+        return value
+
+    def _unifi_dict_protect_obj_list(self, data: Dict[str, Any], key: str, use_obj: bool) -> Any:
+        value: Optional[Any] = data.get(key)
+        if use_obj:
+            value = getattr(self, key)
+
+        if not isinstance(value, list):
+            return value
+
+        items: List[Any] = []
+        for item in value:
+            if isinstance(item, ProtectBaseObject):
+                item = item.unifi_dict()
+            items.append(item)
+
+        return items
+
+    def _unifi_dict_protect_obj_dict(self, data: Dict[str, Any], key: str, use_obj: bool) -> Any:
+        value: Optional[Any] = data.get(key)
+        if use_obj:
+            value = getattr(self, key)
+
+        if not isinstance(value, dict):
+            return value
+
+        items: Dict[Any, Any] = {}
+        for key, obj in value.items():
+            if isinstance(obj, ProtectBaseObject):
+                obj = obj.unifi_dict()
+            items[key] = obj
+
+        return items
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
         use_obj = False
@@ -155,52 +207,16 @@ class ProtectBaseObject(BaseModel):
             use_obj = True
 
         for key in self._get_protect_objs().keys():
-            unifi_obj: Optional[Any] = None
-            if use_obj:
-                unifi_obj = getattr(self, key)
-            elif key in data:
-                unifi_obj = data[key]
-
-            if isinstance(unifi_obj, ProtectBaseObject):
-                data[key] = unifi_obj.unifi_dict()
-            elif use_obj or key in data:
-                data[key] = unifi_obj
+            if use_obj or key in data:
+                data[key] = self._unifi_dict_protect_obj(data, key, use_obj)
 
         for key in self._get_protect_lists().keys():
-            unifi_list: Optional[Any] = None
-            if use_obj:
-                unifi_list = getattr(self, key)
-            elif key in data:
-                unifi_list = data[key]
-
-            if isinstance(unifi_list, list):
-                objs = []
-                for obj in unifi_list:
-                    if isinstance(obj, ProtectBaseObject):
-                        objs.append(obj.unifi_dict())
-                    else:
-                        objs.append(obj)
-                data[key] = objs
-            elif key in data:
-                data[key] = unifi_list
+            if use_obj or key in data:
+                data[key] = self._unifi_dict_protect_obj_list(data, key, use_obj)
 
         for key in self._get_protect_dicts().keys():
-            unifi_dict: Optional[Any] = None
-            if use_obj:
-                unifi_dict = getattr(self, key)
-            elif key in data:
-                unifi_dict = data[key]
-
-            if isinstance(unifi_dict, dict):
-                obj_dict = {}
-                for obj_key, value in unifi_dict.items():
-                    if isinstance(value, ProtectBaseObject):
-                        obj_dict[obj_key] = value.unifi_dict()
-                    else:
-                        obj_dict[obj_key] = value
-                data[key] = obj_dict
-            elif key in data:
-                data[key] = unifi_dict
+            if use_obj or key in data:
+                data[key] = self._unifi_dict_protect_obj_dict(data, key, use_obj)
 
         data: Dict[str, Any] = serialize_unifi_obj(data)
         for to_key, from_key in self.UNIFI_REMAP.items():
