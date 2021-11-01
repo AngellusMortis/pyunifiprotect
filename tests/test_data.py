@@ -18,7 +18,7 @@ from pyunifiprotect.data import (
     Viewer,
     WSPacket,
 )
-from tests.conftest import compare_objs, SAMPLE_DATA_DIRECTORY
+from tests.conftest import SAMPLE_DATA_DIRECTORY, compare_objs
 
 PACKET_B64 = "AQEBAAAAAHR4nB2MQQrCMBBFr1JmbSDNpJnRG4hrDzBNZqCgqUiriHh3SZb/Pd7/guRtWSucBtgfRTaFwwBV39c+zqUJskQW1DufUVwkJsfFxDGLyRFj0dSz+1r0dtFPa+rr2dDSD8YsyceUpskQxzjjHIIQMvz+hMoj/AIBAQAAAAA1eJyrViotKMnMTVWyUjA0MjawMLQ0MDDQUVDKSSwuCU5NzQOJmxkbACUszE0sLQ1rAVU/DPU="
 PACKET_ACTION = {
