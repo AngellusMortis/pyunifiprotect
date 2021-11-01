@@ -614,7 +614,7 @@ class SensorStats(ProtectBaseObject):
     humidity: SensorStat
     temperature: SensorStat
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
         "light": SensorStat,
         "humidity": SensorStat,
         "temperature": SensorStat,
@@ -642,7 +642,7 @@ class Sensor(ProtectAdoptableDeviceModel):
     # TODO:
     # mountType
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
         "alarmSettings": SensorSettingsBase,
         "batteryStatus": SensorBatteryStatus,
     }
