@@ -27,7 +27,7 @@ def read_binary_file(name: str, ext: str = "png"):
 
 
 def read_json_file(name: str):
-    with open(SAMPLE_DATA_DIRECTORY / f"{name}.json") as f:
+    with open(SAMPLE_DATA_DIRECTORY / f"{name}.json", encoding="utf8") as f:
         return json.load(f)
 
 

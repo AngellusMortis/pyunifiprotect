@@ -2,6 +2,7 @@
 
 import base64
 from copy import deepcopy
+import os
 
 import pytest
 
@@ -17,7 +18,7 @@ from pyunifiprotect.data import (
     Viewer,
     WSPacket,
 )
-from tests.conftest import compare_objs
+from tests.conftest import compare_objs, SAMPLE_DATA_DIRECTORY
 
 PACKET_B64 = "AQEBAAAAAHR4nB2MQQrCMBBFr1JmbSDNpJnRG4hrDzBNZqCgqUiriHh3SZb/Pd7/guRtWSucBtgfRTaFwwBV39c+zqUJskQW1DufUVwkJsfFxDGLyRFj0dSz+1r0dtFPa+rr2dDSD8YsyceUpskQxzjjHIIQMvz+hMoj/AIBAQAAAAA1eJyrViotKMnMTVWyUjA0MjawMLQ0MDDQUVDKSSwuCU5NzQOJmxkbACUszE0sLQ1rAVU/DPU="
 PACKET_ACTION = {
@@ -80,6 +81,7 @@ def test_packet_raw_setter():
     assert packet.data_frame.data == PACKET2_DATA
 
 
+@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_viewport.json").exists(), reason="No viewport in testdata")
 def test_viewport(viewport):
     obj: Viewer = ProtectModel.from_unifi_dict(deepcopy(viewport))
 
@@ -88,6 +90,7 @@ def test_viewport(viewport):
     compare_objs(obj.model.value, viewport, obj_dict)
 
 
+@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_light.json").exists(), reason="No light in testdata")
 def test_light(light):
     obj: Light = ProtectModel.from_unifi_dict(deepcopy(light))
 
@@ -96,6 +99,7 @@ def test_light(light):
     compare_objs(obj.model.value, light, obj_dict)
 
 
+@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_camera.json").exists(), reason="No camera in testdata")
 def test_camera(camera):
     obj: Camera = ProtectModel.from_unifi_dict(deepcopy(camera))
 
@@ -104,7 +108,9 @@ def test_camera(camera):
     compare_objs(obj.model.value, camera, obj_dict)
 
 
+@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_sensor.json").exists(), reason="No sensor in testdata")
 def test_sensor(sensor):
+
     obj: Sensor = ProtectModel.from_unifi_dict(deepcopy(sensor))
 
     obj_dict = obj.unifi_dict()
