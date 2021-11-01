@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, tzinfo
 from ipaddress import IPv4Address
 import logging
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Literal, Optional, Set
+from typing import Any, Dict, List, Literal, Optional, Set
 from uuid import UUID
 
 from pydantic.fields import PrivateAttr
@@ -42,7 +42,7 @@ class Event(ProtectModelWithId):
     heatmap_id: Optional[str]
     camera_id: Optional[str]
     smart_detect_types: List[SmartDetectObjectType]
-    smart_detect_events_ids: List[str]
+    smart_detect_event_ids: List[str]
     thumbnail_id: Optional[str]
     user_id: Optional[str]
 
@@ -52,16 +52,16 @@ class Event(ProtectModelWithId):
 
     _smart_detect_events: Optional[List[Event]] = PrivateAttr(None)
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {
-        **ProtectModelWithId.UNIFI_REMAP,
-        **{
-            "heatmap": "heatmapId",
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {
+            **super()._get_unifi_remaps(),
             "camera": "cameraId",
-            "smartDetectEvents": "smartDetectEventsIds",
-            "thumbnail": "thumbnailId",
+            "heatmap": "heatmapId",
             "user": "userId",
-        },
-    }
+            "thumbnail": "thumbnailId",
+            "smartDetectEvents": "smartDetectEventIds",
+        }
 
     @classmethod
     def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -92,7 +92,7 @@ class Event(ProtectModelWithId):
             return self._smart_detect_events
 
         self._smart_detect_events = [
-            self.api.bootstrap.events[g] for g in self.smart_detect_events_ids if g in self.api.bootstrap.events
+            self.api.bootstrap.events[g] for g in self.smart_detect_event_ids if g in self.api.bootstrap.events
         ]
         return self._smart_detect_events
 
@@ -127,12 +127,9 @@ class CloudAccount(ProtectModelWithId):
     # TODO:
     # profileImg
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {
-        **ProtectModelWithId.UNIFI_REMAP,
-        **{
-            "user": "userId",
-        },
-    }
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "user": "userId"}
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
@@ -175,9 +172,11 @@ class User(ProtectModelWithId):
     # alertRules
     # notificationsV2
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectModelWithId.UNIFI_REMAP, **{"groups": "groupIds"}}
-
     _groups: Optional[List[Group]] = PrivateAttr(None)
+
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "groups": "groupIds"}
 
     @property
     def groups(self) -> List[Group]:
@@ -215,10 +214,13 @@ class PortConfig(ProtectBaseObject):
     ucore: int
     discovery_client: int
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {
-        "emsCLI": "emsCli",
-        "emsLiveFLV": "emsLiveFlv",
-    }
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {
+            **super()._get_unifi_remaps(),
+            "emsCLI": "emsCli",
+            "emsLiveFLV": "emsLiveFlv",
+        }
 
 
 class CPUInfo(ProtectBaseObject):
@@ -280,7 +282,9 @@ class DoorbellSettings(ProtectBaseObject):
     # TODO
     # customMessages
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {"defaultMessageResetTimeoutMs": "defaultMessageResetTimeout"}
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "defaultMessageResetTimeoutMs": "defaultMessageResetTimeout"}
 
     @classmethod
     def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -372,10 +376,9 @@ class NVR(ProtectDeviceModel):
     # smartDetectAgreement
     # ssoChannel
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {
-        **ProtectDeviceModel.UNIFI_REMAP,
-        **{"recordingRetentionDurationMs": "recordingRetentionDuration"},
-    }
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "recordingRetentionDurationMs": "recordingRetentionDuration"}
 
     @classmethod
     def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -398,7 +401,9 @@ class LiveviewSlot(ProtectBaseObject):
 
     _cameras: Optional[List[Camera]] = PrivateAttr(None)
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {"cameras": "cameraIds"}
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "cameras": "cameraIds"}
 
     @property
     def cameras(self) -> List[Camera]:
@@ -417,7 +422,9 @@ class Liveview(ProtectModelWithId):
     slots: List[LiveviewSlot]
     owner_id: str
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectModelWithId.UNIFI_REMAP, **{"owner": "ownerId"}}
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "owner": "ownerId"}
 
     @property
     def owner(self) -> Optional[User]:

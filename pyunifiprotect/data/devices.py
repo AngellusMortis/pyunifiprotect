@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from ipaddress import IPv4Address
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 from uuid import UUID
 
 from pydantic.color import Color
@@ -69,7 +69,9 @@ class Light(ProtectMotionDeviceModel):
     camera_id: Optional[str]
     is_camera_paired: bool
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectMotionDeviceModel.UNIFI_REMAP, **{"camera": "cameraId"}}
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "camera": "cameraId"}
 
     @property
     def camera(self) -> Optional[Camera]:
@@ -302,12 +304,15 @@ class VideoStats(ProtectBaseObject):
     timelapse_start_lq: Optional[datetime]
     timelapse_end_lq: Optional[datetime]
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {
-        "recordingStartLQ": "recordingStartLq",
-        "recordingEndLQ": "recordingEndLq",
-        "timelapseStartLQ": "timelapseStartLq",
-        "timelapseEndLQ": "timelapseEndLq",
-    }
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {
+            **super()._get_unifi_remaps(),
+            "recordingStartLQ": "recordingStartLq",
+            "recordingEndLQ": "recordingEndLq",
+            "timelapseStartLQ": "timelapseStartLq",
+            "timelapseEndLQ": "timelapseEndLq",
+        }
 
     @classmethod
     def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -432,7 +437,9 @@ class FeatureFlags(ProtectBaseObject):
     # tilt
     # zoom
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {"hasAutoICROnly": "hasAutoIcrOnly"}
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "hasAutoICROnly": "hasAutoIcrOnly"}
 
 
 class Camera(ProtectMotionDeviceModel):
@@ -532,7 +539,9 @@ class Viewer(ProtectAdoptableDeviceModel):
     software_version: str
     liveview_id: str
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectAdoptableDeviceModel.UNIFI_REMAP, **{"liveview": "liveviewId"}}
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "liveview": "liveviewId"}
 
     @property
     def liveview(self) -> Liveview:
@@ -575,12 +584,6 @@ class SensorStats(ProtectBaseObject):
     humidity: SensorStat
     temperature: SensorStat
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
-        "light": SensorStat,
-        "humidity": SensorStat,
-        "temperature": SensorStat,
-    }
-
 
 class Sensor(ProtectAdoptableDeviceModel):
     alarm_settings: SensorSettingsBase
@@ -603,12 +606,9 @@ class Sensor(ProtectAdoptableDeviceModel):
     # TODO:
     # mountType
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
-        "alarmSettings": SensorSettingsBase,
-        "batteryStatus": SensorBatteryStatus,
-    }
-
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectAdoptableDeviceModel.UNIFI_REMAP, **{"camera": "cameraId"}}
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "camera": "cameraId"}
 
     @property
     def camera(self) -> Optional[Camera]:
