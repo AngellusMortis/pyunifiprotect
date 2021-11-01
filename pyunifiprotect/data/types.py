@@ -71,7 +71,6 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
         # TODO:
         # legacyUFV
         # display
-        # sensor
         # doorlock
 
         return [
@@ -82,6 +81,7 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
             ModelType.VIEWPORT.value,
             ModelType.LIGHT.value,
             ModelType.BRIDGE.value,
+            ModelType.SENSOR.value,
         ]
 
 

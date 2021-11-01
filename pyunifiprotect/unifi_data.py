@@ -223,6 +223,11 @@ def process_sensor(server_id: Optional[str], sensor: Dict[str, Any], include_eve
     humidity_value = stats["humidity"]["value"]
     temperature_value = stats["temperature"]["value"]
     battery_status = sensor["batteryStatus"]["percentage"]
+    bluetooth_signal = sensor["bluetoothConnectionState"]["signalStrength"]
+
+    # Get Binary Sensor Status
+    battery_low = sensor["batteryStatus"]["isLow"]
+    is_open = sensor["isOpened"]
 
     # Get Sensor Mode Settings
     alarm_enabled = sensor["alarmSettings"]["isEnabled"]
@@ -245,12 +250,15 @@ def process_sensor(server_id: Optional[str], sensor: Dict[str, Any], include_eve
         "humidity_value": humidity_value,
         "temperature_value": temperature_value,
         "battery_status": battery_status,
+        "battery_low": battery_low,
+        "bluetooth_signal": bluetooth_signal,
         "alarm_enabled": alarm_enabled,
         "light_enabled": light_enabled,
         "motion_enabled": motion_enabled,
         "temperature_enabled": temperature_enabled,
         "humidity_enabled": humidity_enabled,
         "led_enabled": led_enabled,
+        "is_open": is_open,
     }
 
     if server_id is not None:
@@ -500,7 +508,7 @@ def sensor_update_from_ws_frames(
         return None, None
 
     _LOGGER.debug("Processing sensor: %s", sensor)
-    processed_sensor = process_light(None, sensor, True)
+    processed_sensor = process_sensor(None, sensor, True)
 
     return sensor_id, processed_sensor
 
@@ -647,29 +655,29 @@ def sensor_event_from_ws_frames(
 ) -> Optional[Dict[str, Any]]:
     """Create processed events from the sensor model."""
     # TODO: Add the events that can occur (Motion and Door Open/Close)
-    if "isPirMotionDetected" not in data_json and "lastMotion" not in data_json:
+    if "isMotionDetected" not in data_json and "motionDetectedAt" not in data_json:
         return None
 
-    light_id = action_json["id"]
+    sensor_id = action_json["id"]
     start_time = None
     event_length: float = 0
     event_on = False
-    _LOGGER.debug("Processed light event: %s", data_json)
+    _LOGGER.debug("Processed sensor event: %s", data_json)
 
-    last_motion = data_json.get("lastMotion")
-    is_motion_detected = data_json.get("isPirMotionDetected")
+    last_motion = data_json.get("motionDetectedAt")
+    is_motion_detected = data_json.get("isMotionDetected")
 
     if is_motion_detected is None:
-        start_time = state_machine.get_motion_detected_time(light_id)
+        start_time = state_machine.get_motion_detected_time(sensor_id)
         event_on = start_time is not None
     else:
         if is_motion_detected:
             event_on = True
             start_time = last_motion
-            state_machine.set_motion_detected_time(light_id, start_time)
+            state_machine.set_motion_detected_time(sensor_id, start_time)
         else:
-            start_time = state_machine.get_motion_detected_time(light_id)
-            state_machine.set_motion_detected_time(light_id, None)
+            start_time = state_machine.get_motion_detected_time(sensor_id)
+            state_machine.set_motion_detected_time(sensor_id, None)
             if last_motion is None:
                 last_motion = round(time.time() * 1000)
 

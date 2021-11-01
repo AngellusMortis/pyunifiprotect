@@ -1,0 +1,92 @@
+{
+    "mac": "E1AEFD38EBB5",
+    "host": null,
+    "connectionHost": "192.168.137.32",
+    "type": "UFP-SENSE",
+    "name": "Vmhsffu Epfx",
+    "upSince": 1633775315427,
+    "uptime": null,
+    "lastSeen": 1635645979105,
+    "connectedSince": 1635646114427,
+    "state": "CONNECTED",
+    "hardwareRevision": 5,
+    "firmwareVersion": "1.0.2",
+    "latestFirmwareVersion": "1.0.2",
+    "firmwareBuild": null,
+    "isUpdating": false,
+    "isAdopting": false,
+    "isAdopted": true,
+    "isAdoptedByOther": false,
+    "isProvisioned": false,
+    "isRebooting": false,
+    "isSshEnabled": false,
+    "canAdopt": false,
+    "isAttemptingToConnect": false,
+    "isMotionDetected": true,
+    "mountType": "door",
+    "leakDetectedAt": null,
+    "tamperingDetectedAt": null,
+    "isOpened": true,
+    "openStatusChangedAt": 1635647109850,
+    "alarmTriggeredAt": null,
+    "motionDetectedAt": 1635654005086,
+    "wiredConnectionState": {
+        "phyRate": null
+    },
+    "stats": {
+        "light": {
+            "value": 20,
+            "status": "neutral"
+        },
+        "humidity": {
+            "value": 38,
+            "status": "neutral"
+        },
+        "temperature": {
+            "value": 22.58,
+            "status": "neutral"
+        }
+    },
+    "bluetoothConnectionState": {
+        "signalQuality": 30,
+        "signalStrength": -78
+    },
+    "batteryStatus": {
+        "percentage": 80,
+        "isLow": false
+    },
+    "alarmSettings": {
+        "isEnabled": true
+    },
+    "lightSettings": {
+        "isEnabled": true,
+        "lowThreshold": null,
+        "highThreshold": null,
+        "margin": 10
+    },
+    "motionSettings": {
+        "isEnabled": true,
+        "sensitivity": 100
+    },
+    "temperatureSettings": {
+        "isEnabled": true,
+        "lowThreshold": null,
+        "highThreshold": null,
+        "margin": 0.1
+    },
+    "humiditySettings": {
+        "isEnabled": true,
+        "lowThreshold": null,
+        "highThreshold": null,
+        "margin": 1
+    },
+    "ledSettings": {
+        "isEnabled": true
+    },
+    "bridge": "60958bf101760a03e70003f3",
+    "camera": null,
+    "bridgeCandidates": [],
+    "id": "5df53ed7ee7de9a43cfb0400",
+    "isConnected": true,
+    "modelKey": "sensor"
+}

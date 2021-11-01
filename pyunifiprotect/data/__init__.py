@@ -1,5 +1,5 @@
 from pyunifiprotect.data.base import ProtectModel
-from pyunifiprotect.data.devices import Camera, Light, Viewer
+from pyunifiprotect.data.devices import Camera, Light, Sensor, Viewer
 from pyunifiprotect.data.nvr import (
     NVR,
     Bootstrap,
@@ -48,6 +48,7 @@ __all__ = [
     "NVRLocation",
     "ProtectModel",
     "ProtectWSPayloadFormat",
+    "Sensor",
     "SmartDetectObjectType",
     "StateType",
     "User",

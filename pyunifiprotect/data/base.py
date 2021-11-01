@@ -23,6 +23,7 @@ from pyunifiprotect.exceptions import BadRequest, DataDecodeError
 from pyunifiprotect.utils import process_datetime, serialize_unifi_obj, to_snake_case
 
 if TYPE_CHECKING:
+    from pyunifiprotect.data.devices import Bridge
     from pyunifiprotect.data.nvr import Event
     from pyunifiprotect.unifi_protect_server import ProtectApiClient
 
@@ -135,6 +136,7 @@ class ProtectModel(ProtectBaseObject):
             Bridge,
             Camera,
             Light,
+            Sensor,
             Viewer,
         )
         from pyunifiprotect.data.nvr import (  # pylint: disable=import-outside-toplevel
@@ -176,6 +178,8 @@ class ProtectModel(ProtectBaseObject):
             klass = Viewer
         elif model == ModelType.BRIDGE:
             klass = Bridge
+        elif model == ModelType.SENSOR:
+            klass = Sensor
 
         if klass is None:
             raise DataDecodeError("Unknown modelKey")
@@ -211,7 +215,7 @@ class ProtectDeviceModel(ProtectModelWithId):
     name: str
     type: str
     mac: str
-    host: IPv4Address
+    host: Optional[IPv4Address]
     up_since: Optional[datetime]
     uptime: Optional[timedelta]
     last_seen: datetime
@@ -236,11 +240,15 @@ class WiredConnectionState(ProtectBaseObject):
     phy_rate: Optional[int]
 
 
-class WifiConnectionState(WiredConnectionState):
-    channel: Optional[int]
-    frequency: Optional[int]
+class WirelessConnectionState(ProtectBaseObject):
     signal_quality: Optional[int]
     signal_strength: Optional[int]
+
+
+class WifiConnectionState(WirelessConnectionState):
+    phy_rate: Optional[int]
+    channel: Optional[int]
+    frequency: Optional[int]
     ssid: Optional[str]
 
 
@@ -261,6 +269,13 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
 
     wired_connection_state: Optional[WiredConnectionState] = None
     wifi_connection_state: Optional[WifiConnectionState] = None
+    bluetooth_connection_state: Optional[WirelessConnectionState] = None
+    bridge_id: Optional[str]
+
+    # TODO:
+    # bridgeCandidates
+
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectDeviceModel.UNIFI_REMAP, **{"bridge": "bridgeId"}}
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data)
@@ -269,8 +284,31 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
             del data["wiredConnectionState"]
         if "wifiConnectionState" in data and data["wifiConnectionState"] is None:
             del data["wifiConnectionState"]
+        if "bluetoothConnectionState" in data and data["bluetoothConnectionState"] is None:
+            del data["bluetoothConnectionState"]
+        if "bridge" in data and data["bridge"] is None:
+            del data["bridge"]
 
         return data
+
+    @property
+    def is_wired(self) -> bool:
+        return self.wired_connection_state is not None
+
+    @property
+    def is_wifi(self) -> bool:
+        return self.wifi_connection_state is not None
+
+    @property
+    def is_bluetooth(self) -> bool:
+        return self.bluetooth_connection_state is not None
+
+    @property
+    def bridge(self) -> Optional[Bridge]:
+        if self.bridge_id is None:
+            return None
+
+        return self.api.bootstrap.bridges[self.bridge_id]
 
 
 class ProtectMotionDeviceModel(ProtectAdoptableDeviceModel):

@@ -17,7 +17,7 @@ from pyunifiprotect.data.base import (
     ProtectModel,
     ProtectModelWithId,
 )
-from pyunifiprotect.data.devices import Bridge, Camera, Light, Viewer
+from pyunifiprotect.data.devices import Bridge, Camera, Light, Sensor, Viewer
 from pyunifiprotect.data.types import (
     DoorbellMessageType,
     EventType,
@@ -482,12 +482,12 @@ class Bootstrap(ProtectBaseObject):
     viewers: Dict[str, Viewer]
     lights: Dict[str, Light]
     bridges: Dict[str, Bridge]
+    sensors: Dict[str, Sensor]
     last_update_id: UUID
 
     # TODO:
     # legacyUFVs
     # displays
-    # sensors
     # doorlocks
     # chimes
     # schedules

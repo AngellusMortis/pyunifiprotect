@@ -13,6 +13,7 @@ from pyunifiprotect.data import (
     Light,
     ModelType,
     ProtectModel,
+    Sensor,
     Viewer,
     WSPacket,
 )
@@ -103,6 +104,14 @@ def test_camera(camera):
     compare_objs(obj.model.value, camera, obj_dict)
 
 
+def test_sensor(sensor):
+    obj: Sensor = ProtectModel.from_unifi_dict(deepcopy(sensor))
+
+    obj_dict = obj.unifi_dict()
+
+    compare_objs(obj.model.value, sensor, obj_dict)
+
+
 def test_events(raw_events):
     for event in raw_events:
         obj: Event = ProtectModel.from_unifi_dict(deepcopy(event))
@@ -120,7 +129,6 @@ def test_bootstrap(bootstrap):
     # TODO:
     del bootstrap["legacyUFVs"]
     del bootstrap["displays"]
-    del bootstrap["sensors"]
     del bootstrap["doorlocks"]
     del bootstrap["chimes"]
     del bootstrap["schedules"]

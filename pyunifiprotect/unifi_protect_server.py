@@ -531,7 +531,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
     def _process_sensors_json(self, json_response: Dict[str, Any], server_id: str, include_events: bool) -> None:
         for sensor in json_response["sensors"]:
 
-            # Ignore lights adopted by another controller on the same network
+            # Ignore sensors adopted by another controller on the same network
             # since they appear in the api on 1.17+
             if "isAdopted" in sensor and not sensor["isAdopted"]:
                 continue

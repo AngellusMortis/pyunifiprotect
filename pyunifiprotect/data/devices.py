@@ -581,3 +581,79 @@ class Viewer(ProtectAdoptableDeviceModel):
 class Bridge(ProtectAdoptableDeviceModel):
     hardware_revision: int
     platform: str
+
+
+class SensorSettingsBase(ProtectBaseObject):
+    is_enabled: bool
+
+
+class SensorThresholdSettings(SensorSettingsBase):
+    margin: float
+    # "safe" thresholds for alerting
+    # anything below/above will trigger alert
+    low_threshold: Optional[float]
+    high_threshold: Optional[float]
+
+
+class SensorSensitivitySettings(SensorSettingsBase):
+    sensitivity: PercentInt
+
+
+class SensorBatteryStatus(ProtectBaseObject):
+    percentage: PercentInt
+    is_low: bool
+
+
+class SensorStat(ProtectBaseObject):
+    value: Optional[float]
+    status: str
+
+
+class SensorStats(ProtectBaseObject):
+    light: SensorStat
+    humidity: SensorStat
+    temperature: SensorStat
+
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+        "light": SensorStat,
+        "humidity": SensorStat,
+        "temperature": SensorStat,
+    }
+
+
+class Sensor(ProtectAdoptableDeviceModel):
+    alarm_settings: SensorSettingsBase
+    alarm_triggered_at: Optional[datetime]
+    battery_status: SensorBatteryStatus
+    camera_id: Optional[str]
+    humidity_settings: SensorThresholdSettings
+    is_motion_detected: bool
+    is_opened: bool
+    leak_detected_at: Optional[datetime]
+    led_settings: SensorSettingsBase
+    light_settings: SensorThresholdSettings
+    motion_detected_at: Optional[datetime]
+    motion_settings: SensorSensitivitySettings
+    open_status_changed_at: Optional[datetime]
+    stats: SensorStats
+    tampering_detected_at: Optional[datetime]
+    temperature_settings: SensorThresholdSettings
+
+    # TODO:
+    # mountType
+
+    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {
+        "alarmSettings": SensorSettingsBase,
+        "batteryStatus": SensorBatteryStatus,
+    }
+
+    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectAdoptableDeviceModel.UNIFI_REMAP, **{"camera": "cameraId"}}
+
+    @property
+    def camera(self) -> Optional[Camera]:
+        """Paired Camera will always be none if no camera is paired"""
+
+        if self.camera_id is None:
+            return None
+
+        return self.api.bootstrap.cameras[self.camera_id]

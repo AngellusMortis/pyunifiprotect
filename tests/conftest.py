@@ -172,6 +172,11 @@ def camera():
 
 
 @pytest.fixture
+def sensor():
+    return read_json_file("sample_sensor")
+
+
+@pytest.fixture
 def ws_messages():
     return read_json_file("sample_ws_messages")
 
@@ -216,9 +221,17 @@ def compare_objs(obj_type, expected, actual):
     elif obj_type == ModelType.EVENT.value:
         del expected["metadata"]
         del expected["partition"]
+    elif obj_type == ModelType.SENSOR.value:
+        del expected["bridgeCandidates"]
+        del expected["mountType"]
 
     # sometimes uptime comes back as a str...
-    if "uptime" in expected:
+    if "uptime" in expected and expected["uptime"] is not None:
         expected["uptime"] = int(expected["uptime"])
+
+    # force hardware revision to str to make sure types line up
+    if "hardwareRevision" in expected and expected["hardwareRevision"] is not None:
+        expected["hardwareRevision"] = str(expected["hardwareRevision"])
+        actual["hardwareRevision"] = str(actual["hardwareRevision"])
 
     assert expected == actual
