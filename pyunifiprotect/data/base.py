@@ -87,7 +87,7 @@ class ProtectBaseObject(BaseModel):
         return {}
 
     @classmethod
-    def _set_project_subtypes(cls) -> None:
+    def _set_protect_subtypes(cls) -> None:
         """Helper method to detect attrs of current class that are UFP Objects themselves"""
 
         cls._protect_objs = {}
@@ -112,7 +112,7 @@ class ProtectBaseObject(BaseModel):
         if cls._protect_objs is not None:
             return cls._protect_objs  # type: ignore
 
-        cls._set_project_subtypes()
+        cls._set_protect_subtypes()
         return cls._protect_objs  # type: ignore
 
     @classmethod
@@ -121,7 +121,7 @@ class ProtectBaseObject(BaseModel):
         if cls._protect_lists is not None:
             return cls._protect_lists  # type: ignore
 
-        cls._set_project_subtypes()
+        cls._set_protect_subtypes()
         return cls._protect_lists  # type: ignore
 
     @classmethod
@@ -130,7 +130,7 @@ class ProtectBaseObject(BaseModel):
         if cls._protect_dicts is not None:
             return cls._protect_dicts  # type: ignore
 
-        cls._set_project_subtypes()
+        cls._set_protect_subtypes()
         return cls._protect_dicts  # type: ignore
 
     @classmethod
@@ -144,7 +144,7 @@ class ProtectBaseObject(BaseModel):
         return api
 
     @classmethod
-    def _clean_project_obj(cls, data: Any, klass: Type[ProtectBaseObject], api: Optional[ProtectApiClient]) -> Any:
+    def _clean_protect_obj(cls, data: Any, klass: Type[ProtectBaseObject], api: Optional[ProtectApiClient]) -> Any:
         if isinstance(data, dict):
             if api is not None:
                 data["api"] = api
@@ -152,21 +152,21 @@ class ProtectBaseObject(BaseModel):
         return data
 
     @classmethod
-    def _clean_project_obj_list(
+    def _clean_protect_obj_list(
         cls, items: List[Any], klass: Type[ProtectBaseObject], api: Optional[ProtectApiClient]
     ) -> List[Any]:
         cleaned_items: List[Any] = []
         for item in items:
-            cleaned_items.append(cls._clean_project_obj(item, klass, api))
+            cleaned_items.append(cls._clean_protect_obj(item, klass, api))
         return cleaned_items
 
     @classmethod
-    def _clean_project_obj_dict(
+    def _clean_protect_obj_dict(
         cls, items: Dict[Any, Any], klass: Type[ProtectBaseObject], api: Optional[ProtectApiClient]
     ) -> Dict[Any, Any]:
         cleaned_items: Dict[Any, Any] = {}
         for key, value in items.items():
-            cleaned_items[key] = cls._clean_project_obj(value, klass, api)
+            cleaned_items[key] = cls._clean_protect_obj(value, klass, api)
         return cleaned_items
 
     @classmethod
@@ -192,15 +192,15 @@ class ProtectBaseObject(BaseModel):
         api = cls._get_api(data)
         for key, klass in cls._get_protect_objs().items():
             if key in data:
-                data[key] = cls._clean_project_obj(data[key], klass, api)
+                data[key] = cls._clean_protect_obj(data[key], klass, api)
 
         for key, klass in cls._get_protect_lists().items():
             if key in data and isinstance(data[key], list):
-                data[key] = cls._clean_project_obj_list(data[key], klass, api)
+                data[key] = cls._clean_protect_obj_list(data[key], klass, api)
 
         for key, klass in cls._get_protect_dicts().items():
             if key in data and isinstance(data[key], dict):
-                data[key] = cls._clean_project_obj_dict(data[key], klass, api)
+                data[key] = cls._clean_protect_obj_dict(data[key], klass, api)
 
         return data
 
