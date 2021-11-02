@@ -87,9 +87,9 @@ good-names = [
 # inconsistent-return-statements - doesn't handle raise
 # too-many-ancestors - it's too strict.
 # wrong-import-order - isort guards this
-# no-member - mypy handles this better
-# unsupported-membership-test - mypy handles this better
-# unsubscriptable-object - mypy handles this better
+
+# handled by mypy:
+# no-member, unsupported-membership-test, unsupported-assignment-operation, unsubscriptable-object
 disable = [
     "format",
     "abstract-class-little-used",
@@ -119,6 +119,7 @@ disable = [
     "no-member",
     "unsupported-membership-test",
     "unsubscriptable-object",
+    "unsupported-assignment-operation",
 ]
 enable = [
     #"useless-suppression",  # temporarily every now and then to clean them up

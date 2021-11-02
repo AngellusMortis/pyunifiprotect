@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, tzinfo
 from ipaddress import IPv4Address
 import logging
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Set
 from uuid import UUID
 
 from pydantic.fields import PrivateAttr
@@ -42,7 +42,7 @@ class Event(ProtectModelWithId):
     heatmap_id: Optional[str]
     camera_id: Optional[str]
     smart_detect_types: List[SmartDetectObjectType]
-    smart_detect_events_ids: List[str]
+    smart_detect_event_ids: List[str]
     thumbnail_id: Optional[str]
     user_id: Optional[str]
 
@@ -52,25 +52,25 @@ class Event(ProtectModelWithId):
 
     _smart_detect_events: Optional[List[Event]] = PrivateAttr(None)
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {
-        **ProtectModelWithId.UNIFI_REMAP,
-        **{
-            "heatmap": "heatmapId",
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {
+            **super()._get_unifi_remaps(),
             "camera": "cameraId",
-            "smartDetectEvents": "smartDetectEventsIds",
-            "thumbnail": "thumbnailId",
+            "heatmap": "heatmapId",
             "user": "userId",
-        },
-    }
+            "thumbnail": "thumbnailId",
+            "smartDetectEvents": "smartDetectEventIds",
+        }
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "start" in data:
             data["start"] = process_datetime(data, "start")
         if "end" in data:
             data["end"] = process_datetime(data, "end")
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
     @property
     def camera(self) -> Optional[Camera]:
@@ -92,7 +92,7 @@ class Event(ProtectModelWithId):
             return self._smart_detect_events
 
         self._smart_detect_events = [
-            self.api.bootstrap.events[g] for g in self.smart_detect_events_ids if g in self.api.bootstrap.events
+            self.api.bootstrap.events[g] for g in self.smart_detect_event_ids if g in self.api.bootstrap.events
         ]
         return self._smart_detect_events
 
@@ -127,16 +127,12 @@ class CloudAccount(ProtectModelWithId):
     # TODO:
     # profileImg
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {
-        **ProtectModelWithId.UNIFI_REMAP,
-        **{
-            "user": "userId",
-        },
-    }
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {"location": UserLocation}  # type: ignore
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "user": "userId"}
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        data = super().unifi_dict(data=data)
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data, exclude=exclude)
 
         # id and cloud ID are always the same
         if "id" in data:
@@ -176,13 +172,11 @@ class User(ProtectModelWithId):
     # alertRules
     # notificationsV2
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectModelWithId.UNIFI_REMAP, **{"groups": "groupIds"}}
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
-        "location": UserLocation,
-        "cloudAccount": CloudAccount,
-    }
-
     _groups: Optional[List[Group]] = PrivateAttr(None)
+
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "groups": "groupIds"}
 
     @property
     def groups(self) -> List[Group]:
@@ -220,10 +214,13 @@ class PortConfig(ProtectBaseObject):
     ucore: int
     discovery_client: int
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {
-        "emsCLI": "emsCli",
-        "emsLiveFLV": "emsLiveFlv",
-    }
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {
+            **super()._get_unifi_remaps(),
+            "emsCLI": "emsCli",
+            "emsLiveFLV": "emsLiveFlv",
+        }
 
 
 class CPUInfo(ProtectBaseObject):
@@ -271,12 +268,6 @@ class SystemInfo(ProtectBaseObject):
     storage: StorageInfo
     tmpfs: TMPFSInfo
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
-        "memory": MemoryInfo,
-        "storage": StorageInfo,
-        "tmpfs": TMPFSInfo,
-    }
-
 
 class DoorbellMessage(ProtectBaseObject):
     type: DoorbellMessageType
@@ -291,14 +282,16 @@ class DoorbellSettings(ProtectBaseObject):
     # TODO
     # customMessages
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {"defaultMessageResetTimeoutMs": "defaultMessageResetTimeout"}
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "defaultMessageResetTimeoutMs": "defaultMessageResetTimeout"}
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "defaultMessageResetTimeoutMs" in data:
             data["defaultMessageResetTimeout"] = timedelta(milliseconds=data.pop("defaultMessageResetTimeoutMs"))
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
 
 class RecordingTypeDistribution(ProtectBaseObject):
@@ -324,10 +317,6 @@ class StorageStats(ProtectBaseObject):
     remaining_capacity: int
     recording_space: StorageSpace
     storage_distribution: StorageDistribution
-
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
-        "recordingSpace": StorageSpace,
-    }
 
 
 class NVRFeatureFlags(ProtectBaseObject):
@@ -387,21 +376,12 @@ class NVR(ProtectDeviceModel):
     # smartDetectAgreement
     # ssoChannel
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {
-        **ProtectDeviceModel.UNIFI_REMAP,
-        **{"recordingRetentionDurationMs": "recordingRetentionDuration"},
-    }
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
-        "ports": PortConfig,
-        "locationSettings": NVRLocation,
-        "featureFlags": NVRFeatureFlags,
-        "systemInfo": SystemInfo,
-        "doorbellSettings": DoorbellSettings,
-        "storageStats": StorageStats,
-    }
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "recordingRetentionDurationMs": "recordingRetentionDuration"}
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "lastUpdateAt" in data:
             data["lastUpdateAt"] = process_datetime(data, "lastUpdateAt")
         if "recordingRetentionDurationMs" in data:
@@ -409,7 +389,7 @@ class NVR(ProtectDeviceModel):
         if "timezone" in data and not isinstance(data["timezone"], tzinfo):
             data["timezone"] = pytz.timezone(data["timezone"])
 
-        data = super().clean_unifi_dict(data)
+        data = super().unifi_dict_to_dict(data)
 
         return data
 
@@ -421,7 +401,9 @@ class LiveviewSlot(ProtectBaseObject):
 
     _cameras: Optional[List[Camera]] = PrivateAttr(None)
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {"cameras": "cameraIds"}
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "cameras": "cameraIds"}
 
     @property
     def cameras(self) -> List[Camera]:
@@ -440,25 +422,9 @@ class Liveview(ProtectModelWithId):
     slots: List[LiveviewSlot]
     owner_id: str
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectModelWithId.UNIFI_REMAP, **{"owner": "ownerId"}}
-
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
-        if "slots" in data:
-            slots: List[Dict[str, Any]] = []
-            for slot in data["slots"]:
-                slot["api"] = cls._get_api(data)
-                slots.append(LiveviewSlot.clean_unifi_dict(data=slot))
-            data["slots"] = slots
-
-        return super().clean_unifi_dict(data)
-
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        if data is None:
-            data = self.dict()
-            data["slots"] = [o.unifi_dict() for o in self.slots]
-
-        return super().unifi_dict(data=data)
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "owner": "ownerId"}
 
     @property
     def owner(self) -> Optional[User]:
@@ -492,35 +458,32 @@ class Bootstrap(ProtectBaseObject):
     # chimes
     # schedules
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
-        "nvr": NVR,
-    }
-
     # not directly from Unifi
     events: Dict[str, Event] = FixSizeOrderedDict()
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         for model_type in ModelType.bootstrap_models():
             key = model_type + "s"
             items: Dict[str, ProtectModel] = {}
             for item in data[key]:
-                items[item["id"]] = ProtectModel.from_unifi_dict(item, api=data.get("api"))
+                items[item["id"]] = item
             data[key] = items
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        if data is None:
-            data = self.dict()
-            for model_type in ModelType.bootstrap_models():
-                attr = model_type + "s"
-                data[attr] = getattr(self, attr).values()
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data, exclude=exclude)
 
         if "events" in data:
             del data["events"]
 
-        return super().unifi_dict(data=data)
+        for model_type in ModelType.bootstrap_models():
+            attr = model_type + "s"
+            if attr in data and isinstance(data[attr], dict):
+                data[attr] = list(data[attr].values())
+
+        return data
 
     @property
     def auth_user(self) -> User:

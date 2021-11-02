@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from ipaddress import IPv4Address
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 from uuid import UUID
 
 from pydantic.color import Color
@@ -41,11 +41,11 @@ class LightDeviceSettings(ProtectBaseObject):
     pir_sensitivity: PercentInt
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "pirDuration" in data and not isinstance(data["pirDuration"], timedelta):
             data["pirDuration"] = timedelta(milliseconds=data["pirDuration"])
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
 
 class LightOnSettings(ProtectBaseObject):
@@ -69,12 +69,9 @@ class Light(ProtectMotionDeviceModel):
     camera_id: Optional[str]
     is_camera_paired: bool
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectMotionDeviceModel.UNIFI_REMAP, **{"camera": "cameraId"}}
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
-        "lightDeviceSettings": LightDeviceSettings,
-        "lightOnSettings": LightOnSettings,
-        "lightModeSettings": LightModeSettings,
-    }
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "camera": "cameraId"}
 
     @property
     def camera(self) -> Optional[Camera]:
@@ -92,8 +89,8 @@ class EventStats(ProtectBaseObject):
     last_days: List[int]
     recent_hours: List[int] = []
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        data = super().unifi_dict(data=data)
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data, exclude=exclude)
 
         if "recentHours" in data and len(data["recentHours"]) == 0:
             del data["recentHours"]
@@ -104,11 +101,6 @@ class EventStats(ProtectBaseObject):
 class CameraEventStats(ProtectBaseObject):
     motion: EventStats
     smart: EventStats
-
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
-        "motion": EventStats,
-        "smart": EventStats,
-    }
 
 
 class CameraChannel(ProtectBaseObject):
@@ -202,7 +194,7 @@ class RecordingSettings(ProtectBaseObject):
     use_new_motion_algorithm: bool
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "prePaddingSecs" in data:
             data["prePadding"] = timedelta(seconds=data.pop("prePaddingSecs"))
         if "postPaddingSecs" in data:
@@ -212,10 +204,10 @@ class RecordingSettings(ProtectBaseObject):
         if "endMotionEventDelay" in data and not isinstance(data["endMotionEventDelay"], timedelta):
             data["endMotionEventDelay"] = timedelta(seconds=data["endMotionEventDelay"])
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        data = super().unifi_dict(data=data)
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data, exclude=exclude)
 
         if "prePadding" in data:
             data["prePaddingSecs"] = data.pop("prePadding") // 1000
@@ -246,13 +238,13 @@ class LCDMessage(ProtectBaseObject):
     reset_at: Optional[datetime] = None
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "resetAt" in data:
             data["resetAt"] = process_datetime(data, "resetAt")
         if "text" in data:
             data["text"] = cls._fix_text(data["text"], data.get("type"))
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
     @classmethod
     def _fix_text(cls, text: str, text_type: Optional[str]) -> str:
@@ -264,8 +256,8 @@ class LCDMessage(ProtectBaseObject):
 
         return text
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        data = super().unifi_dict(data=data)
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data, exclude=exclude)
 
         if "text" in data:
             data["text"] = self._fix_text(data["text"], data.get("type", self.type.value))
@@ -312,15 +304,18 @@ class VideoStats(ProtectBaseObject):
     timelapse_start_lq: Optional[datetime]
     timelapse_end_lq: Optional[datetime]
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {
-        "recordingStartLQ": "recordingStartLq",
-        "recordingEndLQ": "recordingEndLq",
-        "timelapseStartLQ": "timelapseStartLq",
-        "timelapseEndLQ": "timelapseEndLq",
-    }
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {
+            **super()._get_unifi_remaps(),
+            "recordingStartLQ": "recordingStartLq",
+            "recordingEndLQ": "recordingEndLq",
+            "timelapseStartLQ": "timelapseStartLq",
+            "timelapseEndLQ": "timelapseEndLq",
+        }
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "recordingStart" in data:
             data["recordingStart"] = process_datetime(data, "recordingStart")
         if "recordingEnd" in data:
@@ -338,7 +333,7 @@ class VideoStats(ProtectBaseObject):
         if "timelapseEndLQ" in data:
             data["timelapseEndLQ"] = process_datetime(data, "timelapseEndLQ")
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
 
 class StorageStats(ProtectBaseObject):
@@ -356,22 +351,15 @@ class CameraStats(ProtectBaseObject):
     wifi_quality: PercentInt
     wifi_strength: int
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
-        "wifi": WifiStats,
-        "battery": BatteryStats,
-        "video": VideoStats,
-        "storage": StorageStats,
-    }
-
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "storage" in data and data["storage"] == {}:
             del data["storage"]
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        data = super().unifi_dict(data=data)
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data, exclude=exclude)
 
         if "storage" in data and data["storage"] is None:
             data["storage"] = {}
@@ -385,8 +373,8 @@ class CameraZone(ProtectBaseObject):
     color: Color
     points: List[Tuple[Percent, Percent]]
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        data = super().unifi_dict(data=data)
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data, exclude=exclude)
 
         if "points" in data:
             data["points"] = [serialize_point(p) for p in data["points"]]
@@ -449,8 +437,9 @@ class FeatureFlags(ProtectBaseObject):
     # tilt
     # zoom
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {"hasAutoICROnly": "hasAutoIcrOnly"}
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {"privacyMaskCapability": PrivacyMaskCapability}  # type: ignore
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "hasAutoICROnly": "hasAutoIcrOnly"}
 
 
 class Camera(ProtectMotionDeviceModel):
@@ -508,37 +497,16 @@ class Camera(ProtectMotionDeviceModel):
     last_smart_detect: Optional[datetime] = None
     last_smart_detect_event_id: Optional[str] = None
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
-        "eventStats": CameraEventStats,
-        "ispSettings": ISPSettings,
-        "talkbackSettings": TalkbackSettings,
-        "osdSettings": OSDSettings,
-        "ledSettings": LEDSettings,
-        "speakerSettings": SpeakerSettings,
-        "recordingSettings": RecordingSettings,
-        "smartDetectSettings": SmartDetectSettings,
-        "stats": CameraStats,
-        "featureFlags": FeatureFlags,
-        "pirSettings": PIRSettings,
-        "lcdMessage": LCDMessage,
-    }
-
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         # LCD messages comes back as empty dict {}
         if "lcdMessage" in data and len(data["lcdMessage"].keys()) == 0:
             del data["lcdMessage"]
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        if data is None:
-            data = self.dict()
-            data["motion_zones"] = [o.unifi_dict() for o in self.motion_zones]
-            data["privacy_zones"] = [o.unifi_dict() for o in self.privacy_zones]
-            data["smart_detect_zones"] = [o.unifi_dict() for o in self.smart_detect_zones]
-
-        data = super().unifi_dict(data=data)
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data, exclude=exclude)
 
         if "lastRingEventId" in data:
             del data["lastRingEventId"]
@@ -571,7 +539,9 @@ class Viewer(ProtectAdoptableDeviceModel):
     software_version: str
     liveview_id: str
 
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectAdoptableDeviceModel.UNIFI_REMAP, **{"liveview": "liveviewId"}}
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "liveview": "liveviewId"}
 
     @property
     def liveview(self) -> Liveview:
@@ -614,12 +584,6 @@ class SensorStats(ProtectBaseObject):
     humidity: SensorStat
     temperature: SensorStat
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
-        "light": SensorStat,
-        "humidity": SensorStat,
-        "temperature": SensorStat,
-    }
-
 
 class Sensor(ProtectAdoptableDeviceModel):
     alarm_settings: SensorSettingsBase
@@ -642,12 +606,9 @@ class Sensor(ProtectAdoptableDeviceModel):
     # TODO:
     # mountType
 
-    PROTECT_OBJ_FIELDS: ClassVar[Dict[str, Callable]] = {  # type: ignore
-        "alarmSettings": SensorSettingsBase,
-        "batteryStatus": SensorBatteryStatus,
-    }
-
-    UNIFI_REMAP: ClassVar[Dict[str, str]] = {**ProtectAdoptableDeviceModel.UNIFI_REMAP, **{"camera": "cameraId"}}
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "camera": "cameraId"}
 
     @property
     def camera(self) -> Optional[Camera]:
