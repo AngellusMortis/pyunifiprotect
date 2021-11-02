@@ -64,13 +64,13 @@ class Event(ProtectModelWithId):
         }
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "start" in data:
             data["start"] = process_datetime(data, "start")
         if "end" in data:
             data["end"] = process_datetime(data, "end")
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
     @property
     def camera(self) -> Optional[Camera]:
@@ -287,11 +287,11 @@ class DoorbellSettings(ProtectBaseObject):
         return {**super()._get_unifi_remaps(), "defaultMessageResetTimeoutMs": "defaultMessageResetTimeout"}
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "defaultMessageResetTimeoutMs" in data:
             data["defaultMessageResetTimeout"] = timedelta(milliseconds=data.pop("defaultMessageResetTimeoutMs"))
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
 
 class RecordingTypeDistribution(ProtectBaseObject):
@@ -381,7 +381,7 @@ class NVR(ProtectDeviceModel):
         return {**super()._get_unifi_remaps(), "recordingRetentionDurationMs": "recordingRetentionDuration"}
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "lastUpdateAt" in data:
             data["lastUpdateAt"] = process_datetime(data, "lastUpdateAt")
         if "recordingRetentionDurationMs" in data:
@@ -389,7 +389,7 @@ class NVR(ProtectDeviceModel):
         if "timezone" in data and not isinstance(data["timezone"], tzinfo):
             data["timezone"] = pytz.timezone(data["timezone"])
 
-        data = super().clean_unifi_dict(data)
+        data = super().unifi_dict_to_dict(data)
 
         return data
 
@@ -462,7 +462,7 @@ class Bootstrap(ProtectBaseObject):
     events: Dict[str, Event] = FixSizeOrderedDict()
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         for model_type in ModelType.bootstrap_models():
             key = model_type + "s"
             items: Dict[str, ProtectModel] = {}
@@ -470,7 +470,7 @@ class Bootstrap(ProtectBaseObject):
                 items[item["id"]] = item
             data[key] = items
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)

@@ -36,7 +36,7 @@ class ProtectBaseObject(BaseModel):
     """
     Base class for building Python objects from Unifi Protect JSON.
 
-    * Provides `.clean_unifi_dict` to convert UFP JSON to a more Pythonic formatted dict (camel case to snake case)
+    * Provides `.unifi_dict_to_dict` to convert UFP JSON to a more Pythonic formatted dict (camel case to snake case)
     * Add attrs with matching Pyhonic name and they will automatically be populated from the UFP JSON if passed in to the constructer
     * Provides `.unifi_dict` to convert object back into UFP JSON
     """
@@ -65,7 +65,7 @@ class ProtectBaseObject(BaseModel):
         (cameras, users, etc.)
         """
         data["api"] = api
-        data = self.clean_unifi_dict(data)
+        data = self.unifi_dict_to_dict(data)
         del data["api"]
         super().__init__(**data)
 
@@ -147,7 +147,7 @@ class ProtectBaseObject(BaseModel):
         if isinstance(data, dict):
             if api is not None:
                 data["api"] = api
-            return klass.clean_unifi_dict(data=data)
+            return klass.unifi_dict_to_dict(data=data)
         return data
 
     @classmethod
@@ -169,14 +169,14 @@ class ProtectBaseObject(BaseModel):
         return cleaned_items
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Takes a decoded UFP JSON dict and converts it into a Python dict
 
         * Remaps items from `._get_unifi_remaps()`
         * Converts camelCase keys to snake_case keys
         * Injects ProtectAPIClient into any child UFP object Dicts
-        * Runs `.clean_unifi_dict` for any child UFP objects
+        * Runs `.unifi_dict_to_dict` for any child UFP objects
 
         :param data: decoded UFP JSON dict
         """
@@ -304,7 +304,7 @@ class ProtectBaseObject(BaseModel):
 
     def update_from_unifi_dict(self: T, data: Dict[str, Any]) -> T:
         """Updates current object from an uncleaned UFP JSON dict"""
-        data = self.clean_unifi_dict(data)
+        data = self.unifi_dict_to_dict(data)
         return self.update_from_dict(data)
 
     @property
@@ -431,7 +431,7 @@ class ProtectDeviceModel(ProtectModelWithId):
     is_ssh_enabled: bool
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "lastSeen" in data:
             data["lastSeen"] = process_datetime(data, "lastSeen")
         if "upSince" in data and data["upSince"] is not None:
@@ -439,7 +439,7 @@ class ProtectDeviceModel(ProtectModelWithId):
         if "uptime" in data and data["uptime"] is not None and not isinstance(data["uptime"], timedelta):
             data["uptime"] = timedelta(milliseconds=int(data["uptime"]))
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
 
 class WiredConnectionState(ProtectBaseObject):

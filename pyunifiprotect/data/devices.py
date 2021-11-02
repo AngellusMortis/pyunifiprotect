@@ -41,11 +41,11 @@ class LightDeviceSettings(ProtectBaseObject):
     pir_sensitivity: PercentInt
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "pirDuration" in data and not isinstance(data["pirDuration"], timedelta):
             data["pirDuration"] = timedelta(milliseconds=data["pirDuration"])
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
 
 class LightOnSettings(ProtectBaseObject):
@@ -194,7 +194,7 @@ class RecordingSettings(ProtectBaseObject):
     use_new_motion_algorithm: bool
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "prePaddingSecs" in data:
             data["prePadding"] = timedelta(seconds=data.pop("prePaddingSecs"))
         if "postPaddingSecs" in data:
@@ -204,7 +204,7 @@ class RecordingSettings(ProtectBaseObject):
         if "endMotionEventDelay" in data and not isinstance(data["endMotionEventDelay"], timedelta):
             data["endMotionEventDelay"] = timedelta(seconds=data["endMotionEventDelay"])
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
@@ -238,13 +238,13 @@ class LCDMessage(ProtectBaseObject):
     reset_at: Optional[datetime] = None
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "resetAt" in data:
             data["resetAt"] = process_datetime(data, "resetAt")
         if "text" in data:
             data["text"] = cls._fix_text(data["text"], data.get("type"))
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
     @classmethod
     def _fix_text(cls, text: str, text_type: Optional[str]) -> str:
@@ -315,7 +315,7 @@ class VideoStats(ProtectBaseObject):
         }
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "recordingStart" in data:
             data["recordingStart"] = process_datetime(data, "recordingStart")
         if "recordingEnd" in data:
@@ -333,7 +333,7 @@ class VideoStats(ProtectBaseObject):
         if "timelapseEndLQ" in data:
             data["timelapseEndLQ"] = process_datetime(data, "timelapseEndLQ")
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
 
 class StorageStats(ProtectBaseObject):
@@ -352,11 +352,11 @@ class CameraStats(ProtectBaseObject):
     wifi_strength: int
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "storage" in data and data["storage"] == {}:
             del data["storage"]
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
@@ -498,12 +498,12 @@ class Camera(ProtectMotionDeviceModel):
     last_smart_detect_event_id: Optional[str] = None
 
     @classmethod
-    def clean_unifi_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         # LCD messages comes back as empty dict {}
         if "lcdMessage" in data and len(data["lcdMessage"].keys()) == 0:
             del data["lcdMessage"]
 
-        return super().clean_unifi_dict(data)
+        return super().unifi_dict_to_dict(data)
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
