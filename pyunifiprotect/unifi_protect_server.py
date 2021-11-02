@@ -425,11 +425,8 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
         now = time.monotonic()
         if force_camera_update and self.ws_connection is not None:
-            self.disconnect_ws()
             self._last_update = NEVER_RAN
             self._last_websocket_check = NEVER_RAN
-            self._is_first_update = True
-            self._processed_data = {}
 
         device_update = False
         if now - self._last_update > DEVICE_UPDATE_INTERVAL:
