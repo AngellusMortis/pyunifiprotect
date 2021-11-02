@@ -374,10 +374,10 @@ class BaseApiClient:
             await self.async_connect_ws()
 
         # log if no active WS
-        if not self.ws_connection:
+        if not self.ws_connection and not first_check:
             log = _LOGGER.debug
             # but only warn if a reconnect attempt was made
-            if not first_check and connect_ws:
+            if connect_ws:
                 log = _LOGGER.warning
             log("Unifi OS: Websocket connection not active, failing back to polling")
 

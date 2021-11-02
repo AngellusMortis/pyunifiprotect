@@ -1,13 +1,17 @@
 """Tests for pyunifiprotect.unifi_protect_server."""
 # pylint: disable=pointless-statement
+# pylint: disable=protected-access
 
 from datetime import datetime, timedelta
+import logging
+import time
 from unittest.mock import patch
 
 import pytest
 
 from pyunifiprotect import ProtectApiClient
 from pyunifiprotect.data import EventType, ModelType
+from pyunifiprotect.unifi_protect_server import NEVER_RAN, WEBSOCKET_CHECK_INTERVAL
 from pyunifiprotect.utils import to_js_time
 from tests.conftest import MockDatetime, compare_objs
 from tests.sample_data.constants import CONSTANTS
@@ -118,3 +122,50 @@ async def test_get_events(protect_client: ProtectApiClient, raw_events):
     assert len(events) == len(expected_events)
     for index, event in enumerate(events):
         compare_objs(event.model.value, expected_events[index], event.unifi_dict())
+
+
+@pytest.mark.asyncio
+async def test_check_ws_initial(protect_client: ProtectApiClient, caplog):
+    caplog.set_level(logging.DEBUG)
+
+    protect_client._last_websocket_check = NEVER_RAN
+    protect_client.disconnect_ws()
+    protect_client.ws_connection = None
+
+    active_ws = await protect_client.check_ws()
+
+    assert active_ws is True
+    assert ["Checking websocket"] == [rec.message for rec in caplog.records]
+
+
+@pytest.mark.asyncio
+async def test_check_ws_no_ws(protect_client: ProtectApiClient, caplog):
+    caplog.set_level(logging.DEBUG)
+
+    protect_client._last_websocket_check = time.monotonic()
+    protect_client.disconnect_ws()
+    protect_client.ws_connection = None
+
+    active_ws = await protect_client.check_ws()
+
+    assert active_ws is False
+
+    expected_logs = ["Unifi OS: Websocket connection not active, failing back to polling"]
+    assert expected_logs == [rec.message for rec in caplog.records]
+    assert caplog.records[0].levelname == "DEBUG"
+
+
+@pytest.mark.asyncio
+async def test_check_ws_reconnect(protect_client: ProtectApiClient, caplog):
+    caplog.set_level(logging.DEBUG)
+
+    protect_client._last_websocket_check = time.monotonic() - WEBSOCKET_CHECK_INTERVAL - 1
+    protect_client.disconnect_ws()
+    protect_client.ws_connection = None
+
+    active_ws = await protect_client.check_ws()
+
+    assert active_ws is True
+    expected_logs = ["Checking websocket", "Unifi OS: Websocket connection not active, failing back to polling"]
+    assert expected_logs == [rec.message for rec in caplog.records]
+    assert caplog.records[1].levelname == "WARNING"
