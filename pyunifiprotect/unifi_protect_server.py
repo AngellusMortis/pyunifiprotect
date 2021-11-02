@@ -1,4 +1,5 @@
 """Unifi Protect Server Wrapper."""
+from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timedelta
@@ -53,17 +54,16 @@ from pyunifiprotect.unifi_data import (
 from pyunifiprotect.utils import get_response_reason, to_js_time
 
 NEVER_RAN = -1000
-DEVICE_UPDATE_INTERVAL_SECONDS = 60
-DEVICE_UPDATE_INTERVAL = timedelta(seconds=DEVICE_UPDATE_INTERVAL_SECONDS)
-WEBSOCKET_CHECK_INTERVAL_SECONDS = 120
-WEBSOCKET_CHECK_INTERVAL = timedelta(seconds=WEBSOCKET_CHECK_INTERVAL_SECONDS)
+# how many seconds before the bootstrap is refreshed from Protect
+DEVICE_UPDATE_INTERVAL = 60
+# how many seconds before before we check for an active WS connection
+WEBSOCKET_CHECK_INTERVAL = 120
 LIGHT_MODES = ["off", "motion", "always"]
 LIGHT_ENABLED = ["dark", "fulltime"]
 LIGHT_DURATIONS = [15000, 30000, 60000, 300000, 900000]
 
 DEFAULT_SNAPSHOT_WIDTH = 1920
 DEFAULT_SNAPSHOT_HEIGHT = 1080
-WEBSOCKET_ERROR_GRACE_PERIOD = timedelta(seconds=60)
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -84,8 +84,8 @@ class BaseApiClient:
     _password: str
     _verify_ssl: bool
     _is_authenticated: bool = False
-    _websocket_failures: int = 0
-    _websocket_error_start: Optional[datetime] = None
+    _last_update: float = NEVER_RAN
+    _last_websocket_check: float = NEVER_RAN
 
     req: aiohttp.ClientSession
     headers: Optional[Dict[str, str]] = None
@@ -346,10 +346,6 @@ class BaseApiClient:
         self.ws_connection = await self.ws_session.ws_connect(url, ssl=self._verify_ssl, headers=self.headers)
         try:
             async for msg in self.ws_connection:
-                # reset Websocket error markers
-                self._websocket_failures = 0
-                self._websocket_error_start = None
-
                 if self.ws_callback is not None:
                     self.ws_callback(msg)  # pylint: disable=not-callable
 
@@ -366,17 +362,28 @@ class BaseApiClient:
             _LOGGER.debug("websocket disconnected")
             self.ws_connection = None
 
-    def _log_websocket_failure(self) -> None:
-        now = datetime.now()
-        if self._websocket_error_start is None:
-            self._websocket_error_start = now
+    async def check_ws(self) -> bool:
+        now = time.monotonic()
 
-        self._websocket_failures += 1
-        log = _LOGGER.warning
+        first_check = self._last_websocket_check == NEVER_RAN
+        connect_ws = False
+        if now - self._last_websocket_check > WEBSOCKET_CHECK_INTERVAL:
+            _LOGGER.debug("Checking websocket")
+            self._last_websocket_check = now
+            connect_ws = True
+            await self.async_connect_ws()
 
-        if self._websocket_failures < 10 or (now - self._websocket_error_start) < WEBSOCKET_ERROR_GRACE_PERIOD:
+        # log if no active WS
+        if not self.ws_connection:
             log = _LOGGER.debug
-        log("Unifi OS: Websocket connection not active, failing back to polling")
+            # but only warn if a reconnect attempt was made
+            if not first_check and connect_ws:
+                log = _LOGGER.warning
+            log("Unifi OS: Websocket connection not active, failing back to polling")
+
+        if self.ws_connection or self._last_websocket_check == now:
+            return True
+        return False
 
     def _process_ws_message(self, msg: aiohttp.WSMessage) -> None:
         raise NotImplementedError()
@@ -390,7 +397,6 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
     _event_state_machine: ProtectEventStateMachine = ProtectEventStateMachine()
     _device_state_machine: ProtectDeviceStateMachine = ProtectDeviceStateMachine()
     _processed_data: Dict[str, Dict[str, Any]] = {}
-    _last_websocket_check: float = NEVER_RAN
     _last_device_update_time: float = NEVER_RAN
     _ws_subscriptions: List[Callable[[Dict[str, Dict[str, Any]]], None]] = []
     _is_first_update: bool = True
@@ -417,31 +423,30 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
     async def update(self, force_camera_update: bool = False) -> Dict[str, Any]:
         """Updates the status of devices."""
 
-        current_time = time.monotonic()
-        device_update = False
+        now = time.monotonic()
+        if force_camera_update and self.ws_connection is not None:
+            self.disconnect_ws()
+            self._last_update = NEVER_RAN
+            self._last_websocket_check = NEVER_RAN
+            self._is_first_update = True
+            self._processed_data = {}
 
-        time_since_device = current_time - self._last_device_update_time
-        if not self.ws_connection and force_camera_update or time_since_device > DEVICE_UPDATE_INTERVAL_SECONDS:
+        device_update = False
+        if now - self._last_update > DEVICE_UPDATE_INTERVAL:
             _LOGGER.debug("Doing device update")
             device_update = True
             await self._get_device_list(not self.ws_connection)
-            self._last_device_update_time = current_time
+            self._last_update = now
         else:
             _LOGGER.debug("Skipping device update")
 
-        time_since_websocket = current_time - self._last_websocket_check
-        if time_since_websocket > WEBSOCKET_CHECK_INTERVAL_SECONDS:
-            _LOGGER.debug("Checking websocket")
-            self._last_websocket_check = current_time
-            await self.async_connect_ws()
-
+        active_ws = await self.check_ws()
         # If the websocket is connected/connecting
         # we do not need to get events
-        if self.ws_connection or self._last_websocket_check == current_time:
+        if active_ws:
             _LOGGER.debug("Skipping update since websocket is active")
             return self._processed_data if device_update else {}
 
-        self._log_websocket_failure()
         self._reset_device_events()
         updates = await self._get_events(lookback=10)
 
@@ -1156,9 +1161,7 @@ class ProtectApiClient(BaseApiClient):
 
     _minimum_score: int
     _bootstrap: Optional[Bootstrap] = None
-    _last_update: Optional[datetime] = None
-    _last_websocket_check: Optional[datetime] = None
-    _websocket_failures: int = 0
+    _last_update_dt: Optional[datetime] = None
 
     def __init__(self, *args: Any, minimum_score: int = 0, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -1166,39 +1169,33 @@ class ProtectApiClient(BaseApiClient):
         self._minimum_score = minimum_score
 
     async def update(self, force: bool = False) -> Union[Bootstrap, List[Event]]:
-        now = datetime.now()
+        """Updates the state of devices."""
 
+        now = time.monotonic()
+        now_dt = datetime.now()
         if force and self.ws_connection is not None:
             self.disconnect_ws()
-            self._last_websocket_check = None
+            self._last_update = NEVER_RAN
+            self._last_websocket_check = NEVER_RAN
 
-        if (
-            self._bootstrap is None
-            or force
-            or self._last_update is None
-            or now - self._last_update > DEVICE_UPDATE_INTERVAL
-        ):
+        if self._bootstrap is None or now - self._last_update > DEVICE_UPDATE_INTERVAL:
             self._last_update = now
             data = await self.api_request_obj("bootstrap")
             self._bootstrap = Bootstrap(**data, api=self)
 
-        if self._last_websocket_check is None or now - self._last_websocket_check > WEBSOCKET_CHECK_INTERVAL:
-            self._last_websocket_check = now
-            self.last_update_id = self._bootstrap.last_update_id
-            await self.async_connect_ws()
-
+        active_ws = await self.check_ws()
         # If the websocket is connected/connecting
         # we do not need to get events
-        if self.ws_connection or self._last_websocket_check == now:
+        if active_ws:
             _LOGGER.debug("Skipping update since websocket is active")
             return self._bootstrap
 
-        self._log_websocket_failure()
-        events = await self.get_events(start=self._last_update, end=now)
+        events = await self.get_events(start=self._last_update_dt, end=now_dt)
         for event in events:
             self.bootstrap.process_event(event)
 
         self._last_update = now
+        self._last_update_dt = now_dt
         return events
 
     def _process_ws_message(self, msg: aiohttp.WSMessage) -> None:
