@@ -74,7 +74,7 @@ class ProtectBaseObject(BaseModel):
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         """
-        Helper method for overriding in child classes for remapping UFP JSON keys to Python ones that do not fix the
+        Helper method for overriding in child classes for remapping UFP JSON keys to Python ones that do not fit the
         simple camel case to snake case formula.
 
         Return format is
