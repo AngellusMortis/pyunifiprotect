@@ -125,7 +125,7 @@ async def test_get_events(protect_client: ProtectApiClient, raw_events):
 
 
 @pytest.mark.asyncio
-async def test_check_ws_initial(protect_client: ProtectApiClient, caplog):
+async def test_check_ws_initial(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
     caplog.set_level(logging.DEBUG)
 
     protect_client._last_websocket_check = NEVER_RAN
@@ -139,7 +139,7 @@ async def test_check_ws_initial(protect_client: ProtectApiClient, caplog):
 
 
 @pytest.mark.asyncio
-async def test_check_ws_no_ws(protect_client: ProtectApiClient, caplog):
+async def test_check_ws_no_ws(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
     caplog.set_level(logging.DEBUG)
 
     protect_client._last_websocket_check = time.monotonic()
@@ -156,7 +156,7 @@ async def test_check_ws_no_ws(protect_client: ProtectApiClient, caplog):
 
 
 @pytest.mark.asyncio
-async def test_check_ws_reconnect(protect_client: ProtectApiClient, caplog):
+async def test_check_ws_reconnect(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
     caplog.set_level(logging.DEBUG)
 
     protect_client._last_websocket_check = time.monotonic() - WEBSOCKET_CHECK_INTERVAL - 1
