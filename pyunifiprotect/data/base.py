@@ -6,7 +6,6 @@ from ipaddress import IPv4Address
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
     Dict,
     List,
@@ -45,9 +44,9 @@ class ProtectBaseObject(BaseModel):
     _api: Optional[ProtectApiClient] = PrivateAttr(None)
     _initial_data: Dict[str, Any] = PrivateAttr()
 
-    _protect_objs: ClassVar[Optional[Dict[str, Callable]]] = None
-    _protect_lists: ClassVar[Optional[Dict[str, Callable]]] = None
-    _protect_dicts: ClassVar[Optional[Dict[str, Callable]]] = None
+    _protect_objs: ClassVar[Optional[Dict[str, Type[ProtectBaseObject]]]] = None
+    _protect_lists: ClassVar[Optional[Dict[str, Type[ProtectBaseObject]]]] = None
+    _protect_dicts: ClassVar[Optional[Dict[str, Type[ProtectBaseObject]]]] = None
     _unifi_remaps: ClassVar[Optional[Dict[str, str]]] = None
 
     class Config:
@@ -110,7 +109,7 @@ class ProtectBaseObject(BaseModel):
     def _get_protect_objs(cls) -> Dict[str, Type[ProtectBaseObject]]:
         """Helper method to get all child UFP objects"""
         if cls._protect_objs is not None:
-            return cls._protect_objs  # type: ignore
+            return cls._protect_objs
 
         cls._set_protect_subtypes()
         return cls._protect_objs  # type: ignore
@@ -119,7 +118,7 @@ class ProtectBaseObject(BaseModel):
     def _get_protect_lists(cls) -> Dict[str, Type[ProtectBaseObject]]:
         """Helper method to get all child of UFP objects (lists)"""
         if cls._protect_lists is not None:
-            return cls._protect_lists  # type: ignore
+            return cls._protect_lists
 
         cls._set_protect_subtypes()
         return cls._protect_lists  # type: ignore
@@ -128,7 +127,7 @@ class ProtectBaseObject(BaseModel):
     def _get_protect_dicts(cls) -> Dict[str, Type[ProtectBaseObject]]:
         """Helper method to get all child of UFP objects (dicts)"""
         if cls._protect_dicts is not None:
-            return cls._protect_dicts  # type: ignore
+            return cls._protect_dicts
 
         cls._set_protect_subtypes()
         return cls._protect_dicts  # type: ignore
