@@ -118,11 +118,8 @@ disable = [
     "fixme",
     "no-member",
     "unsupported-membership-test",
-<<<<<<< HEAD
     "unsubscriptable-object",
-=======
     "unsupported-assignment-operation",
->>>>>>> fba4dc3 (Makes nested Protect Objects smarter)
 ]
 enable = [
     #"useless-suppression",  # temporarily every now and then to clean them up
