@@ -1169,7 +1169,7 @@ class ProtectApiClient(BaseApiClient):
         verify_ssl: bool = True,
         session: Optional[aiohttp.ClientSession] = None,
         minimum_score: int = 0,
-        debug: bool = False
+        debug: bool = False,
     ) -> None:
         super().__init__(
             host=host, port=port, username=username, password=password, verify_ssl=verify_ssl, session=session
