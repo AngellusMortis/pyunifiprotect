@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from pyunifiprotect.unifi_protect_server import ProtectApiClient
 
 
-MODEL_TO_CLASS: Final = {
+MODEL_TO_CLASS: Dict[str, Type[ProtectModel]] = {
     ModelType.EVENT: Event,
     ModelType.GROUP: Group,
     ModelType.USER_LOCATION: UserLocation,
@@ -52,7 +52,7 @@ def get_klass_from_dict(data: Dict[str, Any]) -> Type[ProtectModel]:
     if klass is None:
         raise DataDecodeError("Unknown modelKey")
 
-    return cast(Type[ProtectModel], klass)
+    return klass
 
 
 def create_from_unifi_dict(
