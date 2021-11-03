@@ -1,7 +1,7 @@
 """Unifi Protect Data Conversion."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Final, Optional, Type, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
 from pyunifiprotect.data.devices import Bridge, Camera, Light, Sensor, Viewer
 from pyunifiprotect.data.nvr import (
