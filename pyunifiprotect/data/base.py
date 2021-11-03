@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, PrivateAttr
 
 from pyunifiprotect.data.types import ModelType, StateType
-from pyunifiprotect.exceptions import BadRequest, DataDecodeError
+from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import (
     convert_unifi_data,
     is_debug,
@@ -36,84 +36,6 @@ if TYPE_CHECKING:
 
 
 ProtectObject = TypeVar("ProtectObject", bound="ProtectBaseObject")
-
-
-def get_klass_from_dict(data: Dict[str, Any]) -> Type[ProtectModel]:
-    """
-    Helper method to read the `modelKey` from a UFP JSON dict and get the correct Python class for conversion.
-    Will raise `DataDecodeError` if the `modelKey` is for an unknown object.
-    """
-
-    from pyunifiprotect.data.devices import (  # pylint: disable=import-outside-toplevel
-        Bridge,
-        Camera,
-        Light,
-        Sensor,
-        Viewer,
-    )
-    from pyunifiprotect.data.nvr import (  # pylint: disable=import-outside-toplevel
-        NVR,
-        CloudAccount,
-        Event,
-        Group,
-        Liveview,
-        User,
-        UserLocation,
-    )
-
-    if "modelKey" not in data:
-        raise DataDecodeError("No modelKey")
-
-    model = ModelType(data["modelKey"])
-
-    klass: Optional[Type[ProtectModel]] = None
-
-    if model == ModelType.EVENT:
-        klass = Event
-    elif model == ModelType.GROUP:
-        klass = Group
-    elif model == ModelType.USER_LOCATION:
-        klass = UserLocation
-    elif model == ModelType.CLOUD_IDENTITY:
-        klass = CloudAccount
-    elif model == ModelType.USER:
-        klass = User
-    elif model == ModelType.NVR:
-        klass = NVR
-    elif model == ModelType.LIGHT:
-        klass = Light
-    elif model == ModelType.CAMERA:
-        klass = Camera
-    elif model == ModelType.LIVEVIEW:
-        klass = Liveview
-    elif model == ModelType.VIEWPORT:
-        klass = Viewer
-    elif model == ModelType.BRIDGE:
-        klass = Bridge
-    elif model == ModelType.SENSOR:
-        klass = Sensor
-
-    if klass is None:
-        raise DataDecodeError("Unknown modelKey")
-
-    return klass
-
-
-def create_from_unifi_dict(
-    data: Dict[str, Any], api: Optional[ProtectApiClient] = None, klass: Optional[Type[ProtectModel]] = None
-) -> ProtectModel:
-    """
-    Helper method to read the `modelKey` from a UFP JSON dict and convert to currect Python class.
-    Will raise `DataDecodeError` if the `modelKey` is for an unknown object.
-    """
-
-    if "modelKey" not in data:
-        raise DataDecodeError("No modelKey")
-
-    if klass is None:
-        klass = get_klass_from_dict(data)
-
-    return klass.from_unifi_dict(**data, api=api)
 
 
 class ProtectBaseObject(BaseModel):

@@ -1,12 +1,9 @@
-from pyunifiprotect.data.base import (
-    ProtectBaseObject,
-    ProtectModel,
-    create_from_unifi_dict,
-)
+from pyunifiprotect.data.base import ProtectBaseObject, ProtectModel
+from pyunifiprotect.data.bootstrap import Bootstrap
+from pyunifiprotect.data.convert import create_from_unifi_dict
 from pyunifiprotect.data.devices import Camera, Light, Sensor, Viewer
 from pyunifiprotect.data.nvr import (
     NVR,
-    Bootstrap,
     CloudAccount,
     Event,
     Group,

@@ -16,8 +16,8 @@ import jwt
 from yarl import URL
 
 from pyunifiprotect.const import SERVER_ID, SERVER_NAME
+from pyunifiprotect.data.bootstrap import Bootstrap
 from pyunifiprotect.data import (
-    Bootstrap,
     Event,
     EventType,
     ProtectWSPayloadFormat,
