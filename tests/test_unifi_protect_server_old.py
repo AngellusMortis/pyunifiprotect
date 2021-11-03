@@ -54,7 +54,7 @@ async def test_server_info(old_protect_client: UpvServer):
     )
     assert data == {
         "server_id": CONSTANTS["server_id"],
-        "server_model": "UDM-PRO",
+        "server_model": CONSTANTS["server_model"],
         "server_name": CONSTANTS["server_name"],
         "server_version": CONSTANTS["server_version"],
         "server_ip": CONSTANTS["server_ip"],

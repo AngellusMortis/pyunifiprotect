@@ -350,8 +350,23 @@ class VideoStats(ProtectBaseObject):
 
 
 class StorageStats(ProtectBaseObject):
-    used: int
-    rate: float
+    used: Optional[int]
+    rate: Optional[float]
+
+    @classmethod
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "rate" not in data:
+            data["rate"] = None
+
+        return super().unifi_dict_to_dict(data)
+
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data, exclude=exclude)
+
+        if "rate" in data and data["rate"] is None:
+            del data["rate"]
+
+        return data
 
 
 class CameraStats(ProtectBaseObject):

@@ -237,11 +237,17 @@ def compare_objs(obj_type, expected, actual):
         del expected["featureFlags"]["zoom"]
         del expected["ispSettings"]["mountPosition"]
     elif obj_type == ModelType.USER.value:
-        del expected["settings"]
+        if "settings" in expected:
+            expected.pop("settings", None)
         del expected["alertRules"]
         del expected["notificationsV2"]
         if expected["cloudAccount"] is not None:
             del expected["cloudAccount"]["profileImg"]
+        # lastLoginIp/lastLoginTime is not always present
+        if "lastLoginIp" not in expected:
+            actual.pop("lastLoginIp", None)
+        if "lastLoginTime" not in expected:
+            actual.pop("lastLoginTime", None)
     elif obj_type == ModelType.EVENT.value:
         del expected["metadata"]
         del expected["partition"]

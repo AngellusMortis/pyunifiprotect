@@ -308,8 +308,8 @@ class StorageDistribution(ProtectBaseObject):
 
 class StorageStats(ProtectBaseObject):
     utilization: float
-    capacity: int
-    remaining_capacity: int
+    capacity: Optional[int]
+    remaining_capacity: Optional[int]
     recording_space: StorageSpace
     storage_distribution: StorageDistribution
 
@@ -328,7 +328,7 @@ class NVR(ProtectDeviceModel):
     ucore_version: str
     hardware_platform: str
     ports: PortConfig
-    last_update_at: datetime
+    last_update_at: Optional[datetime]
     is_station: bool
     enable_automatic_backups: bool
     enable_stats_reporting: bool
