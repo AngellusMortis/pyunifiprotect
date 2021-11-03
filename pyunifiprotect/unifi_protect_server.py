@@ -1160,8 +1160,20 @@ class ProtectApiClient(BaseApiClient):
     _bootstrap: Optional[Bootstrap] = None
     _last_update_dt: Optional[datetime] = None
 
-    def __init__(self, *args: Any, minimum_score: int = 0, debug: bool = False, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        username: str,
+        password: str,
+        verify_ssl: bool = True,
+        session: Optional[aiohttp.ClientSession] = None,
+        minimum_score: int = 0,
+        debug: bool = False
+    ) -> None:
+        super().__init__(
+            host=host, port=port, username=username, password=password, verify_ssl=verify_ssl, session=session
+        )
 
         self._minimum_score = minimum_score
 
