@@ -18,8 +18,6 @@ from pyunifiprotect.exceptions import DataDecodeError
 
 if TYPE_CHECKING:
     from pyunifiprotect.data.base import ProtectModel
-    from pyunifiprotect.data.devices import Bridge
-    from pyunifiprotect.data.nvr import Event
     from pyunifiprotect.unifi_protect_server import ProtectApiClient
 
 
