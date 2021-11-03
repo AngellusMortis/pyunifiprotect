@@ -16,7 +16,6 @@ import jwt
 from yarl import URL
 
 from pyunifiprotect.const import SERVER_ID, SERVER_NAME
-from pyunifiprotect.data.bootstrap import Bootstrap
 from pyunifiprotect.data import (
     Event,
     EventType,
@@ -24,6 +23,7 @@ from pyunifiprotect.data import (
     WSPacket,
     create_from_unifi_dict,
 )
+from pyunifiprotect.data.bootstrap import Bootstrap
 from pyunifiprotect.exceptions import BadRequest, NotAuthorized, NvrError
 from pyunifiprotect.unifi_data import (
     DEVICE_MODEL_LIGHT,
