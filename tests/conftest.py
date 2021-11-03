@@ -12,6 +12,7 @@ import pytest
 
 from pyunifiprotect import ProtectApiClient, UpvServer
 from pyunifiprotect.data import ModelType
+from pyunifiprotect.utils import set_debug, set_no_debug
 from tests.sample_data.constants import CONSTANTS
 
 UFP_SAMPLE_DIR = os.environ.get("UFP_SAMPLE_DIR")
@@ -87,6 +88,11 @@ MockDatetime = Mock()
 MockDatetime.now.return_value = get_now()
 
 
+@pytest.fixture(autouse=True)
+def ensure_debug():
+    set_debug()
+
+
 @pytest.fixture
 @pytest.mark.asyncio
 async def old_protect_client():
@@ -128,7 +134,25 @@ async def protect_client():
 
 @pytest.fixture
 @pytest.mark.asyncio
+async def protect_client_no_debug():
+    set_no_debug()
+
+    client = ProtectApiClient("127.0.0.1", 0, "username", "password")
+    client.is_unifi_os = False
+    client.api_request = AsyncMock(side_effect=mock_api_request)
+    client.api_request_raw = AsyncMock(side_effect=mock_api_request_raw)
+    client.ensure_authenticated = AsyncMock()
+
+    await client.update(True)
+
+    yield client
+
+
+@pytest.fixture
+@pytest.mark.asyncio
 async def protect_client_ws():
+    set_no_debug()
+
     client = ProtectApiClient("127.0.0.1", 0, "username", "password")
     client.is_unifi_os = True
     client.api_request = AsyncMock(side_effect=mock_api_request)

@@ -1,21 +1,41 @@
+from __future__ import annotations
+
 import contextlib
-from datetime import datetime, timedelta, tzinfo
+from datetime import datetime, timedelta, timezone, tzinfo
 from decimal import Decimal
 from enum import Enum
+from inspect import isclass
 from ipaddress import IPv4Address
+import os
 from pathlib import Path
 import re
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
 from uuid import UUID
 
 from aiohttp import ClientResponse
-from pydantic.color import Color
+from pydantic.fields import SHAPE_DICT, SHAPE_LIST, ModelField
 from pydantic.utils import to_camel
 
-from pyunifiprotect.data.types import Percent
+if TYPE_CHECKING:
+    from pyunifiprotect.data import CoordType
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-CoordType = Union[Percent, int, float]
+DEBUG_ENV = "UFP_DEBUG"
+
+
+def set_debug() -> None:
+    """Sets ENV variable for UFP_DEBUG to on (True)"""
+    os.environ[DEBUG_ENV] = str(True)
+
+
+def set_no_debug() -> None:
+    """Sets ENV variable for UFP_DEBUG to off (False)"""
+    os.environ[DEBUG_ENV] = str(False)
+
+
+def is_debug() -> bool:
+    """Returns if debug ENV is on (True)"""
+    return os.environ.get(DEBUG_ENV) == str(True)
 
 
 async def get_response_reason(response: ClientResponse) -> str:
@@ -55,7 +75,7 @@ def from_js_time(num: Union[int, float, str, datetime]) -> datetime:
     if isinstance(num, datetime):
         return num
 
-    return datetime.fromtimestamp(int(num) / 1000)
+    return datetime.fromtimestamp(int(num) / 1000, tz=timezone.utc)
 
 
 def process_datetime(data: Dict[str, Any], key: str) -> Optional[datetime]:
@@ -71,16 +91,15 @@ def format_datetime(dt: Optional[datetime], default: Optional[str] = None) -> Op
 
 
 def is_online(data: Dict[str, Any]) -> bool:
-
     return bool(data["state"] == "CONNECTED")
 
 
 def is_doorbell(data: Dict[str, Any]) -> bool:
-
     return "doorbell" in str(data["type"]).lower()
 
 
 def to_snake_case(name: str) -> str:
+    """Converts string to snake_case"""
     name = re.sub("(.)([A-Z0-9][a-z]+)", r"\1_\2", name)
     name = re.sub("__([A-Z0-9])", r"_\1", name)
     name = re.sub("([a-z0-9])([A-Z])", r"\1_\2", name)
@@ -88,6 +107,7 @@ def to_snake_case(name: str) -> str:
 
 
 def to_camel_case(name: str) -> str:
+    """Converts string to camelCase"""
     # repeated runs through should not keep lowercasing
     if "_" in name:
         name = to_camel(name)
@@ -95,8 +115,47 @@ def to_camel_case(name: str) -> str:
     return name
 
 
+def convert_unifi_data(value: Any, field: ModelField) -> Any:
+    """Converts value from UFP data into pydantic field class"""
+    from pyunifiprotect.data import (  # pylint: disable=import-outside-toplevel
+        Color,
+        ProtectBaseObject,
+    )
+
+    if (
+        value is None
+        or not isclass(field.type_)
+        or issubclass(field.type_, ProtectBaseObject)
+        or isinstance(value, field.type_)
+    ):
+        return value
+
+    if field.shape == SHAPE_LIST and isinstance(value, list):
+        value = [convert_unifi_data(v, field) for v in value]
+    elif field.shape == SHAPE_DICT and isinstance(value, dict):
+        value = {k: convert_unifi_data(v, field) for k, v in value.items()}
+    elif field.type_ == IPv4Address:
+        value = IPv4Address(value)
+    elif field.type_ == UUID:
+        value = UUID(value)
+    elif field.type_ == datetime:
+        value = from_js_time(value)
+    elif field.type_ == Color:
+        value = Color(value)
+    elif field.type_ == Decimal:
+        value = Decimal(value)
+    elif field.type_ == Path:
+        value = Path(value)
+    elif issubclass(field.type_, Enum):
+        value = field.type_(value)
+
+    return value
+
+
 def serialize_unifi_obj(value: Any) -> Any:
-    from pyunifiprotect.data.base import (  # pylint: disable=import-outside-toplevel
+    """Serializes UFP data"""
+    from pyunifiprotect.data import (  # pylint: disable=import-outside-toplevel
+        Color,
         ProtectModel,
     )
 
@@ -121,6 +180,7 @@ def serialize_unifi_obj(value: Any) -> Any:
 
 
 def serialize_dict(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Serializes UFP data dict"""
     for key in list(data.keys()):
         data[to_camel_case(key)] = serialize_unifi_obj(data.pop(key))
 
@@ -128,6 +188,9 @@ def serialize_dict(data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def serialize_coord(coord: CoordType) -> Union[int, float]:
+    """Serializes UFP zone coordinate"""
+    from pyunifiprotect.data import Percent  # pylint: disable=import-outside-toplevel
+
     if not isinstance(coord, (Percent, Decimal)):
         return coord
 
@@ -137,6 +200,7 @@ def serialize_coord(coord: CoordType) -> Union[int, float]:
 
 
 def serialize_point(point: Tuple[CoordType, CoordType]) -> List[Union[int, float]]:
+    """Serializes UFP zone coordinate point"""
     return [
         serialize_coord(point[0]),
         serialize_coord(point[1]),
@@ -144,8 +208,14 @@ def serialize_point(point: Tuple[CoordType, CoordType]) -> List[Union[int, float
 
 
 def serialize_list(items: Iterable[Any]) -> List[Any]:
+    """Serializes UFP data list"""
     new_items: List[Any] = []
     for item in items:
         new_items.append(serialize_unifi_obj(item))
 
     return new_items
+
+
+def round_decimal(num: Union[int, float], digits: int) -> Decimal:
+    """Rounds a decimal to a set precision"""
+    return Decimal(str(round(num, digits)))

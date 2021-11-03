@@ -89,7 +89,8 @@ good-names = [
 # wrong-import-order - isort guards this
 
 # handled by mypy:
-# no-member, unsupported-membership-test, unsupported-assignment-operation, unsubscriptable-object
+# no-member, unsupported-membership-test, unsupported-assignment-operation,
+# unsubscriptable-object, used-before-assignment
 disable = [
     "format",
     "abstract-class-little-used",
@@ -120,6 +121,7 @@ disable = [
     "unsupported-membership-test",
     "unsubscriptable-object",
     "unsupported-assignment-operation",
+    "used-before-assignment",
 ]
 enable = [
     #"useless-suppression",  # temporarily every now and then to clean them up

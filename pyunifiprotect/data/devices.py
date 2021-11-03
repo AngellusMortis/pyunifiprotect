@@ -6,14 +6,13 @@ from ipaddress import IPv4Address
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 from uuid import UUID
 
-from pydantic.color import Color
-
 from pyunifiprotect.data.base import (
     ProtectAdoptableDeviceModel,
     ProtectBaseObject,
     ProtectMotionDeviceModel,
 )
 from pyunifiprotect.data.types import (
+    Color,
     DoorbellMessageType,
     LEDLevel,
     LightModeEnableType,
@@ -24,7 +23,12 @@ from pyunifiprotect.data.types import (
     SmartDetectObjectType,
     VideoMode,
 )
-from pyunifiprotect.utils import process_datetime, serialize_point, to_js_time
+from pyunifiprotect.utils import (
+    process_datetime,
+    round_decimal,
+    serialize_point,
+    to_js_time,
+)
 
 if TYPE_CHECKING:
     from pyunifiprotect.data.nvr import Event, Liveview
@@ -88,6 +92,15 @@ class EventStats(ProtectBaseObject):
     average: int
     last_days: List[int]
     recent_hours: List[int] = []
+
+    @classmethod
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        data = super().unifi_dict_to_dict(data)
+
+        if "recent_hours" not in data:
+            data["recent_hours"] = []
+
+        return data
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
@@ -372,6 +385,15 @@ class CameraZone(ProtectBaseObject):
     name: str
     color: Color
     points: List[Tuple[Percent, Percent]]
+
+    @classmethod
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        data = super().unifi_dict_to_dict(data)
+
+        if "points" in data and isinstance(data["points"], list):
+            data["points"] = [(round_decimal(p[0], 4), round_decimal(p[1], 4)) for p in data["points"]]
+
+        return data
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)

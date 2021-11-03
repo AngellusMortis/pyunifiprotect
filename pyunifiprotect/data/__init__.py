@@ -1,4 +1,8 @@
-from pyunifiprotect.data.base import ProtectModel
+from pyunifiprotect.data.base import (
+    ProtectBaseObject,
+    ProtectModel,
+    create_from_unifi_dict,
+)
 from pyunifiprotect.data.devices import Camera, Light, Sensor, Viewer
 from pyunifiprotect.data.nvr import (
     NVR,
@@ -12,12 +16,15 @@ from pyunifiprotect.data.nvr import (
     UserLocation,
 )
 from pyunifiprotect.data.types import (
+    Color,
+    CoordType,
     DoorbellMessageType,
     EventType,
     FixSizeOrderedDict,
     LightModeEnableType,
     LightModeType,
     ModelType,
+    Percent,
     ProtectWSPayloadFormat,
     SmartDetectObjectType,
     StateType,
@@ -34,6 +41,9 @@ __all__ = [
     "Bootstrap",
     "Camera",
     "CloudAccount",
+    "Color",
+    "CoordType",
+    "create_from_unifi_dict",
     "DoorbellMessageType",
     "Event",
     "EventType",
@@ -46,6 +56,8 @@ __all__ = [
     "ModelType",
     "NVR",
     "NVRLocation",
+    "Percent",
+    "ProtectBaseObject",
     "ProtectModel",
     "ProtectWSPayloadFormat",
     "Sensor",

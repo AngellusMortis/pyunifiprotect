@@ -21,7 +21,13 @@ from pydantic.fields import SHAPE_DICT, SHAPE_LIST, PrivateAttr
 
 from pyunifiprotect.data.types import ModelType, StateType
 from pyunifiprotect.exceptions import BadRequest, DataDecodeError
-from pyunifiprotect.utils import process_datetime, serialize_unifi_obj, to_snake_case
+from pyunifiprotect.utils import (
+    convert_unifi_data,
+    is_debug,
+    process_datetime,
+    serialize_unifi_obj,
+    to_snake_case,
+)
 
 if TYPE_CHECKING:
     from pyunifiprotect.data.devices import Bridge
@@ -29,7 +35,85 @@ if TYPE_CHECKING:
     from pyunifiprotect.unifi_protect_server import ProtectApiClient
 
 
-T = TypeVar("T", bound="ProtectBaseObject")
+ProtectObject = TypeVar("ProtectObject", bound="ProtectBaseObject")
+
+
+def get_klass_from_dict(data: Dict[str, Any]) -> Type[ProtectModel]:
+    """
+    Helper method to read the `modelKey` from a UFP JSON dict and get the correct Python class for conversion.
+    Will raise `DataDecodeError` if the `modelKey` is for an unknown object.
+    """
+
+    from pyunifiprotect.data.devices import (  # pylint: disable=import-outside-toplevel
+        Bridge,
+        Camera,
+        Light,
+        Sensor,
+        Viewer,
+    )
+    from pyunifiprotect.data.nvr import (  # pylint: disable=import-outside-toplevel
+        NVR,
+        CloudAccount,
+        Event,
+        Group,
+        Liveview,
+        User,
+        UserLocation,
+    )
+
+    if "modelKey" not in data:
+        raise DataDecodeError("No modelKey")
+
+    model = ModelType(data["modelKey"])
+
+    klass: Optional[Type[ProtectModel]] = None
+
+    if model == ModelType.EVENT:
+        klass = Event
+    elif model == ModelType.GROUP:
+        klass = Group
+    elif model == ModelType.USER_LOCATION:
+        klass = UserLocation
+    elif model == ModelType.CLOUD_IDENTITY:
+        klass = CloudAccount
+    elif model == ModelType.USER:
+        klass = User
+    elif model == ModelType.NVR:
+        klass = NVR
+    elif model == ModelType.LIGHT:
+        klass = Light
+    elif model == ModelType.CAMERA:
+        klass = Camera
+    elif model == ModelType.LIVEVIEW:
+        klass = Liveview
+    elif model == ModelType.VIEWPORT:
+        klass = Viewer
+    elif model == ModelType.BRIDGE:
+        klass = Bridge
+    elif model == ModelType.SENSOR:
+        klass = Sensor
+
+    if klass is None:
+        raise DataDecodeError("Unknown modelKey")
+
+    return klass
+
+
+def create_from_unifi_dict(
+    data: Dict[str, Any], api: Optional[ProtectApiClient] = None, klass: Optional[Type[ProtectModel]] = None
+) -> ProtectModel:
+    """
+    Helper method to read the `modelKey` from a UFP JSON dict and convert to currect Python class.
+    Will raise `DataDecodeError` if the `modelKey` is for an unknown object.
+    """
+
+    if "modelKey" not in data:
+        raise DataDecodeError("No modelKey")
+
+    if klass is None:
+        klass = get_klass_from_dict(data)
+
+    return klass.from_unifi_dict(**data, api=api)
 
 
 class ProtectBaseObject(BaseModel):
@@ -54,6 +138,17 @@ class ProtectBaseObject(BaseModel):
 
     def __init__(self, api: Optional[ProtectApiClient] = None, **data: Any) -> None:
         """
+        Base class for creating Python objects from UFP JSON data.
+
+        Use the static method `.from_unifi_dict()` to create objects from UFP JSON data from then the main class constructor.
+        """
+        super().__init__(**data)
+
+        self._api = api
+
+    @classmethod
+    def from_unifi_dict(cls, api: Optional[ProtectApiClient] = None, **data: Any) -> ProtectObject:
+        """
         Main constructor for `ProtectBaseObject`
 
         :param api: Optional reference to the ProtectAPIClient that created generated the UFP JSON
@@ -64,12 +159,36 @@ class ProtectBaseObject(BaseModel):
         API can be used for saving updates for the Protect object or fetching references to other objects
         (cameras, users, etc.)
         """
-        data["api"] = api
-        data = self.unifi_dict_to_dict(data)
-        del data["api"]
-        super().__init__(**data)
 
-        self._api = api
+        data["api"] = api
+        data = cls.unifi_dict_to_dict(data)
+
+        if is_debug():
+            data.pop("api", None)
+            return cls(api=api, **data)  # type: ignore
+
+        obj = cls.construct(**data)
+        return obj  # type: ignore
+
+    @classmethod
+    def construct(cls, _fields_set: Optional[Set[str]] = None, **values: Any) -> ProtectObject:
+        api = values.pop("api", None)
+        for key, klass in cls._get_protect_objs().items():
+            if key in values and isinstance(values[key], dict):
+                values[key] = klass.construct(**values[key])
+
+        for key, klass in cls._get_protect_lists().items():
+            if key in values and isinstance(values[key], list):
+                values[key] = [klass.construct(**v) if isinstance(v, dict) else v for v in values[key]]
+
+        for key, klass in cls._get_protect_dicts().items():
+            if key in values and isinstance(values[key], dict):
+                values[key] = {k: klass.construct(**v) if isinstance(v, dict) else v for k, v in values[key].items()}
+
+        obj = super().construct(_fields_set=_fields_set, **values)
+        obj._api = api  # pylint: disable=protected-access
+
+        return obj  # type: ignore
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
@@ -133,10 +252,8 @@ class ProtectBaseObject(BaseModel):
         return cls._protect_dicts  # type: ignore
 
     @classmethod
-    def _get_api(cls, data: Dict[str, Any]) -> Optional[ProtectApiClient]:
+    def _get_api(cls, api: Optional[ProtectApiClient]) -> Optional[ProtectApiClient]:
         """Helper method to try to find and the current ProjtectAPIClient instance from given data"""
-        api = data.get("api")
-
         if api is None and isinstance(cls, ProtectBaseObject) and hasattr(cls, "_api"):
             api = cls._api
 
@@ -181,14 +298,30 @@ class ProtectBaseObject(BaseModel):
         :param data: decoded UFP JSON dict
         """
 
+        # get the API client instance
+        api = cls._get_api(data.get("api", None))
+
+        # remap keys that will not be converted correctly by snake_case convert
         for from_key, to_key in cls._get_unifi_remaps().items():
             if from_key in data:
                 data[to_key] = data.pop(from_key)
 
+        # convert to snake_case
         for key in list(data.keys()):
             data[to_snake_case(key)] = data.pop(key)
 
-        api = cls._get_api(data)
+        # remove extra fields
+        if not is_debug():
+            for key, value in list(data.items()):
+                if key == "api":
+                    continue
+
+                if key not in cls.__fields__:
+                    del data[key]
+                    continue
+                data[key] = convert_unifi_data(value, cls.__fields__[key])
+
+        # clean child UFP objs
         for key, klass in cls._get_protect_objs().items():
             if key in data:
                 data[key] = cls._clean_protect_obj(data[key], klass, api)
@@ -289,7 +422,7 @@ class ProtectBaseObject(BaseModel):
 
         return data
 
-    def update_from_dict(self: T, data: Dict[str, Any]) -> T:
+    def update_from_dict(self: ProtectObject, data: Dict[str, Any]) -> ProtectObject:
         """Updates current object from a cleaned UFP JSON dict"""
         for key in self._get_protect_objs().keys():
             if key in data:
@@ -300,9 +433,15 @@ class ProtectBaseObject(BaseModel):
         if "api" in data:
             del data["api"]
 
-        return self.copy(update=data)
+        if is_debug():
+            return self.copy(update=data)
 
-    def update_from_unifi_dict(self: T, data: Dict[str, Any]) -> T:
+        new_data = self.dict()
+        new_data.update(data)
+        new_data["api"] = self._api
+        return self.construct(**new_data)  # type: ignore
+
+    def update_from_unifi_dict(self: ProtectObject, data: Dict[str, Any]) -> ProtectObject:
         """Updates current object from an uncleaned UFP JSON dict"""
         data = self.unifi_dict_to_dict(data)
         return self.update_from_dict(data)
@@ -327,82 +466,9 @@ class ProtectModel(ProtectBaseObject):
 
     model: Optional[ModelType]
 
-    @staticmethod
-    def klass_from_dict(data: Dict[str, Any]) -> Type[ProtectModel]:
-        """
-        Helper method to read the `modelKey` from a UFP JSON dict and get the current Python class for conversion.
-        Will raise `DataDecodeError` if the `modelKey` is for an unknown object.
-        """
-
-        from pyunifiprotect.data.devices import (  # pylint: disable=import-outside-toplevel
-            Bridge,
-            Camera,
-            Light,
-            Sensor,
-            Viewer,
-        )
-        from pyunifiprotect.data.nvr import (  # pylint: disable=import-outside-toplevel
-            NVR,
-            CloudAccount,
-            Event,
-            Group,
-            Liveview,
-            User,
-            UserLocation,
-        )
-
-        if "modelKey" not in data:
-            raise DataDecodeError("No modelKey")
-
-        model = ModelType(data["modelKey"])
-
-        klass: Optional[Type[ProtectModel]] = None
-
-        if model == ModelType.EVENT:
-            klass = Event
-        elif model == ModelType.GROUP:
-            klass = Group
-        elif model == ModelType.USER_LOCATION:
-            klass = UserLocation
-        elif model == ModelType.CLOUD_IDENTITY:
-            klass = CloudAccount
-        elif model == ModelType.USER:
-            klass = User
-        elif model == ModelType.NVR:
-            klass = NVR
-        elif model == ModelType.LIGHT:
-            klass = Light
-        elif model == ModelType.CAMERA:
-            klass = Camera
-        elif model == ModelType.LIVEVIEW:
-            klass = Liveview
-        elif model == ModelType.VIEWPORT:
-            klass = Viewer
-        elif model == ModelType.BRIDGE:
-            klass = Bridge
-        elif model == ModelType.SENSOR:
-            klass = Sensor
-
-        if klass is None:
-            raise DataDecodeError("Unknown modelKey")
-
-        return klass
-
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "modelKey": "model"}
-
-    @staticmethod
-    def from_unifi_dict(
-        data: Dict[str, Any], api: Optional[ProtectApiClient] = None, klass: Optional[Type[ProtectModel]] = None
-    ) -> ProtectModel:
-        if "modelKey" not in data:
-            raise DataDecodeError("No modelKey")
-
-        if klass is None:
-            klass = ProtectModel.klass_from_dict(data)
-
-        return klass(**data, api=api)
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)

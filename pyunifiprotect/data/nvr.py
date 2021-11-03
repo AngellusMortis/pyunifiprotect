@@ -16,6 +16,7 @@ from pyunifiprotect.data.base import (
     ProtectDeviceModel,
     ProtectModel,
     ProtectModelWithId,
+    create_from_unifi_dict,
 )
 from pyunifiprotect.data.devices import Bridge, Camera, Light, Sensor, Viewer
 from pyunifiprotect.data.types import (
@@ -487,7 +488,7 @@ class Bootstrap(ProtectBaseObject):
 
     @property
     def auth_user(self) -> User:
-        user: User = self._api.bootstrap.users[self.auth_user_id]
+        user: User = self.api.bootstrap.users[self.auth_user_id]
         return user
 
     def process_event(self, event: Event) -> None:
@@ -528,7 +529,7 @@ class Bootstrap(ProtectBaseObject):
             return
 
         if action["action"] == "add":
-            obj = ProtectModel.from_unifi_dict(data, api=self._api)
+            obj = create_from_unifi_dict(data, api=self._api)
 
             if isinstance(obj, Event):
                 self.process_event(obj)

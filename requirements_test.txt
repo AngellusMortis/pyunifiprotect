@@ -4,11 +4,13 @@
 #
 #    pip-compile --extra=dev --output-file=requirements_test.txt --pip-args='-c requirements_all.txt' setup.cfg
 #
-aiohttp==3.7.4.post0
+aiohttp==3.8.0
     # via pyunifiprotect (setup.cfg)
+aiosignal==1.2.0
+    # via aiohttp
 astroid==2.8.4
     # via pylint
-async-timeout==3.0.1
+async-timeout==4.0.0
     # via aiohttp
 asyncio==3.4.3
     # via pyunifiprotect (setup.cfg)
@@ -22,18 +24,18 @@ backports.entry-points-selectable==1.1.0
     # via virtualenv
 base36==0.1.1
     # via pyunifiprotect (setup.cfg)
-black==21.9b0
+black==21.10b0
     # via pyunifiprotect (setup.cfg)
 build==0.7.0
     # via pyunifiprotect (setup.cfg)
-chardet==4.0.0
+charset-normalizer==2.0.7
     # via aiohttp
 click==8.0.3
     # via
     #   black
     #   pip-tools
     #   typer
-coverage[toml]==6.1
+coverage[toml]==6.1.1
     # via
     #   pytest-cov
     #   pyunifiprotect (setup.cfg)
@@ -52,6 +54,10 @@ flake8==4.0.1
     #   pyunifiprotect (setup.cfg)
 flake8-docstrings==1.6.0
     # via pyunifiprotect (setup.cfg)
+frozenlist==1.2.0
+    # via
+    #   aiohttp
+    #   aiosignal
 idna==3.3
     # via yarl
 iniconfig==1.1.1
@@ -119,6 +125,8 @@ py==1.10.0
     # via
     #   pytest
     #   tox
+py-cpuinfo==8.0.0
+    # via pytest-benchmark
 pycodestyle==2.8.0
     # via flake8
 pydantic==1.8.2
@@ -146,11 +154,14 @@ pyproject-flake8==0.0.1a2
 pytest==6.2.5
     # via
     #   pytest-asyncio
+    #   pytest-benchmark
     #   pytest-cov
     #   pytest-sugar
     #   pytest-timeout
     #   pyunifiprotect (setup.cfg)
 pytest-asyncio==0.16.0
+    # via pyunifiprotect (setup.cfg)
+pytest-benchmark==3.4.1
     # via pyunifiprotect (setup.cfg)
 pytest-cov==3.0.0
     # via pyunifiprotect (setup.cfg)
@@ -162,7 +173,7 @@ python-dotenv==0.19.1
     # via pyunifiprotect (setup.cfg)
 pytz==2021.3
     # via pyunifiprotect (setup.cfg)
-regex==2021.10.23
+regex==2021.11.2
     # via black
 six==1.16.0
     # via
@@ -203,11 +214,11 @@ types-termcolor==1.1.2
     # via pyunifiprotect (setup.cfg)
 typing-extensions==3.10.0.2
     # via
-    #   aiohttp
+    #   async-timeout
     #   black
     #   mypy
     #   pydantic
-virtualenv==20.9.0
+virtualenv==20.10.0
     # via tox
 wcwidth==0.2.5
     # via prompt-toolkit
@@ -215,7 +226,7 @@ wheel==0.37.0
     # via pip-tools
 wrapt==1.13.3
     # via astroid
-yarl==1.7.0
+yarl==1.7.2
     # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:

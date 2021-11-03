@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import enum
-from typing import TYPE_CHECKING, Any, Generic, List, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, List, Optional, TypeVar, Union
 
 from pydantic import ConstrainedDecimal, ConstrainedInt
+from pydantic.color import Color as BaseColor
 
 KT = TypeVar("KT")
 VT = TypeVar("VT")
@@ -178,3 +179,14 @@ class Percent(ConstrainedDecimal):
     le = 1
     max_digits = 4
     decimal_places = 3
+
+
+CoordType = Union[Percent, int, float]
+
+
+class Color(BaseColor):
+    def __eq__(self, o: Any) -> bool:
+        if isinstance(o, Color):
+            return self.as_hex() == o.as_hex()
+
+        return super().__eq__(o)

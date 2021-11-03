@@ -4,19 +4,16 @@ import base64
 from copy import deepcopy
 
 import pytest
+from pytest_benchmark.fixture import BenchmarkFixture
 
 from pyunifiprotect.data import (
     Bootstrap,
-    Camera,
-    Event,
     FixSizeOrderedDict,
-    Light,
     ModelType,
-    ProtectModel,
-    Sensor,
-    Viewer,
     WSPacket,
+    create_from_unifi_dict,
 )
+from pyunifiprotect.utils import set_debug, set_no_debug
 from tests.conftest import SAMPLE_DATA_DIRECTORY, compare_objs
 
 PACKET_B64 = "AQEBAAAAAHR4nB2MQQrCMBBFr1JmbSDNpJnRG4hrDzBNZqCgqUiriHh3SZb/Pd7/guRtWSucBtgfRTaFwwBV39c+zqUJskQW1DufUVwkJsfFxDGLyRFj0dSz+1r0dtFPa+rr2dDSD8YsyceUpskQxzjjHIIQMvz+hMoj/AIBAQAAAAA1eJyrViotKMnMTVWyUjA0MjawMLQ0MDDQUVDKSSwuCU5NzQOJmxkbACUszE0sLQ1rAVU/DPU="
@@ -80,54 +77,48 @@ def test_packet_raw_setter():
     assert packet.data_frame.data == PACKET2_DATA
 
 
+def compare_devices(data):
+    obj = create_from_unifi_dict(deepcopy(data))
+    obj_dict = obj.unifi_dict()
+    compare_objs(obj.model.value, data, obj_dict)
+
+    set_no_debug()
+    obj_construct = create_from_unifi_dict(deepcopy(data))
+    assert obj == obj_construct
+    set_debug()
+
+
 @pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_viewport.json").exists(), reason="No viewport in testdata")
 def test_viewport(viewport):
-    obj: Viewer = ProtectModel.from_unifi_dict(deepcopy(viewport))
-
-    obj_dict = obj.unifi_dict()
-
-    compare_objs(obj.model.value, viewport, obj_dict)
+    compare_devices(viewport)
 
 
 @pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_light.json").exists(), reason="No light in testdata")
 def test_light(light):
-    obj: Light = ProtectModel.from_unifi_dict(deepcopy(light))
-
-    obj_dict = obj.unifi_dict()
-
-    compare_objs(obj.model.value, light, obj_dict)
+    compare_devices(light)
 
 
 @pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_camera.json").exists(), reason="No camera in testdata")
 def test_camera(camera):
-    obj: Camera = ProtectModel.from_unifi_dict(deepcopy(camera))
-
-    obj_dict = obj.unifi_dict()
-
-    compare_objs(obj.model.value, camera, obj_dict)
+    compare_devices(camera)
 
 
 @pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_sensor.json").exists(), reason="No sensor in testdata")
 def test_sensor(sensor):
-
-    obj: Sensor = ProtectModel.from_unifi_dict(deepcopy(sensor))
-
-    obj_dict = obj.unifi_dict()
-
-    compare_objs(obj.model.value, sensor, obj_dict)
+    compare_devices(sensor)
 
 
 def test_events(raw_events):
     for event in raw_events:
-        obj: Event = ProtectModel.from_unifi_dict(deepcopy(event))
-
-        obj_dict = obj.unifi_dict()
-
-        compare_objs(obj.model.value, event, obj_dict)
+        compare_devices(event)
 
 
 def test_bootstrap(bootstrap):
-    obj = Bootstrap(**deepcopy(bootstrap))
+    obj = Bootstrap.from_unifi_dict(**deepcopy(bootstrap))
+
+    set_no_debug()
+    obj_construct = Bootstrap.from_unifi_dict(**deepcopy(bootstrap))
+    set_debug()
 
     obj_dict = obj.unifi_dict()
 
@@ -156,6 +147,24 @@ def test_bootstrap(bootstrap):
             compare_objs(expected["modelKey"], expected, actual)
 
     assert bootstrap == obj_dict
+    assert obj == obj_construct
+
+
+def test_bootstrap_benchmark(bootstrap, benchmark: BenchmarkFixture):
+    def create():
+        Bootstrap.from_unifi_dict(**deepcopy(bootstrap))
+
+    benchmark.pedantic(create, rounds=50, iterations=5)
+
+
+def test_bootstrap_benchmark_construct(bootstrap, benchmark: BenchmarkFixture):
+    set_no_debug()
+
+    def create():
+        Bootstrap.from_unifi_dict(**deepcopy(bootstrap))
+
+    benchmark.pedantic(create, rounds=50, iterations=5)
+    set_debug()
 
 
 def test_fix_order_size_dict_no_max():

@@ -28,16 +28,18 @@ def packet():
 
 @pytest.mark.asyncio
 async def test_ws_all(protect_client_ws: ProtectApiClient, ws_messages: Dict[str, Dict[str, Any]]):
+    protect_client = protect_client_ws
+
     # wait for ws connection
     for _ in range(60):
-        if protect_client_ws.ws_connection is not None:
+        if protect_client.ws_connection is not None:
             break
         await asyncio.sleep(0.5)
 
-    ws_connect: Optional[MockWebsocket] = protect_client_ws.ws_connection  # type: ignore
+    ws_connect: Optional[MockWebsocket] = protect_client.ws_connection  # type: ignore
     assert ws_connect is not None
 
-    while protect_client_ws.ws_connection is not None:
+    while protect_client.ws_connection is not None:
         await asyncio.sleep(0.1)
 
     assert ws_connect.count == len(ws_messages)
@@ -46,7 +48,9 @@ async def test_ws_all(protect_client_ws: ProtectApiClient, ws_messages: Dict[str
 
 @pytest.mark.asyncio
 @patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
-async def test_ws_event_ring(protect_client: ProtectApiClient, now, camera, packet: WSPacket):
+async def test_ws_event_ring(protect_client_no_debug: ProtectApiClient, now, camera, packet: WSPacket):
+    protect_client = protect_client_no_debug
+
     def get_camera():
         return protect_client.bootstrap.cameras[camera["id"]]
 
@@ -109,7 +113,9 @@ async def test_ws_event_ring(protect_client: ProtectApiClient, now, camera, pack
 
 @pytest.mark.asyncio
 @patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
-async def test_ws_event_motion_in_progress(protect_client: ProtectApiClient, now, camera, packet: WSPacket):
+async def test_ws_event_motion_in_progress(protect_client_no_debug: ProtectApiClient, now, camera, packet: WSPacket):
+    protect_client = protect_client_no_debug
+
     def get_camera():
         return protect_client.bootstrap.cameras[camera["id"]]
 
@@ -206,7 +212,9 @@ async def test_ws_event_motion_in_progress(protect_client: ProtectApiClient, now
 
 @pytest.mark.asyncio
 @patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
-async def test_ws_event_motion(protect_client: ProtectApiClient, now, camera, packet: WSPacket):
+async def test_ws_event_motion(protect_client_no_debug: ProtectApiClient, now, camera, packet: WSPacket):
+    protect_client = protect_client_no_debug
+
     def get_camera():
         return protect_client.bootstrap.cameras[camera["id"]]
 
@@ -272,7 +280,9 @@ async def test_ws_event_motion(protect_client: ProtectApiClient, now, camera, pa
 
 @pytest.mark.asyncio
 @patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
-async def test_ws_event_smart(protect_client: ProtectApiClient, now, camera, packet: WSPacket):
+async def test_ws_event_smart(protect_client_no_debug: ProtectApiClient, now, camera, packet: WSPacket):
+    protect_client = protect_client_no_debug
+
     def get_camera():
         return protect_client.bootstrap.cameras[camera["id"]]
 
@@ -336,7 +346,9 @@ async def test_ws_event_smart(protect_client: ProtectApiClient, now, camera, pac
 
 @pytest.mark.asyncio
 @patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
-async def test_ws_event_update(protect_client: ProtectApiClient, now, camera, packet: WSPacket):
+async def test_ws_event_update(protect_client_no_debug: ProtectApiClient, now, camera, packet: WSPacket):
+    protect_client = protect_client_no_debug
+
     def get_camera() -> Camera:
         return protect_client.bootstrap.cameras[camera["id"]]
 

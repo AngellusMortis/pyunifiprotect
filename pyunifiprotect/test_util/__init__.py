@@ -1,7 +1,7 @@
 # pylint: disable=protected-access
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, overload
@@ -157,7 +157,7 @@ class SampleDataGenerator:
                 heatmap_event: Dict[str, Any] = event
 
         data = self.write_json_file("sample_raw_events", data)
-        self.constants["time"] = datetime.now().isoformat()
+        self.constants["time"] = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
         self.constants["event_count"] = len(data)
 
         # populate event data in devices

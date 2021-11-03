@@ -4,9 +4,11 @@
 #
 #    pip-compile --extra=shell --output-file=requirements_all.txt setup.cfg
 #
-aiohttp==3.7.4.post0
+aiohttp==3.8.0
     # via pyunifiprotect (setup.cfg)
-async-timeout==3.0.1
+aiosignal==1.2.0
+    # via aiohttp
+async-timeout==4.0.0
     # via aiohttp
 asyncio==3.4.3
     # via pyunifiprotect (setup.cfg)
@@ -14,12 +16,16 @@ attrs==21.2.0
     # via aiohttp
 backcall==0.2.0
     # via ipython
-chardet==4.0.0
+charset-normalizer==2.0.7
     # via aiohttp
 click==8.0.3
     # via typer
 decorator==5.1.0
     # via ipython
+frozenlist==1.2.0
+    # via
+    #   aiohttp
+    #   aiosignal
 idna==3.3
     # via yarl
 ipython==7.29.0
@@ -64,11 +70,11 @@ typer==0.4.0
     # via pyunifiprotect (setup.cfg)
 typing-extensions==3.10.0.2
     # via
-    #   aiohttp
+    #   async-timeout
     #   pydantic
 wcwidth==0.2.5
     # via prompt-toolkit
-yarl==1.7.0
+yarl==1.7.2
     # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:

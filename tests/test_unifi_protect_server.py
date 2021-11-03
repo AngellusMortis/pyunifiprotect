@@ -60,6 +60,41 @@ async def test_bootstrap(protect_client: ProtectApiClient):
 
 
 @pytest.mark.asyncio
+async def test_bootstrap_construct(protect_client_no_debug: ProtectApiClient):
+    """Verifies lookup of all object via ID"""
+
+    protect_client = protect_client_no_debug
+    assert protect_client.bootstrap.auth_user
+
+    for light in protect_client.bootstrap.lights.values():
+        light.camera
+        light.last_motion_event
+
+    for camera in protect_client.bootstrap.cameras.values():
+        camera.last_motion_event
+        camera.last_ring_event
+        camera.last_smart_detect_event
+
+    for viewer in protect_client.bootstrap.viewers.values():
+        assert viewer.liveview
+
+    for liveview in protect_client.bootstrap.liveviews.values():
+        liveview.owner
+
+        for slot in liveview.slots:
+            assert len(slot.camera_ids) == len(slot.cameras)
+
+    for user in protect_client.bootstrap.users.values():
+        user.groups
+
+        if user.cloud_account is not None:
+            assert user.cloud_account.user == user
+
+    for event in protect_client.bootstrap.events.values():
+        event.smart_detect_events
+
+
+@pytest.mark.asyncio
 @patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
 async def test_get_events_raw_default(protect_client: ProtectApiClient, now: datetime):
     events = await protect_client.get_events_raw()
