@@ -1,7 +1,7 @@
 """Unifi Protect Data Conversion."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Final, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, Final, Optional, Type, cast
 
 from pyunifiprotect.data.devices import Bridge, Camera, Light, Sensor, Viewer
 from pyunifiprotect.data.nvr import (
@@ -47,12 +47,12 @@ def get_klass_from_dict(data: Dict[str, Any]) -> Type[ProtectModel]:
 
     model = ModelType(data["modelKey"])
 
-    klass: Optional[Type[ProtectModel]] = MODEL_TO_CLASS.get(model)
+    klass = MODEL_TO_CLASS.get(model)
 
     if klass is None:
         raise DataDecodeError("Unknown modelKey")
 
-    return klass
+    return cast(Type[ProtectModel], klass)
 
 
 def create_from_unifi_dict(
