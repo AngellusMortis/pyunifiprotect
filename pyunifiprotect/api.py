@@ -420,7 +420,10 @@ class ProtectApiClient(BaseApiClient):
             return
 
         for sub in self._ws_subscriptions:
-            sub(processed_message)
+            try:
+                sub(processed_message)
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception("Exception while running subscription handler")
 
     @property
     def bootstrap(self) -> Bootstrap:
