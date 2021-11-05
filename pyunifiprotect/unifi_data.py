@@ -727,6 +727,7 @@ def sensor_event_from_ws_frames(
             "event_length": event_length,
             "event_score": 0,
         }
+    return None
 
 
 def process_event(event: Dict[str, Any], minimum_score: int, ring_interval: int) -> Dict[str, Any]:
