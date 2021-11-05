@@ -74,7 +74,7 @@ async def test_ws_all(protect_client_ws: ProtectApiClient, ws_messages: Dict[str
 
 
 @pytest.mark.asyncio
-@patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
+@patch("pyunifiprotect.api.datetime", MockDatetime)
 async def test_ws_event_ring(protect_client_no_debug: ProtectApiClient, now, camera, packet: WSPacket):
     protect_client = protect_client_no_debug
 
@@ -139,7 +139,7 @@ async def test_ws_event_ring(protect_client_no_debug: ProtectApiClient, now, cam
 
 
 @pytest.mark.asyncio
-@patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
+@patch("pyunifiprotect.api.datetime", MockDatetime)
 async def test_ws_event_motion_in_progress(protect_client_no_debug: ProtectApiClient, now, camera, packet: WSPacket):
     protect_client = protect_client_no_debug
 
@@ -238,7 +238,7 @@ async def test_ws_event_motion_in_progress(protect_client_no_debug: ProtectApiCl
 
 
 @pytest.mark.asyncio
-@patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
+@patch("pyunifiprotect.api.datetime", MockDatetime)
 async def test_ws_event_motion(protect_client_no_debug: ProtectApiClient, now, camera, packet: WSPacket):
     protect_client = protect_client_no_debug
 
@@ -306,7 +306,7 @@ async def test_ws_event_motion(protect_client_no_debug: ProtectApiClient, now, c
 
 
 @pytest.mark.asyncio
-@patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
+@patch("pyunifiprotect.api.datetime", MockDatetime)
 async def test_ws_event_smart(protect_client_no_debug: ProtectApiClient, now, camera, packet: WSPacket):
     protect_client = protect_client_no_debug
 
@@ -372,7 +372,7 @@ async def test_ws_event_smart(protect_client_no_debug: ProtectApiClient, now, ca
 
 
 @pytest.mark.asyncio
-@patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
+@patch("pyunifiprotect.api.datetime", MockDatetime)
 async def test_ws_event_update(protect_client_no_debug: ProtectApiClient, now, camera, packet: WSPacket):
     protect_client = protect_client_no_debug
 

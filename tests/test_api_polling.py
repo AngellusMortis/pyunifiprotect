@@ -31,7 +31,7 @@ async def test_process_events_none(protect_client: ProtectApiClient, camera):
 
 
 @pytest.mark.asyncio
-@patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
+@patch("pyunifiprotect.api.datetime", MockDatetime)
 async def test_process_events_ring(protect_client: ProtectApiClient, now, camera):
     def get_camera():
         return protect_client.bootstrap.cameras[camera["id"]]
@@ -90,7 +90,7 @@ async def test_process_events_ring(protect_client: ProtectApiClient, now, camera
 
 
 @pytest.mark.asyncio
-@patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
+@patch("pyunifiprotect.api.datetime", MockDatetime)
 async def test_process_events_motion_in_progress(protect_client: ProtectApiClient, now, camera):
     def get_camera():
         return protect_client.bootstrap.cameras[camera["id"]]
@@ -140,7 +140,7 @@ async def test_process_events_motion_in_progress(protect_client: ProtectApiClien
 
 
 @pytest.mark.asyncio
-@patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
+@patch("pyunifiprotect.api.datetime", MockDatetime)
 async def test_process_events_motion(protect_client: ProtectApiClient, now, camera):
     def get_camera():
         return protect_client.bootstrap.cameras[camera["id"]]
@@ -202,7 +202,7 @@ async def test_process_events_motion(protect_client: ProtectApiClient, now, came
 
 
 @pytest.mark.asyncio
-@patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
+@patch("pyunifiprotect.api.datetime", MockDatetime)
 async def test_process_events_smart(protect_client: ProtectApiClient, now, camera):
     def get_camera():
         return protect_client.bootstrap.cameras[camera["id"]]
