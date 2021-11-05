@@ -28,10 +28,12 @@ from pyunifiprotect.data.types import (
 )
 from pyunifiprotect.data.websocket import (
     WS_HEADER_SIZE,
+    WSAction,
     WSJSONPacketFrame,
     WSPacket,
     WSPacketFrameHeader,
     WSRawPacketFrame,
+    WSSubscriptionMessage,
 )
 
 __all__ = [
@@ -64,8 +66,10 @@ __all__ = [
     "UserLocation",
     "Viewer",
     "WS_HEADER_SIZE",
+    "WSAction",
     "WSJSONPacketFrame",
     "WSPacket",
     "WSPacketFrameHeader",
     "WSRawPacketFrame",
+    "WSSubscriptionMessage",
 ]

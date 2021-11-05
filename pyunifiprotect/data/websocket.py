@@ -3,11 +3,14 @@ from __future__ import annotations
 
 import base64
 from dataclasses import dataclass
+import enum
 import json
 import struct
 from typing import Any, Dict, Optional, Type
+from uuid import UUID
 import zlib
 
+from pyunifiprotect.data.base import ProtectModel
 from pyunifiprotect.data.types import ProtectWSPayloadFormat
 from pyunifiprotect.exceptions import WSDecodeError, WSEncodeError
 
@@ -21,6 +24,21 @@ class WSPacketFrameHeader:
     deflated: int
     unknown: int
     payload_size: int
+
+
+@enum.unique
+class WSAction(str, enum.Enum):
+    ADD = "add"
+    UPDATE = "update"
+
+
+@dataclass
+class WSSubscriptionMessage:
+    action: WSAction
+    new_update_id: UUID
+    changed_data: Dict[str, Any]
+    new_obj: ProtectModel
+    old_obj: Optional[ProtectModel] = None
 
 
 class BaseWSPacketFrame:

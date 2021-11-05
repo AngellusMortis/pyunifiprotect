@@ -6,15 +6,20 @@ import asyncio
 import base64
 from copy import deepcopy
 from datetime import timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from pyunifiprotect import ProtectApiClient
 from pyunifiprotect.data import EventType, WSPacket
+from pyunifiprotect.data.base import ProtectModel
 from pyunifiprotect.data.devices import Camera
-from pyunifiprotect.data.websocket import WSJSONPacketFrame
+from pyunifiprotect.data.websocket import (
+    WSAction,
+    WSJSONPacketFrame,
+    WSSubscriptionMessage,
+)
 from pyunifiprotect.utils import to_js_time
 from tests.conftest import MockDatetime, MockWebsocket
 
@@ -26,9 +31,30 @@ def packet():
     return WSPacket(base64.b64decode(PACKET_RAW))
 
 
+class SubscriptionTest:
+    callback_count: int = 0
+    unsub: Optional[Callable[[], None]] = None
+
+    def callback(self, msg: WSSubscriptionMessage):
+        self.callback_count += 1
+
+        assert isinstance(msg.new_obj, ProtectModel)
+
+        if msg.action == WSAction.ADD:
+            assert msg.old_obj is None
+        else:
+            assert isinstance(msg.old_obj, ProtectModel)
+            assert msg.old_obj.update_from_dict(msg.changed_data) == msg.new_obj
+
+        if self.callback_count >= 3 and self.unsub is not None:
+            self.unsub()
+
+
 @pytest.mark.asyncio
 async def test_ws_all(protect_client_ws: ProtectApiClient, ws_messages: Dict[str, Dict[str, Any]]):
     protect_client = protect_client_ws
+    sub = SubscriptionTest()
+    sub.unsub = protect_client.subscribe_websocket(sub.callback)
 
     # wait for ws connection
     for _ in range(60):
@@ -44,6 +70,7 @@ async def test_ws_all(protect_client_ws: ProtectApiClient, ws_messages: Dict[str
 
     assert ws_connect.count == len(ws_messages)
     assert ws_connect.now == float(list(ws_messages.keys())[-1])
+    assert sub.callback_count == 3
 
 
 @pytest.mark.asyncio

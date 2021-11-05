@@ -1,6 +1,7 @@
 """Unifi Protect Bootstrap."""
 from __future__ import annotations
 
+from copy import deepcopy
 import logging
 from typing import Any, Dict, Optional, Set
 from uuid import UUID
@@ -10,7 +11,12 @@ from pyunifiprotect.data.convert import create_from_unifi_dict
 from pyunifiprotect.data.devices import Bridge, Camera, Light, Sensor, Viewer
 from pyunifiprotect.data.nvr import NVR, Event, Group, Liveview, User
 from pyunifiprotect.data.types import EventType, FixSizeOrderedDict, ModelType
-from pyunifiprotect.data.websocket import WSJSONPacketFrame, WSPacket
+from pyunifiprotect.data.websocket import (
+    WSAction,
+    WSJSONPacketFrame,
+    WSPacket,
+    WSSubscriptionMessage,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -93,7 +99,7 @@ class Bootstrap(ProtectBaseObject):
 
         self.events[event.id] = event
 
-    def process_ws_packet(self, packet: WSPacket) -> None:
+    def process_ws_packet(self, packet: WSPacket) -> Optional[WSSubscriptionMessage]:
         if not isinstance(packet.action_frame, WSJSONPacketFrame):
             _LOGGER.debug("Unexpected action frame format: %s", packet.action_frame.payload_format)
 
@@ -106,7 +112,7 @@ class Bootstrap(ProtectBaseObject):
 
         if action["modelKey"] not in ModelType.values():
             _LOGGER.debug("Unknown model type: %s", action["modelKey"])
-            return
+            return None
 
         if action["action"] == "add":
             obj = create_from_unifi_dict(data, api=self._api)
@@ -122,21 +128,39 @@ class Bootstrap(ProtectBaseObject):
                 getattr(self, key)[obj.id] = obj
             else:
                 _LOGGER.debug("Unexpected bootstrap model type for add: %s", obj.model)
-        elif action["action"] == "update":
+
+            return WSSubscriptionMessage(
+                action=WSAction.ADD, new_update_id=self.last_update_id, changed_data=obj.dict(), new_obj=obj
+            )
+
+        if action["action"] == "update":
             model_type = action["modelKey"]
             if model_type in ModelType.bootstrap_models() or model_type == ModelType.EVENT.value:
                 key = model_type + "s"
                 devices = getattr(self, key)
                 if action["id"] in devices:
                     obj: ProtectModel = devices[action["id"]]
-                    obj = obj.update_from_unifi_dict(data)
+                    data = obj.unifi_dict_to_dict(data)
+                    old_obj = obj.copy()
+                    obj = obj.update_from_dict(deepcopy(data))
 
                     if isinstance(obj, Event):
                         self.process_event(obj)
 
                     devices[action["id"]] = obj
+
+                    return WSSubscriptionMessage(
+                        action=WSAction.UPDATE,
+                        new_update_id=self.last_update_id,
+                        changed_data=data,
+                        new_obj=obj,
+                        old_obj=old_obj,
+                    )
+
                 # ignore updates to events that phase out
-                elif model_type != ModelType.EVENT.value:
+                if model_type != ModelType.EVENT.value:
                     _LOGGER.debug("Unexpected %s: %s", key, action["id"])
             else:
                 _LOGGER.debug("Unexpected bootstrap model type for update: %s", model_type)
+
+        return None

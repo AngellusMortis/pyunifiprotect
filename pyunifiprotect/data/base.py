@@ -363,11 +363,6 @@ class ProtectBaseObject(BaseModel):
         new_data["api"] = self._api
         return self.construct(**new_data)  # type: ignore
 
-    def update_from_unifi_dict(self: ProtectObject, data: Dict[str, Any]) -> ProtectObject:
-        """Updates current object from an uncleaned UFP JSON dict"""
-        data = self.unifi_dict_to_dict(data)
-        return self.update_from_dict(data)
-
     @property
     def api(self) -> ProtectApiClient:
         """

@@ -94,7 +94,7 @@ async def test_bootstrap_construct(protect_client_no_debug: ProtectApiClient):
 
 
 @pytest.mark.asyncio
-@patch("pyunifiprotect.unifi_protect_server.datetime", MockDatetime)
+@patch("pyunifiprotect.api.datetime", MockDatetime)
 async def test_get_events_raw_default(protect_client: ProtectApiClient, now: datetime):
     events = await protect_client.get_events_raw()
 

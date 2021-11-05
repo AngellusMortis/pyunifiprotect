@@ -17,6 +17,7 @@ from yarl import URL
 
 from pyunifiprotect.data import Event, EventType, WSPacket, create_from_unifi_dict
 from pyunifiprotect.data.bootstrap import Bootstrap
+from pyunifiprotect.data.websocket import WSSubscriptionMessage
 from pyunifiprotect.exceptions import BadRequest, NotAuthorized, NvrError
 from pyunifiprotect.utils import get_response_reason, set_debug, to_js_time
 
@@ -359,6 +360,7 @@ class ProtectApiClient(BaseApiClient):
     _minimum_score: int
     _bootstrap: Optional[Bootstrap] = None
     _last_update_dt: Optional[datetime] = None
+    _ws_subscriptions: List[Callable[[WSSubscriptionMessage], None]] = []
 
     def __init__(
         self,
@@ -412,7 +414,13 @@ class ProtectApiClient(BaseApiClient):
 
     def _process_ws_message(self, msg: aiohttp.WSMessage) -> None:
         packet = WSPacket(msg.data)
-        self.bootstrap.process_ws_packet(packet)
+        processed_message = self.bootstrap.process_ws_packet(packet)
+
+        if processed_message is None:
+            return
+
+        for sub in self._ws_subscriptions:
+            sub(processed_message)
 
     @property
     def bootstrap(self) -> Bootstrap:
@@ -498,3 +506,17 @@ class ProtectApiClient(BaseApiClient):
                 events.append(event)
 
         return events
+
+    def subscribe_websocket(self, ws_callback: Callable[[WSSubscriptionMessage], None]) -> Callable[[], None]:
+        """
+        Subscribe to websocket events.
+
+        Returns a callback that will unsubscribe.
+        """
+
+        def _unsub_ws_callback() -> None:
+            self._ws_subscriptions.remove(ws_callback)
+
+        _LOGGER.debug("Adding subscription: %s", ws_callback)
+        self._ws_subscriptions.append(ws_callback)
+        return _unsub_ws_callback
