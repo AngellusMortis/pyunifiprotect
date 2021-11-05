@@ -30,12 +30,12 @@ async def check_motion_event(event: Event):
     data = await event.get_thumbnail()
     assert data is not None
     img = Image.open(BytesIO(data))
-    assert img.format == "PNG"
+    assert img.format in ("PNG", "JPEG")
 
     data = await event.get_heatmap()
     assert data is not None
     img = Image.open(BytesIO(data))
-    assert img.format == "PNG"
+    assert img.format in ("PNG", "JPEG")
 
 
 async def check_camera(camera: Camera):
@@ -48,7 +48,7 @@ async def check_camera(camera: Camera):
     data = await camera.get_snapshot()
     assert data is not None
     img = Image.open(BytesIO(data))
-    assert img.format == "PNG"
+    assert img.format in ("PNG", "JPEG")
 
     camera.last_ring_event
 
@@ -409,7 +409,7 @@ async def test_get_camera_snapshot(protect_client: ProtectApiClient, now):
     )
 
     img = Image.open(BytesIO(data))
-    assert img.format == "PNG"
+    assert img.format in ("PNG", "JPEG")
 
 
 @pytest.mark.skipif(
@@ -433,7 +433,7 @@ async def test_get_camera_snapshot_args(protect_client: ProtectApiClient, now):
     )
 
     img = Image.open(BytesIO(data))
-    assert img.format == "PNG"
+    assert img.format in ("PNG", "JPEG")
 
 
 @pytest.mark.skipif(
@@ -451,7 +451,7 @@ async def test_get_thumbnail(protect_client: ProtectApiClient):
     )
 
     img = Image.open(BytesIO(data))
-    assert img.format == "PNG"
+    assert img.format in ("PNG", "JPEG")
 
 
 @pytest.mark.skipif(
@@ -472,7 +472,7 @@ async def test_get_thumbnail_args(protect_client: ProtectApiClient):
     )
 
     img = Image.open(BytesIO(data))
-    assert img.format == "PNG"
+    assert img.format in ("PNG", "JPEG")
 
 
 @pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_camera_heatmap.png").exists(), reason="No heatmap in testdata")
@@ -487,4 +487,4 @@ async def test_get_heatmap(protect_client: ProtectApiClient):
     )
 
     img = Image.open(BytesIO(data))
-    assert img.format == "PNG"
+    assert img.format in ("PNG", "JPEG")
