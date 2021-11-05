@@ -30,9 +30,9 @@ from pyunifiprotect.utils import (
 )
 
 if TYPE_CHECKING:
+    from pyunifiprotect.api import ProtectApiClient
     from pyunifiprotect.data.devices import Bridge
     from pyunifiprotect.data.nvr import Event
-    from pyunifiprotect.unifi_protect_server import ProtectApiClient
 
 
 ProtectObject = TypeVar("ProtectObject", bound="ProtectBaseObject")

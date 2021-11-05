@@ -17,8 +17,8 @@ from pyunifiprotect.data.types import ModelType
 from pyunifiprotect.exceptions import DataDecodeError
 
 if TYPE_CHECKING:
+    from pyunifiprotect.api import ProtectApiClient
     from pyunifiprotect.data.base import ProtectModel
-    from pyunifiprotect.unifi_protect_server import ProtectApiClient
 
 
 MODEL_TO_CLASS: Dict[str, Type[ProtectModel]] = {

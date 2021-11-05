@@ -1,0 +1,500 @@
+"""Unifi Protect Server Wrapper."""
+from __future__ import annotations
+
+import asyncio
+from datetime import datetime, timedelta
+import json as pjson
+import logging
+import time
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
+from urllib.parse import urljoin
+from uuid import UUID
+
+import aiohttp
+from aiohttp import client_exceptions
+import jwt
+from yarl import URL
+
+from pyunifiprotect.data import Event, EventType, WSPacket, create_from_unifi_dict
+from pyunifiprotect.data.bootstrap import Bootstrap
+from pyunifiprotect.exceptions import BadRequest, NotAuthorized, NvrError
+from pyunifiprotect.utils import get_response_reason, set_debug, to_js_time
+
+NEVER_RAN = -1000
+# how many seconds before the bootstrap is refreshed from Protect
+DEVICE_UPDATE_INTERVAL = 60
+# how many seconds before before we check for an active WS connection
+WEBSOCKET_CHECK_INTERVAL = 120
+
+DEFAULT_SNAPSHOT_WIDTH = 1920
+DEFAULT_SNAPSHOT_HEIGHT = 1080
+
+
+_LOGGER = logging.getLogger(__name__)
+
+
+# TODO: Remove when 3.8 support is dropped
+if TYPE_CHECKING:
+    TaskClass = asyncio.Task[None]
+else:
+    TaskClass = asyncio.Task
+
+
+class BaseApiClient:
+    _host: str
+    _port: int
+    _base_url: str
+    _username: str
+    _password: str
+    _verify_ssl: bool
+    _is_authenticated: bool = False
+    _last_update: float = NEVER_RAN
+    _last_websocket_check: float = NEVER_RAN
+
+    req: aiohttp.ClientSession
+    headers: Optional[Dict[str, str]] = None
+    last_update_id: Optional[UUID] = None
+    ws_session: Optional[aiohttp.ClientSession] = None
+    ws_connection: Optional[aiohttp.ClientWebSocketResponse] = None
+    ws_task: Optional[TaskClass] = None
+    ws_callback: Optional[Callable[[aiohttp.WSMessage], None]] = None
+
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        username: str,
+        password: str,
+        verify_ssl: bool = True,
+        session: Optional[aiohttp.ClientSession] = None,
+    ) -> None:
+        self._host = host
+        self._port = port
+        self._base_url = f"https://{host}:{port}"
+        self._base_ws_url = f"wss://{host}:{port}"
+        self._username = username
+        self._password = password
+        self._verify_ssl = verify_ssl
+
+        if session is None:
+            session = aiohttp.ClientSession()
+
+        self.req = session
+
+    @property
+    def api_path(self) -> str:
+        return "/proxy/protect/api/"
+
+    @property
+    def ws_path(self) -> str:
+        return "/proxy/protect/ws/"
+
+    async def request(
+        self, method: str, url: str, require_auth: bool = False, auto_close: bool = True, **kwargs: Any
+    ) -> aiohttp.ClientResponse:
+        """Make a request to Unifi Protect"""
+
+        if require_auth:
+            await self.ensure_authenticated()
+
+        url = urljoin(self._base_url, url)
+        headers = kwargs.get("headers") or self.headers
+
+        _LOGGER.debug("Request url: %s", url)
+
+        try:
+            req_context = self.req.request(method, url, ssl=self._verify_ssl, headers=headers, **kwargs)
+            response = await req_context.__aenter__()
+
+            try:
+                _LOGGER.debug("%s %s %s", response.status, response.content_type, response)
+
+                if response.status in (401, 403):
+                    raise NotAuthorized(
+                        f"Unifi Protect reported authorization failure on request: {url} received {response.status}"
+                    )
+
+                if response.status == 404:
+                    raise NvrError(f"Call {url} received 404 Not Found")
+
+                if auto_close:
+                    response.release()
+
+                return response
+            except Exception:
+                # make sure response is released
+                response.release()
+                # re-raise exception
+                raise
+
+        except client_exceptions.ClientError as err:
+            raise NvrError(f"Error requesting data from {self._host}: {err}") from None
+
+    async def api_request_raw(
+        self,
+        url: str,
+        method: str = "get",
+        require_auth: bool = True,
+        raise_exception: bool = True,
+        **kwargs: Any,
+    ) -> Optional[bytes]:
+        """Make a request to Unifi Protect API"""
+
+        if require_auth:
+            await self.ensure_authenticated()
+
+        url = urljoin(self.api_path, url)
+        response = await self.request(method, url, require_auth=False, auto_close=False, **kwargs)
+
+        try:
+            if response.status != 200:
+                reason = await get_response_reason(response)
+                msg = "Request failed: %s - Status: %s - Reason: %s"
+                if raise_exception:
+                    raise NvrError(msg % (url, response.status, reason))
+                _LOGGER.warning(msg, url, response.status, reason)
+                return None
+
+            data: Optional[bytes] = await response.read()
+            response.release()
+
+            return data
+        except Exception:
+            # make sure response is released
+            response.release()
+            # re-raise exception
+            raise
+
+    async def api_request(
+        self,
+        url: str,
+        method: str = "get",
+        require_auth: bool = True,
+        raise_exception: bool = True,
+        **kwargs: Any,
+    ) -> Optional[Union[List[Any], Dict[str, Any]]]:
+        data = await self.api_request_raw(
+            url=url, method=method, require_auth=require_auth, raise_exception=raise_exception, **kwargs
+        )
+
+        if data is not None:
+            json_data: Union[List[Any], Dict[str, Any]] = pjson.loads(data)
+            return json_data
+        return None
+
+    async def api_request_obj(
+        self,
+        url: str,
+        method: str = "get",
+        require_auth: bool = True,
+        raise_exception: bool = True,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        data = await self.api_request(
+            url=url, method=method, require_auth=require_auth, raise_exception=raise_exception, **kwargs
+        )
+
+        if not isinstance(data, dict):
+            raise NvrError(f"Could not decode object from {url}")
+
+        return data
+
+    async def api_request_list(
+        self,
+        url: str,
+        method: str = "get",
+        require_auth: bool = True,
+        raise_exception: bool = True,
+        **kwargs: Any,
+    ) -> List[Any]:
+        data = await self.api_request(
+            url=url, method=method, require_auth=require_auth, raise_exception=raise_exception, **kwargs
+        )
+
+        if not isinstance(data, list):
+            raise NvrError(f"Could not decode list from {url}")
+
+        return data
+
+    async def ensure_authenticated(self) -> None:
+        """Ensure we are authenticated."""
+        if self.is_authenticated() is False:
+            await self.authenticate()
+
+    async def authenticate(self) -> None:
+        """Authenticate and get a token."""
+
+        url = "/api/auth/login"
+        self.req.cookie_jar.clear()
+
+        auth = {
+            "username": self._username,
+            "password": self._password,
+            "remember": True,
+        }
+
+        response = await self.request("post", url=url, json=auth)
+        self.headers = {
+            "cookie": response.headers.get("set-cookie", ""),
+        }
+
+        csrf_token = response.headers.get("x-csrf-token")
+        if csrf_token is not None:
+            self.headers["x-csrf-token"] = csrf_token
+
+        self._is_authenticated = True
+        _LOGGER.debug("Authenticated successfully!")
+
+    def is_authenticated(self) -> bool:
+        """Check to see if we are already authenticated."""
+        if self._is_authenticated is True:
+            # Check if token is expired.
+            cookies = self.req.cookie_jar.filter_cookies(URL(self._base_url))
+            token_cookie = cookies.get("TOKEN")
+            if token_cookie is None:
+                return False
+            try:
+                jwt.decode(
+                    token_cookie.value,
+                    options={"verify_signature": False, "verify_exp": True},
+                )
+            except jwt.ExpiredSignatureError:
+                _LOGGER.debug("Authentication token has expired.")
+                return False
+            except Exception as broad_ex:  # pylint: disable=broad-except
+                _LOGGER.debug("Authentication token decode error: %s", broad_ex)
+                return False
+
+        return self._is_authenticated
+
+    def disconnect_ws(self) -> None:
+        """Disconnects from the websocket if already connected."""
+        if self.ws_connection is not None:
+            return
+
+        if self.ws_task is not None:
+            try:
+                self.ws_task.cancel()
+                self.ws_connection = None
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception("Could not cancel ws_task")
+
+    async def async_connect_ws(self) -> None:
+        """Connect the websocket."""
+        if self.ws_connection is not None:
+            return
+
+        self.disconnect_ws()
+        self.ws_task = asyncio.ensure_future(self._setup_websocket())
+
+    async def async_disconnect_ws(self) -> None:
+        """Disconnect the websocket."""
+        if self.ws_connection is None:
+            return
+
+        await self.ws_connection.close()
+        if self.ws_session is not None:
+            await self.ws_session.close()
+
+    async def _setup_websocket(self) -> None:
+        await self.ensure_authenticated()
+
+        url = urljoin(f"{self._base_ws_url}{self.ws_path}", "updates")
+        if self.last_update_id:
+            url += f"?lastUpdateId={self.last_update_id}"
+
+        if not self.ws_session:
+            self.ws_session = aiohttp.ClientSession()
+        _LOGGER.debug("WS connecting to: %s", url)
+
+        self.ws_connection = await self.ws_session.ws_connect(url, ssl=self._verify_ssl, headers=self.headers)
+        try:
+            async for msg in self.ws_connection:
+                if self.ws_callback is not None:
+                    self.ws_callback(msg)  # pylint: disable=not-callable
+
+                if msg.type == aiohttp.WSMsgType.BINARY:
+                    try:
+                        self._process_ws_message(msg)
+                    except Exception:  # pylint: disable=broad-except
+                        _LOGGER.exception("Error processing websocket message")
+                        return
+                elif msg.type == aiohttp.WSMsgType.ERROR:
+                    _LOGGER.exception("Error from Websocket: %s", msg.data)
+                    break
+        finally:
+            _LOGGER.debug("websocket disconnected")
+            self.ws_connection = None
+
+    async def check_ws(self) -> bool:
+        now = time.monotonic()
+
+        first_check = self._last_websocket_check == NEVER_RAN
+        connect_ws = False
+        if now - self._last_websocket_check > WEBSOCKET_CHECK_INTERVAL:
+            _LOGGER.debug("Checking websocket")
+            self._last_websocket_check = now
+            connect_ws = True
+            await self.async_connect_ws()
+
+        # log if no active WS
+        if not self.ws_connection and not first_check:
+            log = _LOGGER.debug
+            # but only warn if a reconnect attempt was made
+            if connect_ws:
+                log = _LOGGER.warning
+            log("Unifi OS: Websocket connection not active, failing back to polling")
+
+        if self.ws_connection or self._last_websocket_check == now:
+            return True
+        return False
+
+    def _process_ws_message(self, msg: aiohttp.WSMessage) -> None:
+        raise NotImplementedError()
+
+
+class ProtectApiClient(BaseApiClient):
+    """WIP new API Client class with real Python objects"""
+
+    _minimum_score: int
+    _bootstrap: Optional[Bootstrap] = None
+    _last_update_dt: Optional[datetime] = None
+
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        username: str,
+        password: str,
+        verify_ssl: bool = True,
+        session: Optional[aiohttp.ClientSession] = None,
+        minimum_score: int = 0,
+        debug: bool = False,
+    ) -> None:
+        super().__init__(
+            host=host, port=port, username=username, password=password, verify_ssl=verify_ssl, session=session
+        )
+
+        self._minimum_score = minimum_score
+
+        if debug:
+            set_debug()
+
+    async def update(self, force: bool = False) -> Union[Bootstrap, List[Event]]:
+        """Updates the state of devices."""
+
+        now = time.monotonic()
+        now_dt = datetime.now()
+        if force and self.ws_connection is not None:
+            self.disconnect_ws()
+            self._last_update = NEVER_RAN
+            self._last_websocket_check = NEVER_RAN
+
+        if self._bootstrap is None or now - self._last_update > DEVICE_UPDATE_INTERVAL:
+            self._last_update = now
+            data = await self.api_request_obj("bootstrap")
+            self._bootstrap = Bootstrap.from_unifi_dict(**data, api=self)
+
+        active_ws = await self.check_ws()
+        # If the websocket is connected/connecting
+        # we do not need to get events
+        if active_ws:
+            _LOGGER.debug("Skipping update since websocket is active")
+            return self._bootstrap
+
+        events = await self.get_events(start=self._last_update_dt, end=now_dt)
+        for event in events:
+            self.bootstrap.process_event(event)
+
+        self._last_update = now
+        self._last_update_dt = now_dt
+        return events
+
+    def _process_ws_message(self, msg: aiohttp.WSMessage) -> None:
+        packet = WSPacket(msg.data)
+        self.bootstrap.process_ws_packet(packet)
+
+    @property
+    def bootstrap(self) -> Bootstrap:
+        if self._bootstrap is None:
+            raise BadRequest("Client not initalized, run `update` first")
+
+        return self._bootstrap
+
+    async def get_events_raw(
+        self,
+        start: Optional[datetime] = None,
+        end: Optional[datetime] = None,
+        limit: Optional[int] = None,
+        camera_ids: Optional[List[str]] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get list of events from Protect
+
+        :param start: start time for events
+        :param end: end time for events
+        :param limit: max number of events to return
+        :camera_ids: list of Cameras to get events for
+
+        If limit, start and end are not provided, it will default to all events in the last 24 hours.
+
+        If start is provided, then end or limit must be provided. If end is provided, then start or
+        limit must be provided. Otherwise, you will get a 400 error from Unifi Protect
+
+        Providing a list of Camera IDs will not prevent non-camera events from returning.
+        """
+
+        # if no parameters are passed in, default to all events from last 24 hours
+        if limit is None and start is None and end is None:
+            end = datetime.now() + timedelta(seconds=10)
+            start = end - timedelta(hours=24)
+
+        params: Dict[str, Any] = {}
+        if limit is not None:
+            params["limit"] = limit
+
+        if start is not None:
+            params["start"] = to_js_time(start)
+
+        if end is not None:
+            params["end"] = to_js_time(end)
+
+        if camera_ids is not None:
+            params["cameras"] = ",".join(camera_ids)
+
+        return await self.api_request_list("events", params=params)
+
+    async def get_events(
+        self,
+        start: Optional[datetime] = None,
+        end: Optional[datetime] = None,
+        limit: Optional[int] = None,
+        camera_ids: Optional[List[str]] = None,
+    ) -> List[Event]:
+        """
+        Same as `get_events_raw`, except
+
+        * returns actual `Event` objects instead of raw Python dictionaries
+        * filers out non-device events
+        * filters out events with too low of a score
+        """
+
+        response = await self.get_events_raw(start=start, end=end, limit=limit, camera_ids=camera_ids)
+        events = []
+
+        for event_dict in response:
+            # ignore unknown events
+            if event_dict["type"] not in EventType.values():
+                _LOGGER.debug("Unknown event type: %s", event_dict["type"])
+                continue
+
+            event = create_from_unifi_dict(event_dict, api=self)
+
+            # should never happen
+            if not isinstance(event, Event):
+                continue
+
+            if event.type.value in EventType.device_events() and event.score >= self._minimum_score:
+                events.append(event)
+
+        return events
