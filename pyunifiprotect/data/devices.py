@@ -24,6 +24,7 @@ from pyunifiprotect.data.types import (
     VideoMode,
 )
 from pyunifiprotect.utils import (
+    is_debug,
     process_datetime,
     round_decimal,
     serialize_point,
@@ -133,6 +134,20 @@ class CameraChannel(ProtectBaseObject):
     min_motion_adaptive_bit_rate: int
     fps_values: List[int]
     idr_interval: int
+
+    @property
+    def rtsp_url(self) -> Optional[str]:
+        if not self.is_rtsp_enabled or self.rtsp_alias is None:
+            return None
+
+        return f"rtsp://{self.api.connection_host}:{self.api.bootstrap.nvr.ports.rtsp}/{self.rtsp_alias}"
+
+    @property
+    def rtsps_url(self) -> Optional[str]:
+        if not self.is_rtsp_enabled or self.rtsp_alias is None:
+            return None
+
+        return f"rtsps://{self.api.connection_host}:{self.api.bootstrap.nvr.ports.rtsps}/{self.rtsp_alias}?enableSrtp"
 
 
 class ISPSettings(ProtectBaseObject):
@@ -405,8 +420,9 @@ class CameraZone(ProtectBaseObject):
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         data = super().unifi_dict_to_dict(data)
 
-        if "points" in data and isinstance(data["points"], list):
-            data["points"] = [(round_decimal(p[0], 4), round_decimal(p[1], 4)) for p in data["points"]]
+        if not is_debug():
+            if "points" in data and isinstance(data["points"], list):
+                data["points"] = [(round_decimal(p[0], 4), round_decimal(p[1], 4)) for p in data["points"]]
 
         return data
 
@@ -570,6 +586,16 @@ class Camera(ProtectMotionDeviceModel):
 
         return self.api.bootstrap.events.get(self.last_smart_detect_event_id)
 
+    @property
+    def timelapse_url(self) -> str:
+        return f"{self.api.base_url}/protect/timelapse/{self.id}"
+
+    async def get_snapshot(
+        self, width: Optional[int] = None, height: Optional[int] = None, dt: Optional[datetime] = None
+    ) -> Optional[bytes]:
+        """Gets snapshot for camera at a given time"""
+        return await self.api.get_camera_snapshot(self.id, width, height, dt)
+
 
 class Viewer(ProtectAdoptableDeviceModel):
     stream_limit: int
@@ -586,7 +612,6 @@ class Viewer(ProtectAdoptableDeviceModel):
 
 
 class Bridge(ProtectAdoptableDeviceModel):
-    hardware_revision: int
     platform: str
 
 

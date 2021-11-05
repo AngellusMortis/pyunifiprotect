@@ -5,10 +5,11 @@ from datetime import datetime, timedelta, timezone, tzinfo
 from decimal import Decimal
 from enum import Enum
 from inspect import isclass
-from ipaddress import IPv4Address
+from ipaddress import AddressValueError, IPv4Address
 import os
 from pathlib import Path
 import re
+import socket
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
 from uuid import UUID
 
@@ -219,3 +220,13 @@ def serialize_list(items: Iterable[Any]) -> List[Any]:
 def round_decimal(num: Union[int, float], digits: int) -> Decimal:
     """Rounds a decimal to a set precision"""
     return Decimal(str(round(num, digits)))
+
+
+def ip_from_host(host: str) -> IPv4Address:
+    try:
+        return IPv4Address(host)
+    except AddressValueError:
+        pass
+
+    _, _, ips = socket.gethostbyname_ex(host)
+    return IPv4Address(ips[0])

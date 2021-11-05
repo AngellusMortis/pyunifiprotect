@@ -81,7 +81,9 @@ class Bootstrap(ProtectBaseObject):
         if event.camera is None:
             return
 
-        if event.type == EventType.MOTION:
+        if event.type == EventType.MOTION and (
+            event.camera.last_motion is None or event.start > event.camera.last_motion
+        ):
             if event.end is None:
                 event.camera.is_motion_detected = True
             else:
@@ -89,11 +91,13 @@ class Bootstrap(ProtectBaseObject):
 
                 event.camera.last_motion = event.end
                 event.camera.last_motion_event_id = event.id
-        elif event.type == EventType.SMART_DETECT:
+        elif event.type == EventType.SMART_DETECT and (
+            event.camera.last_smart_detect is None or event.start > event.camera.last_smart_detect
+        ):
             if event.end is not None:
                 event.camera.last_smart_detect = event.end
                 event.camera.last_smart_detect_event_id = event.id
-        elif event.type == EventType.RING:
+        elif event.type == EventType.RING and (event.camera.last_ring is None or event.start > event.camera.last_ring):
             event.camera.last_ring = event.start
             event.camera.last_ring_event_id = event.id
 

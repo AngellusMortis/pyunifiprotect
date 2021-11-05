@@ -1,16 +1,16 @@
 {
-    "server_name": "Polj Epivng",
-    "server_id": "7A2C27B2FC2E",
-    "server_version": "1.20.0-beta.2",
-    "server_ip": "192.168.25.148",
-    "server_model": "UDM-PRO",
-    "last_update_id": "6189fbad-41c9-4188-aa37-b7f06a8780cd",
-    "user_id": "33f52405dd7909da4a4de5b7",
+    "server_name": "Trv Gyw",
+    "server_id": "01E29D57680A",
+    "server_version": "1.20.0-beta.7",
+    "server_ip": "192.168.150.211",
+    "server_model": "UNVR-PRO",
+    "last_update_id": "5d5a4389-9bf4-4bb8-af8f-fae6dddf23b0",
+    "user_id": "9bdd02b7088c9ebfd80b3868",
     "counts": {
         "camera": 6,
-        "user": 7,
+        "user": 5,
         "group": 2,
-        "liveview": 8,
+        "liveview": 1,
         "viewer": 1,
         "display": 0,
         "light": 1,
@@ -20,8 +20,9 @@
         "chime": 0,
         "schedule": 0
     },
-    "time": "2021-10-18T00:07:17.748398+00:00",
-    "event_count": 785,
-    "camera_thumbnail": "e-ed92bd8337974040dd4711d2",
-    "camera_online": true
+    "time": "2021-11-05T20:38:00.281553+00:00",
+    "event_count": 765,
+    "camera_online": true,
+    "camera_thumbnail": "e-0a871bdf8b5f29ad997c78b0",
+    "camera_heatmap": "e-0a871bdf8b5f29ad997c78b0"
 }

@@ -1,4 +1,5 @@
 """Tests for pyunifiprotect.unifi_protect_server."""
+# pylint: disable=protected-access
 
 import asyncio
 from datetime import datetime, timedelta
@@ -116,7 +117,7 @@ async def test_get_thumbnail(old_protect_client: UpvServer, camera):
     data = await old_protect_client.get_thumbnail(camera_id=camera["id"])
 
     old_protect_client.api_request_raw.assert_called_with(  # type: ignore
-        f"thumbnails/{CONSTANTS['camera_thumbnail']}",
+        f"thumbnails/{old_protect_client._processed_data[camera['id']]['event_thumbnail']}",
         params={
             "h": "360.0",
             "w": "640",

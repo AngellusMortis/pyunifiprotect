@@ -1,13 +1,13 @@
 {
-    "mac": "D28B8E26F4B5",
-    "host": "192.168.156.26",
-    "connectionHost": "192.168.188.156",
+    "mac": "F37268F71288",
+    "host": "192.168.13.71",
+    "connectionHost": "192.168.150.211",
     "type": "UP Viewport",
-    "name": "Qqev Jmp",
-    "upSince": 1634511229498,
-    "uptime": 4354,
-    "lastSeen": 1634515583498,
-    "connectedSince": 1634511284230,
+    "name": "Pldwp Ugx",
+    "upSince": 1634581239121,
+    "uptime": 1563420,
+    "lastSeen": 1636144659121,
+    "connectedSince": 1635977331326,
     "state": "CONNECTED",
     "hardwareRevision": null,
     "firmwareVersion": "1.2.54",
@@ -27,8 +27,8 @@
     "wiredConnectionState": {
         "phyRate": 1000
     },
-    "liveview": "e341c6d551b89f107710bfc8",
-    "id": "2cb3b1df5b02571bdbfa556c",
+    "liveview": "d408011457716b18e80cf1a3",
+    "id": "37e03a300dfe40fa6b95bc84",
     "isConnected": true,
     "modelKey": "viewer"
 }

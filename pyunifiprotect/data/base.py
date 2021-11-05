@@ -13,7 +13,6 @@ from typing import (
     Set,
     Type,
     TypeVar,
-    Union,
 )
 
 from pydantic import BaseModel
@@ -233,15 +232,14 @@ class ProtectBaseObject(BaseModel):
             data[to_snake_case(key)] = data.pop(key)
 
         # remove extra fields
-        if not is_debug():
-            for key, value in list(data.items()):
-                if key == "api":
-                    continue
+        for key, value in list(data.items()):
+            if key == "api":
+                continue
 
-                if key not in cls.__fields__:
-                    del data[key]
-                    continue
-                data[key] = convert_unifi_data(value, cls.__fields__[key])
+            if key not in cls.__fields__:
+                del data[key]
+                continue
+            data[key] = convert_unifi_data(value, cls.__fields__[key])
 
         # clean child UFP objs
         for key, klass in cls._get_protect_objs().items():
@@ -408,7 +406,7 @@ class ProtectDeviceModel(ProtectModelWithId):
     up_since: Optional[datetime]
     uptime: Optional[timedelta]
     last_seen: datetime
-    hardware_revision: Optional[Union[str, int]]
+    hardware_revision: Optional[str]
     firmware_version: str
     is_updating: bool
     is_ssh_enabled: bool
@@ -421,6 +419,10 @@ class ProtectDeviceModel(ProtectModelWithId):
             data["upSince"] = process_datetime(data, "upSince")
         if "uptime" in data and data["uptime"] is not None and not isinstance(data["uptime"], timedelta):
             data["uptime"] = timedelta(milliseconds=int(data["uptime"]))
+        # hardware revisions for all devices are not simple numbers
+        # so cast them all to str to be consistent
+        if "hardwareRevision" in data and data["hardwareRevision"] is not None:
+            data["hardwareRevision"] = str(data["hardwareRevision"])
 
         return super().unifi_dict_to_dict(data)
 
@@ -500,6 +502,10 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
             return None
 
         return self.api.bootstrap.bridges[self.bridge_id]
+
+    @property
+    def protect_url(self) -> str:
+        return f"{self.api.base_url}/protect/devices/{self.id}"
 
 
 class ProtectMotionDeviceModel(ProtectAdoptableDeviceModel):

@@ -1,6 +1,7 @@
 # pylint: disable=protected-access
 
 import asyncio
+from copy import deepcopy
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -10,14 +11,14 @@ from PIL import Image
 import aiohttp
 import typer
 
-from pyunifiprotect.data import EventType, WSJSONPacketFrame, WSPacket
-from pyunifiprotect.exceptions import NvrError
+from pyunifiprotect.api import ProtectApiClient
+from pyunifiprotect.data import WSJSONPacketFrame, WSPacket
 from pyunifiprotect.test_util.anonymize import (
     anonymize_data,
     anonymize_prefixed_event_id,
 )
-from pyunifiprotect.unifi_data import LIVE_RING_FROM_WEBSOCKET
-from pyunifiprotect.unifi_protect_server import UpvServer
+from pyunifiprotect.unifi_data import process_camera
+from pyunifiprotect.utils import is_online
 
 SLEEP_INTERVAL = 2
 
@@ -39,12 +40,12 @@ class SampleDataGenerator:
     _record_ws_messages: Dict[str, Dict[str, Any]] = {}
 
     constants: Dict[str, Any] = {}
-    client: UpvServer
+    client: ProtectApiClient
     output_folder: Path
     anonymize: bool
     wait_time: int
 
-    def __init__(self, client: UpvServer, output: Path, anonymize: bool, wait_time: int) -> None:
+    def __init__(self, client: ProtectApiClient, output: Path, anonymize: bool, wait_time: int) -> None:
         self.client = client
         self.output_folder = output
         self.anonymize = anonymize
@@ -86,12 +87,9 @@ class SampleDataGenerator:
             "schedule": len(bootstrap["schedules"]),
         }
 
-        liveviews: List[Any] = await self.client.api_request_list("liveviews")
-        liveviews = self.write_json_file("sample_liveviews", liveviews)
-
         await self.record_ws_events()
-        heatmap_event = await self.generate_event_data()
-        await self.generate_device_data(heatmap_event)
+        motion_event = await self.generate_event_data()
+        await self.generate_device_data(motion_event)
 
         if close_session:
             await self.client.req.close()
@@ -108,6 +106,7 @@ class SampleDataGenerator:
         self._record_listen_for_events = True
         self._record_ws_messages = {}
 
+        typer.echo(f"Waiting {self.wait_time} seconds for WS messages...")
         with typer.progressbar(range(self.wait_time // SLEEP_INTERVAL), label="Waiting for WS messages") as progress:
             for i in progress:
                 if i > 0:
@@ -151,120 +150,170 @@ class SampleDataGenerator:
             f.write(raw)
 
     async def generate_event_data(self) -> Optional[Dict[str, Any]]:
-        data = await self.client.get_raw_events()
-        heatmap_event = None
-        for event in data:
-            if event.get("heatmap") is not None and event.get("type") in EventType.motion_events():
-                heatmap_event: Dict[str, Any] = event
-
+        data = await self.client.get_events_raw()
         data = self.write_json_file("sample_raw_events", data)
+
         self.constants["time"] = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
         self.constants["event_count"] = len(data)
 
-        # populate event data in devices
-        await self.client._get_events()
-        return heatmap_event
+        motion_event: Optional[Dict[str, Any]] = None
+        for event_dict in reversed(data):
+            if (
+                event_dict["type"] == "motion"
+                and event_dict["camera"] is not None
+                and event_dict["thumbnail"] is not None
+                and event_dict["heatmap"] is not None
+            ):
+                motion_event = event_dict
+                break
 
-    async def generate_device_data(self, camera_heatmap_event: Optional[Dict[str, Any]]) -> None:
-        has_heatmap = False
-        is_camera_online = False
-        camera_id: Optional[str] = None
+        return motion_event
 
-        is_light_online = False
-        light_id: Optional[str] = None
+    async def generate_device_data(self, motion_event: Optional[Dict[str, Any]]) -> None:
+        await self.generate_camera_data(motion_event)
+        await self.generate_light_data()
+        await self.generate_viewport_data()
+        await self.generate_sensor_data()
+        await self.generate_bridge_data()
+        await self.generate_liveview_data()
 
-        is_viewport_online = False
-        viewport_id: Optional[str] = None
+    async def generate_camera_data(self, motion_event: Optional[Dict[str, Any]]) -> None:
+        objs = await self.client.api_request_list("cameras")
+        device_id: Optional[str] = None
+        camera_is_online = False
+        for obj_dict in objs:
+            device_id = obj_dict["id"]
+            if is_online(obj_dict):
+                camera_is_online = True
+                break
 
-        for key, item in self.client.devices.items():
-            if item["type"] in ("camera", "doorbell") and not has_heatmap:
-                use_camera = False
-                # prefer cameras with a heatmap first
-                if is_camera_online and item["event_heatmap"] is not None:
-                    is_camera_online = True
-                    use_camera = True
-                    has_heatmap = True
-                # then prefer cameras that are online
-                elif not is_camera_online:
-                    use_camera = True
-                    if item["online"]:
-                        is_camera_online = True
-
-                if use_camera:
-                    camera_id = key
-            elif item["type"] == "light" and not is_light_online:
-                light_id = key
-                if item["online"]:
-                    is_light_online = True
-            elif item["type"] == "viewer" and not is_viewport_online:
-                viewport_id = key
-                if item["online"]:
-                    is_viewport_online = True
-
-        if camera_id is None:
+        if device_id is None:
             typer.echo("No camera found. Skipping camera endpoints...")
-        else:
-            await self.generate_camera_data(camera_id, camera_heatmap_event)
+            return
 
-        if light_id is None:
-            typer.echo("No light found. Skipping light endpoints...")
-        else:
-            await self.generate_light_data(light_id)
+        obj = await self.client.api_request_obj(f"cameras/{device_id}")
+        self.write_json_file("sample_camera", deepcopy(obj))
+        self.constants["camera_online"] = camera_is_online
 
-        if viewport_id is None:
-            typer.echo("No viewport found. Skipping viewport endpoints...")
-        else:
-            await self.generate_viewport_data(viewport_id)
+        if not camera_is_online:
+            typer.echo("Camera is not online, skipping snapshot, thumbnail and heatmap generation")
 
-    async def generate_camera_data(self, camera_id: str, heatmap_event: Optional[Dict[str, Any]]) -> None:
-        filename = "sample_camera_thumbnail"
-        thumbnail = self.client.devices[camera_id]["event_thumbnail"]
-        if thumbnail is None:
-            typer.echo("Camera has no thumbnail, skipping thumbnail generation...")
-        elif self.anonymize:
-            typer.echo(f"Writing {filename}...")
-            placeholder_image(self.output_folder / f"{filename}.png", 640, 360)
-            thumbnail = anonymize_prefixed_event_id(thumbnail)
-        else:
-            img = await self.client.get_thumbnail(camera_id=camera_id)
-            if img is not None:
-                self.write_image_file(filename, img)
-        self.constants["camera_thumbnail"] = thumbnail
-        self.constants["camera_online"] = self.client.devices[camera_id]["online"]
-
+        processd_camera = process_camera(None, self.client._host, deepcopy(obj), False)
         filename = "sample_camera_snapshot"
         if self.anonymize:
             typer.echo(f"Writing {filename}...")
-            camera = self.client.devices[camera_id]
-            placeholder_image(self.output_folder / f"{filename}.png", camera["image_width"], camera["image_height"])
+            placeholder_image(
+                self.output_folder / f"{filename}.png", processd_camera["image_width"], processd_camera["image_height"]
+            )
         else:
-            self.write_image_file(filename, await self.client.get_snapshot_image(camera_id=camera_id))
+            snapshot = await self.client.get_camera_snapshot(
+                obj["id"], processd_camera["image_width"], processd_camera["image_height"]
+            )
+            self.write_image_file(filename, snapshot)
 
-        data = await self.client._get_camera_detail(camera_id=camera_id)
-        data = self.write_json_file("sample_camera", data)
+        if motion_event is None:
+            typer.echo("No motion event, skipping thumbnail and heatmap generation...")
+            return
 
-        if heatmap_event is not None:
-            self.client._process_events([heatmap_event], LIVE_RING_FROM_WEBSOCKET)
-
-        if self.client.devices[camera_id]["event_heatmap"] is None:
-            typer.echo("Camera has no heatmap, skipping heatmap generation...")
+        filename = "sample_camera_thumbnail"
+        thumbnail_id = motion_event["thumbnail"]
+        if self.anonymize:
+            typer.echo(f"Writing {filename}...")
+            placeholder_image(self.output_folder / f"{filename}.png", 640, 360)
+            thumbnail_id = anonymize_prefixed_event_id(thumbnail_id)
         else:
-            img = None
-            try:
-                img = await self.client.get_heatmap(camera_id=camera_id)
-            except NvrError:
-                typer.echo("Failed to get heatmap, skipping heatmap generation...")
-
+            img = await self.client.get_event_thumbnail(thumbnail_id)
             if img is not None:
-                self.write_image_file("sample_camera_heatmap", img)
+                self.write_image_file(filename, img)
+        self.constants["camera_thumbnail"] = thumbnail_id
 
-    async def generate_light_data(self, light_id: str) -> None:
-        data = await self.client._get_light_detail(light_id=light_id)
-        data = self.write_json_file("sample_light", data)
+        filename = "sample_camera_heatmap"
+        heatmap_id = motion_event["heatmap"]
+        if self.anonymize:
+            typer.echo(f"Writing {filename}...")
+            placeholder_image(self.output_folder / f"{filename}.png", 640, 360)
+            heatmap_id = anonymize_prefixed_event_id(heatmap_id)
+        else:
+            img = await self.client.get_event_heatmap(heatmap_id)
+            if img is not None:
+                self.write_image_file(filename, img)
+        self.constants["camera_heatmap"] = heatmap_id
 
-    async def generate_viewport_data(self, viewport_id: str) -> None:
-        data = await self.client._get_viewport_detail(viewport_id=viewport_id)
-        data = self.write_json_file("sample_viewport", data)
+    async def generate_light_data(self) -> None:
+        objs = await self.client.api_request_list("lights")
+        device_id: Optional[str] = None
+        for obj_dict in objs:
+            device_id = obj_dict["id"]
+            if is_online(obj_dict):
+                break
+
+        if device_id is None:
+            typer.echo("No light found. Skipping light endpoints...")
+            return
+
+        obj = await self.client.api_request_obj(f"lights/{device_id}")
+        self.write_json_file("sample_light", obj)
+        self.write_json_file("sample_lights", objs)
+
+    async def generate_viewport_data(self) -> None:
+        objs = await self.client.api_request_list("viewers")
+        device_id: Optional[str] = None
+        for obj_dict in objs:
+            device_id = obj_dict["id"]
+            if is_online(obj_dict):
+                break
+
+        if device_id is None:
+            typer.echo("No viewer found. Skipping viewer endpoints...")
+            return
+
+        obj = await self.client.api_request_obj(f"viewers/{device_id}")
+        self.write_json_file("sample_viewport", obj)
+
+    async def generate_sensor_data(self) -> None:
+        objs = await self.client.api_request_list("sensors")
+        device_id: Optional[str] = None
+        for obj_dict in objs:
+            device_id = obj_dict["id"]
+            if is_online(obj_dict):
+                break
+
+        if device_id is None:
+            typer.echo("No sensor found. Skipping sensor endpoints...")
+            return
+
+        obj = await self.client.api_request_obj(f"sensors/{device_id}")
+        self.write_json_file("sample_sensor", obj)
+        self.write_json_file("sample_sensors", objs)
+
+    async def generate_bridge_data(self) -> None:
+        objs = await self.client.api_request_list("bridges")
+        device_id: Optional[str] = None
+        for obj_dict in objs:
+            device_id = obj_dict["id"]
+            if is_online(obj_dict):
+                break
+
+        if device_id is None:
+            typer.echo("No bridge found. Skipping bridge endpoints...")
+            return
+
+        obj = await self.client.api_request_obj(f"bridges/{device_id}")
+        self.write_json_file("sample_bridge", obj)
+
+    async def generate_liveview_data(self) -> None:
+        objs = await self.client.api_request_list("liveviews")
+        device_id: Optional[str] = None
+        for obj_dict in objs:
+            device_id = obj_dict["id"]
+            break
+
+        if device_id is None:
+            typer.echo("No liveview found. Skipping liveview endpoints...")
+            return
+
+        obj = await self.client.api_request_obj(f"liveviews/{device_id}")
+        self.write_json_file("sample_liveview", obj)
 
     def _handle_ws_message(self, msg: aiohttp.WSMessage) -> None:
         if not self._record_listen_for_events:

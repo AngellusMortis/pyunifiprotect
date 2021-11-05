@@ -205,7 +205,7 @@ def generate_sample_data(
             sys.exit(1)
         output_folder = (tests_folder / "sample_data").absolute()
 
-    protect = UpvServer(None, address, port, username, password, verify_ssl=verify)
+    protect = ProtectApiClient(address, port, username, password, verify_ssl=verify, debug=True)
     SampleDataGenerator(protect, output_folder, anonymize, wait_type).generate()
 
 

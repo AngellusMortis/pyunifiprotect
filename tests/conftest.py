@@ -41,6 +41,8 @@ async def mock_api_request_raw(url: str, *args, **kwargs):
         return read_binary_file("sample_camera_thumbnail")
     elif url.startswith("cameras/"):
         return read_binary_file("sample_camera_snapshot")
+    elif url.startswith("heatmaps/"):
+        return read_binary_file("sample_camera_heatmap")
     return b""
 
 
@@ -49,8 +51,30 @@ async def mock_api_request(url: str, *args, **kwargs):
         return read_json_file("sample_bootstrap")
     elif url == "events":
         return read_json_file("sample_raw_events")
+    elif url == "cameras":
+        return [read_json_file("sample_camera")]
+    elif url == "lights":
+        return [read_json_file("sample_light")]
+    elif url == "sensors":
+        return [read_json_file("sample_sensor")]
+    elif url == "viewers":
+        return [read_json_file("sample_viewport")]
+    elif url == "bridges":
+        return [read_json_file("sample_bridge")]
     elif url == "liveviews":
-        return read_json_file("sample_liveviews")
+        return [read_json_file("sample_liveview")]
+    elif url.startswith("cameras/"):
+        return read_json_file("sample_camera")
+    elif url.startswith("lights/"):
+        return read_json_file("sample_light")
+    elif url.startswith("sensors/"):
+        return read_json_file("sample_sensor")
+    elif url.startswith("viewers/"):
+        return read_json_file("sample_viewport")
+    elif url.startswith("bridges/"):
+        return read_json_file("sample_bridge")
+    elif url.startswith("liveviews/"):
+        return read_json_file("sample_liveview")
 
     return {}
 
@@ -176,8 +200,8 @@ async def protect_client_ws():
 
 
 @pytest.fixture
-def liveviews():
-    return read_json_file("sample_liveviews")
+def liveview():
+    return read_json_file("sample_liveview")
 
 
 @pytest.fixture
@@ -198,6 +222,41 @@ def camera():
 @pytest.fixture
 def sensor():
     return read_json_file("sample_sensor")
+
+
+@pytest.fixture
+def bridge():
+    return read_json_file("sample_bridge")
+
+
+@pytest.fixture
+def liveviews():
+    return [read_json_file("sample_liveview")]
+
+
+@pytest.fixture
+def viewports():
+    return [read_json_file("sample_viewport")]
+
+
+@pytest.fixture
+def lights():
+    return [read_json_file("sample_light")]
+
+
+@pytest.fixture
+def cameras():
+    return [read_json_file("sample_camera")]
+
+
+@pytest.fixture
+def sensors():
+    return [read_json_file("sample_sensor")]
+
+
+@pytest.fixture
+def bridges():
+    return [read_json_file("sample_bridge")]
 
 
 @pytest.fixture

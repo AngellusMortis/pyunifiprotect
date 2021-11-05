@@ -91,6 +91,20 @@ class Event(ProtectModelWithId):
         ]
         return self._smart_detect_events
 
+    async def get_thumbnail(self, width: Optional[int] = None, height: Optional[int] = None) -> Optional[bytes]:
+        """Gets thumbnail for event"""
+
+        if self.thumbnail_id is None:
+            return None
+        return await self.api.get_event_thumbnail(self.thumbnail_id, width, height)
+
+    async def get_heatmap(self) -> Optional[bytes]:
+        """Gets heatmap for event"""
+
+        if self.heatmap_id is None:
+            return None
+        return await self.api.get_event_heatmap(self.heatmap_id)
+
 
 class Group(ProtectModelWithId):
     name: str
@@ -388,6 +402,10 @@ class NVR(ProtectDeviceModel):
 
         return data
 
+    @property
+    def protect_url(self) -> str:
+        return f"{self.api.base_url}/protect/devices/{self.api.bootstrap.nvr.id}"
+
 
 class LiveviewSlot(ProtectBaseObject):
     camera_ids: List[str]
@@ -430,3 +448,7 @@ class Liveview(ProtectModelWithId):
         """
 
         return self.api.bootstrap.users.get(self.owner_id)
+
+    @property
+    def protect_url(self) -> str:
+        return f"{self.api.base_url}/protect/liveview/{self.id}"

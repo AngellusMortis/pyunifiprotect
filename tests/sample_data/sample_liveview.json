@@ -1,0 +1,53 @@
+{
+    "name": "Default",
+    "isDefault": true,
+    "isGlobal": true,
+    "layout": 6,
+    "slots": [
+        {
+            "cameras": [
+                "600ff7813ea0cdc8218c1bda"
+            ],
+            "cycleMode": "time",
+            "cycleInterval": 10
+        },
+        {
+            "cameras": [
+                "8a0f3d0007784a7a6b0c334c"
+            ],
+            "cycleMode": "time",
+            "cycleInterval": 10
+        },
+        {
+            "cameras": [
+                "0a6ec595956ef5a5c5d646c3"
+            ],
+            "cycleMode": "time",
+            "cycleInterval": 10
+        },
+        {
+            "cameras": [
+                "abbd0c98e15dde8a3b084698"
+            ],
+            "cycleMode": "time",
+            "cycleInterval": 10
+        },
+        {
+            "cameras": [
+                "7a0d8d83b68921d80d3d2872"
+            ],
+            "cycleMode": "time",
+            "cycleInterval": 10
+        },
+        {
+            "cameras": [
+                "77008140644659cc47841a12"
+            ],
+            "cycleMode": "time",
+            "cycleInterval": 10
+        }
+    ],
+    "owner": "d27ba769cc63a073634828f8",
+    "id": "d408011457716b18e80cf1a3",
+    "modelKey": "liveview"
+}

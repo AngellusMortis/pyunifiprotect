@@ -108,6 +108,11 @@ def test_sensor(sensor):
     compare_devices(sensor)
 
 
+@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_bridge.json").exists(), reason="No bridge in testdata")
+def test_bridge(bridge):
+    compare_devices(bridge)
+
+
 def test_events(raw_events):
     for event in raw_events:
         compare_devices(event)

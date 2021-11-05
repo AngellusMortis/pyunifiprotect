@@ -90,7 +90,7 @@ good-names = [
 
 # handled by mypy:
 # no-member, unsupported-membership-test, unsupported-assignment-operation,
-# unsubscriptable-object, used-before-assignment
+# unsubscriptable-object, used-before-assignment, bad-reversed-sequence
 disable = [
     "format",
     "abstract-class-little-used",
@@ -122,6 +122,7 @@ disable = [
     "unsubscriptable-object",
     "unsupported-assignment-operation",
     "used-before-assignment",
+    "bad-reversed-sequence",
 ]
 enable = [
     #"useless-suppression",  # temporarily every now and then to clean them up

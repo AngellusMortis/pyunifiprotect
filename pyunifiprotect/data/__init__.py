@@ -1,7 +1,7 @@
 from pyunifiprotect.data.base import ProtectBaseObject, ProtectModel
 from pyunifiprotect.data.bootstrap import Bootstrap
 from pyunifiprotect.data.convert import create_from_unifi_dict
-from pyunifiprotect.data.devices import Camera, Light, Sensor, Viewer
+from pyunifiprotect.data.devices import Bridge, Camera, Light, Sensor, Viewer
 from pyunifiprotect.data.nvr import (
     NVR,
     CloudAccount,
@@ -38,6 +38,7 @@ from pyunifiprotect.data.websocket import (
 
 __all__ = [
     "Bootstrap",
+    "Bridge",
     "Camera",
     "CloudAccount",
     "Color",

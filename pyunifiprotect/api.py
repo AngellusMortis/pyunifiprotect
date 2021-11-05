@@ -3,10 +3,11 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timedelta
+from ipaddress import IPv4Address
 import json as pjson
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union, cast
 from urllib.parse import urljoin
 from uuid import UUID
 
@@ -15,20 +16,35 @@ from aiohttp import client_exceptions
 import jwt
 from yarl import URL
 
-from pyunifiprotect.data import Event, EventType, WSPacket, create_from_unifi_dict
-from pyunifiprotect.data.bootstrap import Bootstrap
-from pyunifiprotect.data.websocket import WSSubscriptionMessage
+from pyunifiprotect.data import (
+    Bootstrap,
+    Bridge,
+    Camera,
+    Event,
+    EventType,
+    Light,
+    ModelType,
+    ProtectModel,
+    Sensor,
+    Viewer,
+    WSPacket,
+    WSSubscriptionMessage,
+    create_from_unifi_dict,
+)
+from pyunifiprotect.data.nvr import Liveview
 from pyunifiprotect.exceptions import BadRequest, NotAuthorized, NvrError
-from pyunifiprotect.utils import get_response_reason, set_debug, to_js_time
+from pyunifiprotect.utils import (
+    get_response_reason,
+    ip_from_host,
+    set_debug,
+    to_js_time,
+)
 
 NEVER_RAN = -1000
 # how many seconds before the bootstrap is refreshed from Protect
 DEVICE_UPDATE_INTERVAL = 60
 # how many seconds before before we check for an active WS connection
 WEBSOCKET_CHECK_INTERVAL = 120
-
-DEFAULT_SNAPSHOT_WIDTH = 1920
-DEFAULT_SNAPSHOT_HEIGHT = 1080
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -44,7 +60,6 @@ else:
 class BaseApiClient:
     _host: str
     _port: int
-    _base_url: str
     _username: str
     _password: str
     _verify_ssl: bool
@@ -59,6 +74,8 @@ class BaseApiClient:
     ws_connection: Optional[aiohttp.ClientWebSocketResponse] = None
     ws_task: Optional[TaskClass] = None
     ws_callback: Optional[Callable[[aiohttp.WSMessage], None]] = None
+    api_path: str = "/proxy/protect/api/"
+    ws_path: str = "/proxy/protect/ws/"
 
     def __init__(
         self,
@@ -71,8 +88,7 @@ class BaseApiClient:
     ) -> None:
         self._host = host
         self._port = port
-        self._base_url = f"https://{host}:{port}"
-        self._base_ws_url = f"wss://{host}:{port}"
+
         self._username = username
         self._password = password
         self._verify_ssl = verify_ssl
@@ -83,12 +99,16 @@ class BaseApiClient:
         self.req = session
 
     @property
-    def api_path(self) -> str:
-        return "/proxy/protect/api/"
+    def base_url(self) -> str:
+        if self._port != 443:
+            return f"https://{self._host}:{self._port}"
+        return f"https://{self._host}"
 
     @property
-    def ws_path(self) -> str:
-        return "/proxy/protect/ws/"
+    def base_ws_url(self) -> str:
+        if self._port != 443:
+            return f"wss://{self._host}:{self._port}"
+        return f"wss://{self._host}"
 
     async def request(
         self, method: str, url: str, require_auth: bool = False, auto_close: bool = True, **kwargs: Any
@@ -98,7 +118,7 @@ class BaseApiClient:
         if require_auth:
             await self.ensure_authenticated()
 
-        url = urljoin(self._base_url, url)
+        url = urljoin(self.base_url, url)
         headers = kwargs.get("headers") or self.headers
 
         _LOGGER.debug("Request url: %s", url)
@@ -250,7 +270,7 @@ class BaseApiClient:
         """Check to see if we are already authenticated."""
         if self._is_authenticated is True:
             # Check if token is expired.
-            cookies = self.req.cookie_jar.filter_cookies(URL(self._base_url))
+            cookies = self.req.cookie_jar.filter_cookies(URL(self.base_url))
             token_cookie = cookies.get("TOKEN")
             if token_cookie is None:
                 return False
@@ -300,7 +320,7 @@ class BaseApiClient:
     async def _setup_websocket(self) -> None:
         await self.ensure_authenticated()
 
-        url = urljoin(f"{self._base_ws_url}{self.ws_path}", "updates")
+        url = urljoin(f"{self.base_ws_url}{self.ws_path}", "updates")
         if self.last_update_id:
             url += f"?lastUpdateId={self.last_update_id}"
 
@@ -361,6 +381,7 @@ class ProtectApiClient(BaseApiClient):
     _bootstrap: Optional[Bootstrap] = None
     _last_update_dt: Optional[datetime] = None
     _ws_subscriptions: List[Callable[[WSSubscriptionMessage], None]] = []
+    _connection_host: Optional[IPv4Address] = None
 
     def __init__(
         self,
@@ -381,6 +402,30 @@ class ProtectApiClient(BaseApiClient):
 
         if debug:
             set_debug()
+
+    @property
+    def bootstrap(self) -> Bootstrap:
+        if self._bootstrap is None:
+            raise BadRequest("Client not initalized, run `update` first")
+
+        return self._bootstrap
+
+    @property
+    def connection_host(self) -> IPv4Address:
+        """Connection host to use for generating RTSP URLs"""
+
+        if self._connection_host is None:
+            host = ip_from_host(self._host)
+
+            for connection_host in self.bootstrap.nvr.hosts:
+                if connection_host == host:
+                    self._connection_host = connection_host
+                    break
+
+            if self._connection_host is None:
+                self._connection_host = self.bootstrap.nvr.hosts[0]
+
+        return self._connection_host
 
     async def update(self, force: bool = False) -> Union[Bootstrap, List[Event]]:
         """Updates the state of devices."""
@@ -424,13 +469,6 @@ class ProtectApiClient(BaseApiClient):
                 sub(processed_message)
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Exception while running subscription handler")
-
-    @property
-    def bootstrap(self) -> Bootstrap:
-        if self._bootstrap is None:
-            raise BadRequest("Client not initalized, run `update` first")
-
-        return self._bootstrap
 
     async def get_events_raw(
         self,
@@ -523,3 +561,194 @@ class ProtectApiClient(BaseApiClient):
         _LOGGER.debug("Adding subscription: %s", ws_callback)
         self._ws_subscriptions.append(ws_callback)
         return _unsub_ws_callback
+
+    async def get_devices_raw(self, model_type: ModelType) -> List[Dict[str, Any]]:
+        """Gets a raw device list given a model_type"""
+        return await self.api_request_list(f"{model_type.value}s")
+
+    async def get_devices(
+        self, model_type: ModelType, expected_type: Optional[Type[ProtectModel]] = None
+    ) -> List[ProtectModel]:
+        """Gets a device list given a model_type, converted into Python objects"""
+        objs: List[ProtectModel] = []
+
+        for obj_dict in await self.get_devices_raw(model_type):
+            obj = create_from_unifi_dict(obj_dict)
+
+            if expected_type is not None and not isinstance(obj, expected_type):
+                raise NvrError(f"Unexpected model returned: {obj.model}")
+
+            objs.append(obj)
+
+        return objs
+
+    async def get_cameras(self) -> List[Camera]:
+        """
+        Gets the list of cameras straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.cameras`
+        """
+        return cast(List[Camera], await self.get_devices(ModelType.CAMERA, Camera))
+
+    async def get_lights(self) -> List[Light]:
+        """
+        Gets the list of lights straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.lights`
+        """
+        return cast(List[Light], await self.get_devices(ModelType.LIGHT, Light))
+
+    async def get_sensors(self) -> List[Sensor]:
+        """
+        Gets the list of sensors straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.sensors`
+        """
+        return cast(List[Sensor], await self.get_devices(ModelType.SENSOR, Sensor))
+
+    async def get_viewers(self) -> List[Viewer]:
+        """
+        Gets the list of viewers straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.viewers`
+        """
+        return cast(List[Viewer], await self.get_devices(ModelType.VIEWPORT, Viewer))
+
+    async def get_bridges(self) -> List[Bridge]:
+        """
+        Gets the list of bridges straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.bridges`
+        """
+        return cast(List[Bridge], await self.get_devices(ModelType.BRIDGE, Bridge))
+
+    async def get_liveviews(self) -> List[Liveview]:
+        """
+        Gets the list of liveviews straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.liveviews`
+        """
+        return cast(List[Liveview], await self.get_devices(ModelType.LIVEVIEW, Liveview))
+
+    async def get_device_raw(self, model_type: ModelType, device_id: str) -> Dict[str, Any]:
+        """Gets a raw device give the device model_type and id"""
+        return await self.api_request_obj(f"{model_type.value}s/{device_id}")
+
+    async def get_device(
+        self, model_type: ModelType, device_id: str, expected_type: Optional[Type[ProtectModel]] = None
+    ) -> ProtectModel:
+        """Gets a device give the device model_type and id, converted into Python object"""
+        obj = create_from_unifi_dict(await self.get_device_raw(model_type, device_id))
+
+        if expected_type is not None and not isinstance(obj, expected_type):
+            raise NvrError(f"Unexpected model returned: {obj.model}")
+
+        return obj
+
+    async def get_camera(self, device_id: str) -> Camera:
+        """
+        Gets a camera straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.cameras[device_id]`
+        """
+        return cast(Camera, await self.get_device(ModelType.CAMERA, device_id, Camera))
+
+    async def get_light(self, device_id: str) -> Light:
+        """
+        Gets a light straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.lights[device_id]`
+        """
+        return cast(Light, await self.get_device(ModelType.LIGHT, device_id, Light))
+
+    async def get_sensor(self, device_id: str) -> Sensor:
+        """
+        Gets a sensor straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.sensors[device_id]`
+        """
+        return cast(Sensor, await self.get_device(ModelType.SENSOR, device_id, Sensor))
+
+    async def get_viewer(self, device_id: str) -> Viewer:
+        """
+        Gets a viewer straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.viewers[device_id]`
+        """
+        return cast(Viewer, await self.get_device(ModelType.VIEWPORT, device_id, Viewer))
+
+    async def get_bridge(self, device_id: str) -> Bridge:
+        """
+        Gets a bridge straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.bridges[device_id]`
+        """
+        return cast(Bridge, await self.get_device(ModelType.BRIDGE, device_id, Bridge))
+
+    async def get_liveview(self, device_id: str) -> Liveview:
+        """
+        Gets a liveview straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.liveviews[device_id]`
+        """
+        return cast(Liveview, await self.get_device(ModelType.LIVEVIEW, device_id, Liveview))
+
+    async def get_camera_snapshot(
+        self,
+        device_or_id: Union[Camera, str],
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        dt: Optional[datetime] = None,
+    ) -> Optional[bytes]:
+        """Gets a snapshot from a given camera at a given time"""
+
+        if isinstance(device_or_id, Camera):
+            device_id = device_or_id.id
+        else:
+            device_id = device_or_id
+
+        if dt is None:
+            dt = datetime.now()
+
+        params = {
+            "ts": to_js_time(dt),
+            "force": "true",
+        }
+
+        if width is not None:
+            params.update({"w": width})
+
+        if height is not None:
+            params.update({"h": height})
+
+        return await self.api_request_raw(f"cameras/{device_id}/snapshot", params=params, raise_exception=False)
+
+    async def get_event_thumbnail(
+        self, event_or_thumbnail_id: Union[Event, str], width: Optional[int] = None, height: Optional[int] = None
+    ) -> Optional[bytes]:
+        """Gets given thumbanil from a given event"""
+
+        if isinstance(event_or_thumbnail_id, Event):
+            thumbnail_id = event_or_thumbnail_id.thumbnail_id
+        else:
+            thumbnail_id = event_or_thumbnail_id
+
+        params: Dict[str, Any] = {}
+
+        if width is not None:
+            params.update({"w": width})
+
+        if height is not None:
+            params.update({"h": height})
+
+        return await self.api_request_raw(f"thumbnails/{thumbnail_id}", params=params, raise_exception=False)
+
+    async def get_event_heatmap(self, event_or_heatmap_id: Union[Event, str]) -> Optional[bytes]:
+        """Gets given heatmap from a given event"""
+
+        if isinstance(event_or_heatmap_id, Event):
+            heatmap_id = event_or_heatmap_id.heatmap_id
+        else:
+            heatmap_id = event_or_heatmap_id
+
+        return await self.api_request_raw(f"heatmaps/{heatmap_id}", raise_exception=False)

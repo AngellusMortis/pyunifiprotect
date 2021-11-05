@@ -1,0 +1,32 @@
+{
+    "mac": "F4C718B96D42",
+    "host": "192.168.37.140",
+    "connectionHost": "192.168.111.26",
+    "type": "UFP-UAP-B",
+    "name": "Igqfljf Bfa",
+    "upSince": 1635657161082,
+    "uptime": 487498,
+    "lastSeen": 1636144659082,
+    "connectedSince": null,
+    "state": "DISCONNECTED",
+    "hardwareRevision": 19,
+    "firmwareVersion": "",
+    "latestFirmwareVersion": null,
+    "firmwareBuild": null,
+    "isUpdating": false,
+    "isAdopting": false,
+    "isAdopted": true,
+    "isAdoptedByOther": false,
+    "isProvisioned": false,
+    "isRebooting": false,
+    "isSshEnabled": false,
+    "canAdopt": false,
+    "isAttemptingToConnect": false,
+    "wiredConnectionState": {
+        "phyRate": null
+    },
+    "id": "13bb0bd6bbcebb24f41bab03",
+    "isConnected": false,
+    "platform": "mt7621",
+    "modelKey": "bridge"
+}

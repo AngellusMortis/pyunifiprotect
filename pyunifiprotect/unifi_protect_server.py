@@ -10,13 +10,7 @@ from uuid import UUID
 
 import aiohttp
 
-from pyunifiprotect.api import (
-    DEFAULT_SNAPSHOT_HEIGHT,
-    DEFAULT_SNAPSHOT_WIDTH,
-    DEVICE_UPDATE_INTERVAL,
-    NEVER_RAN,
-    BaseApiClient,
-)
+from pyunifiprotect.api import DEVICE_UPDATE_INTERVAL, NEVER_RAN, BaseApiClient
 from pyunifiprotect.const import SERVER_ID, SERVER_NAME
 from pyunifiprotect.data import ProtectWSPayloadFormat
 from pyunifiprotect.exceptions import NvrError
@@ -51,6 +45,8 @@ LIGHT_MODES = ["off", "motion", "always"]
 LIGHT_ENABLED = ["dark", "fulltime"]
 LIGHT_DURATIONS = [15000, 30000, 60000, 300000, 900000]
 
+DEFAULT_SNAPSHOT_WIDTH = 1920
+DEFAULT_SNAPSHOT_HEIGHT = 1080
 
 _LOGGER = logging.getLogger(__name__)
 
