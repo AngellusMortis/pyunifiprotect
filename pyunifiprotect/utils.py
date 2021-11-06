@@ -228,5 +228,4 @@ def ip_from_host(host: str) -> IPv4Address:
     except AddressValueError:
         pass
 
-    _, _, ips = socket.gethostbyname_ex(host)
-    return IPv4Address(ips[0])
+    return IPv4Address(socket.gethostbyname(host))
