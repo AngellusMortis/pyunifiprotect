@@ -38,13 +38,11 @@ async def check_motion_event(event: Event):
     assert data is not None
     img = Image.open(BytesIO(data))
     assert img.format in ("PNG", "JPEG")
-    assert await event.api.get_event_thumbnail(event) == data
 
     data = await event.get_heatmap()
     assert data is not None
     img = Image.open(BytesIO(data))
     assert img.format in ("PNG", "JPEG")
-    assert await event.api.get_event_heatmap(event) == data
 
 
 async def check_camera(camera: Camera):
@@ -58,7 +56,6 @@ async def check_camera(camera: Camera):
     assert data is not None
     img = Image.open(BytesIO(data))
     assert img.format in ("PNG", "JPEG")
-    assert await camera.api.get_camera_snapshot(camera) == data
 
     camera.last_ring_event
 

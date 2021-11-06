@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, tzinfo
 from ipaddress import IPv4Address
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Set, Union
+from typing import Any, Dict, List, Literal, Optional, Set
 from uuid import UUID
 
 from pydantic.fields import PrivateAttr
@@ -16,7 +16,7 @@ from pyunifiprotect.data.base import (
     ProtectModel,
     ProtectModelWithId,
 )
-from pyunifiprotect.data.devices import Camera, CameraChannel
+from pyunifiprotect.data.devices import Camera
 from pyunifiprotect.data.types import (
     DoorbellMessageType,
     EventType,
@@ -106,13 +106,13 @@ class Event(ProtectModelWithId):
             return None
         return await self.api.get_event_heatmap(self.heatmap_id)
 
-    async def get_video(self, channel: Union[CameraChannel, int] = 0) -> Optional[bytes]:
+    async def get_video(self, channel_index: int = 0) -> Optional[bytes]:
         if self.camera is None:
             raise BadRequest("Event does not have a camera")
         if self.end is None:
             raise BadRequest("Event is ongoing")
 
-        return await self.api.get_camera_video(self.camera, self.start, self.end, channel)
+        return await self.api.get_camera_video(self.camera.id, self.start, self.end, channel_index)
 
 
 class Group(ProtectModelWithId):
