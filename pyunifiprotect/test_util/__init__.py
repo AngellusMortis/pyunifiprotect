@@ -5,6 +5,8 @@ from copy import deepcopy
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+from shlex import split
+from subprocess import run
 from typing import Any, Dict, List, Optional, Union, overload
 
 from PIL import Image
@@ -18,9 +20,10 @@ from pyunifiprotect.test_util.anonymize import (
     anonymize_prefixed_event_id,
 )
 from pyunifiprotect.unifi_data import process_camera
-from pyunifiprotect.utils import is_online
+from pyunifiprotect.utils import from_js_time, is_online
 
 SLEEP_INTERVAL = 2
+BLANK_VIDEO_CMD = "ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=size=1280x720:rate=25:color=black -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -t {length} {filename}"
 
 
 def placeholder_image(output_path: Path, width: int, height: Optional[int] = None) -> None:
@@ -140,14 +143,17 @@ class SampleDataGenerator:
 
         return data
 
-    def write_image_file(self, name: str, raw: Optional[bytes]) -> None:
+    def write_binary_file(self, name: str, ext: str, raw: Optional[bytes]) -> None:
         if raw is None:
             typer.echo(f"No image data, skipping {name}...")
             return
 
         typer.echo(f"Writing {name}...")
-        with open(self.output_folder / f"{name}.png", "wb") as f:
+        with open(self.output_folder / f"{name}.{ext}", "wb") as f:
             f.write(raw)
+
+    def write_image_file(self, name: str, raw: Optional[bytes]) -> None:
+        self.write_binary_file(name, "png", raw)
 
     async def generate_event_data(self) -> Optional[Dict[str, Any]]:
         data = await self.client.get_events_raw()
@@ -163,6 +169,7 @@ class SampleDataGenerator:
                 and event_dict["camera"] is not None
                 and event_dict["thumbnail"] is not None
                 and event_dict["heatmap"] is not None
+                and event_dict["end"] is not None
             ):
                 motion_event = event_dict
                 break
@@ -193,6 +200,7 @@ class SampleDataGenerator:
             typer.echo("No camera found. Skipping camera endpoints...")
             return
 
+        # json data
         obj = await self.client.api_request_obj(f"cameras/{device_id}")
         self.write_json_file("sample_camera", deepcopy(obj))
         self.constants["camera_online"] = camera_is_online
@@ -200,6 +208,7 @@ class SampleDataGenerator:
         if not camera_is_online:
             typer.echo("Camera is not online, skipping snapshot, thumbnail and heatmap generation")
 
+        # snapshot
         processd_camera = process_camera(None, self.client._host, deepcopy(obj), False)
         filename = "sample_camera_snapshot"
         if self.anonymize:
@@ -217,6 +226,7 @@ class SampleDataGenerator:
             typer.echo("No motion event, skipping thumbnail and heatmap generation...")
             return
 
+        # event thumbnail
         filename = "sample_camera_thumbnail"
         thumbnail_id = motion_event["thumbnail"]
         if self.anonymize:
@@ -225,10 +235,10 @@ class SampleDataGenerator:
             thumbnail_id = anonymize_prefixed_event_id(thumbnail_id)
         else:
             img = await self.client.get_event_thumbnail(thumbnail_id)
-            if img is not None:
-                self.write_image_file(filename, img)
+            self.write_image_file(filename, img)
         self.constants["camera_thumbnail"] = thumbnail_id
 
+        # event heatmap
         filename = "sample_camera_heatmap"
         heatmap_id = motion_event["heatmap"]
         if self.anonymize:
@@ -237,9 +247,23 @@ class SampleDataGenerator:
             heatmap_id = anonymize_prefixed_event_id(heatmap_id)
         else:
             img = await self.client.get_event_heatmap(heatmap_id)
-            if img is not None:
-                self.write_image_file(filename, img)
+            self.write_image_file(filename, img)
         self.constants["camera_heatmap"] = heatmap_id
+
+        # event video
+        filename = "sample_camera_video"
+        length = int((motion_event["end"] - motion_event["start"]) / 1000)
+        if self.anonymize:
+            run(
+                split(BLANK_VIDEO_CMD.format(length=length, filename=self.output_folder / f"{filename}.mp4")),
+                check=True,
+            )
+        else:
+            video = await self.client.get_camera_video(
+                device_id, from_js_time(motion_event["start"]), from_js_time(motion_event["end"]), 2
+            )
+            self.write_binary_file(filename, "mp4", video)
+        self.constants["camera_video_length"] = length
 
     async def generate_light_data(self) -> None:
         objs = await self.client.api_request_list("lights")

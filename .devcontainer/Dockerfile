@@ -1,7 +1,7 @@
 FROM python:3.10-slim-bullseye
 
 RUN apt-get update \
-    && apt-get install -y git build-essential vim procps curl jq \
+    && apt-get install -y git build-essential vim procps curl jq ffmpeg \
     # cleaning up unused files
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
     && rm -rf /var/lib/apt/lists/*

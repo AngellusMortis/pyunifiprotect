@@ -4,6 +4,9 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
+from shlex import split
+from subprocess import run
+from tempfile import NamedTemporaryFile
 from typing import Any, Dict
 from unittest.mock import AsyncMock, Mock
 
@@ -21,6 +24,9 @@ if UFP_SAMPLE_DIR:
 else:
     SAMPLE_DATA_DIRECTORY = Path(__file__).parent / "sample_data"
 
+CHECK_CMD = "ffprobe -v error -select_streams v:0 -show_entries stream=codec_type -of csv=p=0 {filename}"
+LENGTH_CMD = "ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {filename}"
+
 
 def read_binary_file(name: str, ext: str = "png"):
     with open(SAMPLE_DATA_DIRECTORY / f"{name}.{ext}", "rb") as f:
@@ -36,6 +42,14 @@ def get_now():
     return datetime.fromisoformat(CONSTANTS["time"]).replace(microsecond=0)
 
 
+def validate_video_file(filepath: Path, length: int):
+    output = run(split(CHECK_CMD.format(filename=filepath)), check=True, capture_output=True)
+    assert output.stdout.decode("utf8").strip() == "video"
+
+    output = run(split(LENGTH_CMD.format(filename=filepath)), check=True, capture_output=True)
+    assert length == int(float(output.stdout.decode("utf8").strip()))
+
+
 async def mock_api_request_raw(url: str, *args, **kwargs):
     if url.startswith("thumbnails/"):
         return read_binary_file("sample_camera_thumbnail")
@@ -43,6 +57,8 @@ async def mock_api_request_raw(url: str, *args, **kwargs):
         return read_binary_file("sample_camera_snapshot")
     elif url.startswith("heatmaps/"):
         return read_binary_file("sample_camera_heatmap")
+    elif url == "video/export":
+        return read_binary_file("sample_camera_video", "mp4")
     return b""
 
 
@@ -79,14 +95,14 @@ async def mock_api_request(url: str, *args, **kwargs):
     return {}
 
 
-class MockWebsocket:
+class SimpleMockWebsocket:
     is_closed: bool = False
     now: float = 0
     events: Dict[str, Any]
     count = 0
 
     def __init__(self):
-        self.events = read_json_file("sample_ws_messages")
+        self.events = []
 
     async def close(self):
         self.is_closed = True
@@ -106,6 +122,11 @@ class MockWebsocket:
         data = self.events.pop(key)
         self.count += 1
         return aiohttp.WSMessage(aiohttp.WSMsgType.BINARY, base64.b64decode(data["raw"]), None)
+
+
+class MockWebsocket(SimpleMockWebsocket):
+    def __init__(self):
+        self.events = read_json_file("sample_ws_messages")
 
 
 MockDatetime = Mock()
@@ -146,14 +167,25 @@ async def old_protect_client():
 @pytest.mark.asyncio
 async def protect_client():
     client = ProtectApiClient("127.0.0.1", 0, "username", "password")
-    client.is_unifi_os = False
     client.api_request = AsyncMock(side_effect=mock_api_request)
     client.api_request_raw = AsyncMock(side_effect=mock_api_request_raw)
+    client.ws_session = AsyncMock()
+    client.ws_session.ws_connect = AsyncMock(return_value=SimpleMockWebsocket())
     client.ensure_authenticated = AsyncMock()
 
     await client.update(True)
 
     yield client
+
+    await client.async_disconnect_ws()
+    await client.req.close()
+
+    if client.ws_task is not None:
+        client.ws_task.cancel()
+
+    # empty out websockets
+    while client.ws_connection is not None and client.ws_task is not None and not client.ws_task.done():
+        await asyncio.sleep(0.1)
 
 
 @pytest.fixture
@@ -162,14 +194,25 @@ async def protect_client_no_debug():
     set_no_debug()
 
     client = ProtectApiClient("127.0.0.1", 0, "username", "password")
-    client.is_unifi_os = False
     client.api_request = AsyncMock(side_effect=mock_api_request)
     client.api_request_raw = AsyncMock(side_effect=mock_api_request_raw)
+    client.ws_session = AsyncMock()
+    client.ws_session.ws_connect = AsyncMock(return_value=SimpleMockWebsocket())
     client.ensure_authenticated = AsyncMock()
 
     await client.update(True)
 
     yield client
+
+    await client.async_disconnect_ws()
+    await client.req.close()
+
+    if client.ws_task is not None:
+        client.ws_task.cancel()
+
+    # empty out websockets
+    while client.ws_connection is not None and client.ws_task is not None and not client.ws_task.done():
+        await asyncio.sleep(0.1)
 
 
 @pytest.fixture
@@ -178,7 +221,6 @@ async def protect_client_ws():
     set_no_debug()
 
     client = ProtectApiClient("127.0.0.1", 0, "username", "password")
-    client.is_unifi_os = True
     client.api_request = AsyncMock(side_effect=mock_api_request)
     client.ensure_authenticated = AsyncMock()
     client.ws_session = AsyncMock()
@@ -277,6 +319,20 @@ def bootstrap():
 @pytest.fixture
 def now():
     return get_now()
+
+
+@pytest.fixture
+def tmp_binary_file():
+    tmp_file = NamedTemporaryFile(mode="wb", delete=False)
+
+    yield tmp_file
+
+    try:
+        tmp_file.close()
+    except Exception:  # pylint: disable=broad-except
+        pass
+
+    os.remove(tmp_file.name)
 
 
 def compare_objs(obj_type, expected, actual):

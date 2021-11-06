@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from ipaddress import IPv4Address
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union
 from uuid import UUID
 
 from pyunifiprotect.data.base import (
@@ -595,6 +595,13 @@ class Camera(ProtectMotionDeviceModel):
     ) -> Optional[bytes]:
         """Gets snapshot for camera at a given time"""
         return await self.api.get_camera_snapshot(self.id, width, height, dt)
+
+    async def get_video(
+        self, start: datetime, end: datetime, channel: Union[CameraChannel, int] = 0
+    ) -> Optional[bytes]:
+        """Gets video clip for camera at a given time"""
+
+        return await self.api.get_camera_video(self, start, end, channel)
 
 
 class Viewer(ProtectAdoptableDeviceModel):

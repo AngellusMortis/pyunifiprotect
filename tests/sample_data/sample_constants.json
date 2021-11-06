@@ -24,5 +24,6 @@
     "event_count": 765,
     "camera_online": true,
     "camera_thumbnail": "e-0a871bdf8b5f29ad997c78b0",
-    "camera_heatmap": "e-0a871bdf8b5f29ad997c78b0"
+    "camera_heatmap": "e-0a871bdf8b5f29ad997c78b0",
+    "camera_video_length": 22
 }

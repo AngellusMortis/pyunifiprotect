@@ -4,6 +4,7 @@
 
 from datetime import datetime, timedelta
 from io import BytesIO
+from ipaddress import IPv4Address
 import logging
 import time
 from unittest.mock import AsyncMock, patch
@@ -20,9 +21,15 @@ from pyunifiprotect.data import (
     create_from_unifi_dict,
 )
 from pyunifiprotect.data.base import ProtectAdoptableDeviceModel
-from pyunifiprotect.exceptions import NvrError
+from pyunifiprotect.data.bootstrap import Bootstrap
+from pyunifiprotect.exceptions import BadRequest, NvrError
 from pyunifiprotect.utils import to_js_time
-from tests.conftest import SAMPLE_DATA_DIRECTORY, MockDatetime, compare_objs
+from tests.conftest import (
+    SAMPLE_DATA_DIRECTORY,
+    MockDatetime,
+    compare_objs,
+    validate_video_file,
+)
 from tests.sample_data.constants import CONSTANTS
 
 
@@ -31,11 +38,13 @@ async def check_motion_event(event: Event):
     assert data is not None
     img = Image.open(BytesIO(data))
     assert img.format in ("PNG", "JPEG")
+    assert await event.api.get_event_thumbnail(event) == data
 
     data = await event.get_heatmap()
     assert data is not None
     img = Image.open(BytesIO(data))
     assert img.format in ("PNG", "JPEG")
+    assert await event.api.get_event_heatmap(event) == data
 
 
 async def check_camera(camera: Camera):
@@ -49,6 +58,7 @@ async def check_camera(camera: Camera):
     assert data is not None
     img = Image.open(BytesIO(data))
     assert img.format in ("PNG", "JPEG")
+    assert await camera.api.get_camera_snapshot(camera) == data
 
     camera.last_ring_event
 
@@ -65,6 +75,46 @@ def check_device(device: ProtectAdoptableDeviceModel):
     assert device.protect_url == f"https://127.0.0.1:0/protect/devices/{device.id}"
 
 
+async def check_bootstrap(bootstrap: Bootstrap):
+    assert bootstrap.auth_user
+    assert bootstrap.nvr.protect_url == f"https://127.0.0.1:0/protect/devices/{bootstrap.nvr.id}"
+
+    for light in bootstrap.lights.values():
+        if light.camera is not None:
+            await check_camera(light.camera)
+        light.last_motion_event
+        check_device(light)
+
+    for camera in bootstrap.cameras.values():
+        await check_camera(camera)
+
+    for viewer in bootstrap.viewers.values():
+        assert viewer.liveview
+        check_device(viewer)
+
+    for sensor in bootstrap.sensors.values():
+        check_device(sensor)
+
+    for liveview in bootstrap.liveviews.values():
+        liveview.owner
+        assert liveview.protect_url == f"https://127.0.0.1:0/protect/liveview/{liveview.id}"
+
+        for slot in liveview.slots:
+            assert len(slot.camera_ids) == len(slot.cameras)
+
+    for user in bootstrap.users.values():
+        user.groups
+
+        if user.cloud_account is not None:
+            assert user.cloud_account.user == user
+
+    for event in bootstrap.events.values():
+        event.smart_detect_events
+
+        if event.type.value in EventType.motion_events() and event.camera is not None:
+            await check_motion_event(event)
+
+
 def test_base_url(protect_client: ProtectApiClient):
     assert protect_client.base_url == "https://127.0.0.1:0"
     assert protect_client.base_ws_url == "wss://127.0.0.1:0"
@@ -75,93 +125,52 @@ def test_base_url(protect_client: ProtectApiClient):
     assert protect_client.base_ws_url == "wss://127.0.0.1"
 
 
-@pytest.mark.asyncio
-async def test_api_client_creation():
+def test_api_client_creation():
     """Test we can create the object."""
 
-    client = ProtectApiClient("127.0.0.1", 0, "username", "password")
+    client = ProtectApiClient("127.0.0.1", 0, "username", "password", debug=True)
     assert client
+
+
+def test_early_bootstrap():
+    client = ProtectApiClient("127.0.0.1", 0, "username", "password", debug=True)
+
+    with pytest.raises(BadRequest):
+        client.bootstrap
+
+
+def test_connection_host(protect_client: ProtectApiClient):
+    # mismatch between client IP and IP that NVR returns
+    assert protect_client.connection_host == IPv4Address(CONSTANTS["server_ip"])
+
+    protect_client._host = CONSTANTS["server_ip"]
+    protect_client._connection_host = None
+
+    # same IP from client and NVR
+    assert protect_client.connection_host == IPv4Address(CONSTANTS["server_ip"])
+
+
+@pytest.mark.asyncio
+async def test_force_update(protect_client: ProtectApiClient):
+    protect_client._bootstrap = None
+
+    await protect_client.update(force=True)
+
+    assert protect_client.bootstrap
 
 
 @pytest.mark.asyncio
 async def test_bootstrap(protect_client: ProtectApiClient):
     """Verifies lookup of all object via ID"""
 
-    assert protect_client.bootstrap.auth_user
-    assert (
-        protect_client.bootstrap.nvr.protect_url
-        == f"https://127.0.0.1:0/protect/devices/{protect_client.bootstrap.nvr.id}"
-    )
-
-    for light in protect_client.bootstrap.lights.values():
-        if light.camera is not None:
-            await check_camera(light.camera)
-        light.last_motion_event
-        check_device(light)
-
-    for camera in protect_client.bootstrap.cameras.values():
-        await check_camera(camera)
-
-    for viewer in protect_client.bootstrap.viewers.values():
-        assert viewer.liveview
-        check_device(viewer)
-
-    for sensor in protect_client.bootstrap.sensors.values():
-        check_device(sensor)
-
-    for liveview in protect_client.bootstrap.liveviews.values():
-        liveview.owner
-        assert liveview.protect_url == f"https://127.0.0.1:0/protect/liveview/{liveview.id}"
-
-        for slot in liveview.slots:
-            assert len(slot.camera_ids) == len(slot.cameras)
-
-    for user in protect_client.bootstrap.users.values():
-        user.groups
-
-        if user.cloud_account is not None:
-            assert user.cloud_account.user == user
-
-    for event in protect_client.bootstrap.events.values():
-        event.smart_detect_events
-
-        if event.type in (EventType.MOTION, EventType.SMART_DETECT) and event.camera is not None:
-            await check_motion_event(event)
+    await check_bootstrap(protect_client.bootstrap)
 
 
 @pytest.mark.asyncio
 async def test_bootstrap_construct(protect_client_no_debug: ProtectApiClient):
     """Verifies lookup of all object via ID"""
 
-    protect_client = protect_client_no_debug
-    assert protect_client.bootstrap.auth_user
-
-    for light in protect_client.bootstrap.lights.values():
-        light.camera
-        light.last_motion_event
-
-    for camera in protect_client.bootstrap.cameras.values():
-        camera.last_motion_event
-        camera.last_ring_event
-        camera.last_smart_detect_event
-
-    for viewer in protect_client.bootstrap.viewers.values():
-        assert viewer.liveview
-
-    for liveview in protect_client.bootstrap.liveviews.values():
-        liveview.owner
-
-        for slot in liveview.slots:
-            assert len(slot.camera_ids) == len(slot.cameras)
-
-    for user in protect_client.bootstrap.users.values():
-        user.groups
-
-        if user.cloud_account is not None:
-            assert user.cloud_account.user == user
-
-    for event in protect_client.bootstrap.events.values():
-        event.smart_detect_events
+    await check_bootstrap(protect_client_no_debug.bootstrap)
 
 
 @pytest.mark.asyncio
@@ -227,6 +236,25 @@ async def test_get_events(protect_client: ProtectApiClient, raw_events):
     assert len(events) == len(expected_events)
     for index, event in enumerate(events):
         compare_objs(event.model.value, expected_events[index], event.unifi_dict())
+
+        if event.type.value in EventType.motion_events():
+            await check_motion_event(event)
+
+
+@pytest.mark.asyncio
+async def test_get_events_not_event(protect_client: ProtectApiClient, camera):
+    protect_client.get_events_raw = AsyncMock(return_value=[camera])  # type: ignore
+
+    assert await protect_client.get_events() == []
+
+
+@pytest.mark.asyncio
+async def test_get_events_not_event_with_type(protect_client: ProtectApiClient, camera):
+    camera["type"] = EventType.MOTION.value
+
+    protect_client.get_events_raw = AsyncMock(return_value=[camera])  # type: ignore
+
+    assert await protect_client.get_events() == []
 
 
 @pytest.mark.asyncio
@@ -436,11 +464,38 @@ async def test_get_camera_snapshot_args(protect_client: ProtectApiClient, now):
     assert img.format in ("PNG", "JPEG")
 
 
+@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_camera_video.mp4").exists(), reason="No video in testdata")
+@patch("pyunifiprotect.api.datetime", MockDatetime)
+@pytest.mark.asyncio
+async def test_get_camera_video(protect_client: ProtectApiClient, now, tmp_binary_file):
+    camera = list(protect_client.bootstrap.cameras.values())[0]
+    start = now - timedelta(seconds=CONSTANTS["camera_video_length"])
+
+    data = await protect_client.get_camera_video(camera.id, start, now)
+    assert data is not None
+
+    protect_client.api_request_raw.assert_called_with(  # type: ignore
+        "video/export",
+        params={
+            "camera": camera.id,
+            "channel": 0,
+            "start": to_js_time(start),
+            "end": to_js_time(now),
+        },
+        raise_exception=False,
+    )
+
+    tmp_binary_file.write(data)
+    tmp_binary_file.close()
+
+    validate_video_file(tmp_binary_file.name, CONSTANTS["camera_video_length"])
+
+
 @pytest.mark.skipif(
     not (SAMPLE_DATA_DIRECTORY / "sample_camera_thumbnail.png").exists(), reason="No thumbnail in testdata"
 )
 @pytest.mark.asyncio
-async def test_get_thumbnail(protect_client: ProtectApiClient):
+async def test_get_event_thumbnail(protect_client: ProtectApiClient):
     data = await protect_client.get_event_thumbnail("test_id")
     assert data is not None
 
@@ -458,7 +513,7 @@ async def test_get_thumbnail(protect_client: ProtectApiClient):
     not (SAMPLE_DATA_DIRECTORY / "sample_camera_thumbnail.png").exists(), reason="No thumbnail in testdata"
 )
 @pytest.mark.asyncio
-async def test_get_thumbnail_args(protect_client: ProtectApiClient):
+async def test_get_event_thumbnail_args(protect_client: ProtectApiClient):
     data = await protect_client.get_event_thumbnail("test_id", 1920, 1080)
     assert data is not None
 
@@ -477,7 +532,7 @@ async def test_get_thumbnail_args(protect_client: ProtectApiClient):
 
 @pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_camera_heatmap.png").exists(), reason="No heatmap in testdata")
 @pytest.mark.asyncio
-async def test_get_heatmap(protect_client: ProtectApiClient):
+async def test_get_event_heatmap(protect_client: ProtectApiClient):
     data = await protect_client.get_event_heatmap("test_id")
     assert data is not None
 

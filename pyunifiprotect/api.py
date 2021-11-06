@@ -23,6 +23,7 @@ from pyunifiprotect.data import (
     Event,
     EventType,
     Light,
+    Liveview,
     ModelType,
     ProtectModel,
     Sensor,
@@ -31,7 +32,7 @@ from pyunifiprotect.data import (
     WSSubscriptionMessage,
     create_from_unifi_dict,
 )
-from pyunifiprotect.data.nvr import Liveview
+from pyunifiprotect.data.devices import CameraChannel
 from pyunifiprotect.exceptions import BadRequest, NotAuthorized, NvrError
 from pyunifiprotect.utils import (
     get_response_reason,
@@ -432,7 +433,7 @@ class ProtectApiClient(BaseApiClient):
 
         now = time.monotonic()
         now_dt = datetime.now()
-        if force and self.ws_connection is not None:
+        if force:
             self.disconnect_ws()
             self._last_update = NEVER_RAN
             self._last_websocket_check = NEVER_RAN
@@ -533,8 +534,8 @@ class ProtectApiClient(BaseApiClient):
 
         for event_dict in response:
             # ignore unknown events
-            if event_dict["type"] not in EventType.values():
-                _LOGGER.debug("Unknown event type: %s", event_dict["type"])
+            if "type" not in event_dict or event_dict["type"] not in EventType.values():
+                _LOGGER.debug("Unknown event type: %s", event_dict)
                 continue
 
             event = create_from_unifi_dict(event_dict, api=self)
@@ -722,6 +723,37 @@ class ProtectApiClient(BaseApiClient):
             params.update({"h": height})
 
         return await self.api_request_raw(f"cameras/{device_id}/snapshot", params=params, raise_exception=False)
+
+    async def get_camera_video(
+        self, device_or_id: Union[Camera, str], start: datetime, end: datetime, channel: Union[CameraChannel, int] = 0
+    ) -> Optional[bytes]:
+        """Exports MP4 video from a given camera at a specific time"""
+
+        if isinstance(device_or_id, Camera):
+            camera = device_or_id
+        else:
+            camera = self.bootstrap.cameras[device_or_id]
+
+        if isinstance(channel, CameraChannel):
+            try:
+                channel_index = camera.channels.index(channel)
+            except ValueError as e:
+                raise BadRequest from e
+        else:
+            channel_index = channel
+            try:
+                camera.channels[channel_index]
+            except ValueError as e:
+                raise BadRequest from e
+
+        params = {
+            "camera": camera.id,
+            "channel": channel_index,
+            "start": to_js_time(start),
+            "end": to_js_time(end),
+        }
+
+        return await self.api_request_raw("video/export", params=params, raise_exception=False)
 
     async def get_event_thumbnail(
         self, event_or_thumbnail_id: Union[Event, str], width: Optional[int] = None, height: Optional[int] = None
