@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import contextlib
 from datetime import datetime
 import json
 import os
@@ -7,7 +8,7 @@ from pathlib import Path
 from shlex import split
 from subprocess import run
 from tempfile import NamedTemporaryFile
-from typing import Any, Dict
+from typing import Any, Dict, Union
 from unittest.mock import AsyncMock, Mock
 
 import aiohttp
@@ -127,6 +128,8 @@ class SimpleMockWebsocket:
 
 class MockWebsocket(SimpleMockWebsocket):
     def __init__(self):
+        super().__init__()
+
         self.events = read_json_file("sample_ws_messages")
 
 
@@ -139,54 +142,43 @@ def ensure_debug():
     set_debug()
 
 
+async def setup_client(client: Union[ProtectApiClient, UpvServer], websocket: SimpleMockWebsocket):
+    client.api_request = AsyncMock(side_effect=mock_api_request)  # type: ignore
+    client.api_request_raw = AsyncMock(side_effect=mock_api_request_raw)  # type: ignore
+    client.ensure_authenticated = AsyncMock()  # type: ignore
+    client.ws_session = AsyncMock()
+    client.ws_session.ws_connect = AsyncMock(return_value=websocket)
+    await client.update(True)
+
+    return client
+
+
+async def cleanup_client(client: Union[ProtectApiClient, UpvServer]):
+    await client.async_disconnect_ws()
+    await client.req.close()
+
+    with contextlib.suppress(asyncio.CancelledError):
+        if client.ws_task is not None:
+            client.ws_task.cancel()
+
+            # empty out websockets
+            await client.ws_task
+
+
 @pytest.fixture
 @pytest.mark.asyncio
 async def old_protect_client():
     client = UpvServer(None, "127.0.0.1", 0, "username", "password")
-    client.api_request = AsyncMock(side_effect=mock_api_request)
-    client.api_request_raw = AsyncMock(side_effect=mock_api_request_raw)
-    client.ensure_authenticated = AsyncMock()
-    client.ws_session = AsyncMock()
-    client.ws_session.ws_connect = AsyncMock(return_value=MockWebsocket())
-
-    await client.update(True)
-
-    yield client
-
-    await client.async_disconnect_ws()
-    await client.req.close()
-
-    if client.ws_task is not None:
-        client.ws_task.cancel()
-
-    # empty out websockets
-    while client.ws_connection is not None and not client.ws_task.done():
-        await asyncio.sleep(0.1)
+    yield await setup_client(client, MockWebsocket())
+    await cleanup_client(client)
 
 
 @pytest.fixture
 @pytest.mark.asyncio
 async def protect_client():
     client = ProtectApiClient("127.0.0.1", 0, "username", "password")
-    client.api_request = AsyncMock(side_effect=mock_api_request)
-    client.api_request_raw = AsyncMock(side_effect=mock_api_request_raw)
-    client.ws_session = AsyncMock()
-    client.ws_session.ws_connect = AsyncMock(return_value=SimpleMockWebsocket())
-    client.ensure_authenticated = AsyncMock()
-
-    await client.update(True)
-
-    yield client
-
-    await client.async_disconnect_ws()
-    await client.req.close()
-
-    if client.ws_task is not None:
-        client.ws_task.cancel()
-
-    # empty out websockets
-    while client.ws_connection is not None and client.ws_task is not None and not client.ws_task.done():
-        await asyncio.sleep(0.1)
+    yield await setup_client(client, SimpleMockWebsocket())
+    await cleanup_client(client)
 
 
 @pytest.fixture
@@ -195,25 +187,8 @@ async def protect_client_no_debug():
     set_no_debug()
 
     client = ProtectApiClient("127.0.0.1", 0, "username", "password")
-    client.api_request = AsyncMock(side_effect=mock_api_request)
-    client.api_request_raw = AsyncMock(side_effect=mock_api_request_raw)
-    client.ws_session = AsyncMock()
-    client.ws_session.ws_connect = AsyncMock(return_value=SimpleMockWebsocket())
-    client.ensure_authenticated = AsyncMock()
-
-    await client.update(True)
-
-    yield client
-
-    await client.async_disconnect_ws()
-    await client.req.close()
-
-    if client.ws_task is not None:
-        client.ws_task.cancel()
-
-    # empty out websockets
-    while client.ws_connection is not None and client.ws_task is not None and not client.ws_task.done():
-        await asyncio.sleep(0.1)
+    yield await setup_client(client, SimpleMockWebsocket())
+    await cleanup_client(client)
 
 
 @pytest.fixture
@@ -222,24 +197,8 @@ async def protect_client_ws():
     set_no_debug()
 
     client = ProtectApiClient("127.0.0.1", 0, "username", "password")
-    client.api_request = AsyncMock(side_effect=mock_api_request)
-    client.ensure_authenticated = AsyncMock()
-    client.ws_session = AsyncMock()
-    client.ws_session.ws_connect = AsyncMock(return_value=MockWebsocket())
-
-    await client.update(True)
-
-    yield client
-
-    await client.async_disconnect_ws()
-    await client.req.close()
-
-    if client.ws_task is not None:
-        client.ws_task.cancel()
-
-    # empty out websockets
-    while client.ws_connection is not None and client.ws_task is not None and not client.ws_task.done():
-        await asyncio.sleep(0.1)
+    yield await setup_client(client, MockWebsocket())
+    await cleanup_client(client)
 
 
 @pytest.fixture
