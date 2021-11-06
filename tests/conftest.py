@@ -47,7 +47,8 @@ def validate_video_file(filepath: Path, length: int):
     assert output.stdout.decode("utf8").strip() == "video"
 
     output = run(split(LENGTH_CMD.format(filename=filepath)), check=True, capture_output=True)
-    assert length == int(float(output.stdout.decode("utf8").strip()))
+    # it looks like UFP does not always generate a video of exact length
+    assert length - 10 < int(float(output.stdout.decode("utf8").strip())) < length + 10
 
 
 async def mock_api_request_raw(url: str, *args, **kwargs):

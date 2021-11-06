@@ -172,6 +172,7 @@ class SampleDataGenerator:
                 and event_dict["end"] is not None
             ):
                 motion_event = event_dict
+                typer.echo(f"Using motion event: {motion_event['id']}...")
                 break
 
         return motion_event
