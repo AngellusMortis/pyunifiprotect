@@ -170,12 +170,14 @@ class SampleDataGenerator:
         return motion_event
 
     async def generate_device_data(self, motion_event: Optional[Dict[str, Any]]) -> None:
-        await self.generate_camera_data(motion_event)
-        await self.generate_light_data()
-        await self.generate_viewport_data()
-        await self.generate_sensor_data()
-        await self.generate_bridge_data()
-        await self.generate_liveview_data()
+        await asyncio.gather(
+            self.generate_camera_data(motion_event),
+            self.generate_light_data(),
+            self.generate_viewport_data(),
+            self.generate_sensor_data(),
+            self.generate_bridge_data(),
+            self.generate_liveview_data(),
+        )
 
     async def generate_camera_data(self, motion_event: Optional[Dict[str, Any]]) -> None:
         objs = await self.client.api_request_list("cameras")
@@ -253,7 +255,6 @@ class SampleDataGenerator:
 
         obj = await self.client.api_request_obj(f"lights/{device_id}")
         self.write_json_file("sample_light", obj)
-        self.write_json_file("sample_lights", objs)
 
     async def generate_viewport_data(self) -> None:
         objs = await self.client.api_request_list("viewers")
