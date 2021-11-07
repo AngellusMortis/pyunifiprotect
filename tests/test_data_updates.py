@@ -356,8 +356,8 @@ async def test_camera_set_chime_duration_duration(camera_with_chime_obj: Optiona
 
 
 @pytest.mark.asyncio
-async def test_camera_set_lcd_text_camera(camera_with_lcd_obj: Optional[Camera]):
-    camera = camera_with_lcd_obj
+async def test_camera_set_lcd_text_no_lcd(camera_with_no_lcd_obj: Optional[Camera]):
+    camera = camera_with_no_lcd_obj
     if camera is None:
         pytest.skip("No Camera obj found")
 

@@ -280,6 +280,16 @@ async def camera_with_lcd_obj(protect_client: ProtectApiClient):  # pylint: disa
 
 @pytest.fixture
 @pytest.mark.asyncio
+async def camera_with_no_lcd_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+    for c in protect_client.bootstrap.cameras.values():
+        if not c.feature_flags.has_lcd_screen:
+            return c
+
+    return None
+
+
+@pytest.fixture
+@pytest.mark.asyncio
 async def camera_with_hdr_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
     for c in protect_client.bootstrap.cameras.values():
         if c.feature_flags.has_hdr:
