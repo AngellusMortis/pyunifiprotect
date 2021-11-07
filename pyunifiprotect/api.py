@@ -375,7 +375,22 @@ class BaseApiClient:
 
 
 class ProtectApiClient(BaseApiClient):
-    """WIP new API Client class with real Python objects"""
+    """
+    Main UFP API Client
+
+    Unifi Protect is a full async application. "normal" use of interacting with it is
+    to call `.update()` which will initialize the `.bootstrap` and create a Websocket
+    connection to UFP. This Websocket connection will emit messages that will automatically
+    update the `.bootstrap` over time. Caling `.udpate` again (without `force`) will
+    verify the integry of the Websocket connection.
+
+    You can use the `.get_` methods to one off pull devices from the UFP API, but should
+    not be used for building an aplication on top of.
+
+    All objects inside of `.bootstrap` have a refernce back to the API client so they can
+    use `.save_device()` and update themselves using their own `.set_` methods on the object.
+
+    """
 
     _minimum_score: int
     _bootstrap: Optional[Bootstrap] = None
@@ -428,7 +443,10 @@ class ProtectApiClient(BaseApiClient):
         return self._connection_host
 
     async def update(self, force: bool = False) -> Union[Bootstrap, List[Event]]:
-        """Updates the state of devices."""
+        """
+        Updates the state of devices, initalizes `.bootstrap` and
+        connects to UFP Websocket for real time updates
+        """
 
         now = time.monotonic()
         now_dt = datetime.now()

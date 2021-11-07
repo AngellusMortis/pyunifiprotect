@@ -71,10 +71,6 @@ class ProtectBaseObject(BaseModel):
         self._api = api
 
     @classmethod
-    def _get_excluded_changed_fields(cls) -> Set[str]:
-        return set()
-
-    @classmethod
     def from_unifi_dict(cls, api: Optional[ProtectApiClient] = None, **data: Any) -> ProtectObject:
         """
         Main constructor for `ProtectBaseObject`
@@ -118,6 +114,14 @@ class ProtectBaseObject(BaseModel):
         obj._api = api  # pylint: disable=protected-access
 
         return obj  # type: ignore
+
+    @classmethod
+    def _get_excluded_changed_fields(cls) -> Set[str]:
+        """
+        Helper method for override in child classes for fields that excluded from calculating "changed" state for a
+        model (`.initial_data` and `.get_changed()`)
+        """
+        return set()
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
@@ -516,9 +520,13 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
 
     @property
     def protect_url(self) -> str:
+        """UFP Web app URL for this device"""
+
         return f"{self.api.base_url}/protect/devices/{self.id}"
 
     def get_changed(self) -> Dict[str, Any]:
+        """Gets dictionary of all changed fields"""
+
         new_data = self.dict(exclude=self._get_excluded_changed_fields())
         updated = dict_diff(self._initial_data, new_data)
 
