@@ -95,16 +95,19 @@ class Light(ProtectMotionDeviceModel):
 
     async def set_status_light(self, enabled: bool) -> None:
         """Sets the status indicator light for the light"""
+
         self.light_device_settings.is_indicator_enabled = enabled
         await self.save_device()
 
     async def set_led_level(self, led_level: LEDLevel) -> None:
         """Sets the LED level for the light"""
+
         self.light_device_settings.led_level = led_level
         await self.save_device()
 
     async def set_light(self, enabled: bool, led_level: Optional[LEDLevel] = None) -> None:
         """Force turns on/off the light"""
+
         self.light_on_settings.is_led_force_on = enabled
         if led_level is not None:
             self.light_device_settings.led_level = led_level
@@ -624,10 +627,6 @@ class Camera(ProtectMotionDeviceModel):
     def timelapse_url(self) -> str:
         return f"{self.api.base_url}/protect/timelapse/{self.id}"
 
-    def require_doorbell(self) -> None:
-        if not self.is_doorbell:
-            raise BadRequest("Not a doorbell")
-
     def get_privacy_zone(self) -> Tuple[Optional[int], Optional[CameraZone]]:
         for index, zone in enumerate(self.privacy_zones):
             if zone.name == PRIVACY_ZONE_NAME:
@@ -653,6 +652,7 @@ class Camera(ProtectMotionDeviceModel):
         self, width: Optional[int] = None, height: Optional[int] = None, dt: Optional[datetime] = None
     ) -> Optional[bytes]:
         """Gets snapshot for camera at a given time"""
+
         return await self.api.get_camera_snapshot(self.id, width, height, dt)
 
     async def get_video(self, start: datetime, end: datetime, channel_index: int = 0) -> Optional[bytes]:
@@ -669,6 +669,9 @@ class Camera(ProtectMotionDeviceModel):
     async def set_ir_led_model(self, mode: IRLEDMode) -> None:
         """Sets IR LED mode on camera"""
 
+        if not self.feature_flags.has_led_ir:
+            raise BadRequest("Camera does not have an LED IR")
+
         self.isp_settings.ir_led_mode = mode
         await self.save_device()
 
@@ -682,11 +685,17 @@ class Camera(ProtectMotionDeviceModel):
     async def set_hdr(self, enabled: bool) -> None:
         """Sets HDR (High Dynamic Range) on camera"""
 
+        if not self.feature_flags.has_hdr:
+            raise BadRequest("Camera does not have HDR")
+
         self.hdr_mode = enabled
         await self.save_device()
 
     async def set_video_mode(self, mode: VideoMode) -> None:
         """Sets video mode on camera"""
+
+        if mode not in self.feature_flags.video_modes:
+            raise BadRequest(f"Camera does not have {mode}")
 
         self.video_mode = mode
         await self.save_device()
@@ -704,12 +713,18 @@ class Camera(ProtectMotionDeviceModel):
 
     async def set_mic_volume(self, level: PercentInt) -> None:
         """Sets the mic sensitivity level on camera"""
+
+        if not self.feature_flags.has_mic:
+            raise BadRequest("Camera does not have mic")
+
         self.mic_volume = level
         await self.save_device()
 
     async def set_doorbell_chime_duration(self, duration: ChimeDuration) -> None:
         """Sets chime duration for doorbell. Requires camera to be a doorbell"""
-        self.require_doorbell()
+
+        if not self.is_doorbell:
+            raise BadRequest("Camera does not have a chime")
 
         self.chime_duration = duration
         await self.save_device()
@@ -718,7 +733,9 @@ class Camera(ProtectMotionDeviceModel):
         self, text_type: DoorbellMessageType, text: Optional[str] = None, reset_at: Optional[datetime] = None
     ) -> None:
         """Sets doorbell LCD text. Requires camera to be doorbell"""
-        self.require_doorbell()
+
+        if not self.feature_flags.has_lcd_screen:
+            raise BadRequest("Camera does not have an LCD screen")
 
         if text_type != DoorbellMessageType.CUSTOM_MESSAGE:
             if text is not None:
@@ -732,6 +749,9 @@ class Camera(ProtectMotionDeviceModel):
         self, enabled: bool, mic_level: Optional[PercentInt] = None, recording_mode: Optional[RecordingMode] = None
     ) -> None:
         """Adds/removes a privacy zone that blacks out the whole camera"""
+
+        if not self.feature_flags.has_privacy_mask:
+            raise BadRequest("Camera does not allow privacy zones")
 
         if enabled:
             self.add_privacy_zone()
