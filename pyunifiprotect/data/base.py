@@ -22,6 +22,7 @@ from pyunifiprotect.data.types import ModelType, StateType
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import (
     convert_unifi_data,
+    dict_diff,
     is_debug,
     process_datetime,
     serialize_unifi_obj,
@@ -56,6 +57,7 @@ class ProtectBaseObject(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+        validate_assignment = True
 
     def __init__(self, api: Optional[ProtectApiClient] = None, **data: Any) -> None:
         """
@@ -65,6 +67,7 @@ class ProtectBaseObject(BaseModel):
         """
         super().__init__(**data)
 
+        self._initial_data = self.dict()
         self._api = api
 
     @classmethod
@@ -107,6 +110,7 @@ class ProtectBaseObject(BaseModel):
                 values[key] = {k: klass.construct(**v) if isinstance(v, dict) else v for k, v in values[key].items()}
 
         obj = super().construct(_fields_set=_fields_set, **values)
+        obj._initial_data = obj.dict()  # pylint: disable=protected-access
         obj._api = api  # pylint: disable=protected-access
 
         return obj  # type: ignore
@@ -361,6 +365,9 @@ class ProtectBaseObject(BaseModel):
         new_data["api"] = self._api
         return self.construct(**new_data)  # type: ignore
 
+    def get_changed(self: ProtectObject) -> Dict[str, Any]:
+        return dict_diff(self._initial_data, self.dict())
+
     @property
     def api(self) -> ProtectApiClient:
         """
@@ -506,6 +513,35 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     @property
     def protect_url(self) -> str:
         return f"{self.api.base_url}/protect/devices/{self.id}"
+
+    def get_changed(self) -> Dict[str, Any]:
+        new_data = self.dict()
+        updated = dict_diff(self._initial_data, new_data)
+
+        return updated
+
+    async def save_device(self) -> None:
+        """
+        Generates a diff for unsaved changed on the device and sends them back to UFP
+
+        USE WITH CAUTION, updates _all_ fields for the current object that have been changed.
+        May have unexpected side effects.
+
+        Tested updates have been added a methods on applicable devices.
+        """
+
+        if self.model is None:
+            raise BadRequest("Unknown model type")
+
+        new_data = self.dict()
+        updated = self.unifi_dict(data=self.get_changed())
+
+        # do not patch when there are no updates
+        if updated == {}:
+            return
+
+        await self.api.update_device(self.model, self.id, updated)
+        self._initial_data = new_data
 
 
 class ProtectMotionDeviceModel(ProtectAdoptableDeviceModel):

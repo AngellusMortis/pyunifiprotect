@@ -758,3 +758,15 @@ class ProtectApiClient(BaseApiClient):
         """Gets given heatmap from a given event"""
 
         return await self.api_request_raw(f"heatmaps/{heatmap_id}", raise_exception=False)
+
+    async def update_device(self, model_type: ModelType, device_id: str, data: Dict[str, Any]) -> None:
+        """
+        Sends an update for a device back to UFP
+
+        USE WITH CAUTION, all possible combinations of updating objects have not been fully tested.
+        May have unexpected side effects.
+
+        Tested updates have been added a methods on applicable devices.
+        """
+
+        await self.api_request(f"{model_type.value}s/{device_id}", method="patch", json=data)

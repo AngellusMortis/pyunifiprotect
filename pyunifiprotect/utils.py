@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+from copy import deepcopy
 from datetime import datetime, timedelta, timezone, tzinfo
 from decimal import Decimal
 from enum import Enum
@@ -229,3 +230,23 @@ def ip_from_host(host: str) -> IPv4Address:
         pass
 
     return IPv4Address(socket.gethostbyname(host))
+
+
+def dict_diff(orig: Dict[str, Any], new: Dict[str, Any]) -> Dict[str, Any]:
+    changed: Dict[str, Any] = {}
+
+    for key, value in new.items():
+        if key not in orig:
+            changed[key] = deepcopy(value)
+            continue
+
+        if isinstance(value, dict):
+            sub_changed = dict_diff(orig[key], value)
+
+            if sub_changed != {}:
+                changed[key] = sub_changed
+        else:
+            if value != orig[key]:
+                changed[key] = deepcopy(value)
+
+    return changed

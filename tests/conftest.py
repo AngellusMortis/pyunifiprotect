@@ -243,6 +243,36 @@ async def protect_client_ws():
 
 
 @pytest.fixture
+@pytest.mark.asyncio
+async def camera_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+    yield list(protect_client.bootstrap.cameras.values())[0]
+
+
+@pytest.fixture
+@pytest.mark.asyncio
+async def doorbell_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+    yield list(c for c in protect_client.bootstrap.cameras.values() if c.is_doorbell)[0]
+
+
+@pytest.fixture
+@pytest.mark.asyncio
+async def light_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+    yield list(protect_client.bootstrap.lights.values())[0]
+
+
+@pytest.fixture
+@pytest.mark.asyncio
+async def viewer_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+    yield list(protect_client.bootstrap.viewers.values())[0]
+
+
+@pytest.fixture
+@pytest.mark.asyncio
+async def liveview_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+    yield list(protect_client.bootstrap.liveviews.values())[0]
+
+
+@pytest.fixture
 def liveview():
     return read_json_file("sample_liveview")
 

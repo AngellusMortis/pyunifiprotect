@@ -164,6 +164,14 @@ class RecordingMode(str, enum.Enum):
     DETECTIONS = "detections"
 
 
+@enum.unique
+class IRLEDMode(str, enum.Enum):
+    AUTO = "auto"
+    ON = "on"
+    AUTO_NO_LED = "autoFilterOnly"
+    OFF = "off"
+
+
 class LEDLevel(ConstrainedInt):
     ge = 1
     le = 6
@@ -172,6 +180,16 @@ class LEDLevel(ConstrainedInt):
 class PercentInt(ConstrainedInt):
     ge = 0
     le = 100
+
+
+class ChimeDuration(ConstrainedInt):
+    ge = 0
+    le = 10000
+
+
+class WDRLevel(ConstrainedInt):
+    ge = 0
+    le = 3
 
 
 class Percent(ConstrainedDecimal):

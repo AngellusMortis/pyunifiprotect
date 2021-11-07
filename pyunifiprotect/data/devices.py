@@ -12,8 +12,10 @@ from pyunifiprotect.data.base import (
     ProtectMotionDeviceModel,
 )
 from pyunifiprotect.data.types import (
+    ChimeDuration,
     Color,
     DoorbellMessageType,
+    IRLEDMode,
     LEDLevel,
     LightModeEnableType,
     LightModeType,
@@ -22,7 +24,9 @@ from pyunifiprotect.data.types import (
     RecordingMode,
     SmartDetectObjectType,
     VideoMode,
+    WDRLevel,
 )
+from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import (
     is_debug,
     process_datetime,
@@ -33,6 +37,8 @@ from pyunifiprotect.utils import (
 
 if TYPE_CHECKING:
     from pyunifiprotect.data.nvr import Event, Liveview
+
+PRIVACY_ZONE_NAME = "pyufp_privacy_zone"
 
 
 class LightDeviceSettings(ProtectBaseObject):
@@ -86,6 +92,24 @@ class Light(ProtectMotionDeviceModel):
             return None
 
         return self.api.bootstrap.cameras[self.camera_id]
+
+    async def set_status_light(self, enabled: bool) -> None:
+        """Sets the status indicator light for the light"""
+        self.light_device_settings.is_indicator_enabled = enabled
+        await self.save_device()
+
+    async def set_led_level(self, led_level: LEDLevel) -> None:
+        """Sets the LED level for the light"""
+        self.light_device_settings.led_level = led_level
+        await self.save_device()
+
+    async def set_light(self, enabled: bool, led_level: Optional[LEDLevel] = None) -> None:
+        """Force turns on/off the light"""
+        self.light_on_settings.is_led_force_on = enabled
+        if led_level is not None:
+            self.light_device_settings.led_level = led_level
+
+        await self.save_device()
 
 
 class EventStats(ProtectBaseObject):
@@ -152,9 +176,9 @@ class CameraChannel(ProtectBaseObject):
 
 class ISPSettings(ProtectBaseObject):
     ae_mode: str
-    ir_led_mode: str
+    ir_led_mode: IRLEDMode
     ir_led_level: int
-    wdr: int
+    wdr: WDRLevel
     icr_sensitivity: int
     brightness: int
     contrast: int
@@ -178,7 +202,7 @@ class ISPSettings(ProtectBaseObject):
     focus_position: int
     touch_focus_x: int
     touch_focus_y: int
-    zoom_position: int
+    zoom_position: PercentInt
 
     # TODO:
     # mountPosition
@@ -434,6 +458,12 @@ class CameraZone(ProtectBaseObject):
 
         return data
 
+    @staticmethod
+    def create_privacy_zone(zone_id: int) -> CameraZone:
+        return CameraZone(
+            id=zone_id, name=PRIVACY_ZONE_NAME, color=Color("#85BCEC"), points=[[0, 0], [1, 0], [1, 1], [0, 1]]
+        )
+
 
 class MotionZone(CameraZone):
     sensitivity: PercentInt
@@ -508,7 +538,7 @@ class Camera(ProtectMotionDeviceModel):
     # Recording Quality -> High Frame
     video_mode: VideoMode
     is_probing_for_wifi: bool
-    chime_duration: int
+    chime_duration: ChimeDuration
     last_ring: Optional[datetime]
     is_live_heatmap_enabled: bool
     anonymous_device_id: UUID
@@ -573,6 +603,10 @@ class Camera(ProtectMotionDeviceModel):
         return data
 
     @property
+    def is_doorbell(self) -> bool:
+        return self.feature_flags.has_chime
+
+    @property
     def last_ring_event(self) -> Optional[Event]:
         if self.last_ring_event_id is None:
             return None
@@ -590,6 +624,31 @@ class Camera(ProtectMotionDeviceModel):
     def timelapse_url(self) -> str:
         return f"{self.api.base_url}/protect/timelapse/{self.id}"
 
+    def require_doorbell(self) -> None:
+        if not self.is_doorbell:
+            raise BadRequest("Not a doorbell")
+
+    def get_privacy_zone(self) -> Tuple[Optional[int], Optional[CameraZone]]:
+        for index, zone in enumerate(self.privacy_zones):
+            if zone.name == PRIVACY_ZONE_NAME:
+                return index, zone
+        return None, None
+
+    def add_privacy_zone(self) -> None:
+        index, _ = self.get_privacy_zone()
+        if index is None:
+            zone_id = 0
+            if len(self.privacy_zones) > 0:
+                zone_id = self.privacy_zones[-1].id + 1
+
+            self.privacy_zones.append(CameraZone.create_privacy_zone(zone_id))
+
+    def remove_privacy_zone(self) -> None:
+        index, _ = self.get_privacy_zone()
+
+        if index is not None:
+            self.privacy_zones.pop(index)
+
     async def get_snapshot(
         self, width: Optional[int] = None, height: Optional[int] = None, dt: Optional[datetime] = None
     ) -> Optional[bytes]:
@@ -600,6 +659,92 @@ class Camera(ProtectMotionDeviceModel):
         """Gets video clip for camera at a given time"""
 
         return await self.api.get_camera_video(self.id, start, end, channel_index)
+
+    async def set_recording_mode(self, mode: RecordingMode) -> None:
+        """Sets recording mode on camera"""
+
+        self.recording_settings.mode = mode
+        await self.save_device()
+
+    async def set_ir_led_model(self, mode: IRLEDMode) -> None:
+        """Sets IR LED mode on camera"""
+
+        self.isp_settings.ir_led_mode = mode
+        await self.save_device()
+
+    async def set_status_light(self, enabled: bool) -> None:
+        """Sets status indicicator light on camera"""
+
+        self.led_settings.is_enabled = enabled
+        self.led_settings.blink_rate = 0
+        await self.save_device()
+
+    async def set_hdr(self, enabled: bool) -> None:
+        """Sets HDR (High Dynamic Range) on camera"""
+
+        self.hdr_mode = enabled
+        await self.save_device()
+
+    async def set_video_mode(self, mode: VideoMode) -> None:
+        """Sets video mode on camera"""
+
+        self.video_mode = mode
+        await self.save_device()
+
+    async def set_camera_zoom(self, level: PercentInt) -> None:
+        """Sets zoom level for camera"""
+
+        self.isp_settings.zoom_position = level
+        await self.save_device()
+
+    async def set_wdr_level(self, level: WDRLevel) -> None:
+        """Sets WDR (Wide Dynamic Range) on camera"""
+        self.isp_settings.wdr = level
+        await self.save_device()
+
+    async def set_mic_volume(self, level: PercentInt) -> None:
+        """Sets the mic sensitivity level on camera"""
+        self.mic_volume = level
+        await self.save_device()
+
+    async def set_doorbell_chime_duration(self, duration: ChimeDuration) -> None:
+        """Sets chime duration for doorbell. Requires camera to be a doorbell"""
+        self.require_doorbell()
+
+        self.chime_duration = duration
+        await self.save_device()
+
+    async def set_lcd_text(
+        self, text_type: DoorbellMessageType, text: Optional[str] = None, reset_at: Optional[datetime] = None
+    ) -> None:
+        """Sets doorbell LCD text. Requires camera to be doorbell"""
+        self.require_doorbell()
+
+        if text_type != DoorbellMessageType.CUSTOM_MESSAGE:
+            if text is not None:
+                raise BadRequest("Can only set text if text_type is CUSTOM_MESSAGE")
+            text = text_type.value.replace("_", " ")
+
+        self.lcd_message = LCDMessage(api=self._api, type=text_type, text=text, reset_at=reset_at)
+        await self.save_device()
+
+    async def set_privacy(
+        self, enabled: bool, mic_level: Optional[PercentInt] = None, recording_mode: Optional[RecordingMode] = None
+    ) -> None:
+        """Adds/removes a privacy zone that blacks out the whole camera"""
+
+        if enabled:
+            self.add_privacy_zone()
+        else:
+            self.remove_privacy_zone()
+
+        if mic_level is not None:
+            self.mic_volume = mic_level
+
+        if recording_mode is not None:
+            self.recording_settings.mode = recording_mode
+
+        await self.save_device()
 
 
 class Viewer(ProtectAdoptableDeviceModel):
@@ -614,6 +759,16 @@ class Viewer(ProtectAdoptableDeviceModel):
     @property
     def liveview(self) -> Liveview:
         return self.api.bootstrap.liveviews[self.liveview_id]
+
+    async def set_liveview(self, liveview: Liveview) -> None:
+        """Sets the liveview current set for the viewer"""
+
+        if self._api is not None:
+            if liveview.id not in self._api.bootstrap.liveviews:
+                raise BadRequest("Unknown liveview")
+
+        self.liveview_id = liveview.id
+        await self.save_device()
 
 
 class Bridge(ProtectAdoptableDeviceModel):
