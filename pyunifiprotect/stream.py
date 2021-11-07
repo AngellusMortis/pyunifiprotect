@@ -23,11 +23,8 @@ class FfmpegCommand:
     def __init__(self, cmd: str, ffmpeg_path: Optional[Path] = None) -> None:
         self.args = split(cmd)
 
-        if "ffmpeg" in self.args[0]:
-            default_ffmpeg: Optional[str] = self.args.pop(0)
-
-        if ffmpeg_path is None:
-            self.ffmpeg_path = Path(default_ffmpeg)
+        if "ffmpeg" in self.args[0] and ffmpeg_path is None:
+            self.ffmpeg_path = Path(self.args.pop(0))
         else:
             self.ffmpeg_path = ffmpeg_path
 

@@ -2,6 +2,7 @@
 .vscode/settings.json
 test-data
 ufp-data
+*.mp3
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

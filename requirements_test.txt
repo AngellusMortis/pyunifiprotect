@@ -6,6 +6,8 @@
 #
 aiohttp==3.8.0
     # via pyunifiprotect (setup.cfg)
+aioshutil==1.1
+    # via pyunifiprotect (setup.cfg)
 aiosignal==1.2.0
     # via aiohttp
 astroid==2.8.4
@@ -64,7 +66,7 @@ iniconfig==1.1.1
     # via pytest
 ipython==7.29.0
     # via pyunifiprotect (setup.cfg)
-isort==5.9.3
+isort==5.10.0
     # via pylint
 jedi==0.18.0
     # via ipython
@@ -117,11 +119,11 @@ pluggy==1.0.0
     # via
     #   pytest
     #   tox
-prompt-toolkit==3.0.21
+prompt-toolkit==3.0.22
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
-py==1.10.0
+py==1.11.0
     # via
     #   pytest
     #   tox

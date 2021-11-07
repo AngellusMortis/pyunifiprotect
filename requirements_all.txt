@@ -6,6 +6,8 @@
 #
 aiohttp==3.8.0
     # via pyunifiprotect (setup.cfg)
+aioshutil==1.1
+    # via pyunifiprotect (setup.cfg)
 aiosignal==1.2.0
     # via aiohttp
 async-timeout==4.0.0
@@ -46,7 +48,7 @@ pickleshare==0.7.5
     # via ipython
 pillow==8.4.0
     # via pyunifiprotect (setup.cfg)
-prompt-toolkit==3.0.21
+prompt-toolkit==3.0.22
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
