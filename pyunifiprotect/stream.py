@@ -3,7 +3,7 @@ from __future__ import annotations
 from asyncio.subprocess import PIPE, Process, create_subprocess_exec
 from pathlib import Path
 from shlex import split
-from shutil import which
+from aioshutil import which
 from typing import TYPE_CHECKING, List, Optional
 
 from pyunifiprotect.exceptions import BadRequest, StreamError
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class FfmpegCommand:
-    ffmpeg_path: Path
+    ffmpeg_path: Optional[Path]
     args: List[str]
     process: Optional[Process] = None
 
@@ -25,11 +25,6 @@ class FfmpegCommand:
 
         if "ffmpeg" in self.args[0]:
             default_ffmpeg: Optional[str] = self.args.pop(0)
-        else:
-            default_ffmpeg = which("ffmpeg")
-
-        if default_ffmpeg is None:
-            raise StreamError("Could not find ffmpeg")
 
         if ffmpeg_path is None:
             self.ffmpeg_path = Path(default_ffmpeg)
@@ -90,6 +85,13 @@ class FfmpegCommand:
     async def start(self) -> None:
         if self.is_started:
             raise StreamError("ffmpeg command already started")
+
+        if self.ffmpeg_path is None:
+            system_ffmpeg = await which("ffmpeg")
+
+            if system_ffmpeg is None:
+                raise StreamError("Could not find ffmpeg")
+            self.ffmpeg_path = Path(system_ffmpeg)
 
         if not self.ffmpeg_path.exists():
             raise StreamError("Could not find ffmpeg")
