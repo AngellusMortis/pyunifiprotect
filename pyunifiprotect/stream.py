@@ -3,8 +3,9 @@ from __future__ import annotations
 from asyncio.subprocess import PIPE, Process, create_subprocess_exec
 from pathlib import Path
 from shlex import split
-from aioshutil import which
 from typing import TYPE_CHECKING, List, Optional
+
+from aioshutil import which
 
 from pyunifiprotect.exceptions import BadRequest, StreamError
 
