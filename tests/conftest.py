@@ -279,6 +279,16 @@ async def camera_with_mic_obj(protect_client: ProtectApiClient):  # pylint: disa
 
 @pytest.fixture
 @pytest.mark.asyncio
+async def camera_with_speaker_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+    for c in protect_client.bootstrap.cameras.values():
+        if c.feature_flags.has_speaker:
+            return c
+
+    return None
+
+
+@pytest.fixture
+@pytest.mark.asyncio
 async def camera_with_privacy_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
     for c in protect_client.bootstrap.cameras.values():
         if c.feature_flags.has_privacy_mask:

@@ -314,6 +314,33 @@ async def test_camera_set_mic_volume(camera_with_mic_obj: Optional[Camera], leve
         )
 
 
+@pytest.mark.parametrize("level", [-1, 0, 100, 200])
+@pytest.mark.asyncio
+async def test_camera_set_speaker_volume(camera_with_speaker_obj: Optional[Camera], level: int):
+    camera = camera_with_speaker_obj
+    if camera is None:
+        pytest.skip("No Camera obj found")
+
+    camera.api.api_request.reset_mock()
+
+    camera.speaker_settings.volume = 10
+    camera._initial_data = camera.dict()  # pylint: disable=protected-access
+
+    if level in (-1, 200):
+        with pytest.raises(ValidationError):
+            await camera.set_speaker_volume(level)
+
+        assert not camera.api.api_request.called
+    else:
+        await camera.set_speaker_volume(level)
+
+        camera.api.api_request.assert_called_with(
+            f"cameras/{camera.id}",
+            method="patch",
+            json={"speakerSettings": {"volume": level}},
+        )
+
+
 @pytest.mark.asyncio
 async def test_camera_set_chime_duration_no_chime(camera_with_no_chime_obj: Optional[Camera]):
     camera = camera_with_no_chime_obj

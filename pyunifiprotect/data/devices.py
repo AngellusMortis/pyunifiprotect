@@ -719,6 +719,15 @@ class Camera(ProtectMotionDeviceModel):
         self.mic_volume = level
         await self.save_device()
 
+    async def set_speaker_volume(self, level: PercentInt) -> None:
+        """Sets the speaker sensitivity level on camera"""
+
+        if not self.feature_flags.has_speaker:
+            raise BadRequest("Camera does not have speaker")
+
+        self.speaker_settings.volume = level
+        await self.save_device()
+
     async def set_chime_duration(self, duration: ChimeDuration) -> None:
         """Sets chime duration for doorbell. Requires camera to be a doorbell"""
 
