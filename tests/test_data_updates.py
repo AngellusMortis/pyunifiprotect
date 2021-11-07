@@ -315,8 +315,8 @@ async def test_camera_set_mic_volume(camera_with_mic_obj: Optional[Camera], leve
 
 
 @pytest.mark.asyncio
-async def test_camera_set_chime_duration_camera(camera_with_chime_obj: Optional[Camera]):
-    camera = camera_with_chime_obj
+async def test_camera_set_chime_duration_no_chime(camera_with_no_chime_obj: Optional[Camera]):
+    camera = camera_with_no_chime_obj
     if camera is None:
         pytest.skip("No Camera obj found")
 

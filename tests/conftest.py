@@ -250,6 +250,16 @@ async def any_camera_obj(protect_client: ProtectApiClient):  # pylint: disable=r
 
 @pytest.fixture
 @pytest.mark.asyncio
+async def camera_with_no_chime_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+    for c in protect_client.bootstrap.cameras.values():
+        if not c.feature_flags.has_chime:
+            return c
+
+    return None
+
+
+@pytest.fixture
+@pytest.mark.asyncio
 async def camera_with_chime_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
     for c in protect_client.bootstrap.cameras.values():
         if c.feature_flags.has_chime:
