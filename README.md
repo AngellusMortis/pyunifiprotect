@@ -1,10 +1,51 @@
 # Python Wrapper for Unifi Protect API
 
-This module communicates with Unifi Protect Surveillance software installed on either a Ubiquiti CloudKey+ or Unifi Dream Machine Pro.
+[![Latest PyPI version](https://img.shields.io/pypi/v/pyunifiprotect)](https://pypi.org/project/pyunifiprotect/) [![Supported Python](https://img.shields.io/pypi/pyversions/pyunifiprotect)](https://pypi.org/project/pyunifiprotect/) [![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) [![CI](https://github.com/briis/pyunifiprotect/actions/workflows/ci.yaml/badge.svg)](https://github.com/briis/pyunifiprotect/actions/workflows/ci.yaml)
+
+
+This module communicates with Unifi Protect Surveillance software installed on a UnifiOS Console such as a Ubiquiti CloudKey+ or Unifi Dream Machine Pro
 
 The API is not documented by Ubiquiti, so there might be misses and/or frequent changes in this module, as Ubiquiti evolves the software.
 
-The module is written for the sole purpose as being used in Home Assistant for the Custom Integration called `unifiprotect` but might be used for other purposes also.
+The module is primarily written for the purpose of being used in Home Assistant for the Custom Integration called `unifiprotect` but might be used for other purposes also.
+
+Requires Unifi Protect version 1.20 or higher and Python 3.8+.
+
+## Install
+
+`pyunifiprotect` is avaible on PyPi:
+
+```bash
+pip install pyunifiprotect
+```
+
+## Usage
+
+Unifi Protect itself is 100% async, so as such this library is primarily designed to be used in an async context.
+
+The main interface for the library is the `pyunifiprotect.ProtectApiClient`:
+
+```python
+from pyunifiprotect import ProtectApiClient
+
+protect = ProtectApiClient(host, port, username, password, verify_ssl=True)
+
+await protect.update() # this will initalize the protect .bootstrap and open a Websocket connection for updates
+
+# get names of your cameras
+for camera in protect.bootstrap.cameras.values():
+    print(camera.name)
+
+# subscribe to Websocket for updates to UFP
+def callback(msg: WSSubscriptionMessage):
+    # do stuff
+
+unsub = protect.subscribe_websocket(callback)
+
+# remove subscription
+unsub()
+
+```
 
 ## Development
 
