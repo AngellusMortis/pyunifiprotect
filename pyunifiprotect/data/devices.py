@@ -606,10 +606,6 @@ class Camera(ProtectMotionDeviceModel):
         return data
 
     @property
-    def is_doorbell(self) -> bool:
-        return self.feature_flags.has_chime
-
-    @property
     def last_ring_event(self) -> Optional[Event]:
         if self.last_ring_event_id is None:
             return None
@@ -678,6 +674,9 @@ class Camera(ProtectMotionDeviceModel):
     async def set_status_light(self, enabled: bool) -> None:
         """Sets status indicicator light on camera"""
 
+        if not self.feature_flags.has_led_status:
+            raise BadRequest("Camera does not have status light")
+
         self.led_settings.is_enabled = enabled
         self.led_settings.blink_rate = 0
         await self.save_device()
@@ -720,10 +719,10 @@ class Camera(ProtectMotionDeviceModel):
         self.mic_volume = level
         await self.save_device()
 
-    async def set_doorbell_chime_duration(self, duration: ChimeDuration) -> None:
+    async def set_chime_duration(self, duration: ChimeDuration) -> None:
         """Sets chime duration for doorbell. Requires camera to be a doorbell"""
 
-        if not self.is_doorbell:
+        if not self.feature_flags.has_chime:
             raise BadRequest("Camera does not have a chime")
 
         self.chime_duration = duration

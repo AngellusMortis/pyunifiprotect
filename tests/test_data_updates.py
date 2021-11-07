@@ -21,12 +21,12 @@ from pyunifiprotect.utils import to_js_time
 
 
 @pytest.mark.asyncio
-async def test_save_device_no_changes(camera_obj: Camera):
-    camera_obj.api.api_request.reset_mock()
+async def test_save_device_no_changes(any_camera_obj: Camera):
+    any_camera_obj.api.api_request.reset_mock()
 
-    await camera_obj.save_device()
+    await any_camera_obj.save_device()
 
-    assert not camera_obj.api.api_request.called
+    assert not any_camera_obj.api.api_request.called
 
 
 @pytest.mark.parametrize("status", [True, False])
@@ -130,16 +130,20 @@ async def test_viewer_set_liveview_valid(viewer_obj: Viewer, liveview_obj: Livev
 
 @pytest.mark.parametrize("mode", [RecordingMode.ALWAYS, RecordingMode.DETECTIONS])
 @pytest.mark.asyncio
-async def test_camera_set_recording_mode(camera_obj: Camera, mode: RecordingMode):
-    camera_obj.api.api_request.reset_mock()
+async def test_camera_set_recording_mode(any_camera_obj: Optional[Camera], mode: RecordingMode):
+    camera = any_camera_obj
+    if camera is None:
+        pytest.skip("No Camera obj found")
 
-    camera_obj.recording_settings.mode = RecordingMode.NEVER
-    camera_obj._initial_data = camera_obj.dict()  # pylint: disable=protected-access
+    camera.api.api_request.reset_mock()
 
-    await camera_obj.set_recording_mode(mode)
+    camera.recording_settings.mode = RecordingMode.NEVER
+    camera._initial_data = camera.dict()  # pylint: disable=protected-access
 
-    camera_obj.api.api_request.assert_called_with(
-        f"cameras/{camera_obj.id}",
+    await camera.set_recording_mode(mode)
+
+    camera.api.api_request.assert_called_with(
+        f"cameras/{camera.id}",
         method="patch",
         json={"recordingSettings": {"mode": mode.value}},
     )
@@ -147,16 +151,20 @@ async def test_camera_set_recording_mode(camera_obj: Camera, mode: RecordingMode
 
 @pytest.mark.parametrize("mode", [IRLEDMode.AUTO, IRLEDMode.ON])
 @pytest.mark.asyncio
-async def test_camera_set_ir_led_model(camera_obj: Camera, mode: IRLEDMode):
-    camera_obj.api.api_request.reset_mock()
+async def test_camera_set_ir_led_model(camera_with_led_ir_obj: Optional[Camera], mode: IRLEDMode):
+    camera = camera_with_led_ir_obj
+    if camera is None:
+        pytest.skip("No Camera obj found")
 
-    camera_obj.isp_settings.ir_led_mode = IRLEDMode.OFF
-    camera_obj._initial_data = camera_obj.dict()  # pylint: disable=protected-access
+    camera.api.api_request.reset_mock()
 
-    await camera_obj.set_ir_led_model(mode)
+    camera.isp_settings.ir_led_mode = IRLEDMode.OFF
+    camera._initial_data = camera.dict()  # pylint: disable=protected-access
 
-    camera_obj.api.api_request.assert_called_with(
-        f"cameras/{camera_obj.id}",
+    await camera.set_ir_led_model(mode)
+
+    camera.api.api_request.assert_called_with(
+        f"cameras/{camera.id}",
         method="patch",
         json={"ispSettings": {"irLedMode": mode.value}},
     )
@@ -164,17 +172,21 @@ async def test_camera_set_ir_led_model(camera_obj: Camera, mode: IRLEDMode):
 
 @pytest.mark.parametrize("status", [True, False])
 @pytest.mark.asyncio
-async def test_camera_set_status_light(camera_obj: Camera, status: bool):
-    camera_obj.api.api_request.reset_mock()
+async def test_camera_set_status_light(camera_with_status_obj: Optional[Camera], status: bool):
+    camera = camera_with_status_obj
+    if camera is None:
+        pytest.skip("No Camera obj found")
 
-    camera_obj.led_settings.is_enabled = not status
-    camera_obj.led_settings.blink_rate = 10
-    camera_obj._initial_data = camera_obj.dict()  # pylint: disable=protected-access
+    camera.api.api_request.reset_mock()
 
-    await camera_obj.set_status_light(status)
+    camera.led_settings.is_enabled = not status
+    camera.led_settings.blink_rate = 10
+    camera._initial_data = camera.dict()  # pylint: disable=protected-access
 
-    camera_obj.api.api_request.assert_called_with(
-        f"cameras/{camera_obj.id}",
+    await camera.set_status_light(status)
+
+    camera.api.api_request.assert_called_with(
+        f"cameras/{camera.id}",
         method="patch",
         json={"ledSettings": {"isEnabled": status, "blinkRate": 0}},
     )
@@ -182,32 +194,40 @@ async def test_camera_set_status_light(camera_obj: Camera, status: bool):
 
 @pytest.mark.parametrize("status", [True, False])
 @pytest.mark.asyncio
-async def test_camera_set_hdr(camera_obj: Camera, status: bool):
-    camera_obj.api.api_request.reset_mock()
+async def test_camera_set_hdr(camera_with_hdr_obj: Optional[Camera], status: bool):
+    camera = camera_with_hdr_obj
+    if camera is None:
+        pytest.skip("No Camera obj found")
 
-    camera_obj.hdr_mode = not status
-    camera_obj._initial_data = camera_obj.dict()  # pylint: disable=protected-access
+    camera.api.api_request.reset_mock()
 
-    await camera_obj.set_hdr(status)
+    camera.hdr_mode = not status
+    camera._initial_data = camera.dict()  # pylint: disable=protected-access
 
-    camera_obj.api.api_request.assert_called_with(
-        f"cameras/{camera_obj.id}",
+    await camera.set_hdr(status)
+
+    camera.api.api_request.assert_called_with(
+        f"cameras/{camera.id}",
         method="patch",
         json={"hdrMode": status},
     )
 
 
 @pytest.mark.asyncio
-async def test_camera_set_video_mode(camera_obj: Camera):
-    camera_obj.api.api_request.reset_mock()
+async def test_camera_set_video_mode(any_camera_obj: Optional[Camera]):
+    camera = any_camera_obj
+    if camera is None:
+        pytest.skip("No Camera obj found")
 
-    camera_obj.video_mode = VideoMode.DEFAULT
-    camera_obj._initial_data = camera_obj.dict()  # pylint: disable=protected-access
+    camera.api.api_request.reset_mock()
 
-    await camera_obj.set_video_mode(VideoMode.HIGH_FPS)
+    camera.video_mode = VideoMode.DEFAULT
+    camera._initial_data = camera.dict()  # pylint: disable=protected-access
 
-    camera_obj.api.api_request.assert_called_with(
-        f"cameras/{camera_obj.id}",
+    await camera.set_video_mode(VideoMode.HIGH_FPS)
+
+    camera.api.api_request.assert_called_with(
+        f"cameras/{camera.id}",
         method="patch",
         json={"videoMode": VideoMode.HIGH_FPS.value},
     )
@@ -215,22 +235,26 @@ async def test_camera_set_video_mode(camera_obj: Camera):
 
 @pytest.mark.parametrize("level", [-1, 0, 100, 200])
 @pytest.mark.asyncio
-async def test_camera_set_camera_zoom(camera_obj: Camera, level: int):
-    camera_obj.api.api_request.reset_mock()
+async def test_camera_set_camera_zoom(any_camera_obj: Optional[Camera], level: int):
+    camera = any_camera_obj
+    if camera is None:
+        pytest.skip("No Camera obj found")
 
-    camera_obj.isp_settings.zoom_position = 10
-    camera_obj._initial_data = camera_obj.dict()  # pylint: disable=protected-access
+    camera.api.api_request.reset_mock()
+
+    camera.isp_settings.zoom_position = 10
+    camera._initial_data = camera.dict()  # pylint: disable=protected-access
 
     if level in (-1, 200):
         with pytest.raises(ValidationError):
-            await camera_obj.set_camera_zoom(level)
+            await camera.set_camera_zoom(level)
 
-        assert not camera_obj.api.api_request.called
+        assert not camera.api.api_request.called
     else:
-        await camera_obj.set_camera_zoom(level)
+        await camera.set_camera_zoom(level)
 
-        camera_obj.api.api_request.assert_called_with(
-            f"cameras/{camera_obj.id}",
+        camera.api.api_request.assert_called_with(
+            f"cameras/{camera.id}",
             method="patch",
             json={"ispSettings": {"zoomPosition": level}},
         )
@@ -238,22 +262,26 @@ async def test_camera_set_camera_zoom(camera_obj: Camera, level: int):
 
 @pytest.mark.parametrize("level", [-1, 0, 3, 4])
 @pytest.mark.asyncio
-async def test_camera_set_wdr_level(camera_obj: Camera, level: int):
-    camera_obj.api.api_request.reset_mock()
+async def test_camera_set_wdr_level(any_camera_obj: Optional[Camera], level: int):
+    camera = any_camera_obj
+    if camera is None:
+        pytest.skip("No Camera obj found")
 
-    camera_obj.isp_settings.wdr = 2
-    camera_obj._initial_data = camera_obj.dict()  # pylint: disable=protected-access
+    camera.api.api_request.reset_mock()
+
+    camera.isp_settings.wdr = 2
+    camera._initial_data = camera.dict()  # pylint: disable=protected-access
 
     if level in (-1, 4):
         with pytest.raises(ValidationError):
-            await camera_obj.set_wdr_level(level)
+            await camera.set_wdr_level(level)
 
-            assert not camera_obj.api.api_request.called
+            assert not camera.api.api_request.called
     else:
-        await camera_obj.set_wdr_level(level)
+        await camera.set_wdr_level(level)
 
-        camera_obj.api.api_request.assert_called_with(
-            f"cameras/{camera_obj.id}",
+        camera.api.api_request.assert_called_with(
+            f"cameras/{camera.id}",
             method="patch",
             json={"ispSettings": {"wdr": level}},
         )
@@ -261,84 +289,102 @@ async def test_camera_set_wdr_level(camera_obj: Camera, level: int):
 
 @pytest.mark.parametrize("level", [-1, 0, 100, 200])
 @pytest.mark.asyncio
-async def test_camera_set_mic_volume(camera_obj: Camera, level: int):
-    camera_obj.api.api_request.reset_mock()
+async def test_camera_set_mic_volume(camera_with_mic_obj: Optional[Camera], level: int):
+    camera = camera_with_mic_obj
+    if camera is None:
+        pytest.skip("No Camera obj found")
 
-    camera_obj.mic_volume = 10
-    camera_obj._initial_data = camera_obj.dict()  # pylint: disable=protected-access
+    camera.api.api_request.reset_mock()
+
+    camera.mic_volume = 10
+    camera._initial_data = camera.dict()  # pylint: disable=protected-access
 
     if level in (-1, 200):
         with pytest.raises(ValidationError):
-            await camera_obj.set_mic_volume(level)
+            await camera.set_mic_volume(level)
 
-        assert not camera_obj.api.api_request.called
+        assert not camera.api.api_request.called
     else:
-        await camera_obj.set_mic_volume(level)
+        await camera.set_mic_volume(level)
 
-        camera_obj.api.api_request.assert_called_with(
-            f"cameras/{camera_obj.id}",
+        camera.api.api_request.assert_called_with(
+            f"cameras/{camera.id}",
             method="patch",
             json={"micVolume": level},
         )
 
 
 @pytest.mark.asyncio
-async def test_camera_set_doorbell_chime_duration_camera(camera_obj: Camera):
-    camera_obj.api.api_request.reset_mock()
+async def test_camera_set_chime_duration_camera(camera_with_chime_obj: Optional[Camera]):
+    camera = camera_with_chime_obj
+    if camera is None:
+        pytest.skip("No Camera obj found")
+
+    camera.api.api_request.reset_mock()
 
     with pytest.raises(BadRequest):
-        await camera_obj.set_doorbell_chime_duration(1000)
+        await camera.set_chime_duration(1000)
 
-    assert not camera_obj.api.api_request.called
+    assert not camera.api.api_request.called
 
 
 @pytest.mark.parametrize("duration", [-1, 0, 5000, 10000, 20000])
 @pytest.mark.asyncio
-async def test_camera_set_doorbell_chime_duration(doorbell_obj: Camera, duration: int):
-    doorbell_obj.api.api_request.reset_mock()
+async def test_camera_set_chime_duration_duration(camera_with_chime_obj: Optional[Camera], duration: int):
+    camera = camera_with_chime_obj
+    if camera is None:
+        pytest.skip("No Camera obj found")
 
-    doorbell_obj.mic_volume = 10
-    doorbell_obj._initial_data = doorbell_obj.dict()  # pylint: disable=protected-access
+    camera.api.api_request.reset_mock()
+
+    camera.mic_volume = 10
+    camera._initial_data = camera.dict()  # pylint: disable=protected-access
 
     if duration in (-1, 20000):
         with pytest.raises(ValidationError):
-            await doorbell_obj.set_doorbell_chime_duration(duration)
+            await camera.set_chime_duration(duration)
 
-        assert not doorbell_obj.api.api_request.called
+        assert not camera.api.api_request.called
     else:
-        await doorbell_obj.set_doorbell_chime_duration(duration)
+        await camera.set_chime_duration(duration)
 
-        doorbell_obj.api.api_request.assert_called_with(
-            f"cameras/{doorbell_obj.id}",
+        camera.api.api_request.assert_called_with(
+            f"cameras/{camera.id}",
             method="patch",
             json={"chimeDuration": duration},
         )
 
 
 @pytest.mark.asyncio
-async def test_camera_set_lcd_text_camera(camera_obj: Camera):
-    camera_obj.api.api_request.reset_mock()
+async def test_camera_set_lcd_text_camera(camera_with_lcd_obj: Optional[Camera]):
+    camera = camera_with_lcd_obj
+    if camera is None:
+        pytest.skip("No Camera obj found")
+
+    camera.api.api_request.reset_mock()
 
     with pytest.raises(BadRequest):
-        await camera_obj.set_lcd_text(DoorbellMessageType.DO_NOT_DISTURB)
+        await camera.set_lcd_text(DoorbellMessageType.DO_NOT_DISTURB)
 
-    assert not camera_obj.api.api_request.called
+    assert not camera.api.api_request.called
 
 
 @pytest.mark.asyncio
-async def test_camera_set_lcd_text_custom(doorbell_obj: Camera):
-    doorbell_obj.api.api_request.reset_mock()
+async def test_camera_set_lcd_text_custom(camera_with_lcd_obj: Optional[Camera]):
+    camera = camera_with_lcd_obj
 
-    doorbell_obj.lcd_message.type = DoorbellMessageType.DO_NOT_DISTURB
-    doorbell_obj.lcd_message.text = DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " ")
-    doorbell_obj.lcd_message.reset_at = None
-    doorbell_obj._initial_data = doorbell_obj.dict()  # pylint: disable=protected-access
+    camera.api.api_request.reset_mock()
+
+    camera.lcd_message.type = DoorbellMessageType.DO_NOT_DISTURB
+    camera.lcd_message.text = DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " ")
+    camera.lcd_message.reset_at = None
+    camera._initial_data = camera.dict()  # pylint: disable=protected-access
 
     now = datetime.utcnow()
-    await doorbell_obj.set_lcd_text(DoorbellMessageType.CUSTOM_MESSAGE, "Test", now)
+    await camera.set_lcd_text(DoorbellMessageType.CUSTOM_MESSAGE, "Test", now)
 
-    doorbell_obj.api.api_request.assert_called_with(
-        f"cameras/{doorbell_obj.id}",
+    camera.api.api_request.assert_called_with(
+        f"cameras/{camera.id}",
         method="patch",
         json={
             "lcdMessage": {
@@ -351,28 +397,36 @@ async def test_camera_set_lcd_text_custom(doorbell_obj: Camera):
 
 
 @pytest.mark.asyncio
-async def test_camera_set_lcd_text_invalid_text(doorbell_obj: Camera):
-    doorbell_obj.api.api_request.reset_mock()
+async def test_camera_set_lcd_text_invalid_text(camera_with_lcd_obj: Optional[Camera]):
+    camera = camera_with_lcd_obj
+    if camera is None:
+        pytest.skip("No Camera obj found")
+
+    camera.api.api_request.reset_mock()
 
     with pytest.raises(BadRequest):
-        await doorbell_obj.set_lcd_text(DoorbellMessageType.DO_NOT_DISTURB, "Test")
+        await camera.set_lcd_text(DoorbellMessageType.DO_NOT_DISTURB, "Test")
 
-    assert not doorbell_obj.api.api_request.called
+    assert not camera.api.api_request.called
 
 
 @pytest.mark.asyncio
-async def test_camera_set_lcd_text(doorbell_obj: Camera):
-    doorbell_obj.api.api_request.reset_mock()
+async def test_camera_set_lcd_text(camera_with_lcd_obj: Optional[Camera]):
+    camera = camera_with_lcd_obj
+    if camera is None:
+        pytest.skip("No Camera obj found")
 
-    doorbell_obj.lcd_message.type = DoorbellMessageType.DO_NOT_DISTURB
-    doorbell_obj.lcd_message.text = DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " ")
-    doorbell_obj.lcd_message.reset_at = None
-    doorbell_obj._initial_data = doorbell_obj.dict()  # pylint: disable=protected-access
+    camera.api.api_request.reset_mock()
 
-    await doorbell_obj.set_lcd_text(DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR)
+    camera.lcd_message.type = DoorbellMessageType.DO_NOT_DISTURB
+    camera.lcd_message.text = DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " ")
+    camera.lcd_message.reset_at = None
+    camera._initial_data = camera.dict()  # pylint: disable=protected-access
 
-    doorbell_obj.api.api_request.assert_called_with(
-        f"cameras/{doorbell_obj.id}",
+    await camera.set_lcd_text(DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR)
+
+    camera.api.api_request.assert_called_with(
+        f"cameras/{camera.id}",
         method="patch",
         json={
             "lcdMessage": {
@@ -389,22 +443,30 @@ async def test_camera_set_lcd_text(doorbell_obj: Camera):
 @pytest.mark.parametrize("mode", [None, RecordingMode.ALWAYS])
 @pytest.mark.asyncio
 async def test_camera_set_privacy(
-    camera_obj: Camera, actual_enabled: bool, enabled: bool, level: Optional[int], mode: Optional[RecordingMode]
+    camera_with_privacy_obj: Optional[Camera],
+    actual_enabled: bool,
+    enabled: bool,
+    level: Optional[int],
+    mode: Optional[RecordingMode],
 ):
-    camera_obj.api.api_request.reset_mock()
+    camera = camera_with_privacy_obj
+    if camera is None:
+        pytest.skip("No Camera obj found")
 
-    camera_obj.privacy_zones = []
+    camera.api.api_request.reset_mock()
+
+    camera.privacy_zones = []
     if actual_enabled:
-        camera_obj.add_privacy_zone()
-    camera_obj.mic_volume = 10
-    camera_obj.recording_settings.mode = RecordingMode.NEVER
-    camera_obj._initial_data = camera_obj.dict()  # pylint: disable=protected-access
+        camera.add_privacy_zone()
+    camera.mic_volume = 10
+    camera.recording_settings.mode = RecordingMode.NEVER
+    camera._initial_data = camera.dict()  # pylint: disable=protected-access
 
     if level in (-1, 200):
         with pytest.raises(ValidationError):
-            await camera_obj.set_privacy(enabled, level, mode)
+            await camera.set_privacy(enabled, level, mode)
 
-        assert not camera_obj.api.api_request.called
+        assert not camera.api.api_request.called
     else:
         expected = {}
 
@@ -426,13 +488,13 @@ async def test_camera_set_privacy(
             else:
                 expected.update({"privacyZones": []})
 
-        await camera_obj.set_privacy(enabled, level, mode)
+        await camera.set_privacy(enabled, level, mode)
 
         if expected == {}:
-            assert not camera_obj.api.api_request.called
+            assert not camera.api.api_request.called
         else:
-            camera_obj.api.api_request.assert_called_with(
-                f"cameras/{camera_obj.id}",
+            camera.api.api_request.assert_called_with(
+                f"cameras/{camera.id}",
                 method="patch",
                 json=expected,
             )
