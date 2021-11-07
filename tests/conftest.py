@@ -15,7 +15,7 @@ import aiohttp
 import pytest
 
 from pyunifiprotect import ProtectApiClient, UpvServer
-from pyunifiprotect.data import ModelType
+from pyunifiprotect.data import Camera, ModelType
 from pyunifiprotect.utils import set_debug, set_no_debug
 from tests.sample_data.constants import CONSTANTS
 
@@ -289,6 +289,16 @@ async def camera_with_speaker_obj(protect_client: ProtectApiClient):  # pylint: 
 
 @pytest.fixture
 @pytest.mark.asyncio
+async def camera_with_no_speaker_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+    for c in protect_client.bootstrap.cameras.values():
+        if not c.feature_flags.has_speaker:
+            return c
+
+    return None
+
+
+@pytest.fixture
+@pytest.mark.asyncio
 async def camera_with_privacy_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
     for c in protect_client.bootstrap.cameras.values():
         if c.feature_flags.has_privacy_mask:
@@ -464,3 +474,19 @@ def compare_objs(obj_type, expected, actual):
         actual["hardwareRevision"] = str(actual["hardwareRevision"])
 
     assert expected == actual
+
+
+@pytest.fixture
+def disable_camera_validation():
+    Camera.__config__.validate_assignment = False
+
+    yield
+
+    Camera.__config__.validate_assignment = True
+
+
+class MockTalkback:
+    is_error: bool = False
+
+    run_until_complete = AsyncMock()
+    get_errors = AsyncMock(return_value=[])

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from ipaddress import IPv4Address
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 from uuid import UUID
 
@@ -26,7 +27,8 @@ from pyunifiprotect.data.types import (
     VideoMode,
     WDRLevel,
 )
-from pyunifiprotect.exceptions import BadRequest
+from pyunifiprotect.exceptions import BadRequest, StreamError
+from pyunifiprotect.stream import TalkbackStream
 from pyunifiprotect.utils import (
     is_debug,
     process_datetime,
@@ -582,6 +584,16 @@ class Camera(ProtectMotionDeviceModel):
     last_ring_event_id: Optional[str] = None
     last_smart_detect: Optional[datetime] = None
     last_smart_detect_event_id: Optional[str] = None
+    talkback_stream: Optional[TalkbackStream] = None
+
+    @classmethod
+    def _get_excluded_changed_fields(cls) -> Set[str]:
+        return super()._get_excluded_changed_fields() | {
+            "last_ring_event_id",
+            "last_smart_detect",
+            "last_smart_detect_event_id",
+            "talkback_stream",
+        }
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -600,6 +612,8 @@ class Camera(ProtectMotionDeviceModel):
             del data["lastSmartDetect"]
         if "lastSmartDetectEventId" in data:
             del data["lastSmartDetectEventId"]
+        if "talkbackStream" in data:
+            del data["talkbackStream"]
         if "lcdMessage" in data and data["lcdMessage"] is None:
             data["lcdMessage"] = {}
 
@@ -773,6 +787,45 @@ class Camera(ProtectMotionDeviceModel):
             self.recording_settings.mode = recording_mode
 
         await self.save_device()
+
+    def create_talkback_stream(self, content_url: str, ffmpeg_path: Optional[Path] = None) -> TalkbackStream:
+        """
+        Creates a subprocess to play audio to a camera through its speaker.
+
+        Requires ffmpeg to use.
+
+        :param content_url: Either a URL accessible by python or a path to a file (ffmepg's `-i` parameter)
+        :param ffmpeg_path: Optional path to ffmpeg binary
+
+        Use either `await stream.run_until_complete()` or `await stream.start()` to start subprocess command
+        after getting the stream.
+
+        `.play_audio()` is a helper that wraps this method and automatically runs the subprocess as well
+        """
+
+        if self.talkback_stream is not None and self.talkback_stream.is_running:
+            raise BadRequest("Camera is already playing audio")
+
+        self.talkback_stream = TalkbackStream(self, content_url, ffmpeg_path)
+        return self.talkback_stream
+
+    async def play_audio(self, content_url: str, ffmpeg_path: Optional[Path] = None) -> None:
+        """
+        Plays audio to a camera through its speaker.
+
+        Requires ffmpeg to use.
+
+        :param content_url: Either a URL accessible by python or a path to a file (ffmepg's `-i` parameter)
+        :param ffmpeg_path: Optional path to ffmpeg binary
+        """
+
+        stream = self.create_talkback_stream(content_url, ffmpeg_path)
+
+        await stream.run_until_complete()
+
+        if stream.is_error:
+            error = "\n".join(await stream.get_errors())
+            raise StreamError("Error while playing audio (ffmpeg): \n" + error)
 
 
 class Viewer(ProtectAdoptableDeviceModel):

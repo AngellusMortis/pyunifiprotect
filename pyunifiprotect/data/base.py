@@ -67,8 +67,12 @@ class ProtectBaseObject(BaseModel):
         """
         super().__init__(**data)
 
-        self._initial_data = self.dict()
+        self._initial_data = self.dict(exclude=self._get_excluded_changed_fields())
         self._api = api
+
+    @classmethod
+    def _get_excluded_changed_fields(cls) -> Set[str]:
+        return set()
 
     @classmethod
     def from_unifi_dict(cls, api: Optional[ProtectApiClient] = None, **data: Any) -> ProtectObject:
@@ -110,7 +114,7 @@ class ProtectBaseObject(BaseModel):
                 values[key] = {k: klass.construct(**v) if isinstance(v, dict) else v for k, v in values[key].items()}
 
         obj = super().construct(_fields_set=_fields_set, **values)
-        obj._initial_data = obj.dict()  # pylint: disable=protected-access
+        obj._initial_data = obj.dict(exclude=cls._get_excluded_changed_fields())  # pylint: disable=protected-access
         obj._api = api  # pylint: disable=protected-access
 
         return obj  # type: ignore
@@ -515,7 +519,7 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
         return f"{self.api.base_url}/protect/devices/{self.id}"
 
     def get_changed(self) -> Dict[str, Any]:
-        new_data = self.dict()
+        new_data = self.dict(exclude=self._get_excluded_changed_fields())
         updated = dict_diff(self._initial_data, new_data)
 
         return updated
@@ -533,7 +537,7 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
         if self.model is None:
             raise BadRequest("Unknown model type")
 
-        new_data = self.dict()
+        new_data = self.dict(exclude=self._get_excluded_changed_fields())
         updated = self.unifi_dict(data=self.get_changed())
 
         # do not patch when there are no updates

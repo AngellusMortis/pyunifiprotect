@@ -2,6 +2,10 @@ class UnifiProtectError(Exception):
     """Base class for all other Unifi Protect errors"""
 
 
+class StreamError(UnifiProtectError):
+    """Expcetion raised when trying to stream content"""
+
+
 class DataDecodeError(UnifiProtectError):
     """Exception raised when trying to decode a Unifi Protect object"""
 
