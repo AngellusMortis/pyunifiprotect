@@ -1,7 +1,14 @@
 from pyunifiprotect.data.base import ProtectBaseObject, ProtectModel
 from pyunifiprotect.data.bootstrap import Bootstrap
 from pyunifiprotect.data.convert import create_from_unifi_dict
-from pyunifiprotect.data.devices import Bridge, Camera, Light, Sensor, Viewer
+from pyunifiprotect.data.devices import (
+    Bridge,
+    Camera,
+    LCDMessage,
+    Light,
+    Sensor,
+    Viewer,
+)
 from pyunifiprotect.data.nvr import (
     NVR,
     CloudAccount,
@@ -56,6 +63,7 @@ __all__ = [
     "FixSizeOrderedDict",
     "Group",
     "IRLEDMode",
+    "LCDMessage",
     "Light",
     "LightModeEnableType",
     "LightModeType",
@@ -73,6 +81,7 @@ __all__ = [
     "StateType",
     "User",
     "UserLocation",
+    "VideoMode",
     "Viewer",
     "WDRLevel",
     "WS_HEADER_SIZE",
@@ -82,5 +91,4 @@ __all__ = [
     "WSPacketFrameHeader",
     "WSRawPacketFrame",
     "WSSubscriptionMessage",
-    "VideoMode",
 ]

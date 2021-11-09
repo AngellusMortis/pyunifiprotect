@@ -716,6 +716,9 @@ class Camera(ProtectMotionDeviceModel):
     async def set_camera_zoom(self, level: PercentInt) -> None:
         """Sets zoom level for camera"""
 
+        if not self.feature_flags.can_optical_zoom:
+            raise BadRequest("Camera cannot optical zoom")
+
         self.isp_settings.zoom_position = level
         await self.save_device()
 

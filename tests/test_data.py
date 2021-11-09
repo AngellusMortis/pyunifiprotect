@@ -1,4 +1,5 @@
 """Tests for pyunifiprotect.data"""
+# pylint: disable=protected-access
 
 import base64
 from copy import deepcopy
@@ -210,34 +211,40 @@ def test_fix_order_size_dict_negative_max():
 
 
 @pytest.mark.asyncio
-async def test_play_audio_no_speaker(camera_with_no_speaker_obj: Camera):
+async def test_play_audio_no_speaker(camera_obj: Camera):
+    camera_obj.feature_flags.has_speaker = False
+    camera_obj._initial_data = camera_obj.dict()
+
     with pytest.raises(BadRequest):
-        await camera_with_no_speaker_obj.play_audio("test")
+        await camera_obj.play_audio("test")
 
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("disable_camera_validation")
-async def test_play_audio_already_playing(camera_with_speaker_obj: Camera):
-    camera = camera_with_speaker_obj
-    camera.talkback_stream = Mock()
-    camera.talkback_stream.is_running = True
+async def test_play_audio_already_playing(camera_obj: Camera):
+    camera_obj.feature_flags.has_speaker = True
+    camera_obj._initial_data = camera_obj.dict()
+
+    camera_obj.talkback_stream = Mock()
+    camera_obj.talkback_stream.is_running = True
 
     with pytest.raises(BadRequest):
-        await camera.play_audio("test")
+        await camera_obj.play_audio("test")
 
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("disable_camera_validation")
 @patch("pyunifiprotect.data.devices.TalkbackStream")
-async def test_play_audio(mock_talkback, camera_with_speaker_obj: Camera):
+async def test_play_audio(mock_talkback, camera_obj: Camera):
+    camera_obj.feature_flags.has_speaker = True
+    camera_obj._initial_data = camera_obj.dict()
+
     mock_instance = MockTalkback()
     mock_talkback.return_value = mock_instance
 
-    camera = camera_with_speaker_obj
+    await camera_obj.play_audio("test")
 
-    await camera.play_audio("test")
-
-    mock_talkback.assert_called_with(camera, "test", None)
+    mock_talkback.assert_called_with(camera_obj, "test", None)
     assert mock_instance.run_until_complete.called
     assert not mock_instance.get_errors.called
 
@@ -245,16 +252,17 @@ async def test_play_audio(mock_talkback, camera_with_speaker_obj: Camera):
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("disable_camera_validation")
 @patch("pyunifiprotect.data.devices.TalkbackStream")
-async def test_play_audio_error(mock_talkback, camera_with_speaker_obj: Camera):
+async def test_play_audio_error(mock_talkback, camera_obj: Camera):
+    camera_obj.feature_flags.has_speaker = True
+    camera_obj._initial_data = camera_obj.dict()
+
     mock_instance = MockTalkback()
     mock_instance.is_error = True
     mock_talkback.return_value = mock_instance
 
-    camera = camera_with_speaker_obj
-
     with pytest.raises(StreamError):
-        await camera.play_audio("test")
+        await camera_obj.play_audio("test")
 
-    mock_talkback.assert_called_with(camera, "test", None)
+    mock_talkback.assert_called_with(camera_obj, "test", None)
     assert mock_instance.run_until_complete.called
     assert mock_instance.get_errors.called
