@@ -109,7 +109,9 @@ class Event(ProtectModelWithId):
     async def get_video(self, channel_index: int = 0) -> Optional[bytes]:
         """Get the MP4 video clip for this given event
 
-        :param channel_index: index of `CameraChannel` on the camera to use to retrieve video from
+        Args:
+
+        * `channel_index`: index of `CameraChannel` on the camera to use to retrieve video from
 
         Will raise an exception if event does not have a camera, end time or the channel index is wrong.
         """

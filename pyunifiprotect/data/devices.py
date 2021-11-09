@@ -797,8 +797,10 @@ class Camera(ProtectMotionDeviceModel):
 
         Requires ffmpeg to use.
 
-        :param content_url: Either a URL accessible by python or a path to a file (ffmepg's `-i` parameter)
-        :param ffmpeg_path: Optional path to ffmpeg binary
+        Args:
+
+        * `content_url`: Either a URL accessible by python or a path to a file (ffmepg's `-i` parameter)
+        * `ffmpeg_path`: Optional path to ffmpeg binary
 
         Use either `await stream.run_until_complete()` or `await stream.start()` to start subprocess command
         after getting the stream.
@@ -818,8 +820,10 @@ class Camera(ProtectMotionDeviceModel):
 
         Requires ffmpeg to use.
 
-        :param content_url: Either a URL accessible by python or a path to a file (ffmepg's `-i` parameter)
-        :param ffmpeg_path: Optional path to ffmpeg binary
+        Args:
+
+        * `content_url`: Either a URL accessible by python or a path to a file (ffmepg's `-i` parameter)
+        * `ffmpeg_path`: Optional path to ffmpeg binary
         """
 
         stream = self.create_talkback_stream(content_url, ffmpeg_path)
@@ -845,7 +849,13 @@ class Viewer(ProtectAdoptableDeviceModel):
         return self.api.bootstrap.liveviews[self.liveview_id]
 
     async def set_liveview(self, liveview: Liveview) -> None:
-        """Sets the liveview current set for the viewer"""
+        """
+        Sets the liveview current set for the viewer
+
+        Args:
+
+        * `liveview`: The liveview you want to set
+        """
 
         if self._api is not None:
             if liveview.id not in self._api.bootstrap.liveviews:

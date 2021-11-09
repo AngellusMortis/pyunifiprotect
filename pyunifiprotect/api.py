@@ -498,15 +498,17 @@ class ProtectApiClient(BaseApiClient):
         """
         Get list of events from Protect
 
-        :param start: start time for events
-        :param end: end time for events
-        :param limit: max number of events to return
-        :camera_ids: list of Cameras to get events for
+        Args:
 
-        If limit, start and end are not provided, it will default to all events in the last 24 hours.
+        * `start`: start time for events
+        * `end`: end time for events
+        * `limit`: max number of events to return
+        * `camera_ids`: list of Cameras to get events for
 
-        If start is provided, then end or limit must be provided. If end is provided, then start or
-        limit must be provided. Otherwise, you will get a 400 error from Unifi Protect
+        If `limit`, `start` and `end` are not provided, it will default to all events in the last 24 hours.
+
+        If `start` is provided, then `end` or `limit` must be provided. If `end` is provided, then `start` or
+        `limit` must be provided. Otherwise, you will get a 400 error from Unifi Protect
 
         Providing a list of Camera IDs will not prevent non-camera events from returning.
         """

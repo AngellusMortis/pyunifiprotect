@@ -75,8 +75,10 @@ class ProtectBaseObject(BaseModel):
         """
         Main constructor for `ProtectBaseObject`
 
-        :param api: Optional reference to the ProtectAPIClient that created generated the UFP JSON
-        :param data: decoded UFP JSON
+        Args:
+
+        * `api`: Optional reference to the ProtectAPIClient that created generated the UFP JSON
+        * `data`: decoded UFP JSON
 
         `api` is is expected as a `@property`. If it is `None` and accessed, a `BadRequest` will be raised.
 
@@ -228,7 +230,9 @@ class ProtectBaseObject(BaseModel):
         * Injects ProtectAPIClient into any child UFP object Dicts
         * Runs `.unifi_dict_to_dict` for any child UFP objects
 
-        :param data: decoded UFP JSON dict
+        Args:
+
+        * `data`: decoded UFP JSON dict
         """
 
         # get the API client instance
@@ -319,8 +323,10 @@ class ProtectBaseObject(BaseModel):
         * Automatically removes any ProtectApiClient instances that might still be in the data
         * Automaitcally calls `.unifi_dict()` for any UFP Python objects that are detected
 
-        :param data: Optional output of `.dict()` for the Python object. If `None`, will call `.dict` first
-        :param exclude: Optional set of fields to exclude from convert. Useful for subclassing and having custom
+        Args:
+
+        `data`: Optional output of `.dict()` for the Python object. If `None`, will call `.dict` first
+        `exclude`: Optional set of fields to exclude from convert. Useful for subclassing and having custom
             processing for dumping to UFP JSON data.
         """
 
