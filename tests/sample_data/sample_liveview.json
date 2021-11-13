@@ -6,48 +6,48 @@
     "slots": [
         {
             "cameras": [
-                "6183057603835403e7000400"
+                "600ff7813ea0cdc8218c1bda"
             ],
             "cycleMode": "time",
             "cycleInterval": 10
         },
         {
             "cameras": [
-                "61830576039e5403e7000401"
+                "8a0f3d0007784a7a6b0c334c"
             ],
             "cycleMode": "time",
             "cycleInterval": 10
         },
         {
             "cameras": [
-                "6183057603665403e70003ff"
+                "0a6ec595956ef5a5c5d646c3"
             ],
             "cycleMode": "time",
             "cycleInterval": 10
         },
         {
             "cameras": [
-                "6183057603b55403e7000402"
+                "abbd0c98e15dde8a3b084698"
             ],
             "cycleMode": "time",
             "cycleInterval": 10
         },
         {
             "cameras": [
-                "6183057603e15403e7000404"
+                "7a0d8d83b68921d80d3d2872"
             ],
             "cycleMode": "time",
             "cycleInterval": 10
         },
         {
             "cameras": [
-                "6183057603cc5403e7000403"
+                "77008140644659cc47841a12"
             ],
             "cycleMode": "time",
             "cycleInterval": 10
         }
     ],
-    "owner": "6183003d01a21f03e700040c",
-    "id": "6183058f03b0b803e70003e9",
+    "owner": "d27ba769cc63a073634828f8",
+    "id": "d408011457716b18e80cf1a3",
     "modelKey": "liveview"
 }
