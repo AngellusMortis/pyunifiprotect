@@ -1,7 +1,7 @@
 import asyncio
 import base64
 import contextlib
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -302,7 +302,7 @@ def bootstrap():
 
 @pytest.fixture
 def now():
-    return get_now()
+    return get_now().replace(tzinfo=timezone.utc)
 
 
 @pytest.fixture
