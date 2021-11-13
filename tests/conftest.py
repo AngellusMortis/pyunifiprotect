@@ -135,6 +135,7 @@ class MockWebsocket(SimpleMockWebsocket):
 
 MockDatetime = Mock()
 MockDatetime.now.return_value = get_now()
+MockDatetime.utcnow.return_value = get_now()
 
 
 @pytest.fixture(autouse=True)

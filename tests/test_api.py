@@ -171,7 +171,7 @@ async def test_bootstrap_construct(protect_client_no_debug: ProtectApiClient):
 
 
 @pytest.mark.asyncio
-@patch("pyunifiprotect.api.datetime", MockDatetime)
+@patch("pyunifiprotect.utils.datetime", MockDatetime)
 async def test_get_events_raw_default(protect_client: ProtectApiClient, now: datetime):
     events = await protect_client.get_events_raw()
 
@@ -418,7 +418,7 @@ async def test_get_liveviews(protect_client: ProtectApiClient, liveviews):
 @pytest.mark.skipif(
     not (SAMPLE_DATA_DIRECTORY / "sample_camera_snapshot.png").exists(), reason="No snapshot in testdata"
 )
-@patch("pyunifiprotect.api.datetime", MockDatetime)
+@patch("pyunifiprotect.utils.datetime", MockDatetime)
 @pytest.mark.asyncio
 async def test_get_camera_snapshot(protect_client: ProtectApiClient, now):
     data = await protect_client.get_camera_snapshot("test_id")
@@ -440,7 +440,7 @@ async def test_get_camera_snapshot(protect_client: ProtectApiClient, now):
 @pytest.mark.skipif(
     not (SAMPLE_DATA_DIRECTORY / "sample_camera_snapshot.png").exists(), reason="No snapshot in testdata"
 )
-@patch("pyunifiprotect.api.datetime", MockDatetime)
+@patch("pyunifiprotect.utils.datetime", MockDatetime)
 @pytest.mark.asyncio
 async def test_get_camera_snapshot_args(protect_client: ProtectApiClient, now):
     data = await protect_client.get_camera_snapshot("test_id", 1920, 1080)
