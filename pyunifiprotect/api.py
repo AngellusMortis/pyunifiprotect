@@ -169,9 +169,6 @@ class BaseApiClient:
         url = urljoin(self.api_path, url)
         response = await self.request(method, url, require_auth=False, auto_close=False, **kwargs)
 
-        if "params" in kwargs:
-            print(url, kwargs["params"])
-
         try:
             if response.status != 200:
                 reason = await get_response_reason(response)
@@ -529,8 +526,6 @@ class ProtectApiClient(BaseApiClient):
         if limit is None and start is None and end is None:
             end = utc_now() + timedelta(seconds=10)
             start = end - timedelta(hours=24)
-
-        print(start, end)
 
         params: Dict[str, Any] = {}
         if limit is not None:

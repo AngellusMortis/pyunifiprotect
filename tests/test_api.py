@@ -468,8 +468,6 @@ async def test_get_camera_snapshot_args(protect_client: ProtectApiClient, now):
 @patch("pyunifiprotect.api.datetime", MockDatetime)
 @pytest.mark.asyncio
 async def test_get_camera_video(protect_client: ProtectApiClient, now, tmp_binary_file):
-    print("camera_video_length" in CONSTANTS)
-
     camera = list(protect_client.bootstrap.cameras.values())[0]
     start = now - timedelta(seconds=CONSTANTS["camera_video_length"])
 

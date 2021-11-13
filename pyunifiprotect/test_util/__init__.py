@@ -164,11 +164,7 @@ class SampleDataGenerator:
         self.constants["event_count"] = len(data)
 
         motion_event: Optional[Dict[str, Any]] = None
-        print(data)
         for event_dict in reversed(data):
-            if event_dict["type"] == "motion":
-                print(event_dict)
-
             if (
                 event_dict["type"] == "motion"
                 and event_dict["camera"] is not None
