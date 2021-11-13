@@ -56,4 +56,4 @@ jobs:
       run: unifi-protect generate-sample-data -w 300 --actual
 
     - name: Run Tests
-      run: pytest --force-sugar --timeout=330 --cov-report term
+      run: pytest --force-sugar --timeout=330 --cov-report term --ignore=tests/test_unifi_data.py --ignore=tests/test_unifi_protect_server.py

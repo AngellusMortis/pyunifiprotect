@@ -30,6 +30,8 @@ exclude = '''
 omit = [
     ".tox/*",
     "tests/*",
+    "pyunifiprotect/unifi_data.py",
+    "pyunifiprotect/unifi_protect_server.py",
 ]
 
 [tool.isort]
