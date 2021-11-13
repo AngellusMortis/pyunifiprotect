@@ -354,6 +354,9 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         ip_address = self._processed_data[camera_id]["ip_address"]
 
         img_uri = f"http://{ip_address}/snap.jpeg"
+        if self.req is None:
+            self.req = aiohttp.ClientSession()
+
         async with self.req.get(img_uri) as response:
             if response.status == 200:
                 return await response.read()

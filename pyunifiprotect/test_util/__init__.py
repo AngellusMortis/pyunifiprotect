@@ -94,7 +94,7 @@ class SampleDataGenerator:
         motion_event = await self.generate_event_data()
         await self.generate_device_data(motion_event)
 
-        if close_session:
+        if close_session and self.client.req is not None:
             await self.client.req.close()
 
         self.write_json_file("sample_constants", self.constants, anonymize=False)

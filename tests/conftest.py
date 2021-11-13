@@ -155,7 +155,9 @@ async def setup_client(client: Union[ProtectApiClient, UpvServer], websocket: Si
 
 async def cleanup_client(client: Union[ProtectApiClient, UpvServer]):
     await client.async_disconnect_ws()
-    await client.req.close()
+
+    if client.req is not None:
+        await client.req.close()
 
     with contextlib.suppress(asyncio.CancelledError):
         if client.ws_task is not None:
@@ -163,6 +165,8 @@ async def cleanup_client(client: Union[ProtectApiClient, UpvServer]):
 
             # empty out websockets
             await client.ws_task
+
+    await client.async_disconnect_ws()
 
 
 @pytest.fixture

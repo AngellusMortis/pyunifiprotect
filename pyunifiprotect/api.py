@@ -67,7 +67,7 @@ class BaseApiClient:
     _last_update: float = NEVER_RAN
     _last_websocket_check: float = NEVER_RAN
 
-    req: aiohttp.ClientSession
+    req: Optional[aiohttp.ClientSession] = None
     headers: Optional[Dict[str, str]] = None
     last_update_id: Optional[UUID] = None
     ws_session: Optional[aiohttp.ClientSession] = None
@@ -93,10 +93,8 @@ class BaseApiClient:
         self._password = password
         self._verify_ssl = verify_ssl
 
-        if session is None:
-            session = aiohttp.ClientSession()
-
-        self.req = session
+        if session is not None:
+            self.req = aiohttp.ClientSession()
 
     @property
     def base_url(self) -> str:
@@ -122,6 +120,9 @@ class BaseApiClient:
         headers = kwargs.get("headers") or self.headers
 
         _LOGGER.debug("Request url: %s", url)
+
+        if self.req is None:
+            self.req = aiohttp.ClientSession()
 
         try:
             req_context = self.req.request(method, url, ssl=self._verify_ssl, headers=headers, **kwargs)
@@ -246,7 +247,9 @@ class BaseApiClient:
         """Authenticate and get a token."""
 
         url = "/api/auth/login"
-        self.req.cookie_jar.clear()
+
+        if self.req is not None:
+            self.req.cookie_jar.clear()
 
         auth = {
             "username": self._username,
@@ -268,6 +271,10 @@ class BaseApiClient:
 
     def is_authenticated(self) -> bool:
         """Check to see if we are already authenticated."""
+
+        if self.req is None:
+            self.req = aiohttp.ClientSession()
+
         if self._is_authenticated is True:
             # Check if token is expired.
             cookies = self.req.cookie_jar.filter_cookies(URL(self.base_url))
@@ -316,6 +323,7 @@ class BaseApiClient:
         await self.ws_connection.close()
         if self.ws_session is not None:
             await self.ws_session.close()
+            self.ws_session = None
 
     async def _setup_websocket(self) -> None:
         await self.ensure_authenticated()

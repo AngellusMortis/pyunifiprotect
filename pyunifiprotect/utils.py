@@ -61,7 +61,7 @@ def to_js_time(dt: Optional[datetime]) -> Optional[int]:
         return None
 
     if dt.tzinfo is None:
-        return time.mktime(datetime.now().timetuple()) * 1000
+        return int(time.mktime(datetime.now().timetuple()) * 1000)
 
     return int(dt.astimezone(timezone.utc).timestamp() * 1000)
 
