@@ -61,7 +61,7 @@ def to_js_time(dt: Optional[datetime]) -> Optional[int]:
         return None
 
     if dt.tzinfo is None:
-        return int(time.mktime(datetime.now().timetuple()) * 1000)
+        return int(time.mktime(dt.timetuple()) * 1000)
 
     return int(dt.astimezone(timezone.utc).timestamp() * 1000)
 
@@ -73,6 +73,10 @@ def to_ms(duration: Optional[timedelta]) -> Optional[int]:
         return None
 
     return int(round(duration.total_seconds() * 1000))
+
+
+def utc_now() -> datetime:
+    return datetime.utcnow().replace(tzinfo=timezone.utc)
 
 
 def from_js_time(num: Union[int, float, str, datetime]) -> datetime:

@@ -38,6 +38,7 @@ from pyunifiprotect.utils import (
     ip_from_host,
     set_debug,
     to_js_time,
+    utc_now,
 )
 
 NEVER_RAN = -1000
@@ -167,6 +168,9 @@ class BaseApiClient:
 
         url = urljoin(self.api_path, url)
         response = await self.request(method, url, require_auth=False, auto_close=False, **kwargs)
+
+        if "params" in kwargs:
+            print(url, kwargs["params"])
 
         try:
             if response.status != 200:
@@ -457,7 +461,7 @@ class ProtectApiClient(BaseApiClient):
         """
 
         now = time.monotonic()
-        now_dt = datetime.now()
+        now_dt = utc_now()
         if force:
             self.disconnect_ws()
             self._last_update = NEVER_RAN
@@ -523,8 +527,10 @@ class ProtectApiClient(BaseApiClient):
 
         # if no parameters are passed in, default to all events from last 24 hours
         if limit is None and start is None and end is None:
-            end = datetime.now() + timedelta(seconds=10)
+            end = utc_now() + timedelta(seconds=10)
             start = end - timedelta(hours=24)
+
+        print(start, end)
 
         params: Dict[str, Any] = {}
         if limit is not None:
@@ -731,7 +737,7 @@ class ProtectApiClient(BaseApiClient):
         """Gets a snapshot from a given camera at a given time"""
 
         if dt is None:
-            dt = datetime.now()
+            dt = utc_now()
 
         params = {
             "ts": to_js_time(dt),

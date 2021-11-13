@@ -461,10 +461,15 @@ async def test_get_camera_snapshot_args(protect_client: ProtectApiClient, now):
     assert img.format in ("PNG", "JPEG")
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_camera_video.mp4").exists(), reason="No video in testdata")
+@pytest.mark.skipif(
+    not (SAMPLE_DATA_DIRECTORY / "sample_camera_video.mp4").exists() or "camera_video_length" not in CONSTANTS,
+    reason="No video in testdata",
+)
 @patch("pyunifiprotect.api.datetime", MockDatetime)
 @pytest.mark.asyncio
 async def test_get_camera_video(protect_client: ProtectApiClient, now, tmp_binary_file):
+    print("camera_video_length" in CONSTANTS)
+
     camera = list(protect_client.bootstrap.cameras.values())[0]
     start = now - timedelta(seconds=CONSTANTS["camera_video_length"])
 

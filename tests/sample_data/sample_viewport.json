@@ -1,13 +1,13 @@
 {
-    "mac": "F37268F71288",
-    "host": "192.168.13.71",
-    "connectionHost": "192.168.150.211",
+    "mac": "68D79A6882EB",
+    "host": "192.168.51.46",
+    "connectionHost": "192.168.51.16",
     "type": "UP Viewport",
-    "name": "Pldwp Ugx",
-    "upSince": 1634581239121,
-    "uptime": 1563420,
-    "lastSeen": 1636144659121,
-    "connectedSince": 1635977331326,
+    "name": "Entertainment Room Viewport",
+    "upSince": 1636685492088,
+    "uptime": 136038,
+    "lastSeen": 1636821530088,
+    "connectedSince": 1636770349366,
     "state": "CONNECTED",
     "hardwareRevision": null,
     "firmwareVersion": "1.2.54",
@@ -27,8 +27,8 @@
     "wiredConnectionState": {
         "phyRate": 1000
     },
-    "liveview": "d408011457716b18e80cf1a3",
-    "id": "37e03a300dfe40fa6b95bc84",
+    "liveview": "6183058f03b0b803e70003e9",
+    "id": "6183057700605403e7000406",
     "isConnected": true,
     "modelKey": "viewer"
 }

@@ -16,6 +16,9 @@ class ConstantData:
     def __getitem__(self, key):
         return self.data().__getitem__(key)
 
+    def __contains__(self, key):
+        return self.data().__contains__(key)
+
     def get(self, key, default=None):
         return self.data().get(key, default)
 
