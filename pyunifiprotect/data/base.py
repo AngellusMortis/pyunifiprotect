@@ -53,7 +53,6 @@ class ProtectBaseObject(BaseModel):
     _protect_objs: ClassVar[Optional[Dict[str, Type[ProtectBaseObject]]]] = None
     _protect_lists: ClassVar[Optional[Dict[str, Type[ProtectBaseObject]]]] = None
     _protect_dicts: ClassVar[Optional[Dict[str, Type[ProtectBaseObject]]]] = None
-    _unifi_remaps: ClassVar[Optional[Dict[str, str]]] = None
 
     class Config:
         arbitrary_types_allowed = True
