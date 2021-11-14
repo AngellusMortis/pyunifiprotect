@@ -118,7 +118,7 @@ class BaseApiClient:
         """Gets or creates current client session"""
 
         if self._session is None or self._session.closed:
-            if self._session.closed:
+            if self._session is not None and self._session.closed:
                 _LOGGER.debug("Session was closed, creating a new one")
             self._session = aiohttp.ClientSession()
 
