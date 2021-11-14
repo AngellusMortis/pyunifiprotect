@@ -259,8 +259,7 @@ async def test_check_ws_initial(protect_client: ProtectApiClient, caplog: pytest
     caplog.set_level(logging.DEBUG)
 
     protect_client._last_websocket_check = NEVER_RAN
-    protect_client.disconnect_ws()
-    protect_client.ws_connection = None
+    protect_client.reset_ws()
 
     active_ws = await protect_client.check_ws()
 
@@ -273,8 +272,7 @@ async def test_check_ws_no_ws(protect_client: ProtectApiClient, caplog: pytest.L
     caplog.set_level(logging.DEBUG)
 
     protect_client._last_websocket_check = time.monotonic()
-    protect_client.disconnect_ws()
-    protect_client.ws_connection = None
+    protect_client.reset_ws()
 
     active_ws = await protect_client.check_ws()
 
@@ -290,8 +288,7 @@ async def test_check_ws_reconnect(protect_client: ProtectApiClient, caplog: pyte
     caplog.set_level(logging.DEBUG)
 
     protect_client._last_websocket_check = time.monotonic() - WEBSOCKET_CHECK_INTERVAL - 1
-    protect_client.disconnect_ws()
-    protect_client.ws_connection = None
+    protect_client.reset_ws()
 
     active_ws = await protect_client.check_ws()
 

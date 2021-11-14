@@ -29,14 +29,14 @@ async def test_upvserver_creation():
 async def test_websocket(old_protect_client: UpvServer, ws_messages: Dict[str, Dict[str, Any]]):
     # wait for ws connection
     for _ in range(60):
-        if old_protect_client.ws_connection is not None:
+        if old_protect_client.is_ws_connected:
             break
         await asyncio.sleep(0.5)
 
-    ws_connect: Optional[MockWebsocket] = old_protect_client.ws_connection  # type: ignore
+    ws_connect: Optional[MockWebsocket] = old_protect_client._ws_connection  # type: ignore
     assert ws_connect is not None
 
-    while old_protect_client.ws_connection is not None:
+    while old_protect_client.is_ws_connected:
         await asyncio.sleep(0.1)
 
     assert ws_connect.count == len(ws_messages)

@@ -86,7 +86,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         """Updates the status of devices."""
 
         now = time.monotonic()
-        if force_camera_update and self.ws_connection is not None:
+        if force_camera_update and self.is_ws_connected:
             self._last_update = NEVER_RAN
             self._last_websocket_check = NEVER_RAN
 
@@ -94,7 +94,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         if now - self._last_update > DEVICE_UPDATE_INTERVAL:
             _LOGGER.debug("Doing device update")
             device_update = True
-            await self._get_device_list(not self.ws_connection)
+            await self._get_device_list(not self.is_ws_connected)
             self._last_update = now
         else:
             _LOGGER.debug("Skipping device update")
@@ -140,7 +140,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
 
         data = await self.api_request_obj("bootstrap")
         server_id: str = data["nvr"]["mac"]
-        if not self.ws_connection and "lastUpdateId" in data:
+        if not self.is_ws_connected and "lastUpdateId" in data:
             self.last_update_id = UUID(data["lastUpdateId"])
 
         self._process_cameras_json(data, server_id, include_events)
@@ -354,10 +354,9 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         ip_address = self._processed_data[camera_id]["ip_address"]
 
         img_uri = f"http://{ip_address}/snap.jpeg"
-        if self.req is None:
-            self.req = aiohttp.ClientSession()
 
-        async with self.req.get(img_uri) as response:
+        session = await self.get_session()
+        async with session.get(img_uri) as response:
             if response.status == 200:
                 return await response.read()
             raise NvrError(f"Direct Snapshot failed: {response.status} - Reason: {response.reason}")

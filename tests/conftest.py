@@ -1,3 +1,5 @@
+# pylint: disable=protected-access
+
 import asyncio
 import base64
 import contextlib
@@ -147,8 +149,8 @@ async def setup_client(client: Union[ProtectApiClient, UpvServer], websocket: Si
     client.api_request = AsyncMock(side_effect=mock_api_request)  # type: ignore
     client.api_request_raw = AsyncMock(side_effect=mock_api_request_raw)  # type: ignore
     client.ensure_authenticated = AsyncMock()  # type: ignore
-    client.ws_session = AsyncMock()
-    client.ws_session.ws_connect = AsyncMock(return_value=websocket)
+    client._ws_session = AsyncMock()
+    client._ws_session.ws_connect = AsyncMock(return_value=websocket)
     await client.update(True)
 
     return client
@@ -156,18 +158,14 @@ async def setup_client(client: Union[ProtectApiClient, UpvServer], websocket: Si
 
 async def cleanup_client(client: Union[ProtectApiClient, UpvServer]):
     await client.async_disconnect_ws()
-
-    if client.req is not None:
-        await client.req.close()
-
     with contextlib.suppress(asyncio.CancelledError):
-        if client.ws_task is not None:
-            client.ws_task.cancel()
+        if client._ws_task is not None:
+            client._ws_task.cancel()
 
             # empty out websockets
-            await client.ws_task
+            await client._ws_task
 
-    await client.async_disconnect_ws()
+    await client.close_session()
 
 
 @pytest.fixture

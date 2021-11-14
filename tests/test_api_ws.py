@@ -61,14 +61,14 @@ async def test_ws_all(protect_client_ws: ProtectApiClient, ws_messages: Dict[str
 
     # wait for ws connection
     for _ in range(60):
-        if protect_client.ws_connection is not None:
+        if protect_client.is_ws_connected:
             break
         await asyncio.sleep(0.5)
 
-    ws_connect: Optional[MockWebsocket] = protect_client.ws_connection  # type: ignore
+    ws_connect: Optional[MockWebsocket] = protect_client._ws_connection  # type: ignore
     assert ws_connect is not None
 
-    while protect_client.ws_connection is not None:
+    while protect_client.is_ws_connected:
         await asyncio.sleep(0.1)
 
     assert ws_connect.count == len(ws_messages)

@@ -75,8 +75,7 @@ def _call_unifi(protect: Union[UpvServer, ProtectApiClient], method: str, *args:
                 await asyncio.sleep(2)
 
         # Close the Session
-        if protect.req is not None:
-            await protect.req.close()
+        await protect.close_session()
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(callback())
@@ -94,9 +93,8 @@ def _listen_to_ws(protect: UpvServer) -> None:
             await asyncio.sleep(1)
 
         # Close the Session
-        if protect.req is not None:
-            await protect.req.close()
         await protect.async_disconnect_ws()
+        await protect.close_session()
         unsub()
 
     loop = asyncio.get_event_loop()

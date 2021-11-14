@@ -62,7 +62,7 @@ class SampleDataGenerator:
     async def async_generate(self, close_session: bool = True) -> None:
         typer.echo(f"Output folder: {self.output_folder}")
         self.output_folder.mkdir(parents=True, exist_ok=True)
-        self.client.ws_callback = self._handle_ws_message
+        self.client.subscribe_raw_websocket(self._handle_ws_message)
 
         typer.echo("Updating devices...")
         await self.client.update(True)
@@ -95,8 +95,8 @@ class SampleDataGenerator:
         motion_event = await self.generate_event_data()
         await self.generate_device_data(motion_event)
 
-        if close_session and self.client.req is not None:
-            await self.client.req.close()
+        if close_session:
+            await self.client.close_session()
 
         self.write_json_file("sample_constants", self.constants, anonymize=False)
 
