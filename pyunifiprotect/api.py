@@ -96,7 +96,7 @@ class BaseApiClient:
         self._verify_ssl = verify_ssl
 
         if session is not None:
-            self._session = aiohttp.ClientSession()
+            self._session = session
 
     @property
     def base_url(self) -> str:
