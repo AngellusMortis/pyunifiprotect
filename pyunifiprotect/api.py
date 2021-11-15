@@ -27,6 +27,7 @@ from pyunifiprotect.data import (
     ModelType,
     ProtectModel,
     Sensor,
+    SmartDetectTrack,
     Viewer,
     WSPacket,
     WSSubscriptionMessage,
@@ -709,12 +710,20 @@ class ProtectApiClient(BaseApiClient):
         self, model_type: ModelType, device_id: str, expected_type: Optional[Type[ProtectModel]] = None
     ) -> ProtectModel:
         """Gets a device give the device model_type and id, converted into Python object"""
-        obj = create_from_unifi_dict(await self.get_device_raw(model_type, device_id))
+        obj = create_from_unifi_dict(await self.get_device_raw(model_type, device_id), api=self)
 
         if expected_type is not None and not isinstance(obj, expected_type):
             raise NvrError(f"Unexpected model returned: {obj.model}")
 
         return obj
+
+    async def get_event(self, event_id: str) -> Event:
+        """
+        Gets an event straight from the NVR.
+
+        This is a great alternative if the event is no longer in the `self.bootstrap.events[event_id]` cache
+        """
+        return cast(Event, await self.get_device(ModelType.EVENT, event_id, Event))
 
     async def get_camera(self, device_id: str) -> Camera:
         """
@@ -826,6 +835,18 @@ class ProtectApiClient(BaseApiClient):
         """Gets given heatmap from a given event"""
 
         return await self.api_request_raw(f"heatmaps/{heatmap_id}", raise_exception=False)
+
+    async def get_event_smart_detect_track_raw(self, event_id: str) -> Dict[str, Any]:
+        """Gets raw Smart Detect Track for a Smart Detection"""
+
+        return await self.api_request_obj(f"events/{event_id}/smartDetectTrack")
+
+    async def get_event_smart_detect_track(self, event_id: str) -> SmartDetectTrack:
+        """Gets raw Smart Detect Track for a Smart Detection"""
+
+        data = await self.api_request_obj(f"events/{event_id}/smartDetectTrack")
+
+        return SmartDetectTrack.from_unifi_dict(api=self, **data)
 
     async def update_device(self, model_type: ModelType, device_id: str, data: Dict[str, Any]) -> None:
         """

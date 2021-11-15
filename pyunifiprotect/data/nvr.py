@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, tzinfo
 from ipaddress import IPv4Address
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Set
+from typing import Any, Dict, List, Literal, Optional, Set, Tuple
 from uuid import UUID
 
 from pydantic.fields import PrivateAttr
@@ -16,11 +16,12 @@ from pyunifiprotect.data.base import (
     ProtectModel,
     ProtectModelWithId,
 )
-from pyunifiprotect.data.devices import Camera
+from pyunifiprotect.data.devices import Camera, CameraZone
 from pyunifiprotect.data.types import (
     DoorbellMessageType,
     EventType,
     ModelType,
+    PercentInt,
     SmartDetectObjectType,
 )
 from pyunifiprotect.exceptions import BadRequest
@@ -28,6 +29,53 @@ from pyunifiprotect.utils import process_datetime
 
 MAX_SUPPORTED_CAMERAS = 256
 MAX_EVENT_HISTORY_IN_STATE_MACHINE = MAX_SUPPORTED_CAMERAS * 2
+
+
+class SmartDetectItem(ProtectBaseObject):
+    id: str
+    timestamp: datetime
+    level: PercentInt
+    coord: Tuple[int, int, int, int]
+    object_type: SmartDetectObjectType
+    zone_ids: List[int]
+    duration: timedelta
+
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {
+            **super()._get_unifi_remaps(),
+            "zones": "zoneIds",
+        }
+
+    @classmethod
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "duration" in data:
+            data["duration"] = timedelta(milliseconds=data["duration"])
+
+        return super().unifi_dict_to_dict(data)
+
+
+class SmartDetectTrack(ProtectBaseObject):
+    id: str
+    payload: List[SmartDetectItem]
+    camera_id: str
+    event_id: str
+
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {
+            **super()._get_unifi_remaps(),
+            "camera": "cameraId",
+            "event": "eventId",
+        }
+
+    @property
+    def camera(self) -> Camera:
+        return self.api.bootstrap.cameras[self.camera_id]
+
+    @property
+    def event(self) -> Optional[Event]:
+        return self.api.bootstrap.events.get(self.event_id)
 
 
 class Event(ProtectModelWithId):
@@ -47,6 +95,8 @@ class Event(ProtectModelWithId):
     # partition
 
     _smart_detect_events: Optional[List[Event]] = PrivateAttr(None)
+    _smart_detect_track: Optional[SmartDetectTrack] = PrivateAttr(None)
+    _smart_detect_zones: Optional[Dict[int, CameraZone]] = PrivateAttr(None)
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
@@ -122,6 +172,38 @@ class Event(ProtectModelWithId):
             raise BadRequest("Event is ongoing")
 
         return await self.api.get_camera_video(self.camera.id, self.start, self.end, channel_index)
+
+    async def get_smart_detect_track(self) -> SmartDetectTrack:
+        """
+        Gets smart detect track for given smart detect event.
+
+        If event is not a smart detect event, it will raise a `BadRequest`
+        """
+
+        if self.type != EventType.SMART_DETECT:
+            raise BadRequest("Not a smart detect event")
+
+        if self._smart_detect_track is None:
+            self._smart_detect_track = await self.api.get_event_smart_detect_track(self.id)
+
+        return self._smart_detect_track
+
+    async def get_smart_detect_zones(self) -> Dict[int, CameraZone]:
+        """Gets the triggering zones for the smart detection"""
+
+        if self.camera is None:
+            raise BadRequest("No camera on event")
+
+        if self._smart_detect_zones is None:
+            smart_track = await self.get_smart_detect_track()
+
+            ids: Set[int] = set()
+            for item in smart_track.payload:
+                ids = ids | set(item.zone_ids)
+
+            self._smart_detect_zones = {z.id: z for z in self.camera.smart_detect_zones if z.id in ids}
+
+        return self._smart_detect_zones
 
 
 class Group(ProtectModelWithId):

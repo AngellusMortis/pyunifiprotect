@@ -16,6 +16,8 @@ from pyunifiprotect.data.nvr import (
     Group,
     Liveview,
     NVRLocation,
+    SmartDetectItem,
+    SmartDetectTrack,
     User,
     UserLocation,
 )
@@ -77,7 +79,9 @@ __all__ = [
     "ProtectWSPayloadFormat",
     "RecordingMode",
     "Sensor",
+    "SmartDetectItem",
     "SmartDetectObjectType",
+    "SmartDetectTrack",
     "StateType",
     "User",
     "UserLocation",
