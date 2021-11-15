@@ -769,13 +769,10 @@ class ProtectApiClient(BaseApiClient):
         camera_id: str,
         width: Optional[int] = None,
         height: Optional[int] = None,
-        dt: Optional[datetime] = None,
     ) -> Optional[bytes]:
-        """Gets a snapshot from a given camera at a given time"""
+        """Gets a snapshot from a camera"""
 
-        if dt is None:
-            dt = utc_now()
-
+        dt = utc_now()  # ts is only used as a cache buster
         params = {
             "ts": to_js_time(dt),
             "force": "true",

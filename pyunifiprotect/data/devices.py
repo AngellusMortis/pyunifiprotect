@@ -658,12 +658,10 @@ class Camera(ProtectMotionDeviceModel):
         if index is not None:
             self.privacy_zones.pop(index)
 
-    async def get_snapshot(
-        self, width: Optional[int] = None, height: Optional[int] = None, dt: Optional[datetime] = None
-    ) -> Optional[bytes]:
-        """Gets snapshot for camera at a given time"""
+    async def get_snapshot(self, width: Optional[int] = None, height: Optional[int] = None) -> Optional[bytes]:
+        """Gets snapshot for camera"""
 
-        return await self.api.get_camera_snapshot(self.id, width, height, dt)
+        return await self.api.get_camera_snapshot(self.id, width, height)
 
     async def get_video(self, start: datetime, end: datetime, channel_index: int = 0) -> Optional[bytes]:
         """Gets video clip for camera at a given time"""
