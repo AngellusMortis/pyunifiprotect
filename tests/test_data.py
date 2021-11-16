@@ -21,11 +21,7 @@ from pyunifiprotect.data import (
 )
 from pyunifiprotect.exceptions import BadRequest, StreamError
 from pyunifiprotect.utils import set_debug, set_no_debug
-from tests.conftest import (
-    SAMPLE_DATA_DIRECTORY,
-    MockTalkback,
-    compare_objs,
-)
+from tests.conftest import SAMPLE_DATA_DIRECTORY, MockTalkback, compare_objs
 
 PACKET_B64 = "AQEBAAAAAHR4nB2MQQrCMBBFr1JmbSDNpJnRG4hrDzBNZqCgqUiriHh3SZb/Pd7/guRtWSucBtgfRTaFwwBV39c+zqUJskQW1DufUVwkJsfFxDGLyRFj0dSz+1r0dtFPa+rr2dDSD8YsyceUpskQxzjjHIIQMvz+hMoj/AIBAQAAAAA1eJyrViotKMnMTVWyUjA0MjawMLQ0MDDQUVDKSSwuCU5NzQOJmxkbACUszE0sLQ1rAVU/DPU="
 PACKET_ACTION = {
