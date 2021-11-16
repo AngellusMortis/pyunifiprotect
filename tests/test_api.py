@@ -540,3 +540,16 @@ async def test_get_event_heatmap(protect_client: ProtectApiClient):
 
     img = Image.open(BytesIO(data))
     assert img.format in ("PNG", "JPEG")
+
+
+@pytest.mark.skipif(
+    not (SAMPLE_DATA_DIRECTORY / "sample_event_smart_track.json").exists(), reason="No smart track in testdata"
+)
+@pytest.mark.asyncio
+async def test_get_event_smart_detect_track(protect_client: ProtectApiClient):
+    data = await protect_client.get_event_smart_detect_track("test_id")
+    assert data.camera
+
+    protect_client.api_request.assert_called_with(  # type: ignore
+        url="events/test_id/smartDetectTrack", method="get", require_auth=True, raise_exception=True
+    )

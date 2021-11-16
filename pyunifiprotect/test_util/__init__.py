@@ -8,14 +8,14 @@ from pathlib import Path
 from shlex import split
 from subprocess import run
 import time
-from typing import Any, Dict, List, Optional, Union, overload
+from typing import Any, Dict, List, Optional, Tuple, Union, overload
 
 from PIL import Image
 import aiohttp
 import typer
 
 from pyunifiprotect.api import ProtectApiClient
-from pyunifiprotect.data import WSJSONPacketFrame, WSPacket
+from pyunifiprotect.data import EventType, WSJSONPacketFrame, WSPacket
 from pyunifiprotect.test_util.anonymize import (
     anonymize_data,
     anonymize_prefixed_event_id,
@@ -92,8 +92,8 @@ class SampleDataGenerator:
         }
 
         await self.record_ws_events()
-        motion_event = await self.generate_event_data()
-        await self.generate_device_data(motion_event)
+        motion_event, smart_detection = await self.generate_event_data()
+        await self.generate_device_data(motion_event, smart_detection)
 
         if close_session:
             await self.client.close_session()
@@ -156,31 +156,49 @@ class SampleDataGenerator:
     def write_image_file(self, name: str, raw: Optional[bytes]) -> None:
         self.write_binary_file(name, "png", raw)
 
-    async def generate_event_data(self) -> Optional[Dict[str, Any]]:
+    async def generate_event_data(self) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         data = await self.client.get_events_raw()
-        data = self.write_json_file("sample_raw_events", data)
 
         self.constants["time"] = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
         self.constants["event_count"] = len(data)
 
         motion_event: Optional[Dict[str, Any]] = None
+        smart_detection: Optional[Dict[str, Any]] = None
         for event_dict in reversed(data):
             if (
-                event_dict["type"] == "motion"
+                motion_event is None
+                and event_dict["type"] == EventType.MOTION.value
                 and event_dict["camera"] is not None
                 and event_dict["thumbnail"] is not None
                 and event_dict["heatmap"] is not None
                 and event_dict["end"] is not None
             ):
-                motion_event = event_dict
+                motion_event = deepcopy(event_dict)
                 typer.echo(f"Using motion event: {motion_event['id']}...")
+            elif (
+                smart_detection is None
+                and event_dict["type"] == EventType.SMART_DETECT.value
+                and event_dict["camera"] is not None
+                and event_dict["end"] is not None
+            ):
+                smart_detection = deepcopy(event_dict)
+                typer.echo(f"Using smart detection event: {smart_detection['id']}...")
+
+            if motion_event is not None and smart_detection is not None:
                 break
 
-        return motion_event
+        # anonymize data after pulling events
+        data = self.write_json_file("sample_raw_events", data)
 
-    async def generate_device_data(self, motion_event: Optional[Dict[str, Any]]) -> None:
+        return motion_event, smart_detection
+
+    async def generate_device_data(
+        self, motion_event: Optional[Dict[str, Any]], smart_detection: Optional[Dict[str, Any]]
+    ) -> None:
         await asyncio.gather(
-            self.generate_camera_data(motion_event),
+            self.generate_camera_data(),
+            self.generate_motion_data(motion_event),
+            self.generate_smart_detection_data(smart_detection),
             self.generate_light_data(),
             self.generate_viewport_data(),
             self.generate_sensor_data(),
@@ -188,7 +206,7 @@ class SampleDataGenerator:
             self.generate_liveview_data(),
         )
 
-    async def generate_camera_data(self, motion_event: Optional[Dict[str, Any]]) -> None:
+    async def generate_camera_data(self) -> None:
         objs = await self.client.api_request_list("cameras")
         device_id: Optional[str] = None
         camera_is_online = False
@@ -224,6 +242,7 @@ class SampleDataGenerator:
             )
             self.write_image_file(filename, snapshot)
 
+    async def generate_motion_data(self, motion_event: Optional[Dict[str, Any]]) -> None:
         if motion_event is None:
             typer.echo("No motion event, skipping thumbnail and heatmap generation...")
             return
@@ -262,10 +281,18 @@ class SampleDataGenerator:
             )
         else:
             video = await self.client.get_camera_video(
-                device_id, from_js_time(motion_event["start"]), from_js_time(motion_event["end"]), 2
+                motion_event["camera"], from_js_time(motion_event["start"]), from_js_time(motion_event["end"]), 2
             )
             self.write_binary_file(filename, "mp4", video)
         self.constants["camera_video_length"] = length
+
+    async def generate_smart_detection_data(self, smart_detection: Optional[Dict[str, Any]]) -> None:
+        if smart_detection is None:
+            typer.echo("No smart detection event, skipping smart detection data...")
+            return
+
+        data = await self.client.get_event_smart_detect_track_raw(smart_detection["id"])
+        self.write_json_file("sample_event_smart_track", data)
 
     async def generate_light_data(self) -> None:
         objs = await self.client.api_request_list("lights")

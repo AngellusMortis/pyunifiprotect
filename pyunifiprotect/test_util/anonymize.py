@@ -72,7 +72,7 @@ def anonymize_value(value: Any, name: Optional[str] = None) -> Any:
             value = anonymize_peristent_string(value, random_hex(12).upper())
         elif name == "name" and value != "Default":
             value = f"{random_word()} {random_word()}".title()
-        elif name in ("owner", "user", "camera", "liveview", "authUserId"):
+        elif name in ("owner", "user", "camera", "liveview", "authUserId", "event"):
             value = anonymize_object_id(value)
         elif name == "rtsp":
             value = anonymize_rstp_url(value)
@@ -96,7 +96,7 @@ def anonymize_dict(obj: Dict[str, Any], name: Optional[str] = None) -> Dict[str,
 
     for key, value in obj.items():
         handled = False
-        if obj_type is not None:
+        if obj_type is not None or "payload" in obj:
             if key == "id":
                 obj[key] = anonymize_object_id(value)
                 handled = True

@@ -18,6 +18,8 @@ import pytest
 
 from pyunifiprotect import ProtectApiClient, UpvServer
 from pyunifiprotect.data import Camera, ModelType
+from pyunifiprotect.data.nvr import Event
+from pyunifiprotect.data.types import EventType
 from pyunifiprotect.utils import set_debug, set_no_debug
 from tests.sample_data.constants import CONSTANTS
 
@@ -95,6 +97,8 @@ async def mock_api_request(url: str, *args, **kwargs):
         return read_json_file("sample_bridge")
     elif url.startswith("liveviews/"):
         return read_json_file("sample_liveview")
+    elif "smartDetectTrack" in url:
+        return read_json_file("sample_event_smart_track")
 
     return {}
 
@@ -206,6 +210,21 @@ async def protect_client_ws():
 
 @pytest.fixture
 @pytest.mark.asyncio
+async def smart_dectect_obj(protect_client: ProtectApiClient, raw_events):  # pylint: disable=redefined-outer-name
+    event_dict = None
+    for event in raw_events:
+        if event["type"] == EventType.SMART_DETECT.value:
+            event_dict = event
+            break
+
+    if event_dict is None:
+        yield None
+    else:
+        yield Event.from_unifi_dict(api=protect_client, **event_dict)
+
+
+@pytest.fixture
+@pytest.mark.asyncio
 async def camera_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
     yield list(protect_client.bootstrap.cameras.values())[0]
 
@@ -301,6 +320,11 @@ def raw_events():
 @pytest.fixture
 def bootstrap():
     return read_json_file("sample_bootstrap")
+
+
+@pytest.fixture
+def smart_track():
+    return read_json_file("sample_event_smart_track")
 
 
 @pytest.fixture
