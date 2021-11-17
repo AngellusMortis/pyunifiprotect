@@ -17,6 +17,7 @@ import jwt
 from yarl import URL
 
 from pyunifiprotect.data import (
+    NVR,
     Bootstrap,
     Bridge,
     Camera,
@@ -509,8 +510,7 @@ class ProtectApiClient(BaseApiClient):
 
         if self._bootstrap is None or now - self._last_update > DEVICE_UPDATE_INTERVAL:
             self._last_update = now
-            data = await self.api_request_obj("bootstrap")
-            self._bootstrap = Bootstrap.from_unifi_dict(**data, api=self)
+            self._bootstrap = await self.get_bootstrap()
 
         active_ws = await self.check_ws()
         # If the websocket is connected/connecting
@@ -634,6 +634,16 @@ class ProtectApiClient(BaseApiClient):
         self._ws_subscriptions.append(ws_callback)
         return _unsub_ws_callback
 
+    async def get_bootstrap(self) -> Bootstrap:
+        """
+        Gets bootstrap object from UFP instance
+
+        This is a great alternative if you need metadata about the NVR without connecting to the Websocket
+        """
+
+        data = await self.api_request_obj("bootstrap")
+        return Bootstrap.from_unifi_dict(**data, api=self)
+
     async def get_devices_raw(self, model_type: ModelType) -> List[Dict[str, Any]]:
         """Gets a raw device list given a model_type"""
         return await self.api_request_list(f"{model_type.value}s")
@@ -716,6 +726,16 @@ class ProtectApiClient(BaseApiClient):
             raise NvrError(f"Unexpected model returned: {obj.model}")
 
         return obj
+
+    async def get_nvr(self) -> NVR:
+        """
+        Gets an NVR object straight from the NVR.
+
+        This is a great alternative if you need metadata about the NVR without connecting to the Websocket
+        """
+
+        data = await self.api_request_obj("nvr")
+        return NVR.from_unifi_dict(**data, api=self)
 
     async def get_event(self, event_id: str) -> Event:
         """

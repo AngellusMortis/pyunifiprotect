@@ -71,6 +71,8 @@ async def mock_api_request_raw(url: str, *args, **kwargs):
 async def mock_api_request(url: str, *args, **kwargs):
     if url == "bootstrap":
         return read_json_file("sample_bootstrap")
+    elif url == "nvr":
+        return read_json_file("sample_bootstrap")["nvr"]
     elif url == "events":
         return read_json_file("sample_raw_events")
     elif url == "cameras":
@@ -320,6 +322,11 @@ def raw_events():
 @pytest.fixture
 def bootstrap():
     return read_json_file("sample_bootstrap")
+
+
+@pytest.fixture
+def nvr():
+    return read_json_file("sample_bootstrap")["nvr"]
 
 
 @pytest.fixture
