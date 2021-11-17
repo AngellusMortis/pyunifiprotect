@@ -499,6 +499,8 @@ class ProtectApiClient(BaseApiClient):
         """
         Updates the state of devices, initalizes `.bootstrap` and
         connects to UFP Websocket for real time updates
+
+        You can use the various other `get_` methods if you need one off data from UFP
         """
 
         now = time.monotonic()
