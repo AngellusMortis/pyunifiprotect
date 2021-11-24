@@ -63,7 +63,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
     _last_device_update_time: float = NEVER_RAN
     _ws_subscriptions: List[Callable[[Dict[str, Dict[str, Any]]], None]] = []
     _is_first_update: bool = True
-    _connection_host: Optional[IPv4Address] = None
+    _connection_host: Optional[str] = None
 
     def __init__(
         self,
@@ -129,7 +129,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         data = await self.api_request_obj("bootstrap")
         nvr_data: Dict[str, Any] = data["nvr"]
 
-        self._connection_host = IPv4Address(nvr_data["host"])
+        self._connection_host = str(nvr_data["host"])
 
         return {
             SERVER_NAME: nvr_data["name"],
@@ -147,7 +147,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         if not self.is_ws_connected and "lastUpdateId" in data:
             self.last_update_id = UUID(data["lastUpdateId"])
 
-        self._connection_host = IPv4Address(data["nvr"]["host"])
+        self._connection_host = str(data["nvr"]["host"])
 
         self._process_cameras_json(data, server_id, include_events)
         self._process_lights_json(data, server_id, include_events)
