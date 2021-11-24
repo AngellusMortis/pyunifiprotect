@@ -123,6 +123,8 @@ class Bootstrap(ProtectBaseObject):
 
             if isinstance(obj, Event):
                 self.process_event(obj)
+            elif isinstance(obj, NVR):
+                self.nvr = obj
             elif (
                 isinstance(obj, ProtectModelWithId)
                 and obj.model is not None

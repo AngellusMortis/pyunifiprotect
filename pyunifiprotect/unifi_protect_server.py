@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from ipaddress import IPv4Address
 import json as pjson
 import logging
 import time
@@ -62,6 +63,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
     _last_device_update_time: float = NEVER_RAN
     _ws_subscriptions: List[Callable[[Dict[str, Dict[str, Any]]], None]] = []
     _is_first_update: bool = True
+    _connection_host: Optional[IPv4Address] = None
 
     def __init__(
         self,
@@ -127,6 +129,8 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         data = await self.api_request_obj("bootstrap")
         nvr_data: Dict[str, Any] = data["nvr"]
 
+        self._connection_host = IPv4Address(nvr_data["host"])
+
         return {
             SERVER_NAME: nvr_data["name"],
             "server_version": nvr_data["version"],
@@ -142,6 +146,8 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
         server_id: str = data["nvr"]["mac"]
         if not self.is_ws_connected and "lastUpdateId" in data:
             self.last_update_id = UUID(data["lastUpdateId"])
+
+        self._connection_host = IPv4Address(data["nvr"]["host"])
 
         self._process_cameras_json(data, server_id, include_events)
         self._process_lights_json(data, server_id, include_events)
@@ -167,7 +173,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
                 camera_id,
                 process_camera(
                     server_id,
-                    self._host,
+                    self._connection_host or self._host,
                     camera,
                     include_events or self._is_first_update,
                 ),
@@ -734,7 +740,7 @@ class UpvServer(BaseApiClient):  # pylint: disable=too-many-public-methods, too-
     def _process_camera_ws_message(self, action_json: Dict[str, Any], data_json: Dict[str, Any]) -> None:
         """Process a decoded camera websocket message."""
         camera_id, processed_camera = camera_update_from_ws_frames(
-            self._device_state_machine, self._host, action_json, data_json
+            self._device_state_machine, self._connection_host or self._host, action_json, data_json
         )
 
         if camera_id is None or processed_camera is None:
