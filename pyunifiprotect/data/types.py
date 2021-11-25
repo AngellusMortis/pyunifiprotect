@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 from typing import TYPE_CHECKING, Any, Generic, List, Optional, TypeVar, Union
 
+from packaging.version import Version as BaseVersion
 from pydantic import ConstrainedDecimal, ConstrainedInt
 from pydantic.color import Color as BaseColor
 
@@ -208,3 +209,11 @@ class Color(BaseColor):
             return self.as_hex() == o.as_hex()
 
         return super().__eq__(o)
+
+
+class Version(BaseVersion):
+    def __str__(self):
+        super_str = super().__str__()
+        if self.pre is not None and self.pre[0] == "b":
+            super_str = super_str.replace("b", "-beta.")
+        return super_str

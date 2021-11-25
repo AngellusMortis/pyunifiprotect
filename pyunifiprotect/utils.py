@@ -16,9 +16,10 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Un
 from uuid import UUID
 
 from aiohttp import ClientResponse
-from packaging.version import Version, parse
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, ModelField
 from pydantic.utils import to_camel
+
+from pyunifiprotect.data.types import Version
 
 if TYPE_CHECKING:
     from pyunifiprotect.data import CoordType
@@ -158,7 +159,7 @@ def convert_unifi_data(value: Any, field: ModelField) -> Any:
     elif field.type_ == Path:
         value = Path(value)
     elif field.type_ == Version:
-        value = parse(value)
+        value = Version(value)
     elif issubclass(field.type_, Enum):
         value = field.type_(value)
 

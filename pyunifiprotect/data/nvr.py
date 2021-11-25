@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Set, Tuple
 from uuid import UUID
 
-from packaging.version import Version
 from pydantic.fields import PrivateAttr
 import pytz
 
@@ -24,6 +23,7 @@ from pyunifiprotect.data.types import (
     ModelType,
     PercentInt,
     SmartDetectObjectType,
+    Version,
 )
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import process_datetime
