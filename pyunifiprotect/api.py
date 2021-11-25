@@ -12,7 +12,7 @@ from urllib.parse import urljoin
 from uuid import UUID
 
 import aiohttp
-from aiohttp import client_exceptions
+from aiohttp import client_exceptions, CookieJar
 import jwt
 from yarl import URL
 
@@ -122,7 +122,8 @@ class BaseApiClient:
         if self._session is None or self._session.closed:
             if self._session is not None and self._session.closed:
                 _LOGGER.debug("Session was closed, creating a new one")
-            self._session = aiohttp.ClientSession()
+            # need unsafe to access httponly cookies
+            self._session = aiohttp.ClientSession(cookie_jar=CookieJar(unsafe=True))
 
         return self._session
 
@@ -148,7 +149,9 @@ class BaseApiClient:
 
         session = await self.get_session()
         try:
-            req_context = session.request(method, url, ssl=self._verify_ssl, headers=headers, **kwargs)
+            if not self._verify_ssl:
+                kwargs["ssl"] = False
+            req_context = session.request(method, url, headers=headers, **kwargs)
             response = await req_context.__aenter__()
 
             try:
