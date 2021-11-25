@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Set, Tuple
 from uuid import UUID
 
+from packaging.version import Version
 from pydantic.fields import PrivateAttr
 import pytz
 
@@ -438,7 +439,7 @@ class NVR(ProtectDeviceModel):
     can_auto_update: bool
     is_stats_gathering_enabled: bool
     timezone: tzinfo
-    version: str
+    version: Version
     ucore_version: str
     hardware_platform: str
     ports: PortConfig

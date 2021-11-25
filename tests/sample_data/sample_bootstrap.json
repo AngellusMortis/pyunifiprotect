@@ -3573,7 +3573,7 @@
         "canAutoUpdate": true,
         "isStatsGatheringEnabled": true,
         "timezone": "America/New_York",
-        "version": "1.20.0-beta.7",
+        "version": "1.20.0",
         "ucoreVersion": "1.8.43",
         "firmwareVersion": "2.2.12",
         "uiVersion": null,
