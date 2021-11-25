@@ -12,7 +12,7 @@ from urllib.parse import urljoin
 from uuid import UUID
 
 import aiohttp
-from aiohttp import client_exceptions, CookieJar
+from aiohttp import CookieJar, client_exceptions
 import jwt
 from yarl import URL
 
