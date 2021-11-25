@@ -212,7 +212,7 @@ class Color(BaseColor):
 
 
 class Version(BaseVersion):
-    def __str__(self):
+    def __str__(self) -> str:
         super_str = super().__str__()
         if self.pre is not None and self.pre[0] == "b":
             super_str = super_str.replace("b", "-beta.")
