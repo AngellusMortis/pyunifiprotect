@@ -686,7 +686,8 @@ class Camera(ProtectMotionDeviceModel):
 
     @property
     def is_privacy_on(self) -> bool:
-        return self.get_privacy_zone() is not None
+        index, _ = self.get_privacy_zone()
+        return index is not None
 
     def get_privacy_zone(self) -> Tuple[Optional[int], Optional[CameraZone]]:
         for index, zone in enumerate(self.privacy_zones):
