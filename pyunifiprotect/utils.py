@@ -244,8 +244,11 @@ def ip_from_host(host: str) -> IPv4Address:
     return IPv4Address(socket.gethostbyname(host))
 
 
-def dict_diff(orig: Dict[str, Any], new: Dict[str, Any]) -> Dict[str, Any]:
+def dict_diff(orig: Optional[Dict[str, Any]], new: Dict[str, Any]) -> Dict[str, Any]:
     changed: Dict[str, Any] = {}
+
+    if orig is None:
+        return new
 
     for key, value in new.items():
         if key not in orig:

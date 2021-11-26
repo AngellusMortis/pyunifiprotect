@@ -609,8 +609,6 @@ async def test_camera_set_lcd_text_custom(camera_obj: Optional[Camera]):
         method="patch",
         json={
             "lcdMessage": {
-                "type": DoorbellMessageType.CUSTOM_MESSAGE.value,
-                "text": "Test",
                 "resetAt": to_js_time(now),
             }
         },
@@ -657,6 +655,37 @@ async def test_camera_set_lcd_text(camera_obj: Optional[Camera]):
             "lcdMessage": {
                 "type": DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR.value,
                 "text": DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR.value.replace("_", " "),
+                "resetAt": None,
+            }
+        },
+    )
+
+
+@pytest.mark.asyncio
+async def test_camera_set_lcd_text_none(camera_obj: Optional[Camera]):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.feature_flags.has_lcd_screen = True
+    camera_obj.lcd_message = LCDMessage(
+        type=DoorbellMessageType.DO_NOT_DISTURB,
+        text=DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " "),
+        reset_at=None,
+    )
+    camera_obj._initial_data = camera_obj.dict()
+
+    await camera_obj.set_lcd_text(None)
+
+    camera_obj.api.api_request.assert_called_with(
+        f"cameras/{camera_obj.id}",
+        method="patch",
+        json={
+            "lcdMessage": {
+                "type": DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR.value,
+                "text": DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR.value.replace("_", " "),
+                "resetAt": camera_obj.lcd_message.reset_at,
             }
         },
     )

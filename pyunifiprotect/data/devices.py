@@ -35,6 +35,7 @@ from pyunifiprotect.utils import (
     round_decimal,
     serialize_point,
     to_js_time,
+    utc_now,
 )
 
 if TYPE_CHECKING:
@@ -350,8 +351,6 @@ class LCDMessage(ProtectBaseObject):
             data["text"] = self._fix_text(data["text"], data.get("type", self.type.value))
         if "resetAt" in data:
             data["resetAt"] = to_js_time(data["resetAt"])
-        else:
-            data["resetAt"] = None
 
         return data
 
@@ -668,6 +667,22 @@ class Camera(ProtectMotionDeviceModel):
 
         return data
 
+    def get_changed(self) -> Dict[str, Any]:
+        updated = super().get_changed()
+
+        # if reset_at is not passed in, it will default to reset in 1 minute
+        lcd_message = updated.get("lcd_message")
+        if lcd_message is not None and "reset_at" not in lcd_message:
+            if self.lcd_message is None:
+                updated["lcd_message"]["reset_at"] = None
+            else:
+                updated["lcd_message"]["reset_at"] = self.lcd_message.reset_at
+        # to "clear" LCD message, set reset_at to a time in the past
+        elif "lcd_message" in updated and lcd_message is None:
+            updated["lcd_message"] = {"reset_at": utc_now() - timedelta(seconds=10)}
+
+        return updated
+
     @property
     def last_ring_event(self) -> Optional[Event]:
         if self.last_ring_event_id is None:
@@ -811,12 +826,17 @@ class Camera(ProtectMotionDeviceModel):
         await self.save_device()
 
     async def set_lcd_text(
-        self, text_type: DoorbellMessageType, text: Optional[str] = None, reset_at: Optional[datetime] = None
+        self, text_type: Optional[DoorbellMessageType], text: Optional[str] = None, reset_at: Optional[datetime] = None
     ) -> None:
         """Sets doorbell LCD text. Requires camera to be doorbell"""
 
         if not self.feature_flags.has_lcd_screen:
             raise BadRequest("Camera does not have an LCD screen")
+
+        if text_type is None:
+            self.lcd_message = None
+            await self.save_device()
+            return
 
         if text_type != DoorbellMessageType.CUSTOM_MESSAGE:
             if text is not None:
