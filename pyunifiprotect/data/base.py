@@ -18,7 +18,12 @@ from typing import (
 from pydantic import BaseModel
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, PrivateAttr
 
-from pyunifiprotect.data.types import ModelType, StateType
+from pyunifiprotect.data.types import ModelType, ProtectWSPayloadFormat, StateType
+from pyunifiprotect.data.websocket import (
+    WSJSONPacketFrame,
+    WSPacket,
+    WSPacketFrameHeader,
+)
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import (
     convert_unifi_data,
@@ -564,7 +569,7 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
 
         return updated
 
-    async def save_device(self) -> None:
+    async def save_device(self, force_emit: bool = False) -> None:
         """
         Generates a diff for unsaved changed on the device and sends them back to UFP
 
@@ -572,6 +577,10 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
         May have unexpected side effects.
 
         Tested updates have been added a methods on applicable devices.
+
+        Args:
+
+        * `force_emit`: Emit a fake UFP WS message. Should only be use for when UFP does not properly emit a WS message
         """
 
         if self.model is None:
@@ -586,6 +595,23 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
 
         await self.api.update_device(self.model, self.id, updated)
         self._initial_data = new_data
+
+        if force_emit:
+            header = WSPacketFrameHeader(
+                packet_type=1, payload_format=ProtectWSPayloadFormat.JSON.value, deflated=0, unknown=1, payload_size=1
+            )
+
+            action_frame = WSJSONPacketFrame()
+            action_frame.header = header
+            action_frame.data = {"action": "update", "newUpdateId": None, "modelKey": self.model.value, "id": self.id}
+
+            data_frame = WSJSONPacketFrame()
+            data_frame.header = header
+            data_frame.data = updated
+
+            message = self.api.bootstrap.process_ws_packet(WSPacket(action_frame.packed + data_frame.packed))
+            if message is not None:
+                self.api.emit_message(message)
 
 
 class ProtectMotionDeviceModel(ProtectAdoptableDeviceModel):

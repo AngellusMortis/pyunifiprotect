@@ -536,6 +536,13 @@ class ProtectApiClient(BaseApiClient):
         self._last_update_dt = now_dt
         return self._bootstrap
 
+    def emit_message(self, msg: WSSubscriptionMessage) -> None:
+        for sub in self._ws_subscriptions:
+            try:
+                sub(msg)
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception("Exception while running subscription handler")
+
     def _process_ws_message(self, msg: aiohttp.WSMessage) -> None:
         packet = WSPacket(msg.data)
         processed_message = self.bootstrap.process_ws_packet(packet)
@@ -543,11 +550,7 @@ class ProtectApiClient(BaseApiClient):
         if processed_message is None:
             return
 
-        for sub in self._ws_subscriptions:
-            try:
-                sub(processed_message)
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Exception while running subscription handler")
+        self.emit_message(processed_message)
 
     async def get_events_raw(
         self,

@@ -112,7 +112,8 @@ class Bootstrap(ProtectBaseObject):
 
         action: dict = packet.action_frame.data  # type: ignore
         data: dict = packet.data_frame.data  # type: ignore
-        self.last_update_id = UUID(action["newUpdateId"])
+        if action["newUpdateId"] is not None:
+            self.last_update_id = UUID(action["newUpdateId"])
 
         if action["modelKey"] not in ModelType.values():
             _LOGGER.debug("Unknown model type: %s", action["modelKey"])

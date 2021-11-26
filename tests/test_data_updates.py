@@ -3,6 +3,7 @@
 
 from datetime import datetime, timedelta
 from typing import Optional
+from unittest.mock import Mock
 
 from pydantic.error_wrappers import ValidationError
 import pytest
@@ -20,6 +21,7 @@ from pyunifiprotect.data import (
 )
 from pyunifiprotect.data.devices import CameraZone
 from pyunifiprotect.data.types import LightModeEnableType, LightModeType
+from pyunifiprotect.data.websocket import WSAction, WSSubscriptionMessage
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import to_js_time, to_ms
 
@@ -179,16 +181,28 @@ async def test_viewer_set_liveview_invalid(viewer_obj: Viewer, liveview_obj: Liv
 @pytest.mark.asyncio
 async def test_viewer_set_liveview_valid(viewer_obj: Viewer, liveview_obj: Liveview):
     viewer_obj.api.api_request.reset_mock()
+    viewer_obj.api.emit_message = Mock()
+
+    old_viewer = viewer_obj.copy()
 
     viewer_obj.liveview_id = "bad_id"
     viewer_obj._initial_data = viewer_obj.dict()
 
     await viewer_obj.set_liveview(liveview_obj)
-
     viewer_obj.api.api_request.assert_called_with(
         f"viewers/{viewer_obj.id}",
         method="patch",
         json={"liveview": liveview_obj.id},
+    )
+
+    viewer_obj.api.emit_message.assert_called_with(
+        WSSubscriptionMessage(
+            action=WSAction.UPDATE,
+            new_update_id=viewer_obj.api.bootstrap.last_update_id,
+            changed_data={"liveview_id": liveview_obj.id},
+            old_obj=old_viewer,
+            new_obj=viewer_obj,
+        )
     )
 
 

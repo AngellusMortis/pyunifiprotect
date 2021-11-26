@@ -350,6 +350,8 @@ class LCDMessage(ProtectBaseObject):
             data["text"] = self._fix_text(data["text"], data.get("type", self.type.value))
         if "resetAt" in data:
             data["resetAt"] = to_js_time(data["resetAt"])
+        else:
+            data["resetAt"] = None
 
         return data
 
@@ -916,7 +918,8 @@ class Viewer(ProtectAdoptableDeviceModel):
                 raise BadRequest("Unknown liveview")
 
         self.liveview_id = liveview.id
-        await self.save_device()
+        # UniFi Protect bug: changing the liveview does _not_ emit a WS message
+        await self.save_device(force_emit=True)
 
 
 class Bridge(ProtectAdoptableDeviceModel):
