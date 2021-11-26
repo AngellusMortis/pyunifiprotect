@@ -563,6 +563,10 @@ class FeatureFlags(ProtectBaseObject):
     def has_highfps(self) -> bool:
         return VideoMode.HIGH_FPS in self.video_modes
 
+    @property
+    def has_wdr(self) -> bool:
+        return not self.has_hdr
+
 
 class Camera(ProtectMotionDeviceModel):
     is_deleting: bool
@@ -679,6 +683,10 @@ class Camera(ProtectMotionDeviceModel):
     @property
     def timelapse_url(self) -> str:
         return f"{self.api.base_url}/protect/timelapse/{self.id}"
+
+    @property
+    def is_privacy_on(self) -> bool:
+        return self.get_privacy_zone() is not None
 
     def get_privacy_zone(self) -> Tuple[Optional[int], Optional[CameraZone]]:
         for index, zone in enumerate(self.privacy_zones):

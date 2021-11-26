@@ -76,6 +76,11 @@ async def check_camera(camera: Camera):
     else:
         assert not camera.feature_flags.has_highfps
 
+    if camera.feature_flags.has_hdr:
+        assert not camera.feature_flags.has_wdr
+    else:
+        assert camera.feature_flags.has_wdr
+
 
 def check_device(device: ProtectAdoptableDeviceModel):
     assert device.protect_url == f"https://127.0.0.1:0/protect/devices/{device.id}"

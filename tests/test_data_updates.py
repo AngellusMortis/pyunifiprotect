@@ -708,3 +708,8 @@ async def test_camera_set_privacy(
                 method="patch",
                 json=expected,
             )
+
+        if enabled:
+            assert camera_obj.is_privacy_on
+        else:
+            assert not camera_obj.is_privacy_on
