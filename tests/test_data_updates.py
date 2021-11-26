@@ -324,6 +324,26 @@ async def test_camera_set_hdr(camera_obj: Optional[Camera], status: bool):
     )
 
 
+@pytest.mark.parametrize("status", [True, False])
+@pytest.mark.asyncio
+async def test_camera_set_ssh(camera_obj: Optional[Camera], status: bool):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.is_ssh_enabled = not status
+    camera_obj._initial_data = camera_obj.dict()
+
+    await camera_obj.set_ssh(status)
+
+    camera_obj.api.api_request.assert_called_with(
+        f"cameras/{camera_obj.id}",
+        method="patch",
+        json={"isSshEnabled": status},
+    )
+
+
 @pytest.mark.asyncio
 async def test_camera_set_video_mode(camera_obj: Optional[Camera]):
     if camera_obj is None:

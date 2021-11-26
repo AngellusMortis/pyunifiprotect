@@ -808,6 +808,12 @@ class Camera(ProtectMotionDeviceModel):
         self.chime_duration = duration
         await self.save_device()
 
+    async def set_ssh(self, enabled: bool) -> None:
+        """Sets ssh status for protect device"""
+
+        self.is_ssh_enabled = enabled
+        await self.save_device()
+
     async def set_lcd_text(
         self, text_type: DoorbellMessageType, text: Optional[str] = None, reset_at: Optional[datetime] = None
     ) -> None:
