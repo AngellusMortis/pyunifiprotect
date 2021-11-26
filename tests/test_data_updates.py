@@ -394,6 +394,7 @@ async def test_camera_set_wdr_level(camera_obj: Optional[Camera], level: int):
 
     camera_obj.api.api_request.reset_mock()
 
+    camera_obj.feature_flags.has_hdr = False
     camera_obj.isp_settings.wdr = 2
     camera_obj._initial_data = camera_obj.dict()
 
@@ -410,6 +411,22 @@ async def test_camera_set_wdr_level(camera_obj: Optional[Camera], level: int):
             method="patch",
             json={"ispSettings": {"wdr": level}},
         )
+
+
+@pytest.mark.asyncio
+async def test_camera_set_wdr_level_hdr(camera_obj: Optional[Camera]):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.feature_flags.has_hdr = True
+    camera_obj._initial_data = camera_obj.dict()
+
+    with pytest.raises(BadRequest):
+        await camera_obj.set_wdr_level(1)
+
+    assert not camera_obj.api.api_request.called
 
 
 @pytest.mark.asyncio

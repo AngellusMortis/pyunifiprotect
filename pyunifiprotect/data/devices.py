@@ -761,6 +761,10 @@ class Camera(ProtectMotionDeviceModel):
 
     async def set_wdr_level(self, level: WDRLevel) -> None:
         """Sets WDR (Wide Dynamic Range) on camera"""
+
+        if self.feature_flags.has_hdr:
+            raise BadRequest("Cannot set WDR on cameras with HDR")
+
         self.isp_settings.wdr = level
         await self.save_device()
 
