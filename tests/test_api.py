@@ -24,6 +24,7 @@ from pyunifiprotect.data.base import ProtectAdoptableDeviceModel
 from pyunifiprotect.data.bootstrap import Bootstrap
 from pyunifiprotect.exceptions import BadRequest, NvrError
 from pyunifiprotect.utils import to_js_time
+from pyunifiprotect.data.types import VideoMode
 from tests.conftest import (
     SAMPLE_DATA_DIRECTORY,
     MockDatetime,
@@ -69,6 +70,11 @@ async def check_camera(camera: Camera):
         if channel.is_rtsp_enabled:
             assert channel.rtsp_url == f"rtsp://{camera.api.connection_host}:7447/{channel.rtsp_alias}"
             assert channel.rtsps_url == f"rtsps://{camera.api.connection_host}:7441/{channel.rtsp_alias}?enableSrtp"
+
+    if VideoMode.HIGH_FPS in camera.feature_flags.video_modes:
+        assert camera.feature_flags.has_highfps
+    else:
+        assert not camera.feature_flags.has_highfps
 
 
 def check_device(device: ProtectAdoptableDeviceModel):

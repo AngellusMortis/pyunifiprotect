@@ -559,6 +559,10 @@ class FeatureFlags(ProtectBaseObject):
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "hasAutoICROnly": "hasAutoIcrOnly"}
 
+    @property
+    def has_highfps(self) -> bool:
+        return VideoMode.HIGH_FPS in self.video_modes
+
 
 class Camera(ProtectMotionDeviceModel):
     is_deleting: bool
