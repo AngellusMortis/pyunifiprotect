@@ -22,9 +22,9 @@ from pyunifiprotect.data import (
 )
 from pyunifiprotect.data.base import ProtectAdoptableDeviceModel
 from pyunifiprotect.data.bootstrap import Bootstrap
+from pyunifiprotect.data.types import VideoMode
 from pyunifiprotect.exceptions import BadRequest, NvrError
 from pyunifiprotect.utils import to_js_time
-from pyunifiprotect.data.types import VideoMode
 from tests.conftest import (
     SAMPLE_DATA_DIRECTORY,
     MockDatetime,
