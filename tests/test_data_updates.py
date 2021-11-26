@@ -671,6 +671,8 @@ async def test_camera_set_lcd_text_none(mock_now, camera_obj: Optional[Camera], 
     if camera_obj is None:
         pytest.skip("No camera_obj obj found")
 
+    old_camera = camera_obj.copy()
+    camera_obj.api.emit_message = Mock()
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_lcd_screen = True
@@ -683,14 +685,25 @@ async def test_camera_set_lcd_text_none(mock_now, camera_obj: Optional[Camera], 
 
     await camera_obj.set_lcd_text(None)
 
+    expected_dt = now - timedelta(seconds=10)
     camera_obj.api.api_request.assert_called_with(
         f"cameras/{camera_obj.id}",
         method="patch",
         json={
             "lcdMessage": {
-                "resetAt": to_js_time(now - timedelta(seconds=10)),
+                "resetAt": to_js_time(expected_dt),
             }
         },
+    )
+
+    camera_obj.api.emit_message.assert_called_with(
+        WSSubscriptionMessage(
+            action=WSAction.UPDATE,
+            new_update_id=camera_obj.api.bootstrap.last_update_id,
+            changed_data={"lcd_message": {"reset_at": expected_dt}},
+            old_obj=old_camera,
+            new_obj=camera_obj,
+        )
     )
 
 

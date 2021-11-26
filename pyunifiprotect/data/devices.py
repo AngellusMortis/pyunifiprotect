@@ -30,6 +30,7 @@ from pyunifiprotect.data.types import (
 from pyunifiprotect.exceptions import BadRequest, StreamError
 from pyunifiprotect.stream import TalkbackStream
 from pyunifiprotect.utils import (
+    from_js_time,
     is_debug,
     process_datetime,
     round_decimal,
@@ -690,6 +691,16 @@ class Camera(ProtectMotionDeviceModel):
 
         return self.api.bootstrap.events.get(self.last_ring_event_id)
 
+    def update_from_dict(self, data: Dict[str, Any]) -> Camera:
+        # a message in the past is actually a singal to wipe the message
+        reset_at = data.get("lcd_message", {}).get("reset_at")
+        if reset_at is not None:
+            reset_at = from_js_time(reset_at)
+            if utc_now() > reset_at:
+                data["lcd_message"] = None
+
+        return super().update_from_dict(data)
+
     @property
     def last_smart_detect_event(self) -> Optional[Event]:
         if self.last_smart_detect_event_id is None:
@@ -835,7 +846,8 @@ class Camera(ProtectMotionDeviceModel):
 
         if text_type is None:
             self.lcd_message = None
-            await self.save_device()
+            # UniFi Protect bug: clearing LCD text message does _not_ emit a WS message
+            await self.save_device(force_emit=True)
             return
 
         if text_type != DoorbellMessageType.CUSTOM_MESSAGE:
