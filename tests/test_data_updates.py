@@ -3,7 +3,7 @@
 
 from datetime import datetime, timedelta
 from typing import Optional
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from pydantic.error_wrappers import ValidationError
 import pytest
@@ -609,6 +609,8 @@ async def test_camera_set_lcd_text_custom(camera_obj: Optional[Camera]):
         method="patch",
         json={
             "lcdMessage": {
+                "type": DoorbellMessageType.CUSTOM_MESSAGE.value,
+                "text": "Test",
                 "resetAt": to_js_time(now),
             }
         },
@@ -662,7 +664,10 @@ async def test_camera_set_lcd_text(camera_obj: Optional[Camera]):
 
 
 @pytest.mark.asyncio
-async def test_camera_set_lcd_text_none(camera_obj: Optional[Camera]):
+@patch("pyunifiprotect.data.devices.utc_now")
+async def test_camera_set_lcd_text_none(mock_now, camera_obj: Optional[Camera], now: datetime):
+    mock_now.return_value = now
+
     if camera_obj is None:
         pytest.skip("No camera_obj obj found")
 
@@ -683,9 +688,7 @@ async def test_camera_set_lcd_text_none(camera_obj: Optional[Camera]):
         method="patch",
         json={
             "lcdMessage": {
-                "type": DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR.value,
-                "text": DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR.value.replace("_", " "),
-                "resetAt": camera_obj.lcd_message.reset_at,
+                "resetAt": to_js_time(now - timedelta(seconds=10)),
             }
         },
     )
