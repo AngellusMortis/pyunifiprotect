@@ -512,13 +512,16 @@ class ProtectApiClient(BaseApiClient):
 
         now = time.monotonic()
         now_dt = utc_now()
+        max_event_dt = now_dt - timedelta(hours=24)
         if force:
             self.reset_ws()
             self._last_update = NEVER_RAN
+            self._last_update_dt = max_event_dt
             self._last_websocket_check = NEVER_RAN
 
         if self._bootstrap is None or now - self._last_update > DEVICE_UPDATE_INTERVAL:
             self._last_update = now
+            self._last_update_dt = now_dt
             self._bootstrap = await self.get_bootstrap()
 
         active_ws = await self.check_ws()
@@ -528,7 +531,7 @@ class ProtectApiClient(BaseApiClient):
             _LOGGER.debug("Skipping update since websocket is active")
             return None
 
-        events = await self.get_events(start=self._last_update_dt, end=now_dt)
+        events = await self.get_events(start=self._last_update_dt or max_event_dt, end=now_dt)
         for event in events:
             self.bootstrap.process_event(event)
 
