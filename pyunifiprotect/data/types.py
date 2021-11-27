@@ -101,6 +101,7 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     CAMERA_POWER_CYCLE = "cameraPowerCycling"
     VIDEO_EXPORTED = "videoExported"
     APP_UPDATE = "applicationUpdate"
+    DEVICE_PASSWORD_UPDATE = "devicesPasswordUpdated"
 
     @staticmethod
     def device_events() -> List[str]:
