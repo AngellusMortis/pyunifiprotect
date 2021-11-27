@@ -118,6 +118,12 @@ class Light(ProtectMotionDeviceModel):
 
         await self.save_device()
 
+    async def set_sensitivity(self, sensitivity: PercentInt) -> None:
+        """Sets motion sensitivity"""
+
+        self.light_device_settings.pir_sensitivity = sensitivity
+        await self.save_device()
+
     async def set_light_settings(
         self,
         mode: LightModeType,

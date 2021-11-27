@@ -106,6 +106,34 @@ async def test_light_set_light(light_obj: Light, status: bool, level: Optional[i
         )
 
 
+@pytest.mark.parametrize("sensitivity", [1, 100, -10])
+@pytest.mark.asyncio
+async def test_light_set_sensitivity(
+    light_obj: Light,
+    sensitivity: int,
+):
+    light_obj.api.api_request.reset_mock()
+
+    light_obj.light_device_settings.pir_sensitivity = 50
+    light_obj._initial_data = light_obj.dict()
+
+    if sensitivity == -10:
+        with pytest.raises(ValidationError):
+            await light_obj.set_sensitivity(sensitivity)
+
+            assert not light_obj.api.api_request.called
+    else:
+        await light_obj.set_sensitivity(sensitivity)
+
+        expected = {"lightDeviceSettings": {"pirSensitivity": sensitivity}}
+
+        light_obj.api.api_request.assert_called_with(
+            f"lights/{light_obj.id}",
+            method="patch",
+            json=expected,
+        )
+
+
 @pytest.mark.parametrize("mode", [LightModeType.MANUAL, LightModeType.WHEN_DARK])
 @pytest.mark.parametrize("enable_at", [None, LightModeEnableType.ALWAYS])
 @pytest.mark.parametrize(
