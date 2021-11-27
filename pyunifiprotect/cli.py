@@ -8,10 +8,12 @@ from typing import Any, Optional, Union
 
 import typer
 
-from pyunifiprotect.api import _LOGGER, ProtectApiClient
+from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.data import WSPacket
 from pyunifiprotect.test_util import SampleDataGenerator
 from pyunifiprotect.unifi_protect_server import UpvServer
+
+_LOGGER = logging.getLogger("pyunifiprotect")
 
 try:
     from IPython import embed  # type: ignore

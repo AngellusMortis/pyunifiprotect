@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from ipaddress import IPv4Address
+import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 from uuid import UUID
@@ -41,6 +42,8 @@ if TYPE_CHECKING:
     from pyunifiprotect.data.nvr import Event, Liveview
 
 PRIVACY_ZONE_NAME = "pyufp_privacy_zone"
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class LightDeviceSettings(ProtectBaseObject):
@@ -884,8 +887,10 @@ class Camera(ProtectMotionDeviceModel):
 
         await stream.run_until_complete()
 
+        _LOGGER.debug("ffmpeg stdout:\n%s", "\n".join(stream.stdout))
+        _LOGGER.debug("ffmpeg stderr:\n%s", "\n".join(stream.stderr))
         if stream.is_error:
-            error = "\n".join(await stream.get_errors())
+            error = "\n".join(await stream.stderr)
             raise StreamError("Error while playing audio (ffmpeg): \n" + error)
 
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+from asyncio.streams import StreamReader
 from asyncio.subprocess import PIPE, Process, create_subprocess_exec
 from pathlib import Path
 from shlex import split
@@ -18,8 +20,8 @@ class FfmpegCommand:
     args: List[str]
     process: Optional[Process] = None
 
-    _stdout: Optional[List[str]] = None
-    _stderr: Optional[List[str]] = None
+    stdout: Optional[List[str]] = []
+    stderr: Optional[List[str]] = []
 
     def __init__(self, cmd: str, ffmpeg_path: Optional[Path] = None) -> None:
         self.args = split(cmd)
@@ -50,36 +52,6 @@ class FfmpegCommand:
 
         return self.process.returncode != 0
 
-    async def get_output(self) -> List[str]:
-        if self._stdout is not None:
-            return self._stdout
-
-        if not self.is_error or self.process is None:
-            return []
-
-        if self.process.stdout is None:
-            stdout = b""
-        else:
-            stdout = await self.process.stdout.read()
-        self._stdout = stdout.decode("utf8").split("\n")
-
-        return self._stdout
-
-    async def get_errors(self) -> List[str]:
-        if self._stderr is not None:
-            return self._stderr
-
-        if not self.is_error or self.process is None:
-            return []
-
-        if self.process.stderr is None:
-            stderr = b""
-        else:
-            stderr = await self.process.stderr.read()
-        self._stderr = stderr.decode("utf8").split("\n")
-
-        return self._stderr
-
     async def start(self) -> None:
         if self.is_started:
             raise StreamError("ffmpeg command already started")
@@ -103,6 +75,14 @@ class FfmpegCommand:
         self.process.kill()
         await self.process.wait()
 
+    async def _read_stream(self, stream: StreamReader, attr):
+        while True:
+            line = await stream.readline()
+            if line:
+                getattr(self, attr).append(line.decode("utf8").rstrip())
+            else:
+                break
+
     async def run_until_complete(self) -> None:
         if self.is_started:
             raise StreamError("ffmpeg command already started")
@@ -111,6 +91,9 @@ class FfmpegCommand:
         if self.process is None:
             raise StreamError("Could not start stream")
 
+        await asyncio.wait(
+            [self._read_stream(self.process.stdout, "stdout"), self._read_stream(self.process.stderr, "stderr")]
+        )
         await self.process.wait()
 
 
@@ -126,7 +109,7 @@ class TalkbackStream(FfmpegCommand):
         if len(input_args) > 0:
             input_args += " "
 
-        cmd = f"-loglevel error -hide_banner {input_args}-i {content_url} -vn -acodec {camera.talkback_settings.type_fmt} -ac {camera.talkback_settings.channels} -ar {camera.talkback_settings.sampling_rate} -bits_per_raw_sample {camera.talkback_settings.bits_per_sample} -map 0:a -aq {camera.talkback_settings.quality} -f adts udp://{camera.host}:{camera.talkback_settings.bind_port}"
+        cmd = f"-loglevel info -hide_banner {input_args}-i {content_url} -vn -acodec {camera.talkback_settings.type_fmt} -ac {camera.talkback_settings.channels} -ar {camera.talkback_settings.sampling_rate} -bits_per_raw_sample {camera.talkback_settings.bits_per_sample} -map 0:a -aq {camera.talkback_settings.quality} -f adts udp://{camera.host}:{camera.talkback_settings.bind_port}"
 
         super().__init__(cmd, ffmpeg_path)
 
