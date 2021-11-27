@@ -134,6 +134,43 @@ async def test_light_set_sensitivity(
         )
 
 
+@pytest.mark.parametrize(
+    "duration",
+    [
+        timedelta(seconds=1),
+        timedelta(seconds=15),
+        timedelta(seconds=900),
+        timedelta(seconds=1000),
+    ],
+)
+@pytest.mark.asyncio
+async def test_light_set_duration(
+    light_obj: Light,
+    duration: timedelta,
+):
+    light_obj.api.api_request.reset_mock()
+
+    light_obj.light_device_settings.pir_duration = timedelta(seconds=30)
+    light_obj._initial_data = light_obj.dict()
+
+    duration_invalid = duration is not None and int(duration.total_seconds()) in (1, 1000)
+    if duration_invalid:
+        with pytest.raises(BadRequest):
+            await light_obj.set_duration(duration)
+
+            assert not light_obj.api.api_request.called
+    else:
+        await light_obj.set_duration(duration)
+
+        expected = {"lightDeviceSettings": {"pirDuration": to_ms(duration)}}
+
+        light_obj.api.api_request.assert_called_with(
+            f"lights/{light_obj.id}",
+            method="patch",
+            json=expected,
+        )
+
+
 @pytest.mark.parametrize("mode", [LightModeType.MANUAL, LightModeType.WHEN_DARK])
 @pytest.mark.parametrize("enable_at", [None, LightModeEnableType.ALWAYS])
 @pytest.mark.parametrize(

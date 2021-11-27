@@ -124,6 +124,15 @@ class Light(ProtectMotionDeviceModel):
         self.light_device_settings.pir_sensitivity = sensitivity
         await self.save_device()
 
+    async def set_duration(self, duration: timedelta) -> None:
+        """Sets motion sensitivity"""
+
+        if duration.total_seconds() < 15 or duration.total_seconds() > 900:
+            raise BadRequest("Duration outside of 15s to 900s range")
+
+        self.light_device_settings.pir_duration = duration
+        await self.save_device()
+
     async def set_light_settings(
         self,
         mode: LightModeType,
