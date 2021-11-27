@@ -564,6 +564,12 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
 
         return updated
 
+    async def set_ssh(self, enabled: bool) -> None:
+        """Sets ssh status for protect device"""
+
+        self.is_ssh_enabled = enabled
+        await self.save_device()
+
     async def save_device(self) -> None:
         """
         Generates a diff for unsaved changed on the device and sends them back to UFP
