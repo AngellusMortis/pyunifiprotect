@@ -90,7 +90,7 @@ class Bootstrap(ProtectBaseObject):
         if event.type in EVENT_ATTR_MAP:
             dt_attr, event_attr = EVENT_ATTR_MAP[event.type]
             dt = getattr(event.camera, dt_attr)
-            if dt is None or event.start >= dt or event.end >= dt:
+            if dt is None or event.start >= dt or (event.end is not None and event.end >= dt):
                 setattr(event.camera, event_attr, event.id)
 
         self.events[event.id] = event
