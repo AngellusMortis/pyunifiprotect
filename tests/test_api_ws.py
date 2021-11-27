@@ -116,14 +116,6 @@ async def test_ws_event_ring(protect_client_no_debug: ProtectApiClient, now, cam
 
     protect_client._process_ws_message(msg)
 
-    camera_index = -1
-    for index, camera_dict in enumerate(bootstrap_before["cameras"]):
-        if camera_dict["id"] == camera["id"]:
-            camera_index = index
-            break
-
-    camera_before.last_ring = now - timedelta(seconds=1)
-    bootstrap_before["cameras"][camera_index]["lastRing"] = to_js_time(camera_before.last_ring)
     bootstrap_before["lastUpdateId"] = expected_updated_id
     bootstrap = protect_client.bootstrap.unifi_dict()
     camera = get_camera()
@@ -138,111 +130,8 @@ async def test_ws_event_ring(protect_client_no_debug: ProtectApiClient, now, cam
     assert event.type == EventType.RING
     assert event.thumbnail_id == f"e-{expected_event_id}"
     assert event.heatmap_id == f"e-{expected_event_id}"
-    assert event.start == camera.last_ring
 
     for channel in camera.channels:
-        assert channel._api is not None
-
-
-@pytest.mark.asyncio
-@patch("pyunifiprotect.api.datetime", MockDatetime)
-async def test_ws_event_motion_in_progress(protect_client_no_debug: ProtectApiClient, now, camera, packet: WSPacket):
-    protect_client = protect_client_no_debug
-
-    def get_camera():
-        return protect_client.bootstrap.cameras[camera["id"]]
-
-    bootstrap_before = protect_client.bootstrap.unifi_dict()
-    camera_before = get_camera().copy()
-
-    expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"
-    expected_event_id = "bf9a241afe74821ceffffd05"
-
-    action_frame: WSJSONPacketFrame = packet.action_frame  # type: ignore
-    action_frame.data["newUpdateId"] = expected_updated_id
-    action_frame.data["id"] = expected_event_id
-
-    data_frame: WSJSONPacketFrame = packet.data_frame  # type: ignore
-    data_frame.data = {
-        "id": expected_event_id,
-        "type": "motion",
-        "start": to_js_time(now - timedelta(seconds=30)),
-        "end": None,
-        "score": 0,
-        "smartDetectTypes": [],
-        "smartDetectEvents": [],
-        "camera": camera["id"],
-        "partition": None,
-        "user": None,
-        "metadata": {},
-        "thumbnail": f"e-{expected_event_id}",
-        "heatmap": f"e-{expected_event_id}",
-        "modelKey": "event",
-    }
-
-    msg = MagicMock()
-    msg.data = packet.pack_frames()
-
-    protect_client._process_ws_message(msg)
-
-    camera_index = -1
-    for index, camera_dict in enumerate(bootstrap_before["cameras"]):
-        if camera_dict["id"] == camera["id"]:
-            camera_index = index
-            break
-
-    camera_before.is_motion_detected = True
-    bootstrap_before["cameras"][camera_index]["isMotionDetected"] = True
-    bootstrap_before["lastUpdateId"] = expected_updated_id
-    bootstrap = protect_client.bootstrap.unifi_dict()
-    camera_obj = get_camera()
-
-    assert bootstrap == bootstrap_before
-    assert camera_obj == camera_before
-
-    bootstrap_before = protect_client.bootstrap.unifi_dict()
-    camera_before = get_camera().copy()
-
-    expected_updated_id = "7d06fdd0-76be-4e65-9b61-9406d4ac1433"
-
-    action_frame.data["newUpdateId"] = expected_updated_id
-    action_frame.data["action"] = "update"
-
-    data_frame.data = {"end": to_js_time(now)}
-
-    msg = MagicMock()
-    msg.data = packet.pack_frames()
-
-    protect_client._process_ws_message(msg)
-
-    camera_index = -1
-    for index, camera_dict in enumerate(bootstrap_before["cameras"]):
-        if camera_dict["id"] == camera["id"]:
-            camera_index = index
-            break
-
-    camera_before.last_motion = now
-    camera_before.is_motion_detected = False
-    bootstrap_before["cameras"][camera_index]["lastMotion"] = to_js_time(camera_before.last_motion)
-    bootstrap_before["cameras"][camera_index]["isMotionDetected"] = False
-    bootstrap_before["lastUpdateId"] = expected_updated_id
-    bootstrap = protect_client.bootstrap.unifi_dict()
-    camera_obj = get_camera()
-
-    event = camera_obj.last_motion_event
-    camera_obj.last_motion_event_id = None
-    camera_before.last_motion_event_id = None
-
-    assert bootstrap == bootstrap_before
-    assert camera_obj.dict() == camera_before.dict()
-    assert event.id == expected_event_id
-    assert event.type == EventType.MOTION
-    assert event.thumbnail_id == f"e-{expected_event_id}"
-    assert event.heatmap_id == f"e-{expected_event_id}"
-    assert event.start == (now - timedelta(seconds=30))
-    assert event.end == camera_obj.last_motion
-
-    for channel in camera_obj.channels:
         assert channel._api is not None
 
 
@@ -286,16 +175,6 @@ async def test_ws_event_motion(protect_client_no_debug: ProtectApiClient, now, c
 
     protect_client._process_ws_message(msg)
 
-    camera_index = -1
-    for index, camera_dict in enumerate(bootstrap_before["cameras"]):
-        if camera_dict["id"] == camera["id"]:
-            camera_index = index
-            break
-
-    camera_before.last_motion = now
-    camera_before.is_motion_detected = False
-    bootstrap_before["cameras"][camera_index]["lastMotion"] = to_js_time(camera_before.last_motion)
-    bootstrap_before["cameras"][camera_index]["isMotionDetected"] = False
     bootstrap_before["lastUpdateId"] = expected_updated_id
     bootstrap = protect_client.bootstrap.unifi_dict()
     camera = get_camera()
@@ -311,7 +190,6 @@ async def test_ws_event_motion(protect_client_no_debug: ProtectApiClient, now, c
     assert event.thumbnail_id == f"e-{expected_event_id}"
     assert event.heatmap_id == f"e-{expected_event_id}"
     assert event.start == (now - timedelta(seconds=30))
-    assert event.end == camera.last_motion
 
     for channel in camera.channels:
         assert channel._api is not None
@@ -357,14 +235,6 @@ async def test_ws_event_smart(protect_client_no_debug: ProtectApiClient, now, ca
 
     protect_client._process_ws_message(msg)
 
-    camera_index = -1
-    for index, camera_dict in enumerate(bootstrap_before["cameras"]):
-        if camera_dict["id"] == camera["id"]:
-            camera_index = index
-            break
-
-    camera_before.last_smart_detect = now
-    bootstrap_before["cameras"][camera_index]["lastMotion"] = to_js_time(camera_before.last_motion)
     bootstrap_before["lastUpdateId"] = expected_updated_id
     bootstrap = protect_client.bootstrap.unifi_dict()
     camera = get_camera()
