@@ -3,6 +3,7 @@
 
 from datetime import datetime, timedelta
 from typing import Optional
+from unittest.mock import Mock, patch
 
 from pydantic.error_wrappers import ValidationError
 import pytest
@@ -20,6 +21,7 @@ from pyunifiprotect.data import (
 )
 from pyunifiprotect.data.devices import CameraZone
 from pyunifiprotect.data.types import LightModeEnableType, LightModeType
+from pyunifiprotect.data.websocket import WSAction, WSSubscriptionMessage
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import to_js_time, to_ms
 
@@ -104,6 +106,71 @@ async def test_light_set_light(light_obj: Light, status: bool, level: Optional[i
         )
 
 
+@pytest.mark.parametrize("sensitivity", [1, 100, -10])
+@pytest.mark.asyncio
+async def test_light_set_sensitivity(
+    light_obj: Light,
+    sensitivity: int,
+):
+    light_obj.api.api_request.reset_mock()
+
+    light_obj.light_device_settings.pir_sensitivity = 50
+    light_obj._initial_data = light_obj.dict()
+
+    if sensitivity == -10:
+        with pytest.raises(ValidationError):
+            await light_obj.set_sensitivity(sensitivity)
+
+            assert not light_obj.api.api_request.called
+    else:
+        await light_obj.set_sensitivity(sensitivity)
+
+        expected = {"lightDeviceSettings": {"pirSensitivity": sensitivity}}
+
+        light_obj.api.api_request.assert_called_with(
+            f"lights/{light_obj.id}",
+            method="patch",
+            json=expected,
+        )
+
+
+@pytest.mark.parametrize(
+    "duration",
+    [
+        timedelta(seconds=1),
+        timedelta(seconds=15),
+        timedelta(seconds=900),
+        timedelta(seconds=1000),
+    ],
+)
+@pytest.mark.asyncio
+async def test_light_set_duration(
+    light_obj: Light,
+    duration: timedelta,
+):
+    light_obj.api.api_request.reset_mock()
+
+    light_obj.light_device_settings.pir_duration = timedelta(seconds=30)
+    light_obj._initial_data = light_obj.dict()
+
+    duration_invalid = duration is not None and int(duration.total_seconds()) in (1, 1000)
+    if duration_invalid:
+        with pytest.raises(BadRequest):
+            await light_obj.set_duration(duration)
+
+            assert not light_obj.api.api_request.called
+    else:
+        await light_obj.set_duration(duration)
+
+        expected = {"lightDeviceSettings": {"pirDuration": to_ms(duration)}}
+
+        light_obj.api.api_request.assert_called_with(
+            f"lights/{light_obj.id}",
+            method="patch",
+            json=expected,
+        )
+
+
 @pytest.mark.parametrize("mode", [LightModeType.MANUAL, LightModeType.WHEN_DARK])
 @pytest.mark.parametrize("enable_at", [None, LightModeEnableType.ALWAYS])
 @pytest.mark.parametrize(
@@ -179,16 +246,28 @@ async def test_viewer_set_liveview_invalid(viewer_obj: Viewer, liveview_obj: Liv
 @pytest.mark.asyncio
 async def test_viewer_set_liveview_valid(viewer_obj: Viewer, liveview_obj: Liveview):
     viewer_obj.api.api_request.reset_mock()
+    viewer_obj.api.emit_message = Mock()
+
+    old_viewer = viewer_obj.copy()
 
     viewer_obj.liveview_id = "bad_id"
     viewer_obj._initial_data = viewer_obj.dict()
 
     await viewer_obj.set_liveview(liveview_obj)
-
     viewer_obj.api.api_request.assert_called_with(
         f"viewers/{viewer_obj.id}",
         method="patch",
         json={"liveview": liveview_obj.id},
+    )
+
+    viewer_obj.api.emit_message.assert_called_with(
+        WSSubscriptionMessage(
+            action=WSAction.UPDATE,
+            new_update_id=viewer_obj.api.bootstrap.last_update_id,
+            changed_data={"liveview_id": liveview_obj.id},
+            old_obj=old_viewer,
+            new_obj=viewer_obj,
+        )
     )
 
 
@@ -624,6 +703,35 @@ async def test_camera_set_lcd_text_custom(camera_obj: Optional[Camera]):
 
 
 @pytest.mark.asyncio
+async def test_camera_set_lcd_text_custom_to_custom(camera_obj: Optional[Camera]):
+
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.feature_flags.has_lcd_screen = True
+    camera_obj.lcd_message = LCDMessage(
+        type=DoorbellMessageType.CUSTOM_MESSAGE,
+        text="Welcome",
+        reset_at=None,
+    )
+    camera_obj._initial_data = camera_obj.dict()
+
+    now = datetime.utcnow()
+    await camera_obj.set_lcd_text(DoorbellMessageType.CUSTOM_MESSAGE, "Test", now)
+
+    camera_obj.api.api_request.assert_called_with(
+        f"cameras/{camera_obj.id}",
+        method="patch",
+        json={
+            "lcdMessage": {
+                "type": DoorbellMessageType.CUSTOM_MESSAGE.value,
+                "text": "Test",
+                "resetAt": to_js_time(now),
+            }
+        },
+    )
+
+
+@pytest.mark.asyncio
 async def test_camera_set_lcd_text_invalid_text(camera_obj: Optional[Camera]):
     if camera_obj is None:
         pytest.skip("No camera_obj obj found")
@@ -663,8 +771,53 @@ async def test_camera_set_lcd_text(camera_obj: Optional[Camera]):
             "lcdMessage": {
                 "type": DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR.value,
                 "text": DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR.value.replace("_", " "),
+                "resetAt": None,
             }
         },
+    )
+
+
+@pytest.mark.asyncio
+@patch("pyunifiprotect.data.devices.utc_now")
+async def test_camera_set_lcd_text_none(mock_now, camera_obj: Optional[Camera], now: datetime):
+    mock_now.return_value = now
+
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    old_camera = camera_obj.copy()
+    camera_obj.api.emit_message = Mock()
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.feature_flags.has_lcd_screen = True
+    camera_obj.lcd_message = LCDMessage(
+        type=DoorbellMessageType.DO_NOT_DISTURB,
+        text=DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " "),
+        reset_at=None,
+    )
+    camera_obj._initial_data = camera_obj.dict()
+
+    await camera_obj.set_lcd_text(None)
+
+    expected_dt = now - timedelta(seconds=10)
+    camera_obj.api.api_request.assert_called_with(
+        f"cameras/{camera_obj.id}",
+        method="patch",
+        json={
+            "lcdMessage": {
+                "resetAt": to_js_time(expected_dt),
+            }
+        },
+    )
+
+    camera_obj.api.emit_message.assert_called_with(
+        WSSubscriptionMessage(
+            action=WSAction.UPDATE,
+            new_update_id=camera_obj.api.bootstrap.last_update_id,
+            changed_data={"lcd_message": {"reset_at": expected_dt}},
+            old_obj=old_camera,
+            new_obj=camera_obj,
+        )
     )
 
 

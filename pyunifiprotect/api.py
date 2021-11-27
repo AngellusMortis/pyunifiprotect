@@ -512,13 +512,16 @@ class ProtectApiClient(BaseApiClient):
 
         now = time.monotonic()
         now_dt = utc_now()
+        max_event_dt = now_dt - timedelta(hours=24)
         if force:
             self.reset_ws()
             self._last_update = NEVER_RAN
+            self._last_update_dt = max_event_dt
             self._last_websocket_check = NEVER_RAN
 
         if self._bootstrap is None or now - self._last_update > DEVICE_UPDATE_INTERVAL:
             self._last_update = now
+            self._last_update_dt = now_dt
             self._bootstrap = await self.get_bootstrap()
 
         active_ws = await self.check_ws()
@@ -528,13 +531,20 @@ class ProtectApiClient(BaseApiClient):
             _LOGGER.debug("Skipping update since websocket is active")
             return None
 
-        events = await self.get_events(start=self._last_update_dt, end=now_dt)
+        events = await self.get_events(start=self._last_update_dt or max_event_dt, end=now_dt)
         for event in events:
             self.bootstrap.process_event(event)
 
         self._last_update = now
         self._last_update_dt = now_dt
         return self._bootstrap
+
+    def emit_message(self, msg: WSSubscriptionMessage) -> None:
+        for sub in self._ws_subscriptions:
+            try:
+                sub(msg)
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception("Exception while running subscription handler")
 
     def _process_ws_message(self, msg: aiohttp.WSMessage) -> None:
         packet = WSPacket(msg.data)
@@ -543,11 +553,7 @@ class ProtectApiClient(BaseApiClient):
         if processed_message is None:
             return
 
-        for sub in self._ws_subscriptions:
-            try:
-                sub(processed_message)
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Exception while running subscription handler")
+        self.emit_message(processed_message)
 
     async def get_events_raw(
         self,

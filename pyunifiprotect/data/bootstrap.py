@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 import logging
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, Optional, Set, Tuple
 from uuid import UUID
 
 from pyunifiprotect.data.base import ProtectBaseObject, ProtectModel, ProtectModelWithId
@@ -22,6 +22,12 @@ _LOGGER = logging.getLogger(__name__)
 
 MAX_SUPPORTED_CAMERAS = 256
 MAX_EVENT_HISTORY_IN_STATE_MACHINE = MAX_SUPPORTED_CAMERAS * 2
+
+EVENT_ATTR_MAP: Dict[EventType, Tuple[str, str]] = {
+    EventType.MOTION: ("last_motion", "last_motion_event_id"),
+    EventType.SMART_DETECT: ("last_smart_detect", "last_smart_detect_event_id"),
+    EventType.RING: ("last_ring", "last_ring_event_id"),
+}
 
 
 class Bootstrap(ProtectBaseObject):
@@ -81,25 +87,11 @@ class Bootstrap(ProtectBaseObject):
         if event.camera is None:
             return
 
-        if event.type == EventType.MOTION and (
-            event.camera.last_motion is None or event.start > event.camera.last_motion
-        ):
-            if event.end is None:
-                event.camera.is_motion_detected = True
-            else:
-                event.camera.is_motion_detected = False
-
-                event.camera.last_motion = event.end
-                event.camera.last_motion_event_id = event.id
-        elif event.type == EventType.SMART_DETECT and (
-            event.camera.last_smart_detect is None or event.start > event.camera.last_smart_detect
-        ):
-            if event.end is not None:
-                event.camera.last_smart_detect = event.end
-                event.camera.last_smart_detect_event_id = event.id
-        elif event.type == EventType.RING and (event.camera.last_ring is None or event.start > event.camera.last_ring):
-            event.camera.last_ring = event.start
-            event.camera.last_ring_event_id = event.id
+        if event.type in EVENT_ATTR_MAP:
+            dt_attr, event_attr = EVENT_ATTR_MAP[event.type]
+            dt = getattr(event.camera, dt_attr)
+            if dt is None or event.start >= dt or (event.end is not None and event.end >= dt):
+                setattr(event.camera, event_attr, event.id)
 
         self.events[event.id] = event
 
@@ -112,7 +104,8 @@ class Bootstrap(ProtectBaseObject):
 
         action: dict = packet.action_frame.data  # type: ignore
         data: dict = packet.data_frame.data  # type: ignore
-        self.last_update_id = UUID(action["newUpdateId"])
+        if action["newUpdateId"] is not None:
+            self.last_update_id = UUID(action["newUpdateId"])
 
         if action["modelKey"] not in ModelType.values():
             _LOGGER.debug("Unknown model type: %s", action["modelKey"])

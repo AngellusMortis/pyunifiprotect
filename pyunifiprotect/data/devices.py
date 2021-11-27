@@ -31,11 +31,13 @@ from pyunifiprotect.data.types import (
 from pyunifiprotect.exceptions import BadRequest, StreamError
 from pyunifiprotect.stream import TalkbackStream
 from pyunifiprotect.utils import (
+    from_js_time,
     is_debug,
     process_datetime,
     round_decimal,
     serialize_point,
     to_js_time,
+    utc_now,
 )
 
 if TYPE_CHECKING:
@@ -117,6 +119,21 @@ class Light(ProtectMotionDeviceModel):
         if led_level is not None:
             self.light_device_settings.led_level = led_level
 
+        await self.save_device()
+
+    async def set_sensitivity(self, sensitivity: PercentInt) -> None:
+        """Sets motion sensitivity"""
+
+        self.light_device_settings.pir_sensitivity = sensitivity
+        await self.save_device()
+
+    async def set_duration(self, duration: timedelta) -> None:
+        """Sets motion sensitivity"""
+
+        if duration.total_seconds() < 15 or duration.total_seconds() > 900:
+            raise BadRequest("Duration outside of 15s to 900s range")
+
+        self.light_device_settings.pir_duration = duration
         await self.save_device()
 
     async def set_light_settings(
@@ -669,12 +686,43 @@ class Camera(ProtectMotionDeviceModel):
 
         return data
 
+    def get_changed(self) -> Dict[str, Any]:
+        updated = super().get_changed()
+
+        if "lcd_message" in updated:
+            lcd_message = updated["lcd_message"]
+            # to "clear" LCD message, set reset_at to a time in the past
+            if lcd_message is None:
+                updated["lcd_message"] = {"reset_at": utc_now() - timedelta(seconds=10)}
+            # otherwise, pass full LCD message to prevent issues
+            elif self.lcd_message is not None:
+                updated["lcd_message"] = self.lcd_message.dict()
+
+            # if reset_at is not passed in, it will default to reset in 1 minute
+            if lcd_message is not None and "reset_at" not in lcd_message:
+                if self.lcd_message is None:
+                    updated["lcd_message"]["reset_at"] = None
+                else:
+                    updated["lcd_message"]["reset_at"] = self.lcd_message.reset_at
+
+        return updated
+
     @property
     def last_ring_event(self) -> Optional[Event]:
         if self.last_ring_event_id is None:
             return None
 
         return self.api.bootstrap.events.get(self.last_ring_event_id)
+
+    def update_from_dict(self, data: Dict[str, Any]) -> Camera:
+        # a message in the past is actually a singal to wipe the message
+        reset_at = data.get("lcd_message", {}).get("reset_at")
+        if reset_at is not None:
+            reset_at = from_js_time(reset_at)
+            if utc_now() > reset_at:
+                data["lcd_message"] = None
+
+        return super().update_from_dict(data)
 
     @property
     def last_smart_detect_event(self) -> Optional[Event]:
@@ -812,12 +860,18 @@ class Camera(ProtectMotionDeviceModel):
         await self.save_device()
 
     async def set_lcd_text(
-        self, text_type: DoorbellMessageType, text: Optional[str] = None, reset_at: Optional[datetime] = None
+        self, text_type: Optional[DoorbellMessageType], text: Optional[str] = None, reset_at: Optional[datetime] = None
     ) -> None:
         """Sets doorbell LCD text. Requires camera to be doorbell"""
 
         if not self.feature_flags.has_lcd_screen:
             raise BadRequest("Camera does not have an LCD screen")
+
+        if text_type is None:
+            self.lcd_message = None
+            # UniFi Protect bug: clearing LCD text message does _not_ emit a WS message
+            await self.save_device(force_emit=True)
+            return
 
         if text_type != DoorbellMessageType.CUSTOM_MESSAGE:
             if text is not None:
@@ -921,7 +975,8 @@ class Viewer(ProtectAdoptableDeviceModel):
                 raise BadRequest("Unknown liveview")
 
         self.liveview_id = liveview.id
-        await self.save_device()
+        # UniFi Protect bug: changing the liveview does _not_ emit a WS message
+        await self.save_device(force_emit=True)
 
 
 class Bridge(ProtectAdoptableDeviceModel):
