@@ -671,16 +671,21 @@ class Camera(ProtectMotionDeviceModel):
     def get_changed(self) -> Dict[str, Any]:
         updated = super().get_changed()
 
-        # if reset_at is not passed in, it will default to reset in 1 minute
-        lcd_message = updated.get("lcd_message")
-        if lcd_message is not None and "reset_at" not in lcd_message:
-            if self.lcd_message is None:
-                updated["lcd_message"]["reset_at"] = None
-            else:
-                updated["lcd_message"]["reset_at"] = self.lcd_message.reset_at
-        # to "clear" LCD message, set reset_at to a time in the past
-        elif "lcd_message" in updated and lcd_message is None:
-            updated["lcd_message"] = {"reset_at": utc_now() - timedelta(seconds=10)}
+        if "lcd_message" in updated:
+            lcd_message = updated["lcd_message"]
+            # to "clear" LCD message, set reset_at to a time in the past
+            if lcd_message is None:
+                updated["lcd_message"] = {"reset_at": utc_now() - timedelta(seconds=10)}
+            # otherwise, pass full LCD message to prevent issues
+            elif self.lcd_message is not None:
+                updated["lcd_message"] = self.lcd_message.dict()
+
+            # if reset_at is not passed in, it will default to reset in 1 minute
+            if lcd_message is not None and "reset_at" not in lcd_message:
+                if self.lcd_message is None:
+                    updated["lcd_message"]["reset_at"] = None
+                else:
+                    updated["lcd_message"]["reset_at"] = self.lcd_message.reset_at
 
         return updated
 

@@ -618,6 +618,35 @@ async def test_camera_set_lcd_text_custom(camera_obj: Optional[Camera]):
 
 
 @pytest.mark.asyncio
+async def test_camera_set_lcd_text_custom_to_custom(camera_obj: Optional[Camera]):
+
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.feature_flags.has_lcd_screen = True
+    camera_obj.lcd_message = LCDMessage(
+        type=DoorbellMessageType.CUSTOM_MESSAGE,
+        text="Welcome",
+        reset_at=None,
+    )
+    camera_obj._initial_data = camera_obj.dict()
+
+    now = datetime.utcnow()
+    await camera_obj.set_lcd_text(DoorbellMessageType.CUSTOM_MESSAGE, "Test", now)
+
+    camera_obj.api.api_request.assert_called_with(
+        f"cameras/{camera_obj.id}",
+        method="patch",
+        json={
+            "lcdMessage": {
+                "type": DoorbellMessageType.CUSTOM_MESSAGE.value,
+                "text": "Test",
+                "resetAt": to_js_time(now),
+            }
+        },
+    )
+
+
+@pytest.mark.asyncio
 async def test_camera_set_lcd_text_invalid_text(camera_obj: Optional[Camera]):
     if camera_obj is None:
         pytest.skip("No camera_obj obj found")
