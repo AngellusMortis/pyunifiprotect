@@ -168,7 +168,6 @@ async def test_get_live_views(old_protect_client: UpvServer, liveviews: List[Dic
         raise_exception=True,
     )
 
-    assert len(data) == CONSTANTS["counts"]["liveview"]
     for view in data:
         mock_view = None
 

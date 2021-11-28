@@ -479,22 +479,24 @@ class ProtectModelWithId(ProtectModel):
         await self._api_update(updated)
         self._initial_data = new_data
 
-        if force_emit:
-            header = WSPacketFrameHeader(
-                packet_type=1, payload_format=ProtectWSPayloadFormat.JSON.value, deflated=0, unknown=1, payload_size=1
-            )
+        if not force_emit:
+            return
 
-            action_frame = WSJSONPacketFrame()
-            action_frame.header = header
-            action_frame.data = {"action": "update", "newUpdateId": None, "modelKey": self.model.value, "id": self.id}
+        header = WSPacketFrameHeader(
+            packet_type=1, payload_format=ProtectWSPayloadFormat.JSON.value, deflated=0, unknown=1, payload_size=1
+        )
 
-            data_frame = WSJSONPacketFrame()
-            data_frame.header = header
-            data_frame.data = updated
+        action_frame = WSJSONPacketFrame()
+        action_frame.header = header
+        action_frame.data = {"action": "update", "newUpdateId": None, "modelKey": self.model.value, "id": self.id}
 
-            message = self.api.bootstrap.process_ws_packet(WSPacket(action_frame.packed + data_frame.packed))
-            if message is not None:
-                self.api.emit_message(message)
+        data_frame = WSJSONPacketFrame()
+        data_frame.header = header
+        data_frame.data = updated
+
+        message = self.api.bootstrap.process_ws_packet(WSPacket(action_frame.packed + data_frame.packed))
+        if message is not None:
+            self.api.emit_message(message)
 
 
 class ProtectDeviceModel(ProtectModelWithId):
@@ -504,7 +506,7 @@ class ProtectDeviceModel(ProtectModelWithId):
     host: Optional[IPv4Address]
     up_since: Optional[datetime]
     uptime: Optional[timedelta]
-    last_seen: datetime
+    last_seen: Optional[datetime]
     hardware_revision: Optional[str]
     firmware_version: str
     is_updating: bool
