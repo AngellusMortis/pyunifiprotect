@@ -115,6 +115,7 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
 @enum.unique
 class StateType(str, enum.Enum):
     CONNECTED = "CONNECTED"
+    CONNECTING = "CONNECTING"
     DISCONNECTED = "DISCONNECTED"
 
 

@@ -452,7 +452,7 @@ class ProtectDeviceModel(ProtectModelWithId):
     host: Optional[IPv4Address]
     up_since: Optional[datetime]
     uptime: Optional[timedelta]
-    last_seen: datetime
+    last_seen: Optional[datetime]
     hardware_revision: Optional[str]
     firmware_version: str
     is_updating: bool
