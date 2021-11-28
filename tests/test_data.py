@@ -145,7 +145,6 @@ def test_bootstrap(bootstrap):
     del bootstrap["nvr"]["wifiSettings"]
     del bootstrap["nvr"]["ssoChannel"]
     del bootstrap["nvr"]["smartDetectAgreement"]
-    del bootstrap["nvr"]["doorbellSettings"]["customMessages"]
 
     for model_type in ModelType.bootstrap_models():
         key = model_type + "s"
@@ -249,7 +248,6 @@ async def test_play_audio(mock_talkback, camera_obj: Camera):
 
     mock_talkback.assert_called_with(camera_obj, "test", None)
     assert mock_instance.run_until_complete.called
-    assert not mock_instance.get_errors.called
 
 
 @pytest.mark.asyncio
@@ -268,7 +266,6 @@ async def test_play_audio_error(mock_talkback, camera_obj: Camera):
 
     mock_talkback.assert_called_with(camera_obj, "test", None)
     assert mock_instance.run_until_complete.called
-    assert mock_instance.get_errors.called
 
 
 @pytest.mark.asyncio

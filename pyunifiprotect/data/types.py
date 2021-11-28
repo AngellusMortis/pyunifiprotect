@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import enum
-from typing import TYPE_CHECKING, Any, Generic, List, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Generic, List, Literal, Optional, TypeVar, Union
 
 from packaging.version import Version as BaseVersion
 from pydantic import ConstrainedDecimal, ConstrainedInt
 from pydantic.color import Color as BaseColor
+from pydantic.types import ConstrainedStr
 
 KT = TypeVar("KT")
 VT = TypeVar("VT")
@@ -22,6 +23,10 @@ else:
 
     class FixSizeOrderedDictBase(Generic[KT, VT], dict):
         pass
+
+
+DEFAULT = "DEFAULT_VALUE"
+DEFAULT_TYPE = Literal["DEFAULT_VALUE"]
 
 
 class FixSizeOrderedDict(FixSizeOrderedDictBase[KT, VT]):
@@ -172,6 +177,10 @@ class IRLEDMode(str, enum.Enum):
     ON = "on"
     AUTO_NO_LED = "autoFilterOnly"
     OFF = "off"
+
+
+class DoorbellText(ConstrainedStr):
+    max_length = 30
 
 
 class LEDLevel(ConstrainedInt):

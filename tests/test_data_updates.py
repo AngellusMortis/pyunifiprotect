@@ -20,10 +20,12 @@ from pyunifiprotect.data import (
     Viewer,
 )
 from pyunifiprotect.data.devices import CameraZone
-from pyunifiprotect.data.types import LightModeEnableType, LightModeType
+from pyunifiprotect.data.nvr import NVR
+from pyunifiprotect.data.types import DEFAULT, LightModeEnableType, LightModeType
 from pyunifiprotect.data.websocket import WSAction, WSSubscriptionMessage
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import to_js_time, to_ms
+from tests.conftest import nvr
 
 
 @pytest.mark.asyncio
@@ -33,6 +35,18 @@ async def test_save_device_no_changes(camera_obj: Camera):
     await camera_obj.save_device()
 
     assert not camera_obj.api.api_request.called
+
+
+@pytest.mark.asyncio
+async def test_device_reboot(light_obj: Light):
+    light_obj.api.api_request.reset_mock()
+
+    await light_obj.reboot()
+
+    light_obj.api.api_request.assert_called_with(
+        f"lights/{light_obj.id}/reboot",
+        method="post",
+    )
 
 
 @pytest.mark.parametrize("status", [True, False])
@@ -822,6 +836,41 @@ async def test_camera_set_lcd_text_none(mock_now, camera_obj: Optional[Camera], 
 
 
 @pytest.mark.asyncio
+@patch("pyunifiprotect.data.devices.utc_now")
+async def test_camera_set_lcd_text_default(mock_now, camera_obj: Optional[Camera], now: datetime):
+    mock_now.return_value = now
+
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    camera_obj.api.emit_message = Mock()
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.feature_flags.has_lcd_screen = True
+    camera_obj.lcd_message = LCDMessage(
+        type=DoorbellMessageType.DO_NOT_DISTURB,
+        text=DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " "),
+        reset_at=None,
+    )
+    camera_obj._initial_data = camera_obj.dict()
+
+    await camera_obj.set_lcd_text(DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR, reset_at=DEFAULT)
+
+    expected_dt = now + camera_obj.api.bootstrap.nvr.doorbell_settings.default_message_reset_timeout
+    camera_obj.api.api_request.assert_called_with(
+        f"cameras/{camera_obj.id}",
+        method="patch",
+        json={
+            "lcdMessage": {
+                "type": DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR.value,
+                "text": DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR.value.replace("_", " "),
+                "resetAt": to_js_time(expected_dt),
+            }
+        },
+    )
+
+
+@pytest.mark.asyncio
 async def test_camera_set_privacy_no_privacy(camera_obj: Optional[Camera]):
     if camera_obj is None:
         pytest.skip("No camera_obj obj found")
@@ -903,3 +952,79 @@ async def test_camera_set_privacy(
             assert camera_obj.is_privacy_on
         else:
             assert not camera_obj.is_privacy_on
+
+
+@pytest.mark.asyncio
+async def test_nvr_set_default_reset_timeout(nvr_obj: NVR):
+    nvr_obj.api.api_request.reset_mock()
+
+    duration = timedelta(seconds=10)
+    await nvr_obj.set_default_reset_timeout(duration)
+
+    nvr_obj.api.api_request.assert_called_with(
+        "nvr",
+        method="patch",
+        json={"doorbellSettings": {"defaultMessageResetTimeout": to_ms(duration)}},
+    )
+
+
+@pytest.mark.parametrize("message", ["Test", "fqthpqBgVMKXp9jXX2VeuGeXYfx2mMjB"])
+@pytest.mark.asyncio
+async def test_nvr_set_default_doorbell_message(nvr_obj: NVR, message: str):
+    nvr_obj.api.api_request.reset_mock()
+
+    if len(message) > 30:
+        with pytest.raises(ValidationError):
+            await nvr_obj.set_default_doorbell_message(message)
+
+        assert not nvr_obj.api.api_request.called
+    else:
+        await nvr_obj.set_default_doorbell_message(message)
+
+        nvr_obj.api.api_request.assert_called_with(
+            "nvr",
+            method="patch",
+            json={"doorbellSettings": {"defaultMessageText": message}},
+        )
+
+
+@pytest.mark.parametrize("message", ["Welcome", "Test", "fqthpqBgVMKXp9jXX2VeuGeXYfx2mMjB"])
+@pytest.mark.asyncio
+async def test_nvr_add_custom_doorbell_message(nvr_obj: NVR, message: str):
+    nvr_obj.api.api_request.reset_mock()
+
+    nvr_obj.doorbell_settings.custom_messages = ["Welcome"]
+    nvr_obj._initial_data = nvr_obj.dict()
+
+    if message != "Test":
+        with pytest.raises(BadRequest):
+            await nvr_obj.add_custom_doorbell_message(message)
+
+        assert not nvr_obj.api.api_request.called
+    else:
+        await nvr_obj.add_custom_doorbell_message(message)
+
+        nvr_obj.api.api_request.assert_called_with(
+            "nvr", method="patch", json={"doorbellSettings": {"customMessages": ["Welcome", "Test"]}}
+        )
+
+
+@pytest.mark.parametrize("message", ["Welcome", "Test"])
+@pytest.mark.asyncio
+async def test_nvr_remove_custom_doorbell_message(nvr_obj: NVR, message: str):
+    nvr_obj.api.api_request.reset_mock()
+
+    nvr_obj.doorbell_settings.custom_messages = ["Welcome"]
+    nvr_obj._initial_data = nvr_obj.dict()
+
+    if message == "Test":
+        with pytest.raises(BadRequest):
+            await nvr_obj.remove_custom_doorbell_message(message)
+
+        assert not nvr_obj.api.api_request.called
+    else:
+        await nvr_obj.remove_custom_doorbell_message(message)
+
+        nvr_obj.api.api_request.assert_called_with(
+            "nvr", method="patch", json={"doorbellSettings": {"customMessages": []}}
+        )

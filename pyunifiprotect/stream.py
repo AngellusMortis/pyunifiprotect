@@ -20,8 +20,8 @@ class FfmpegCommand:
     args: List[str]
     process: Optional[Process] = None
 
-    stdout: Optional[List[str]] = []
-    stderr: Optional[List[str]] = []
+    stdout: List[str] = []
+    stderr: List[str] = []
 
     def __init__(self, cmd: str, ffmpeg_path: Optional[Path] = None) -> None:
         self.args = split(cmd)
@@ -75,7 +75,10 @@ class FfmpegCommand:
         self.process.kill()
         await self.process.wait()
 
-    async def _read_stream(self, stream: StreamReader, attr):
+    async def _read_stream(self, stream: Optional[StreamReader], attr: str) -> None:
+        if stream is None:
+            return
+
         while True:
             line = await stream.readline()
             if line:

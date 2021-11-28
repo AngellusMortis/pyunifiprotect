@@ -10,7 +10,7 @@ from pathlib import Path
 from shlex import split
 from subprocess import run
 from tempfile import NamedTemporaryFile
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 from unittest.mock import AsyncMock, Mock
 
 import aiohttp
@@ -227,6 +227,12 @@ async def smart_dectect_obj(protect_client: ProtectApiClient, raw_events):  # py
 
 @pytest.fixture
 @pytest.mark.asyncio
+async def nvr_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+    yield protect_client.bootstrap.nvr
+
+
+@pytest.fixture
+@pytest.mark.asyncio
 async def camera_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
     yield list(protect_client.bootstrap.cameras.values())[0]
 
@@ -411,6 +417,7 @@ def disable_camera_validation():
 
 class MockTalkback:
     is_error: bool = False
+    stdout: List[str] = []
+    stderr: List[str] = []
 
     run_until_complete = AsyncMock()
-    get_errors = AsyncMock(return_value=[])

@@ -894,3 +894,20 @@ class ProtectApiClient(BaseApiClient):
         """
 
         await self.api_request(f"{model_type.value}s/{device_id}", method="patch", json=data)
+
+    async def update_nvr(self, data: Dict[str, Any]) -> None:
+        """
+        Sends an update for main UFP NVR device
+
+        USE WITH CAUTION, all possible combinations of updating objects have not been fully tested.
+        May have unexpected side effects.
+
+        Tested updates have been added a methods on applicable devices.
+        """
+
+        await self.api_request("nvr", method="patch", json=data)
+
+    async def reboot_device(self, model_type: ModelType, device_id: str) -> None:
+        """Reboots an adopted device"""
+
+        await self.api_request(f"{model_type.value}s/{device_id}/reboot", method="post")

@@ -449,6 +449,53 @@ class ProtectModel(ProtectBaseObject):
 class ProtectModelWithId(ProtectModel):
     id: str
 
+    async def _api_update(self, data: Dict[str, Any]) -> None:
+        raise NotImplementedError()
+
+    async def save_device(self, force_emit: bool = False) -> None:
+        """
+        Generates a diff for unsaved changed on the device and sends them back to UFP
+
+        USE WITH CAUTION, updates _all_ fields for the current object that have been changed.
+        May have unexpected side effects.
+
+        Tested updates have been added a methods on applicable devices.
+
+        Args:
+
+        * `force_emit`: Emit a fake UFP WS message. Should only be use for when UFP does not properly emit a WS message
+        """
+
+        if self.model is None:
+            raise BadRequest("Unknown model type")
+
+        new_data = self.dict(exclude=self._get_excluded_changed_fields())
+        updated = self.unifi_dict(data=self.get_changed())
+
+        # do not patch when there are no updates
+        if updated == {}:
+            return
+
+        await self._api_update(updated)
+        self._initial_data = new_data
+
+        if force_emit:
+            header = WSPacketFrameHeader(
+                packet_type=1, payload_format=ProtectWSPayloadFormat.JSON.value, deflated=0, unknown=1, payload_size=1
+            )
+
+            action_frame = WSJSONPacketFrame()
+            action_frame.header = header
+            action_frame.data = {"action": "update", "newUpdateId": None, "modelKey": self.model.value, "id": self.id}
+
+            data_frame = WSJSONPacketFrame()
+            data_frame.header = header
+            data_frame.data = updated
+
+            message = self.api.bootstrap.process_ws_packet(WSPacket(action_frame.packed + data_frame.packed))
+            if message is not None:
+                self.api.emit_message(message)
+
 
 class ProtectDeviceModel(ProtectModelWithId):
     name: str
@@ -522,6 +569,10 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "bridge": "bridgeId"}
 
+    async def _api_update(self, data: Dict[str, Any]) -> None:
+        if self.model is not None:
+            return await self.api.update_device(self.model, self.id, data)
+
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
@@ -575,49 +626,11 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
         self.is_ssh_enabled = enabled
         await self.save_device()
 
-    async def save_device(self, force_emit: bool = False) -> None:
-        """
-        Generates a diff for unsaved changed on the device and sends them back to UFP
+    async def reboot(self) -> None:
+        """Reboots an adopted device"""
 
-        USE WITH CAUTION, updates _all_ fields for the current object that have been changed.
-        May have unexpected side effects.
-
-        Tested updates have been added a methods on applicable devices.
-
-        Args:
-
-        * `force_emit`: Emit a fake UFP WS message. Should only be use for when UFP does not properly emit a WS message
-        """
-
-        if self.model is None:
-            raise BadRequest("Unknown model type")
-
-        new_data = self.dict(exclude=self._get_excluded_changed_fields())
-        updated = self.unifi_dict(data=self.get_changed())
-
-        # do not patch when there are no updates
-        if updated == {}:
-            return
-
-        await self.api.update_device(self.model, self.id, updated)
-        self._initial_data = new_data
-
-        if force_emit:
-            header = WSPacketFrameHeader(
-                packet_type=1, payload_format=ProtectWSPayloadFormat.JSON.value, deflated=0, unknown=1, payload_size=1
-            )
-
-            action_frame = WSJSONPacketFrame()
-            action_frame.header = header
-            action_frame.data = {"action": "update", "newUpdateId": None, "modelKey": self.model.value, "id": self.id}
-
-            data_frame = WSJSONPacketFrame()
-            data_frame.header = header
-            data_frame.data = updated
-
-            message = self.api.bootstrap.process_ws_packet(WSPacket(action_frame.packed + data_frame.packed))
-            if message is not None:
-                self.api.emit_message(message)
+        if self.model is not None:
+            await self.api.reboot_device(self.model, self.id)
 
 
 class ProtectMotionDeviceModel(ProtectAdoptableDeviceModel):

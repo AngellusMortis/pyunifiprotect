@@ -19,6 +19,7 @@ from pyunifiprotect.data.base import (
 from pyunifiprotect.data.devices import Camera, CameraZone
 from pyunifiprotect.data.types import (
     DoorbellMessageType,
+    DoorbellText,
     EventType,
     ModelType,
     PercentInt,
@@ -381,16 +382,14 @@ class SystemInfo(ProtectBaseObject):
 
 class DoorbellMessage(ProtectBaseObject):
     type: DoorbellMessageType
-    text: str
+    text: DoorbellText
 
 
 class DoorbellSettings(ProtectBaseObject):
-    default_message_text: str
+    default_message_text: DoorbellText
     default_message_reset_timeout: timedelta
     all_messages: List[DoorbellMessage]
-
-    # TODO
-    # customMessages
+    custom_messages: List[DoorbellText]
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
@@ -503,9 +502,45 @@ class NVR(ProtectDeviceModel):
 
         return data
 
+    async def _api_update(self, data: Dict[str, Any]) -> None:
+        return await self.api.update_nvr(data)
+
     @property
     def protect_url(self) -> str:
         return f"{self.api.base_url}/protect/devices/{self.api.bootstrap.nvr.id}"
+
+    async def set_default_reset_timeout(self, timeout: timedelta) -> None:
+        """Sets the default message reset timeout"""
+
+        self.doorbell_settings.default_message_reset_timeout = timeout
+        await self.save_device()
+
+    async def set_default_doorbell_message(self, message: DoorbellText) -> None:
+        """Sets default doorbell message"""
+
+        self.doorbell_settings.default_message_text = message
+        await self.save_device()
+
+    async def add_custom_doorbell_message(self, message: DoorbellText) -> None:
+        """Adds custom doorbell message"""
+
+        if len(message) > 30:
+            raise BadRequest("Message length over 30 characters")
+
+        if message in self.doorbell_settings.custom_messages:
+            raise BadRequest("Custom doorbell message already exists")
+
+        self.doorbell_settings.custom_messages.append(message)
+        await self.save_device()
+
+    async def remove_custom_doorbell_message(self, message: DoorbellText) -> None:
+        """Removes custom doorbell message"""
+
+        if message not in self.doorbell_settings.custom_messages:
+            raise BadRequest("Custom doorbell message does not exists")
+
+        self.doorbell_settings.custom_messages.remove(message)
+        await self.save_device()
 
 
 class LiveviewSlot(ProtectBaseObject):
