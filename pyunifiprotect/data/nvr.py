@@ -509,6 +509,29 @@ class NVR(ProtectDeviceModel):
     def protect_url(self) -> str:
         return f"{self.api.base_url}/protect/devices/{self.api.bootstrap.nvr.id}"
 
+    def update_all_messages(self):
+        """Updates doorbell_settings.all_messages after adding/removing custom message"""
+
+        messages = self.doorbell_settings.custom_messages
+        self.doorbell_settings.all_messages = [
+            DoorbellMessage(
+                type=DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR,
+                text=DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR.value.replace("_", " "),
+            ),
+            DoorbellMessage(
+                type=DoorbellMessageType.DO_NOT_DISTURB,
+                text=DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " "),
+            ),
+            *(
+                DoorbellMessage(
+                    type=DoorbellMessageType.CUSTOM_MESSAGE,
+                    text=message,
+                )
+                for message in messages
+            ),
+        ]
+        self._initial_data = self.dict()
+
     async def set_default_reset_timeout(self, timeout: timedelta) -> None:
         """Sets the default message reset timeout"""
 
@@ -532,6 +555,7 @@ class NVR(ProtectDeviceModel):
 
         self.doorbell_settings.custom_messages.append(message)
         await self.save_device()
+        self.update_all_messages()
 
     async def remove_custom_doorbell_message(self, message: DoorbellText) -> None:
         """Removes custom doorbell message"""
@@ -541,6 +565,7 @@ class NVR(ProtectDeviceModel):
 
         self.doorbell_settings.custom_messages.remove(message)
         await self.save_device()
+        self.update_all_messages()
 
 
 class LiveviewSlot(ProtectBaseObject):

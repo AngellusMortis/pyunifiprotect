@@ -20,7 +20,7 @@ from pyunifiprotect.data import (
     Viewer,
 )
 from pyunifiprotect.data.devices import CameraZone
-from pyunifiprotect.data.nvr import NVR
+from pyunifiprotect.data.nvr import NVR, DoorbellMessage
 from pyunifiprotect.data.types import DEFAULT, LightModeEnableType, LightModeType
 from pyunifiprotect.data.websocket import WSAction, WSSubscriptionMessage
 from pyunifiprotect.exceptions import BadRequest
@@ -1007,6 +1007,25 @@ async def test_nvr_add_custom_doorbell_message(nvr_obj: NVR, message: str):
             "nvr", method="patch", json={"doorbellSettings": {"customMessages": ["Welcome", "Test"]}}
         )
 
+        assert nvr_obj.doorbell_settings.all_messages == [
+            DoorbellMessage(
+                type=DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR,
+                text=DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR.value.replace("_", " "),
+            ),
+            DoorbellMessage(
+                type=DoorbellMessageType.DO_NOT_DISTURB,
+                text=DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " "),
+            ),
+            DoorbellMessage(
+                type=DoorbellMessageType.CUSTOM_MESSAGE,
+                text="Welcome",
+            ),
+            DoorbellMessage(
+                type=DoorbellMessageType.CUSTOM_MESSAGE,
+                text="Test",
+            ),
+        ]
+
 
 @pytest.mark.parametrize("message", ["Welcome", "Test"])
 @pytest.mark.asyncio
@@ -1027,3 +1046,14 @@ async def test_nvr_remove_custom_doorbell_message(nvr_obj: NVR, message: str):
         nvr_obj.api.api_request.assert_called_with(
             "nvr", method="patch", json={"doorbellSettings": {"customMessages": []}}
         )
+
+        assert nvr_obj.doorbell_settings.all_messages == [
+            DoorbellMessage(
+                type=DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR,
+                text=DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR.value.replace("_", " "),
+            ),
+            DoorbellMessage(
+                type=DoorbellMessageType.DO_NOT_DISTURB,
+                text=DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " "),
+            ),
+        ]
