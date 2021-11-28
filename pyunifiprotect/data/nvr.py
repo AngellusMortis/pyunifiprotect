@@ -509,7 +509,7 @@ class NVR(ProtectDeviceModel):
     def protect_url(self) -> str:
         return f"{self.api.base_url}/protect/devices/{self.api.bootstrap.nvr.id}"
 
-    def update_all_messages(self):
+    def update_all_messages(self) -> None:
         """Updates doorbell_settings.all_messages after adding/removing custom message"""
 
         messages = self.doorbell_settings.custom_messages
