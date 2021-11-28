@@ -356,9 +356,12 @@ def tmp_binary_file():
 def compare_objs(obj_type, expected, actual):
     # TODO: fields not supported yet
     if obj_type == ModelType.CAMERA.value:
-        del expected["apMac"]
+        # fields does not always exist (G4 Instant)
+        if "apMac" in expected:
+            del expected["apMac"]
+        if "elementInfo" in expected:
+            del expected["elementInfo"]
         del expected["apRssi"]
-        del expected["elementInfo"]
         del expected["lastPrivacyZonePositionId"]
         del expected["recordingSchedules"]
         del expected["smartDetectLines"]
