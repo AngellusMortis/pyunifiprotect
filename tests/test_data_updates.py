@@ -261,8 +261,6 @@ async def test_viewer_set_liveview_valid(viewer_obj: Viewer, liveview_obj: Livev
     viewer_obj.api.api_request.reset_mock()
     viewer_obj.api.emit_message = Mock()
 
-    old_viewer = viewer_obj.copy()
-
     viewer_obj.liveview_id = "bad_id"
     viewer_obj._initial_data = viewer_obj.dict()
 
@@ -273,12 +271,14 @@ async def test_viewer_set_liveview_valid(viewer_obj: Viewer, liveview_obj: Livev
         json={"liveview": liveview_obj.id},
     )
 
+    # old/new is actually the same here since the client
+    # generating the message is the one that changed it
     viewer_obj.api.emit_message.assert_called_with(
         WSSubscriptionMessage(
             action=WSAction.UPDATE,
             new_update_id=viewer_obj.api.bootstrap.last_update_id,
             changed_data={"liveview_id": liveview_obj.id},
-            old_obj=old_viewer,
+            old_obj=viewer_obj,
             new_obj=viewer_obj,
         )
     )
@@ -798,7 +798,6 @@ async def test_camera_set_lcd_text_none(mock_now, camera_obj: Optional[Camera], 
     if camera_obj is None:
         pytest.skip("No camera_obj obj found")
 
-    old_camera = camera_obj.copy()
     camera_obj.api.emit_message = Mock()
     camera_obj.api.api_request.reset_mock()
 
@@ -823,12 +822,14 @@ async def test_camera_set_lcd_text_none(mock_now, camera_obj: Optional[Camera], 
         },
     )
 
+    # old/new is actually the same here since the client
+    # generating the message is the one that changed it
     camera_obj.api.emit_message.assert_called_with(
         WSSubscriptionMessage(
             action=WSAction.UPDATE,
             new_update_id=camera_obj.api.bootstrap.last_update_id,
             changed_data={"lcd_message": {"reset_at": expected_dt}},
-            old_obj=old_camera,
+            old_obj=camera_obj,
             new_obj=camera_obj,
         )
     )
