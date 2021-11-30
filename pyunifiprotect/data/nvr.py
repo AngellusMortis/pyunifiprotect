@@ -493,7 +493,7 @@ class NVR(ProtectDeviceModel):
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "lastUpdateAt" in data:
             data["lastUpdateAt"] = process_datetime(data, "lastUpdateAt")
-        if "recordingRetentionDurationMs" in data and data["recordingRetentionDuration"] is not None:
+        if "recordingRetentionDurationMs" in data and data["recordingRetentionDurationMs"] is not None:
             data["recordingRetentionDuration"] = timedelta(milliseconds=data.pop("recordingRetentionDurationMs"))
         if "timezone" in data and not isinstance(data["timezone"], tzinfo):
             data["timezone"] = pytz.timezone(data["timezone"])
@@ -582,7 +582,8 @@ class LiveviewSlot(ProtectBaseObject):
         if self._cameras is not None:
             return self._cameras
 
-        self._cameras = [self.api.bootstrap.cameras[g] for g in self.camera_ids]
+        # user may not have permission to see the cameras in the liveview
+        self._cameras = [self.api.bootstrap.cameras[g] for g in self.camera_ids if g in self.api.bootstrap.cameras]
         return self._cameras
 
 

@@ -111,7 +111,8 @@ async def check_bootstrap(bootstrap: Bootstrap):
         assert liveview.protect_url == f"https://127.0.0.1:0/protect/liveview/{liveview.id}"
 
         for slot in liveview.slots:
-            assert len(slot.camera_ids) == len(slot.cameras)
+            expected_ids = set(slot.camera_ids).intersection(set(bootstrap.cameras.keys()))
+            assert len(expected_ids) == len(slot.cameras)
 
     for user in bootstrap.users.values():
         user.groups

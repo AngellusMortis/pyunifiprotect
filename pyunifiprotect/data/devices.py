@@ -966,8 +966,9 @@ class Viewer(ProtectAdoptableDeviceModel):
         return {**super()._get_unifi_remaps(), "liveview": "liveviewId"}
 
     @property
-    def liveview(self) -> Liveview:
-        return self.api.bootstrap.liveviews[self.liveview_id]
+    def liveview(self) -> Optional[Liveview]:
+        # user may not have permission to see the liveview
+        return self.api.bootstrap.liveviews.get(self.liveview_id)
 
     async def set_liveview(self, liveview: Liveview) -> None:
         """
