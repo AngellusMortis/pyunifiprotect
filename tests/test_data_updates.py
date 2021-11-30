@@ -437,12 +437,30 @@ async def test_camera_set_ssh(camera_obj: Optional[Camera], status: bool):
 
 
 @pytest.mark.asyncio
+async def test_camera_set_video_mode_no_highfps(camera_obj: Optional[Camera]):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.feature_flags.video_modes = [VideoMode.DEFAULT]
+    camera_obj.video_mode = VideoMode.DEFAULT
+    camera_obj._initial_data = camera_obj.dict()
+
+    with pytest.raises(BadRequest):
+        await camera_obj.set_video_mode(VideoMode.HIGH_FPS)
+
+    assert not camera_obj.api.api_request.called
+
+
+@pytest.mark.asyncio
 async def test_camera_set_video_mode(camera_obj: Optional[Camera]):
     if camera_obj is None:
         pytest.skip("No camera_obj obj found")
 
     camera_obj.api.api_request.reset_mock()
 
+    camera_obj.feature_flags.video_modes = [VideoMode.DEFAULT, VideoMode.HIGH_FPS]
     camera_obj.video_mode = VideoMode.DEFAULT
     camera_obj._initial_data = camera_obj.dict()
 
