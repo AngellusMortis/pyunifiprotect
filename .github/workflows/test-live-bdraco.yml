@@ -1,0 +1,59 @@
+name: Test Live Data (bdraco)
+
+on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '0 16 * * *'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test Live Data
+    runs-on: [self-hosted, linux, ufp, bdraco]
+    environment: bdraco
+
+    env:
+      UFP_SAMPLE_DIR: /share/gha-runner/ufp-data
+
+    steps:
+    - name: Clean Up Previous Runs
+      run: |
+        cd $GITHUB_WORKSPACE/../
+        n=0
+        until [[ "$n" -ge 12 ]]; do
+          sudo rm $GITHUB_WORKSPACE -rf && break
+          n=$((n+1))
+          sleep 5
+        done
+        mkdir -p $GITHUB_WORKSPACE
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+
+    - name: Install requirements
+      run: |
+        pip install -e ".[dev]"
+        sudo apt update
+        sudo apt install -y ffmpeg
+
+    - name: Remove Previous Test Data
+      run: rm -rf "${UFP_SAMPLE_DIR}/*"
+
+    - name: Update Sample Data
+      env:
+        UFP_ADDRESS: ${{ secrets.UFP_ADDRESS }}
+        UFP_PASSWORD: ${{ secrets.UFP_PASSWORD }}
+        UFP_PORT: ${{ secrets.UFP_PORT }}
+        UFP_SSL_VERIFY: ${{ secrets.UFP_SSL_VERIFY }}
+        UFP_USERNAME: ${{ secrets.UFP_USERNAME }}
+      run: unifi-protect generate-sample-data -w 300 --actual
+
+    - name: Run Tests
+      run: pytest --force-sugar --timeout=330 --cov-report term --ignore=tests/test_unifi_data.py --ignore=tests/test_unifi_protect_server.py
