@@ -25,7 +25,6 @@ from pyunifiprotect.data.types import DEFAULT, LightModeEnableType, LightModeTyp
 from pyunifiprotect.data.websocket import WSAction, WSSubscriptionMessage
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import to_js_time, to_ms
-
 from tests.conftest import TEST_CAMERA_EXISTS, TEST_LIGHT_EXISTS, TEST_VIEWPORT_EXISTS
 
 
