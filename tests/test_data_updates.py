@@ -26,7 +26,10 @@ from pyunifiprotect.data.websocket import WSAction, WSSubscriptionMessage
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import to_js_time, to_ms
 
+from tests.conftest import TEST_CAMERA_EXISTS, TEST_LIGHT_EXISTS, TEST_VIEWPORT_EXISTS
 
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_save_device_no_changes(camera_obj: Camera):
     camera_obj.api.api_request.reset_mock()
@@ -36,18 +39,20 @@ async def test_save_device_no_changes(camera_obj: Camera):
     assert not camera_obj.api.api_request.called
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
-async def test_device_reboot(light_obj: Light):
-    light_obj.api.api_request.reset_mock()
+async def test_device_reboot(camera_obj: Camera):
+    camera_obj.api.api_request.reset_mock()
 
-    await light_obj.reboot()
+    await camera_obj.reboot()
 
-    light_obj.api.api_request.assert_called_with(
-        f"lights/{light_obj.id}/reboot",
+    camera_obj.api.api_request.assert_called_with(
+        f"cameras/{camera_obj.id}/reboot",
         method="post",
     )
 
 
+@pytest.mark.skipif(not TEST_LIGHT_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("status", [True, False])
 @pytest.mark.asyncio
 async def test_light_set_status_light(light_obj: Light, status: bool):
@@ -65,6 +70,7 @@ async def test_light_set_status_light(light_obj: Light, status: bool):
     )
 
 
+@pytest.mark.skipif(not TEST_LIGHT_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("level", [0, 1, 3, 6, 7])
 @pytest.mark.asyncio
 async def test_light_set_led_level(light_obj: Light, level: int):
@@ -88,6 +94,7 @@ async def test_light_set_led_level(light_obj: Light, level: int):
         )
 
 
+@pytest.mark.skipif(not TEST_LIGHT_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("status", [True, False])
 @pytest.mark.parametrize("level", [None, 0, 1, 3, 6, 7])
 @pytest.mark.asyncio
@@ -119,6 +126,7 @@ async def test_light_set_light(light_obj: Light, status: bool, level: Optional[i
         )
 
 
+@pytest.mark.skipif(not TEST_LIGHT_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("sensitivity", [1, 100, -10])
 @pytest.mark.asyncio
 async def test_light_set_sensitivity(
@@ -147,6 +155,7 @@ async def test_light_set_sensitivity(
         )
 
 
+@pytest.mark.skipif(not TEST_LIGHT_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize(
     "duration",
     [
@@ -184,6 +193,7 @@ async def test_light_set_duration(
         )
 
 
+@pytest.mark.skipif(not TEST_LIGHT_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("mode", [LightModeType.MANUAL, LightModeType.WHEN_DARK])
 @pytest.mark.parametrize("enable_at", [None, LightModeEnableType.ALWAYS])
 @pytest.mark.parametrize(
@@ -244,6 +254,7 @@ async def test_light_set_light_settings(
         )
 
 
+@pytest.mark.skipif(not TEST_VIEWPORT_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_viewer_set_liveview_invalid(viewer_obj: Viewer, liveview_obj: Liveview):
     viewer_obj.api.api_request.reset_mock()
@@ -256,6 +267,7 @@ async def test_viewer_set_liveview_invalid(viewer_obj: Viewer, liveview_obj: Liv
     assert not viewer_obj.api.api_request.called
 
 
+@pytest.mark.skipif(not TEST_VIEWPORT_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_viewer_set_liveview_valid(viewer_obj: Viewer, liveview_obj: Liveview):
     viewer_obj.api.api_request.reset_mock()
@@ -284,6 +296,7 @@ async def test_viewer_set_liveview_valid(viewer_obj: Viewer, liveview_obj: Livev
     )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("mode", [RecordingMode.ALWAYS, RecordingMode.DETECTIONS])
 @pytest.mark.asyncio
 async def test_camera_set_recording_mode(camera_obj: Optional[Camera], mode: RecordingMode):
@@ -304,6 +317,7 @@ async def test_camera_set_recording_mode(camera_obj: Optional[Camera], mode: Rec
     )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_ir_led_model_no_ir(camera_obj: Optional[Camera]):
     if camera_obj is None:
@@ -320,6 +334,7 @@ async def test_camera_set_ir_led_model_no_ir(camera_obj: Optional[Camera]):
     assert not camera_obj.api.api_request.called
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("mode", [IRLEDMode.AUTO, IRLEDMode.ON])
 @pytest.mark.asyncio
 async def test_camera_set_ir_led_model(camera_obj: Optional[Camera], mode: IRLEDMode):
@@ -341,6 +356,7 @@ async def test_camera_set_ir_led_model(camera_obj: Optional[Camera], mode: IRLED
     )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_status_light_no_status(camera_obj: Optional[Camera]):
     if camera_obj is None:
@@ -357,6 +373,7 @@ async def test_camera_set_status_light_no_status(camera_obj: Optional[Camera]):
     assert not camera_obj.api.api_request.called
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("status", [True, False])
 @pytest.mark.asyncio
 async def test_camera_set_status_light(camera_obj: Optional[Camera], status: bool):
@@ -379,6 +396,7 @@ async def test_camera_set_status_light(camera_obj: Optional[Camera], status: boo
     )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_hdr_no_hdr(camera_obj: Optional[Camera]):
     if camera_obj is None:
@@ -395,6 +413,7 @@ async def test_camera_set_hdr_no_hdr(camera_obj: Optional[Camera]):
     assert not camera_obj.api.api_request.called
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("status", [True, False])
 @pytest.mark.asyncio
 async def test_camera_set_hdr(camera_obj: Optional[Camera], status: bool):
@@ -416,6 +435,7 @@ async def test_camera_set_hdr(camera_obj: Optional[Camera], status: bool):
     )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("status", [True, False])
 @pytest.mark.asyncio
 async def test_camera_set_ssh(camera_obj: Optional[Camera], status: bool):
@@ -436,6 +456,7 @@ async def test_camera_set_ssh(camera_obj: Optional[Camera], status: bool):
     )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_video_mode_no_highfps(camera_obj: Optional[Camera]):
     if camera_obj is None:
@@ -453,6 +474,7 @@ async def test_camera_set_video_mode_no_highfps(camera_obj: Optional[Camera]):
     assert not camera_obj.api.api_request.called
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_video_mode(camera_obj: Optional[Camera]):
     if camera_obj is None:
@@ -473,6 +495,7 @@ async def test_camera_set_video_mode(camera_obj: Optional[Camera]):
     )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_camera_zoom_no_zoom(camera_obj: Optional[Camera]):
     if camera_obj is None:
@@ -489,6 +512,7 @@ async def test_camera_set_camera_zoom_no_zoom(camera_obj: Optional[Camera]):
     assert not camera_obj.api.api_request.called
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("level", [-1, 0, 100, 200])
 @pytest.mark.asyncio
 async def test_camera_set_camera_zoom(camera_obj: Optional[Camera], level: int):
@@ -516,6 +540,7 @@ async def test_camera_set_camera_zoom(camera_obj: Optional[Camera], level: int):
         )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("level", [-1, 0, 3, 4])
 @pytest.mark.asyncio
 async def test_camera_set_wdr_level(camera_obj: Optional[Camera], level: int):
@@ -543,6 +568,7 @@ async def test_camera_set_wdr_level(camera_obj: Optional[Camera], level: int):
         )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_wdr_level_hdr(camera_obj: Optional[Camera]):
     if camera_obj is None:
@@ -559,6 +585,7 @@ async def test_camera_set_wdr_level_hdr(camera_obj: Optional[Camera]):
     assert not camera_obj.api.api_request.called
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_mic_volume_no_mic(camera_obj: Optional[Camera]):
     if camera_obj is None:
@@ -575,6 +602,7 @@ async def test_camera_set_mic_volume_no_mic(camera_obj: Optional[Camera]):
     assert not camera_obj.api.api_request.called
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("level", [-1, 0, 100, 200])
 @pytest.mark.asyncio
 async def test_camera_set_mic_volume(camera_obj: Optional[Camera], level: int):
@@ -602,6 +630,7 @@ async def test_camera_set_mic_volume(camera_obj: Optional[Camera], level: int):
         )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_speaker_volume_no_speaker(camera_obj: Optional[Camera]):
     if camera_obj is None:
@@ -618,6 +647,7 @@ async def test_camera_set_speaker_volume_no_speaker(camera_obj: Optional[Camera]
     assert not camera_obj.api.api_request.called
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("level", [-1, 0, 100, 200])
 @pytest.mark.asyncio
 async def test_camera_set_speaker_volume(camera_obj: Optional[Camera], level: int):
@@ -645,6 +675,7 @@ async def test_camera_set_speaker_volume(camera_obj: Optional[Camera], level: in
         )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_chime_duration_no_chime(camera_obj: Optional[Camera]):
     if camera_obj is None:
@@ -661,6 +692,7 @@ async def test_camera_set_chime_duration_no_chime(camera_obj: Optional[Camera]):
     assert not camera_obj.api.api_request.called
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("duration", [-1, 0, 5000, 10000, 20000])
 @pytest.mark.asyncio
 async def test_camera_set_chime_duration_duration(camera_obj: Optional[Camera], duration: int):
@@ -688,6 +720,7 @@ async def test_camera_set_chime_duration_duration(camera_obj: Optional[Camera], 
         )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_lcd_text_no_lcd(camera_obj: Optional[Camera]):
     if camera_obj is None:
@@ -704,6 +737,7 @@ async def test_camera_set_lcd_text_no_lcd(camera_obj: Optional[Camera]):
     assert not camera_obj.api.api_request.called
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_lcd_text_custom(camera_obj: Optional[Camera]):
 
@@ -733,6 +767,7 @@ async def test_camera_set_lcd_text_custom(camera_obj: Optional[Camera]):
     )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_lcd_text_custom_to_custom(camera_obj: Optional[Camera]):
 
@@ -762,6 +797,7 @@ async def test_camera_set_lcd_text_custom_to_custom(camera_obj: Optional[Camera]
     )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_lcd_text_invalid_text(camera_obj: Optional[Camera]):
     if camera_obj is None:
@@ -778,6 +814,7 @@ async def test_camera_set_lcd_text_invalid_text(camera_obj: Optional[Camera]):
     assert not camera_obj.api.api_request.called
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_lcd_text(camera_obj: Optional[Camera]):
     if camera_obj is None:
@@ -808,6 +845,7 @@ async def test_camera_set_lcd_text(camera_obj: Optional[Camera]):
     )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 @patch("pyunifiprotect.data.devices.utc_now")
 async def test_camera_set_lcd_text_none(mock_now, camera_obj: Optional[Camera], now: datetime):
@@ -853,6 +891,7 @@ async def test_camera_set_lcd_text_none(mock_now, camera_obj: Optional[Camera], 
     )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 @patch("pyunifiprotect.data.devices.utc_now")
 async def test_camera_set_lcd_text_default(mock_now, camera_obj: Optional[Camera], now: datetime):
@@ -887,6 +926,7 @@ async def test_camera_set_lcd_text_default(mock_now, camera_obj: Optional[Camera
     )
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_privacy_no_privacy(camera_obj: Optional[Camera]):
     if camera_obj is None:
@@ -903,6 +943,7 @@ async def test_camera_set_privacy_no_privacy(camera_obj: Optional[Camera]):
     assert not camera_obj.api.api_request.called
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("actual_enabled", [True, False])
 @pytest.mark.parametrize("enabled", [True, False])
 @pytest.mark.parametrize("level", [None, -1, 0, 100, 200])
@@ -956,7 +997,7 @@ async def test_camera_set_privacy(
 
         await camera_obj.set_privacy(enabled, level, mode)
 
-        if expected == {}:
+        if not expected:
             assert not camera_obj.api.api_request.called
         else:
             camera_obj.api.api_request.assert_called_with(

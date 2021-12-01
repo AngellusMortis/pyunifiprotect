@@ -21,7 +21,15 @@ from pyunifiprotect.data import (
 )
 from pyunifiprotect.exceptions import BadRequest, StreamError
 from pyunifiprotect.utils import set_debug, set_no_debug
-from tests.conftest import SAMPLE_DATA_DIRECTORY, MockTalkback, compare_objs
+from tests.conftest import (
+    TEST_BRIDGE_EXISTS,
+    TEST_CAMERA_EXISTS,
+    TEST_LIGHT_EXISTS,
+    TEST_SENSOR_EXISTS,
+    TEST_VIEWPORT_EXISTS,
+    MockTalkback,
+    compare_objs,
+)
 
 PACKET_B64 = "AQEBAAAAAHR4nB2MQQrCMBBFr1JmbSDNpJnRG4hrDzBNZqCgqUiriHh3SZb/Pd7/guRtWSucBtgfRTaFwwBV39c+zqUJskQW1DufUVwkJsfFxDGLyRFj0dSz+1r0dtFPa+rr2dDSD8YsyceUpskQxzjjHIIQMvz+hMoj/AIBAQAAAAA1eJyrViotKMnMTVWyUjA0MjawMLQ0MDDQUVDKSSwuCU5NzQOJmxkbACUszE0sLQ1rAVU/DPU="
 PACKET_ACTION = {
@@ -95,27 +103,27 @@ def compare_devices(data):
     set_debug()
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_viewport.json").exists(), reason="No viewport in testdata")
+@pytest.mark.skipif(not TEST_VIEWPORT_EXISTS, reason="Missing testdata")
 def test_viewport(viewport):
     compare_devices(viewport)
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_light.json").exists(), reason="No light in testdata")
+@pytest.mark.skipif(not TEST_LIGHT_EXISTS, reason="Missing testdata")
 def test_light(light):
     compare_devices(light)
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_camera.json").exists(), reason="No camera in testdata")
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 def test_camera(camera):
     compare_devices(camera)
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_sensor.json").exists(), reason="No sensor in testdata")
+@pytest.mark.skipif(not TEST_SENSOR_EXISTS, reason="Missing testdata")
 def test_sensor(sensor):
     compare_devices(sensor)
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_bridge.json").exists(), reason="No bridge in testdata")
+@pytest.mark.skipif(not TEST_BRIDGE_EXISTS, reason="Missing testdata")
 def test_bridge(bridge):
     compare_devices(bridge)
 

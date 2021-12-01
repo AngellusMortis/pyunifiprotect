@@ -26,7 +26,17 @@ from pyunifiprotect.data.types import VideoMode
 from pyunifiprotect.exceptions import BadRequest, NvrError
 from pyunifiprotect.utils import to_js_time
 from tests.conftest import (
-    SAMPLE_DATA_DIRECTORY,
+    TEST_BRIDGE_EXISTS,
+    TEST_CAMERA_EXISTS,
+    TEST_HEATMAP_EXISTS,
+    TEST_LIGHT_EXISTS,
+    TEST_LIVEVIEW_EXISTS,
+    TEST_SENSOR_EXISTS,
+    TEST_SMART_TRACK_EXISTS,
+    TEST_SNAPSHOT_EXISTS,
+    TEST_THUMBNAIL_EXISTS,
+    TEST_VIDEO_EXISTS,
+    TEST_VIEWPORT_EXISTS,
     MockDatetime,
     compare_objs,
     validate_video_file,
@@ -340,7 +350,7 @@ async def test_check_ws_reconnect(protect_client: ProtectApiClient, caplog: pyte
     assert caplog.records[1].levelname == "WARNING"
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_camera.json").exists(), reason="No camera in testdata")
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_device_mismatch(protect_client: ProtectApiClient, camera):
     protect_client.api_request_obj = AsyncMock(return_value=camera)  # type: ignore
@@ -349,7 +359,7 @@ async def test_get_device_mismatch(protect_client: ProtectApiClient, camera):
         await protect_client.get_bridge("test_id")
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_camera.json").exists(), reason="No camera in testdata")
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_camera(protect_client: ProtectApiClient, camera):
     obj = create_from_unifi_dict(camera)
@@ -357,7 +367,7 @@ async def test_get_camera(protect_client: ProtectApiClient, camera):
     assert obj == await protect_client.get_camera("test_id")
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_light.json").exists(), reason="No light in testdata")
+@pytest.mark.skipif(not TEST_LIGHT_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_light(protect_client: ProtectApiClient, light):
     obj = create_from_unifi_dict(light)
@@ -365,7 +375,7 @@ async def test_get_light(protect_client: ProtectApiClient, light):
     assert obj == await protect_client.get_light("test_id")
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_sensor.json").exists(), reason="No sensor in testdata")
+@pytest.mark.skipif(not TEST_SENSOR_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_sensor(protect_client: ProtectApiClient, sensor):
     obj = create_from_unifi_dict(sensor)
@@ -373,7 +383,7 @@ async def test_get_sensor(protect_client: ProtectApiClient, sensor):
     assert obj == await protect_client.get_sensor("test_id")
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_viewport.json").exists(), reason="No viewport in testdata")
+@pytest.mark.skipif(not TEST_VIEWPORT_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_viewer(protect_client: ProtectApiClient, viewport):
     obj = create_from_unifi_dict(viewport)
@@ -381,7 +391,7 @@ async def test_get_viewer(protect_client: ProtectApiClient, viewport):
     assert obj == await protect_client.get_viewer("test_id")
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_bridge.json").exists(), reason="No bridge in testdata")
+@pytest.mark.skipif(not TEST_BRIDGE_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_bridge(protect_client: ProtectApiClient, bridge):
     obj = create_from_unifi_dict(bridge)
@@ -389,7 +399,7 @@ async def test_get_bridge(protect_client: ProtectApiClient, bridge):
     assert obj == await protect_client.get_bridge("test_id")
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_liveview.json").exists(), reason="No liveview in testdata")
+@pytest.mark.skipif(not TEST_LIVEVIEW_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_liveview(protect_client: ProtectApiClient, liveview):
     obj = create_from_unifi_dict(liveview)
@@ -397,7 +407,7 @@ async def test_get_liveview(protect_client: ProtectApiClient, liveview):
     assert obj == await protect_client.get_liveview("test_id")
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_camera.json").exists(), reason="No camera in testdata")
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_devices_mismatch(protect_client: ProtectApiClient, cameras):
     protect_client.api_request_list = AsyncMock(return_value=cameras)  # type: ignore
@@ -406,7 +416,7 @@ async def test_get_devices_mismatch(protect_client: ProtectApiClient, cameras):
         await protect_client.get_bridges()
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_camera.json").exists(), reason="No camera in testdata")
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_cameras(protect_client: ProtectApiClient, cameras):
     objs = [create_from_unifi_dict(d) for d in cameras]
@@ -414,7 +424,7 @@ async def test_get_cameras(protect_client: ProtectApiClient, cameras):
     assert objs == await protect_client.get_cameras()
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_light.json").exists(), reason="No light in testdata")
+@pytest.mark.skipif(not TEST_LIGHT_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_lights(protect_client: ProtectApiClient, lights):
     objs = [create_from_unifi_dict(d) for d in lights]
@@ -422,7 +432,7 @@ async def test_get_lights(protect_client: ProtectApiClient, lights):
     assert objs == await protect_client.get_lights()
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_sensor.json").exists(), reason="No sensor in testdata")
+@pytest.mark.skipif(not TEST_SENSOR_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_sensors(protect_client: ProtectApiClient, sensors):
     objs = [create_from_unifi_dict(d) for d in sensors]
@@ -430,7 +440,7 @@ async def test_get_sensors(protect_client: ProtectApiClient, sensors):
     assert objs == await protect_client.get_sensors()
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_viewport.json").exists(), reason="No viewport in testdata")
+@pytest.mark.skipif(not TEST_VIEWPORT_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_viewers(protect_client: ProtectApiClient, viewports):
     objs = [create_from_unifi_dict(d) for d in viewports]
@@ -438,7 +448,7 @@ async def test_get_viewers(protect_client: ProtectApiClient, viewports):
     assert objs == await protect_client.get_viewers()
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_bridge.json").exists(), reason="No bridge in testdata")
+@pytest.mark.skipif(not TEST_BRIDGE_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_bridges(protect_client: ProtectApiClient, bridges):
     objs = [create_from_unifi_dict(d) for d in bridges]
@@ -446,7 +456,7 @@ async def test_get_bridges(protect_client: ProtectApiClient, bridges):
     assert objs == await protect_client.get_bridges()
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_liveview.json").exists(), reason="No liveview in testdata")
+@pytest.mark.skipif(not TEST_LIVEVIEW_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_liveviews(protect_client: ProtectApiClient, liveviews):
     objs = [create_from_unifi_dict(d) for d in liveviews]
@@ -454,9 +464,7 @@ async def test_get_liveviews(protect_client: ProtectApiClient, liveviews):
     assert objs == await protect_client.get_liveviews()
 
 
-@pytest.mark.skipif(
-    not (SAMPLE_DATA_DIRECTORY / "sample_camera_snapshot.png").exists(), reason="No snapshot in testdata"
-)
+@pytest.mark.skipif(not TEST_SNAPSHOT_EXISTS, reason="Missing testdata")
 @patch("pyunifiprotect.utils.datetime", MockDatetime)
 @pytest.mark.asyncio
 async def test_get_camera_snapshot(protect_client: ProtectApiClient, now):
@@ -476,9 +484,7 @@ async def test_get_camera_snapshot(protect_client: ProtectApiClient, now):
     assert img.format in ("PNG", "JPEG")
 
 
-@pytest.mark.skipif(
-    not (SAMPLE_DATA_DIRECTORY / "sample_camera_snapshot.png").exists(), reason="No snapshot in testdata"
-)
+@pytest.mark.skipif(not TEST_SNAPSHOT_EXISTS, reason="Missing testdata")
 @patch("pyunifiprotect.utils.datetime", MockDatetime)
 @pytest.mark.asyncio
 async def test_get_camera_snapshot_args(protect_client: ProtectApiClient, now):
@@ -500,10 +506,7 @@ async def test_get_camera_snapshot_args(protect_client: ProtectApiClient, now):
     assert img.format in ("PNG", "JPEG")
 
 
-@pytest.mark.skipif(
-    not (SAMPLE_DATA_DIRECTORY / "sample_camera_video.mp4").exists() or "camera_video_length" not in CONSTANTS,
-    reason="No video in testdata",
-)
+@pytest.mark.skipif(not TEST_VIDEO_EXISTS, reason="Missing testdata")
 @patch("pyunifiprotect.api.datetime", MockDatetime)
 @pytest.mark.asyncio
 async def test_get_camera_video(protect_client: ProtectApiClient, now, tmp_binary_file):
@@ -530,9 +533,7 @@ async def test_get_camera_video(protect_client: ProtectApiClient, now, tmp_binar
     validate_video_file(tmp_binary_file.name, CONSTANTS["camera_video_length"])
 
 
-@pytest.mark.skipif(
-    not (SAMPLE_DATA_DIRECTORY / "sample_camera_thumbnail.png").exists(), reason="No thumbnail in testdata"
-)
+@pytest.mark.skipif(not TEST_THUMBNAIL_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_event_thumbnail(protect_client: ProtectApiClient):
     data = await protect_client.get_event_thumbnail("test_id")
@@ -548,9 +549,7 @@ async def test_get_event_thumbnail(protect_client: ProtectApiClient):
     assert img.format in ("PNG", "JPEG")
 
 
-@pytest.mark.skipif(
-    not (SAMPLE_DATA_DIRECTORY / "sample_camera_thumbnail.png").exists(), reason="No thumbnail in testdata"
-)
+@pytest.mark.skipif(not TEST_THUMBNAIL_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_event_thumbnail_args(protect_client: ProtectApiClient):
     data = await protect_client.get_event_thumbnail("test_id", 1920, 1080)
@@ -569,7 +568,7 @@ async def test_get_event_thumbnail_args(protect_client: ProtectApiClient):
     assert img.format in ("PNG", "JPEG")
 
 
-@pytest.mark.skipif(not (SAMPLE_DATA_DIRECTORY / "sample_camera_heatmap.png").exists(), reason="No heatmap in testdata")
+@pytest.mark.skipif(not TEST_HEATMAP_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_event_heatmap(protect_client: ProtectApiClient):
     data = await protect_client.get_event_heatmap("test_id")
@@ -584,9 +583,7 @@ async def test_get_event_heatmap(protect_client: ProtectApiClient):
     assert img.format in ("PNG", "JPEG")
 
 
-@pytest.mark.skipif(
-    not (SAMPLE_DATA_DIRECTORY / "sample_event_smart_track.json").exists(), reason="No smart track in testdata"
-)
+@pytest.mark.skipif(not TEST_SMART_TRACK_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_event_smart_detect_track(protect_client: ProtectApiClient):
     data = await protect_client.get_event_smart_detect_track("test_id")

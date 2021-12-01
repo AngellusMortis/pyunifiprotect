@@ -32,6 +32,20 @@ else:
 CHECK_CMD = "ffprobe -v error -select_streams v:0 -show_entries stream=codec_type -of csv=p=0 {filename}"
 LENGTH_CMD = "ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 {filename}"
 
+TEST_CAMERA_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_camera.json").exists()
+TEST_SNAPSHOT_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_camera_snapshot.png").exists()
+TEST_VIDEO_EXISTS = (
+    SAMPLE_DATA_DIRECTORY / "sample_camera_video.mp4"
+).exists() or "camera_video_length" not in CONSTANTS
+TEST_THUMBNAIL_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_camera_thumbnail.png").exists()
+TEST_HEATMAP_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_camera_heatmap.png").exists()
+TEST_SMART_TRACK_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_event_smart_track.json").exists()
+TEST_LIGHT_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_light.json").exists()
+TEST_SENSOR_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_sensor.json").exists()
+TEST_VIEWPORT_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_viewport.json").exists()
+TEST_BRIDGE_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_bridge.json").exists()
+TEST_LIVEVIEW_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_liveview.json").exists()
+
 
 def read_binary_file(name: str, ext: str = "png"):
     with open(SAMPLE_DATA_DIRECTORY / f"{name}.{ext}", "rb") as f:
@@ -234,84 +248,132 @@ async def nvr_obj(protect_client: ProtectApiClient):  # pylint: disable=redefine
 @pytest.fixture
 @pytest.mark.asyncio
 async def camera_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
-    yield list(protect_client.bootstrap.cameras.values())[0]
+    if not TEST_CAMERA_EXISTS:
+        return None
+
+    return list(protect_client.bootstrap.cameras.values())[0]
 
 
 @pytest.fixture
 @pytest.mark.asyncio
 async def light_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
-    yield list(protect_client.bootstrap.lights.values())[0]
+    if not TEST_LIGHT_EXISTS:
+        return None
+
+    return list(protect_client.bootstrap.lights.values())[0]
 
 
 @pytest.fixture
 @pytest.mark.asyncio
 async def viewer_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
-    yield list(protect_client.bootstrap.viewers.values())[0]
+    if not TEST_VIEWPORT_EXISTS:
+        return None
+
+    return list(protect_client.bootstrap.viewers.values())[0]
 
 
 @pytest.fixture
 @pytest.mark.asyncio
 async def liveview_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
-    yield list(protect_client.bootstrap.liveviews.values())[0]
+    if not TEST_LIVEVIEW_EXISTS:
+        return None
+
+    return list(protect_client.bootstrap.liveviews.values())[0]
 
 
 @pytest.fixture
 def liveview():
+    if not TEST_LIVEVIEW_EXISTS:
+        return None
+
     return read_json_file("sample_liveview")
 
 
 @pytest.fixture
 def viewport():
+    if not TEST_VIEWPORT_EXISTS:
+        return None
+
     return read_json_file("sample_viewport")
 
 
 @pytest.fixture
 def light():
+    if not TEST_LIGHT_EXISTS:
+        return None
+
     return read_json_file("sample_light")
 
 
 @pytest.fixture
 def camera():
+    if not TEST_CAMERA_EXISTS:
+        return None
+
     return read_json_file("sample_camera")
 
 
 @pytest.fixture
 def sensor():
+    if not TEST_SENSOR_EXISTS:
+        return None
+
     return read_json_file("sample_sensor")
 
 
 @pytest.fixture
 def bridge():
+    if not TEST_BRIDGE_EXISTS:
+        return None
+
     return read_json_file("sample_bridge")
 
 
 @pytest.fixture
 def liveviews():
+    if not TEST_LIVEVIEW_EXISTS:
+        return []
+
     return [read_json_file("sample_liveview")]
 
 
 @pytest.fixture
 def viewports():
+    if not TEST_VIEWPORT_EXISTS:
+        return []
+
     return [read_json_file("sample_viewport")]
 
 
 @pytest.fixture
 def lights():
+    if not TEST_LIGHT_EXISTS:
+        return []
+
     return [read_json_file("sample_light")]
 
 
 @pytest.fixture
 def cameras():
+    if not TEST_CAMERA_EXISTS:
+        return []
+
     return [read_json_file("sample_camera")]
 
 
 @pytest.fixture
 def sensors():
+    if not TEST_SENSOR_EXISTS:
+        return []
+
     return [read_json_file("sample_sensor")]
 
 
 @pytest.fixture
 def bridges():
+    if not TEST_BRIDGE_EXISTS:
+        return []
+
     return [read_json_file("sample_bridge")]
 
 
@@ -337,6 +399,9 @@ def nvr():
 
 @pytest.fixture
 def smart_track():
+    if not TEST_SMART_TRACK_EXISTS:
+        return None
+
     return read_json_file("sample_event_smart_track")
 
 
