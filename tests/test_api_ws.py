@@ -8,6 +8,7 @@ from copy import deepcopy
 from datetime import timedelta
 from typing import Any, Callable, Dict, Optional
 from unittest.mock import MagicMock, patch
+from pytest_benchmark.fixture import BenchmarkFixture
 
 import pytest
 
@@ -54,10 +55,19 @@ class SubscriptionTest:
 
 
 @pytest.mark.asyncio
-async def test_ws_all(protect_client_ws: ProtectApiClient, ws_messages: Dict[str, Dict[str, Any]]):
+async def test_ws_all(
+    protect_client_ws: ProtectApiClient, ws_messages: Dict[str, Dict[str, Any]], benchmark: BenchmarkFixture
+):
     protect_client = protect_client_ws
     sub = SubscriptionTest()
     sub.unsub = protect_client.subscribe_websocket(sub.callback)
+    _orig = protect_client.bootstrap.process_ws_packet
+
+    def benchmark_process_ws_packet(*args, **kwargs):
+        benchmark(_orig, *args, **kwargs)
+
+    # bypass pydantic checks
+    object.__setattr__(protect_client.bootstrap, "process_ws_packet", benchmark_process_ws_packet)
 
     # wait for ws connection
     for _ in range(60):
