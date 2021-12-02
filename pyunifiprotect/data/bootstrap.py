@@ -22,6 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 
 MAX_SUPPORTED_CAMERAS = 256
 MAX_EVENT_HISTORY_IN_STATE_MACHINE = MAX_SUPPORTED_CAMERAS * 2
+STATS_KEYS = {"storageStats", "stats", "systemInfo"}
 
 EVENT_ATTR_MAP: Dict[EventType, Tuple[str, str]] = {
     EventType.MOTION: ("last_motion", "last_motion_event_id"),
@@ -95,7 +96,12 @@ class Bootstrap(ProtectBaseObject):
 
         self.events[event.id] = event
 
-    def process_ws_packet(self, packet: WSPacket) -> Optional[WSSubscriptionMessage]:
+    def process_ws_packet(
+        self, packet: WSPacket, models: Optional[Set[ModelType]] = None, ignore_stats: bool = False
+    ) -> Optional[WSSubscriptionMessage]:
+        if models is None:
+            models = set()
+
         if not isinstance(packet.action_frame, WSJSONPacketFrame):
             _LOGGER.debug("Unexpected action frame format: %s", packet.action_frame.payload_format)
 
@@ -110,6 +116,9 @@ class Bootstrap(ProtectBaseObject):
         if action["modelKey"] not in ModelType.values():
             _LOGGER.debug("Unknown model type: %s", action["modelKey"])
             return None
+
+        if len(models) > 0 and ModelType(action["modelKey"]) not in models:
+            return
 
         if action["action"] == "add":
             obj = create_from_unifi_dict(data, api=self._api)
@@ -135,6 +144,14 @@ class Bootstrap(ProtectBaseObject):
         if action["action"] == "update":
             model_type = action["modelKey"]
             if model_type == ModelType.NVR.value:
+                if ignore_stats:
+                    for key in list(data.keys()):
+                        if key in STATS_KEYS:
+                            del data[key]
+                    # nothing left to process
+                    if data == {}:
+                        return
+
                 data = self.nvr.unifi_dict_to_dict(data)
                 old_nvr = self.nvr.copy()
                 self.nvr = self.nvr.update_from_dict(deepcopy(data))
@@ -147,6 +164,15 @@ class Bootstrap(ProtectBaseObject):
                     old_obj=old_nvr,
                 )
             if model_type in ModelType.bootstrap_models() or model_type == ModelType.EVENT.value:
+
+                if model_type == ModelType.CAMERA.value and ignore_stats:
+                    for key in list(data.keys()):
+                        if key in STATS_KEYS:
+                            del data[key]
+                    # nothing left to process
+                    if data == {}:
+                        return
+
                 key = model_type + "s"
                 devices = getattr(self, key)
                 if action["id"] in devices:

@@ -7,7 +7,7 @@ from ipaddress import IPv4Address
 import json as pjson
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Type, Union, cast
 from urllib.parse import urljoin
 from uuid import UUID
 
@@ -45,7 +45,7 @@ from pyunifiprotect.utils import (
 
 NEVER_RAN = -1000
 # how many seconds before the bootstrap is refreshed from Protect
-DEVICE_UPDATE_INTERVAL = 60
+DEVICE_UPDATE_INTERVAL = 900
 # how many seconds before before we check for an active WS connection
 WEBSOCKET_CHECK_INTERVAL = 120
 
@@ -446,9 +446,23 @@ class ProtectApiClient(BaseApiClient):
     All objects inside of `.bootstrap` have a refernce back to the API client so they can
     use `.save_device()` and update themselves using their own `.set_` methods on the object.
 
+    Args:
+
+    * `host`: UFP hostname / IP address
+    * `port`: UFP HTTPS port
+    * `username`: UFP username
+    * `password`: UFP password
+    * `verify_ssl`: Verify HTTPS certificate (default: `True`)
+    * `session`: Optional aiohttp session to use (default: generate one)
+    * `minimum_score`: minimum score for events (default: `0`)
+    * `subscribed_models`: Model types you want to filter events for WS. You will need to manually check the bootstrap for updates for events that not subscibred.
+    * `ignore_stats`: Ignore storage, system, etc. stats/metrics from NVR and cameras (default: false)
+    * `debug`: Use full type validation (default: false)
     """
 
     _minimum_score: int
+    _subscribed_models: Set[ModelType]
+    _ignore_stats: bool
     _bootstrap: Optional[Bootstrap] = None
     _last_update_dt: Optional[datetime] = None
     _ws_subscriptions: List[Callable[[WSSubscriptionMessage], None]] = []
@@ -463,6 +477,8 @@ class ProtectApiClient(BaseApiClient):
         verify_ssl: bool = True,
         session: Optional[aiohttp.ClientSession] = None,
         minimum_score: int = 0,
+        subscribed_models: Optional[Set[ModelType]] = None,
+        ignore_stats: bool = False,
         debug: bool = False,
     ) -> None:
         super().__init__(
@@ -470,6 +486,8 @@ class ProtectApiClient(BaseApiClient):
         )
 
         self._minimum_score = minimum_score
+        self._subscribed_models = subscribed_models or set()
+        self._ignore_stats = ignore_stats
 
         if debug:
             set_debug()
@@ -519,17 +537,19 @@ class ProtectApiClient(BaseApiClient):
             self._last_update_dt = max_event_dt
             self._last_websocket_check = NEVER_RAN
 
+        bootstrap_updated = False
         if self._bootstrap is None or now - self._last_update > DEVICE_UPDATE_INTERVAL:
+            bootstrap_updated = True
             self._last_update = now
             self._last_update_dt = now_dt
             self._bootstrap = await self.get_bootstrap()
 
         active_ws = await self.check_ws()
-        # If the websocket is connected/connecting
-        # we do not need to get events
-        if active_ws:
+        if not bootstrap_updated and active_ws:
+            # If the websocket is connected/connecting
+            # we do not need to get events
             _LOGGER.debug("Skipping update since websocket is active")
-            return None
+            return
 
         events = await self.get_events(start=self._last_update_dt or max_event_dt, end=now_dt)
         for event in events:
@@ -548,7 +568,9 @@ class ProtectApiClient(BaseApiClient):
 
     def _process_ws_message(self, msg: aiohttp.WSMessage) -> None:
         packet = WSPacket(msg.data)
-        processed_message = self.bootstrap.process_ws_packet(packet)
+        processed_message = self.bootstrap.process_ws_packet(
+            packet, models=self._subscribed_models, ignore_stats=self._ignore_stats
+        )
 
         if processed_message is None:
             return
