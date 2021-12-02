@@ -118,7 +118,7 @@ class Bootstrap(ProtectBaseObject):
             return None
 
         if len(models) > 0 and ModelType(action["modelKey"]) not in models:
-            return
+            return None
 
         if action["action"] == "add":
             obj = create_from_unifi_dict(data, api=self._api)
@@ -150,7 +150,7 @@ class Bootstrap(ProtectBaseObject):
                             del data[key]
                     # nothing left to process
                     if data == {}:
-                        return
+                        return None
 
                 data = self.nvr.unifi_dict_to_dict(data)
                 old_nvr = self.nvr.copy()
@@ -171,7 +171,7 @@ class Bootstrap(ProtectBaseObject):
                             del data[key]
                     # nothing left to process
                     if data == {}:
-                        return
+                        return None
 
                 key = model_type + "s"
                 devices = getattr(self, key)

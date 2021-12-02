@@ -7,7 +7,18 @@ from ipaddress import IPv4Address
 import json as pjson
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Type,
+    Union,
+    cast,
+)
 from urllib.parse import urljoin
 from uuid import UUID
 
@@ -549,7 +560,7 @@ class ProtectApiClient(BaseApiClient):
             # If the websocket is connected/connecting
             # we do not need to get events
             _LOGGER.debug("Skipping update since websocket is active")
-            return
+            return None
 
         events = await self.get_events(start=self._last_update_dt or max_event_dt, end=now_dt)
         for event in events:

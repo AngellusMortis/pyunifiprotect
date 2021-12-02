@@ -8,9 +8,9 @@ from copy import deepcopy
 from datetime import timedelta
 from typing import Any, Callable, Dict, Optional
 from unittest.mock import MagicMock, patch
-from pytest_benchmark.fixture import BenchmarkFixture
 
 import pytest
+from pytest_benchmark.fixture import BenchmarkFixture
 
 from pyunifiprotect import ProtectApiClient
 from pyunifiprotect.data import EventType, WSPacket
@@ -63,8 +63,14 @@ async def test_ws_all(
     sub.unsub = protect_client.subscribe_websocket(sub.callback)
     _orig = protect_client.bootstrap.process_ws_packet
 
+    stats = benchmark._make_stats(1)
+
     def benchmark_process_ws_packet(*args, **kwargs):
-        benchmark(_orig, *args, **kwargs)
+        runner = benchmark._make_runner(_orig, args, kwargs)
+        duration, result = runner(None)
+        stats.update(duration)
+
+        return result
 
     # bypass pydantic checks
     object.__setattr__(protect_client.bootstrap, "process_ws_packet", benchmark_process_ws_packet)
