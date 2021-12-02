@@ -393,22 +393,26 @@ class ProtectBaseObject(BaseModel):
 
     def update_from_dict(self: ProtectObject, data: Dict[str, Any]) -> ProtectObject:
         """Updates current object from a cleaned UFP JSON dict"""
-        for key in self._get_protect_objs().keys():
-            if key in list(data.keys()):
-                unifi_obj: Optional[Any] = getattr(self, key)
-                if unifi_obj is not None and isinstance(unifi_obj, ProtectBaseObject):
-                    setattr(self, key, unifi_obj.update_from_dict(data.pop(key)))
+        data_set = set(data)
+        for key in data_set.intersection(self._get_protect_objs()):
+            unifi_obj: Optional[Any] = getattr(self, key)
+            if unifi_obj is not None and isinstance(unifi_obj, ProtectBaseObject):
+                setattr(self, key, unifi_obj.update_from_dict(data.pop(key)))
 
         data = self._inject_api(data, self._api)
-        for key, klass in self._get_protect_lists().items():
-            if key in data and isinstance(data[key], list):
-                new_items = []
-                for item in data.pop(key):
-                    if item is not None and isinstance(item, ProtectBaseObject):
-                        new_items.append(item)
-                    elif isinstance(item, dict):
-                        new_items.append(klass(**item, api=self._api))
-                setattr(self, key, new_items)
+        protect_lists = self._get_protect_lists()
+
+        for key in data_set.intersection(protect_lists):
+            if not isinstance(data[key], list):
+                continue
+            klass = protect_lists[key]
+            new_items = []
+            for item in data.pop(key):
+                if item is not None and isinstance(item, ProtectBaseObject):
+                    new_items.append(item)
+                elif isinstance(item, dict):
+                    new_items.append(klass(**item, api=self._api))
+            setattr(self, key, new_items)
 
         if "api" in data:
             del data["api"]
