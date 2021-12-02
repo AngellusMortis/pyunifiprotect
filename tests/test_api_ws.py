@@ -54,6 +54,7 @@ class SubscriptionTest:
             self.unsub()
 
 
+@pytest.mark.benchmark(group="websockets")
 @pytest.mark.asyncio
 async def test_ws_all(
     protect_client_ws: ProtectApiClient, ws_messages: Dict[str, Dict[str, Any]], benchmark: BenchmarkFixture

@@ -31,6 +31,14 @@ EVENT_ATTR_MAP: Dict[EventType, Tuple[str, str]] = {
 }
 
 
+def _remove_stats_keys(data: Dict[str, Any], ignore_stats: bool):
+    if ignore_stats:
+        for key in list(data.keys()):
+            if key in STATS_KEYS:
+                del data[key]
+    return data
+
+
 class Bootstrap(ProtectBaseObject):
     auth_user_id: str
     access_key: str
@@ -144,13 +152,10 @@ class Bootstrap(ProtectBaseObject):
         if action["action"] == "update":
             model_type = action["modelKey"]
             if model_type == ModelType.NVR.value:
-                if ignore_stats:
-                    for key in list(data.keys()):
-                        if key in STATS_KEYS:
-                            del data[key]
-                    # nothing left to process
-                    if data == {}:
-                        return None
+                data = _remove_stats_keys(data, ignore_stats)
+                # nothing left to process
+                if data == {}:
+                    return None
 
                 data = self.nvr.unifi_dict_to_dict(data)
                 old_nvr = self.nvr.copy()
@@ -164,11 +169,8 @@ class Bootstrap(ProtectBaseObject):
                     old_obj=old_nvr,
                 )
             if model_type in ModelType.bootstrap_models() or model_type == ModelType.EVENT.value:
-
-                if model_type == ModelType.CAMERA.value and ignore_stats:
-                    for key in list(data.keys()):
-                        if key in STATS_KEYS:
-                            del data[key]
+                if model_type == ModelType.CAMERA.value:
+                    data = _remove_stats_keys(data, ignore_stats)
                     # nothing left to process
                     if data == {}:
                         return None

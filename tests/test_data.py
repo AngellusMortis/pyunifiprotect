@@ -169,6 +169,7 @@ def test_bootstrap(bootstrap):
     assert obj == obj_construct
 
 
+@pytest.mark.benchmark(group="construct")
 def test_bootstrap_benchmark(bootstrap, benchmark: BenchmarkFixture):
     def create():
         Bootstrap.from_unifi_dict(**deepcopy(bootstrap))
@@ -176,6 +177,7 @@ def test_bootstrap_benchmark(bootstrap, benchmark: BenchmarkFixture):
     benchmark.pedantic(create, rounds=50, iterations=5)
 
 
+@pytest.mark.benchmark(group="construct")
 def test_bootstrap_benchmark_construct(bootstrap, benchmark: BenchmarkFixture):
     set_no_debug()
 
