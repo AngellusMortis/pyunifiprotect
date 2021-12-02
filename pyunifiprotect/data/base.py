@@ -409,11 +409,11 @@ class ProtectBaseObject(BaseModel):
                 if item is not None and isinstance(item, ProtectBaseObject):
                     new_items.append(item)
                 elif isinstance(item, dict):
-                    new_items.append(klass(**item, api=self._api))
+                    new_items.append(klass(**item))
             setattr(self, key, new_items)
 
-        if "api" in data:
-            del data["api"]
+        # Always injected above
+        del data["api"]
 
         for key in data:
             setattr(self, key, convert_unifi_data(data[key], self.__fields__[key]))
