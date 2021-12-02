@@ -394,21 +394,30 @@ class ProtectBaseObject(BaseModel):
     def update_from_dict(self: ProtectObject, data: Dict[str, Any]) -> ProtectObject:
         """Updates current object from a cleaned UFP JSON dict"""
         for key in self._get_protect_objs().keys():
-            if key in data:
+            if key in list(data.keys()):
                 unifi_obj: Optional[Any] = getattr(self, key)
                 if unifi_obj is not None and isinstance(unifi_obj, ProtectBaseObject):
                     setattr(self, key, unifi_obj.update_from_dict(data.pop(key)))
 
+        data = self._inject_api(data, self._api)
+        for key, klass in self._get_protect_lists().items():
+            if key in data and isinstance(data[key], list):
+                new_items = []
+                for item in data.pop(key):
+                    if item is not None and isinstance(item, ProtectBaseObject):
+                        new_items.append(item)
+                    elif isinstance(item, dict):
+                        new_items.append(klass(**item, api=self._api))
+                setattr(self, key, new_items)
+
         if "api" in data:
             del data["api"]
 
-        if is_debug():
-            return self.copy(update=data)
+        for key in data:
+            setattr(self, key, convert_unifi_data(data[key], self.__fields__[key]))
 
-        new_data = self.dict()
-        new_data.update(data)
-        new_data = self._inject_api(new_data, self._api)
-        return self.construct(**new_data)  # type: ignore
+        self._initial_data = self.dict(exclude=self._get_excluded_changed_fields())
+        return self
 
     def get_changed(self: ProtectObject) -> Dict[str, Any]:
         return dict_diff(self._initial_data, self.dict())
