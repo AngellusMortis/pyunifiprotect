@@ -16,6 +16,7 @@ from pyunifiprotect import ProtectApiClient
 from pyunifiprotect.data import EventType, WSPacket
 from pyunifiprotect.data.base import ProtectModel
 from pyunifiprotect.data.devices import Camera
+from pyunifiprotect.data.types import ModelType
 from pyunifiprotect.data.websocket import (
     WSAction,
     WSJSONPacketFrame,
@@ -91,6 +92,48 @@ async def test_ws_all(
     assert ws_connect.count == len(ws_messages)
     assert ws_connect.now == float(list(ws_messages.keys())[-1])
     assert sub.callback_count == 3
+
+
+@pytest.mark.benchmark(group="websockets")
+@pytest.mark.asyncio
+async def test_ws_filtered(protect_client_ws: ProtectApiClient, benchmark: BenchmarkFixture):
+    protect_client = protect_client_ws
+    protect_client._ignore_stats = True
+    protect_client._subscribed_models = {
+        ModelType.EVENT,
+        ModelType.CAMERA,
+        ModelType.LIGHT,
+        ModelType.VIEWPORT,
+        ModelType.SENSOR,
+        ModelType.LIVEVIEW,
+    }
+    sub = SubscriptionTest()
+    sub.unsub = protect_client.subscribe_websocket(sub.callback)
+    _orig = protect_client.bootstrap.process_ws_packet
+
+    stats = benchmark._make_stats(1)
+
+    def benchmark_process_ws_packet(*args, **kwargs):
+        runner = benchmark._make_runner(_orig, args, kwargs)
+        duration, result = runner(None)
+        stats.update(duration)
+
+        return result
+
+    # bypass pydantic checks
+    object.__setattr__(protect_client.bootstrap, "process_ws_packet", benchmark_process_ws_packet)
+
+    # wait for ws connection
+    for _ in range(60):
+        if protect_client.is_ws_connected:
+            break
+        await asyncio.sleep(0.5)
+
+    ws_connect: Optional[MockWebsocket] = protect_client._ws_connection  # type: ignore
+    assert ws_connect is not None
+
+    while protect_client.is_ws_connected:
+        await asyncio.sleep(0.1)
 
 
 @pytest.mark.asyncio
