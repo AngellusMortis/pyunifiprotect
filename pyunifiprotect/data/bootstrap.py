@@ -33,9 +33,8 @@ EVENT_ATTR_MAP: Dict[EventType, Tuple[str, str]] = {
 
 def _remove_stats_keys(data: Dict[str, Any], ignore_stats: bool) -> Dict[str, Any]:
     if ignore_stats:
-        for key in list(data.keys()):
-            if key in STATS_KEYS:
-                del data[key]
+        for key in STATS_KEYS.intersection(data.keys()):
+            del data[key]
     return data
 
 
