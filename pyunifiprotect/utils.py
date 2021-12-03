@@ -284,8 +284,8 @@ def ws_stat_summmary(stats: List[WSStat]) -> Tuple[List[WSStat], float, Counter[
     unfiltered = [s for s in stats if not s.filtered]
     percent = (1 - len(unfiltered) / len(stats)) * 100
     keys = Counter(k for s in unfiltered for k in s.keys_set)
-    models = Counter(k for s in unfiltered for k in s.model)
-    actions = Counter(k for s in unfiltered for k in s.action)
+    models = Counter(k.model for k in unfiltered)
+    actions = Counter(k.action for k in unfiltered)
 
     return unfiltered, percent, keys, models, actions
 
