@@ -13,7 +13,17 @@ from pathlib import Path
 import re
 import socket
 import time
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 from uuid import UUID
 
 from aiohttp import ClientResponse
@@ -270,17 +280,32 @@ def dict_diff(orig: Optional[Dict[str, Any]], new: Dict[str, Any]) -> Dict[str, 
     return changed
 
 
-def print_ws_stat_summary(stats: List[WSStat]) -> None:
+def ws_stat_summmary(stats: List[WSStat]) -> Tuple[List[WSStat], float, Counter[str]]:
     unfiltered = [s for s in stats if not s.filtered]
     percent = (1 - len(unfiltered) / len(stats)) * 100
     keys = Counter(k for s in unfiltered for k in s.keys_set)
 
+    return unfiltered, percent, keys
+
+
+def print_ws_stat_summary(stats: List[WSStat], output: Optional[Callable[[Any], None]] = None) -> None:
+    if output is None:
+        output = typer.echo
+
+    unfiltered, percent, keys = ws_stat_summmary(stats)
+
     title = " ws stat summary "
     side_length = int((80 - len(title)) / 2)
-    typer.echo("-" * side_length + title + "-" * side_length)
-    typer.echo(f"packet count: {len(stats)}")
-    typer.echo(f"filtered packet count: {len(unfiltered)} ({percent:.4}%)")
-    typer.echo("-" * 80)
+
+    lines = [
+        "-" * side_length + title + "-" * side_length,
+        f"packet count: {len(stats)}",
+        f"filtered packet count: {len(unfiltered)} ({percent:.4}%)",
+        "-" * 80,
+    ]
+
     for key, count in keys.most_common(10):
-        typer.echo(f"{key}: {count}")
-    typer.echo("-" * 80)
+        lines.append(f"{key}: {count}")
+    lines.append("-" * 80)
+
+    output("\n".join(lines))

@@ -104,8 +104,8 @@ class Bootstrap(ProtectBaseObject):
 
         if "events" in data:
             del data["events"]
-        if "capture_ws_stats" in data:
-            del data["capture_ws_stats"]
+        if "captureWsStats" in data:
+            del data["captureWsStats"]
 
         for model_type in ModelType.bootstrap_models():
             attr = model_type + "s"
