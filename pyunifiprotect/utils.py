@@ -290,16 +290,6 @@ def ws_stat_summmary(stats: List[WSStat]) -> Tuple[List[WSStat], float, Counter[
     return unfiltered, percent, keys, models, actions
 
 
-def ws_stat_summmary(stats: List[WSStat]) -> Tuple[List[WSStat], float, Counter[str], Counter[str], Counter[str]]:
-    unfiltered = [s for s in stats if not s.filtered]
-    percent = (1 - len(unfiltered) / len(stats)) * 100
-    keys = Counter(k for s in unfiltered for k in s.keys_set)
-    models = Counter(k.model for k in unfiltered)
-    actions = Counter(k.action for k in unfiltered)
-
-    return unfiltered, percent, keys, models, actions
-
-
 def print_ws_stat_summary(stats: List[WSStat], output: Optional[Callable[[Any], None]] = None) -> None:
     if output is None:
         output = typer.echo
