@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import dataclass
 import logging
-from typing import Any, Dict, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import UUID
+
+from pydantic.fields import PrivateAttr
 
 from pyunifiprotect.data.base import ProtectBaseObject, ProtectModel, ProtectModelWithId
 from pyunifiprotect.data.convert import create_from_unifi_dict
@@ -22,7 +25,18 @@ _LOGGER = logging.getLogger(__name__)
 
 MAX_SUPPORTED_CAMERAS = 256
 MAX_EVENT_HISTORY_IN_STATE_MACHINE = MAX_SUPPORTED_CAMERAS * 2
-STATS_KEYS = {"storageStats", "stats", "systemInfo"}
+STATS_KEYS = {
+    "storageStats",
+    "stats",
+    "systemInfo",
+    "phyRate",
+    "wifiConnectionState",
+    "upSince",
+    "uptime",
+    "lastSeen",
+    "recordingSchedules",
+    "eventStats",
+}
 
 EVENT_ATTR_MAP: Dict[EventType, Tuple[str, str]] = {
     EventType.MOTION: ("last_motion", "last_motion_event_id"),
@@ -36,6 +50,16 @@ def _remove_stats_keys(data: Dict[str, Any], ignore_stats: bool) -> Dict[str, An
         for key in STATS_KEYS.intersection(data.keys()):
             del data[key]
     return data
+
+
+@dataclass
+class WSStat:
+    model: str
+    action: str
+    keys: List[str]
+    keys_set: List[str]
+    size: int
+    filtered: bool
 
 
 class Bootstrap(ProtectBaseObject):
@@ -61,6 +85,8 @@ class Bootstrap(ProtectBaseObject):
 
     # not directly from Unifi
     events: Dict[str, Event] = FixSizeOrderedDict()
+    capture_ws_stats: bool = False
+    _ws_stats: List[WSStat] = PrivateAttr([])
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -78,6 +104,8 @@ class Bootstrap(ProtectBaseObject):
 
         if "events" in data:
             del data["events"]
+        if "capture_ws_stats" in data:
+            del data["capture_ws_stats"]
 
         for model_type in ModelType.bootstrap_models():
             attr = model_type + "s"
@@ -85,6 +113,10 @@ class Bootstrap(ProtectBaseObject):
                 data[attr] = list(data[attr].values())
 
         return data
+
+    @property
+    def ws_stats(self) -> List[WSStat]:
+        return self._ws_stats
 
     @property
     def auth_user(self) -> User:
@@ -103,6 +135,19 @@ class Bootstrap(ProtectBaseObject):
 
         self.events[event.id] = event
 
+    def _create_stat(self, packet: WSPacket, keys_set: List[str], filtered: bool) -> None:
+        if self.capture_ws_stats:
+            self._ws_stats.append(
+                WSStat(
+                    model=packet.action_frame.data["modelKey"],
+                    action=packet.action_frame.data["action"],
+                    keys=list(packet.data_frame.data.keys()),
+                    keys_set=keys_set,
+                    size=len(packet.raw),
+                    filtered=filtered,
+                )
+            )
+
     def process_ws_packet(
         self, packet: WSPacket, models: Optional[Set[ModelType]] = None, ignore_stats: bool = False
     ) -> Optional[WSSubscriptionMessage]:
@@ -115,16 +160,18 @@ class Bootstrap(ProtectBaseObject):
         if not isinstance(packet.data_frame, WSJSONPacketFrame):
             _LOGGER.debug("Unexpected data frame format: %s", packet.data_frame.payload_format)
 
-        action: dict = packet.action_frame.data  # type: ignore
-        data: dict = packet.data_frame.data  # type: ignore
+        action: dict = deepcopy(packet.action_frame.data)  # type: ignore
+        data: dict = deepcopy(packet.data_frame.data)  # type: ignore
         if action["newUpdateId"] is not None:
             self.last_update_id = UUID(action["newUpdateId"])
 
         if action["modelKey"] not in ModelType.values():
             _LOGGER.debug("Unknown model type: %s", action["modelKey"])
+            self._create_stat(packet, [], True)
             return None
 
-        if len(models) > 0 and ModelType(action["modelKey"]) not in models:
+        if len(models) > 0 and ModelType(action["modelKey"]) not in models or len(data) == 0:
+            self._create_stat(packet, [], True)
             return None
 
         if action["action"] == "add":
@@ -144,8 +191,10 @@ class Bootstrap(ProtectBaseObject):
             else:
                 _LOGGER.debug("Unexpected bootstrap model type for add: %s", obj.model)
 
+            updated = obj.dict()
+            self._create_stat(packet, list(updated.keys()), False)
             return WSSubscriptionMessage(
-                action=WSAction.ADD, new_update_id=self.last_update_id, changed_data=obj.dict(), new_obj=obj
+                action=WSAction.ADD, new_update_id=self.last_update_id, changed_data=updated, new_obj=obj
             )
 
         if action["action"] == "update":
@@ -153,13 +202,15 @@ class Bootstrap(ProtectBaseObject):
             if model_type == ModelType.NVR.value:
                 data = _remove_stats_keys(data, ignore_stats)
                 # nothing left to process
-                if data == {}:
+                if len(data) == 0:
+                    self._create_stat(packet, [], True)
                     return None
 
                 data = self.nvr.unifi_dict_to_dict(data)
                 old_nvr = self.nvr.copy()
                 self.nvr = self.nvr.update_from_dict(deepcopy(data))
 
+                self._create_stat(packet, list(data.keys()), False)
                 return WSSubscriptionMessage(
                     action=WSAction.UPDATE,
                     new_update_id=self.last_update_id,
@@ -168,11 +219,11 @@ class Bootstrap(ProtectBaseObject):
                     old_obj=old_nvr,
                 )
             if model_type in ModelType.bootstrap_models() or model_type == ModelType.EVENT.value:
-                if model_type == ModelType.CAMERA.value:
-                    data = _remove_stats_keys(data, ignore_stats)
-                    # nothing left to process
-                    if data == {}:
-                        return None
+                data = _remove_stats_keys(data, ignore_stats)
+                # nothing left to process
+                if len(data) == 0:
+                    self._create_stat(packet, [], True)
+                    return None
 
                 key = model_type + "s"
                 devices = getattr(self, key)
@@ -187,6 +238,7 @@ class Bootstrap(ProtectBaseObject):
 
                     devices[action["id"]] = obj
 
+                    self._create_stat(packet, list(data.keys()), False)
                     return WSSubscriptionMessage(
                         action=WSAction.UPDATE,
                         new_update_id=self.last_update_id,
@@ -201,4 +253,5 @@ class Bootstrap(ProtectBaseObject):
             else:
                 _LOGGER.debug("Unexpected bootstrap model type for update: %s", model_type)
 
+        self._create_stat(packet, [], True)
         return None

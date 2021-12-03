@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 import contextlib
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone, tzinfo
@@ -18,11 +19,13 @@ from uuid import UUID
 from aiohttp import ClientResponse
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, ModelField
 from pydantic.utils import to_camel
+import typer
 
 from pyunifiprotect.data.types import Version
 
 if TYPE_CHECKING:
     from pyunifiprotect.data import CoordType
+    from pyunifiprotect.data.bootstrap import WSStat
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 DEBUG_ENV = "UFP_DEBUG"
@@ -265,3 +268,19 @@ def dict_diff(orig: Optional[Dict[str, Any]], new: Dict[str, Any]) -> Dict[str, 
                 changed[key] = deepcopy(value)
 
     return changed
+
+
+def print_ws_stat_summary(stats: List[WSStat]) -> None:
+    unfiltered = [s for s in stats if not s.filtered]
+    percent = (1 - len(unfiltered) / len(stats)) * 100
+    keys = Counter(k for s in unfiltered for k in s.keys_set)
+
+    title = "ws stat summary"
+    side_length = int((80 - len(title) - 2) / 2)
+    typer.echo("-" * side_length + title + "-" * side_length)
+    typer.echo(f"packet count: {len(stats)}")
+    typer.echo(f"filtered packet count: {len(unfiltered)} ({percent:.4}%)")
+    typer.echo("-" * 80)
+    for key, count in keys.most_common(10):
+        typer.echo(f"{key}: {count}")
+    typer.echo("-" * 80)
