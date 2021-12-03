@@ -22,7 +22,7 @@ from pyunifiprotect.data.websocket import (
     WSJSONPacketFrame,
     WSSubscriptionMessage,
 )
-from pyunifiprotect.utils import to_js_time
+from pyunifiprotect.utils import print_ws_stat_summary, to_js_time
 from tests.conftest import MockDatetime, MockWebsocket
 
 PACKET_RAW = "AQEBAAAAAHR4nCXMQQrCMBBA0auUWRvIpJOm8Qbi2gNMZiZQ0NRFqIh4dwluP7z/AZa+7Q3OE7AqnCZo9ro9lbtddFRPhCayuOorOyqYXfEJXcprEqQZ55UHe+xq96u9h7HDWh9x+y+UqeZAsUrQrCFajFQWgu8PBLYjMAIBAQAAAAC2eJxVjr0KwzAMhF8leO6QOLZDOrdT126lg2PLxRA7wVYKIeTdK1PoD2jQfTodtzFcZ2DHiiUfH+xQsYw6IYFGtbyplaKRnDhE+0u7N81mSuW9LnugzxMgGLxSaCZ8u//z8xMifg4BUFuNmvS2kzY6QCqKdaaXsrNOcSN1ywfbgXGtg1JwpjSPfopkjMs4EloypK/ypSirrRau50I6w21vuQQpxaBEiQiThfECa/FBqcT2F6ZyTac="
@@ -98,6 +98,7 @@ async def test_ws_all(
 @pytest.mark.asyncio
 async def test_ws_filtered(protect_client_ws: ProtectApiClient, benchmark: BenchmarkFixture):
     protect_client = protect_client_ws
+    protect_client.bootstrap.capture_ws_stats = True
     protect_client._ignore_stats = True
     protect_client._subscribed_models = {
         ModelType.EVENT,
@@ -134,6 +135,8 @@ async def test_ws_filtered(protect_client_ws: ProtectApiClient, benchmark: Bench
 
     while protect_client.is_ws_connected:
         await asyncio.sleep(0.1)
+
+    print_ws_stat_summary(protect_client.bootstrap.ws_stats)
 
 
 @pytest.mark.asyncio

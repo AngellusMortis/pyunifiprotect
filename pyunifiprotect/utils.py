@@ -280,19 +280,31 @@ def dict_diff(orig: Optional[Dict[str, Any]], new: Dict[str, Any]) -> Dict[str, 
     return changed
 
 
-def ws_stat_summmary(stats: List[WSStat]) -> Tuple[List[WSStat], float, Counter[str]]:
+def ws_stat_summmary(stats: List[WSStat]) -> Tuple[List[WSStat], float, Counter[str], Counter[str], Counter[str]]:
     unfiltered = [s for s in stats if not s.filtered]
     percent = (1 - len(unfiltered) / len(stats)) * 100
     keys = Counter(k for s in unfiltered for k in s.keys_set)
+    models = Counter(k for s in unfiltered for k in s.model)
+    actions = Counter(k for s in unfiltered for k in s.action)
 
-    return unfiltered, percent, keys
+    return unfiltered, percent, keys, models, actions
+
+
+def ws_stat_summmary(stats: List[WSStat]) -> Tuple[List[WSStat], float, Counter[str], Counter[str], Counter[str]]:
+    unfiltered = [s for s in stats if not s.filtered]
+    percent = (1 - len(unfiltered) / len(stats)) * 100
+    keys = Counter(k for s in unfiltered for k in s.keys_set)
+    models = Counter(k.model for k in unfiltered)
+    actions = Counter(k.action for k in unfiltered)
+
+    return unfiltered, percent, keys, models, actions
 
 
 def print_ws_stat_summary(stats: List[WSStat], output: Optional[Callable[[Any], None]] = None) -> None:
     if output is None:
         output = typer.echo
 
-    unfiltered, percent, keys = ws_stat_summmary(stats)
+    unfiltered, percent, keys, models, actions = ws_stat_summmary(stats)
 
     title = " ws stat summary "
     side_length = int((80 - len(title)) / 2)
@@ -303,6 +315,14 @@ def print_ws_stat_summary(stats: List[WSStat], output: Optional[Callable[[Any], 
         f"filtered packet count: {len(unfiltered)} ({percent:.4}%)",
         "-" * 80,
     ]
+
+    for key, count in models.most_common():
+        lines.append(f"{key}: {count}")
+    lines.append("-" * 80)
+
+    for key, count in actions.most_common():
+        lines.append(f"{key}: {count}")
+    lines.append("-" * 80)
 
     for key, count in keys.most_common(10):
         lines.append(f"{key}: {count}")
