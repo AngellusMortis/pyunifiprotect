@@ -275,8 +275,8 @@ def print_ws_stat_summary(stats: List[WSStat]) -> None:
     percent = (1 - len(unfiltered) / len(stats)) * 100
     keys = Counter(k for s in unfiltered for k in s.keys_set)
 
-    title = "ws stat summary"
-    side_length = int((80 - len(title) - 2) / 2)
+    title = " ws stat summary "
+    side_length = int((80 - len(title)) / 2)
     typer.echo("-" * side_length + title + "-" * side_length)
     typer.echo(f"packet count: {len(stats)}")
     typer.echo(f"filtered packet count: {len(unfiltered)} ({percent:.4}%)")
