@@ -251,7 +251,7 @@ class Bootstrap(ProtectBaseObject):
         if not isinstance(packet.data_frame, WSJSONPacketFrame):
             _LOGGER.debug("Unexpected data frame format: %s", packet.data_frame.payload_format)
 
-        data, action = self._get_frame_data(packet)
+        action, data = self._get_frame_data(packet)
         if action["newUpdateId"] is not None:
             self.last_update_id = UUID(action["newUpdateId"])
 
