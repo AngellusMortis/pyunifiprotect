@@ -151,6 +151,94 @@ class Bootstrap(ProtectBaseObject):
                 )
             )
 
+    def _get_frame_data(self, packet: WSPacket) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        if self.capture_ws_stats:
+            return deepcopy(packet.action_frame.data), deepcopy(packet.data_frame.data)
+        return packet.action_frame.data, packet.data_frame.data
+
+    def _process_add_packet(self, packet: WSPacket, data: Dict[str, Any]) -> WSSubscriptionMessage:
+        obj = create_from_unifi_dict(data, api=self._api)
+
+        if isinstance(obj, Event):
+            self.process_event(obj)
+        elif isinstance(obj, NVR):
+            self.nvr = obj
+        elif (
+            isinstance(obj, ProtectModelWithId)
+            and obj.model is not None
+            and obj.model.value in ModelType.bootstrap_models()
+        ):
+            key = obj.model.value + "s"
+            getattr(self, key)[obj.id] = obj
+        else:
+            _LOGGER.debug("Unexpected bootstrap model type for add: %s", obj.model)
+
+        updated = obj.dict()
+        self._create_stat(packet, list(updated.keys()), False)
+        return WSSubscriptionMessage(
+            action=WSAction.ADD, new_update_id=self.last_update_id, changed_data=updated, new_obj=obj
+        )
+
+    def _process_nvr_update(
+        self, packet: WSPacket, data: Dict[str, Any], ignore_stats: bool
+    ) -> Optional[WSSubscriptionMessage]:
+        data = _remove_stats_keys(data, ignore_stats)
+        # nothing left to process
+        if len(data) == 0:
+            self._create_stat(packet, [], True)
+            return None
+
+        data = self.nvr.unifi_dict_to_dict(data)
+        old_nvr = self.nvr.copy()
+        self.nvr = self.nvr.update_from_dict(deepcopy(data))
+
+        self._create_stat(packet, list(data.keys()), False)
+        return WSSubscriptionMessage(
+            action=WSAction.UPDATE,
+            new_update_id=self.last_update_id,
+            changed_data=data,
+            new_obj=self.nvr,
+            old_obj=old_nvr,
+        )
+
+    def _process_device_update(
+        self, packet: WSPacket, action: Dict[str, Any], data: Dict[str, Any], ignore_stats: bool
+    ) -> Optional[WSSubscriptionMessage]:
+        model_type = action["modelKey"]
+
+        data = _remove_stats_keys(data, ignore_stats)
+        # nothing left to process
+        if len(data) == 0:
+            self._create_stat(packet, [], True)
+            return None
+
+        key = model_type + "s"
+        devices = getattr(self, key)
+        if action["id"] in devices:
+            obj: ProtectModel = devices[action["id"]]
+            data = obj.unifi_dict_to_dict(data)
+            old_obj = obj.copy()
+            obj = obj.update_from_dict(deepcopy(data))
+
+            if isinstance(obj, Event):
+                self.process_event(obj)
+
+            devices[action["id"]] = obj
+
+            self._create_stat(packet, list(data.keys()), False)
+            return WSSubscriptionMessage(
+                action=WSAction.UPDATE,
+                new_update_id=self.last_update_id,
+                changed_data=data,
+                new_obj=obj,
+                old_obj=old_obj,
+            )
+
+        # ignore updates to events that phase out
+        if model_type != ModelType.EVENT.value:
+            _LOGGER.debug("Unexpected %s: %s", key, action["id"])
+        return None
+
     def process_ws_packet(
         self, packet: WSPacket, models: Optional[Set[ModelType]] = None, ignore_stats: bool = False
     ) -> Optional[WSSubscriptionMessage]:
@@ -163,8 +251,7 @@ class Bootstrap(ProtectBaseObject):
         if not isinstance(packet.data_frame, WSJSONPacketFrame):
             _LOGGER.debug("Unexpected data frame format: %s", packet.data_frame.payload_format)
 
-        action: dict = deepcopy(packet.action_frame.data)  # type: ignore
-        data: dict = deepcopy(packet.data_frame.data)  # type: ignore
+        data, action = self._get_frame_data(packet)
         if action["newUpdateId"] is not None:
             self.last_update_id = UUID(action["newUpdateId"])
 
@@ -178,83 +265,14 @@ class Bootstrap(ProtectBaseObject):
             return None
 
         if action["action"] == "add":
-            obj = create_from_unifi_dict(data, api=self._api)
-
-            if isinstance(obj, Event):
-                self.process_event(obj)
-            elif isinstance(obj, NVR):
-                self.nvr = obj
-            elif (
-                isinstance(obj, ProtectModelWithId)
-                and obj.model is not None
-                and obj.model.value in ModelType.bootstrap_models()
-            ):
-                key = obj.model.value + "s"
-                getattr(self, key)[obj.id] = obj
-            else:
-                _LOGGER.debug("Unexpected bootstrap model type for add: %s", obj.model)
-
-            updated = obj.dict()
-            self._create_stat(packet, list(updated.keys()), False)
-            return WSSubscriptionMessage(
-                action=WSAction.ADD, new_update_id=self.last_update_id, changed_data=updated, new_obj=obj
-            )
+            return self._process_add_packet(packet, data)
 
         if action["action"] == "update":
-            model_type = action["modelKey"]
-            if model_type == ModelType.NVR.value:
-                data = _remove_stats_keys(data, ignore_stats)
-                # nothing left to process
-                if len(data) == 0:
-                    self._create_stat(packet, [], True)
-                    return None
-
-                data = self.nvr.unifi_dict_to_dict(data)
-                old_nvr = self.nvr.copy()
-                self.nvr = self.nvr.update_from_dict(deepcopy(data))
-
-                self._create_stat(packet, list(data.keys()), False)
-                return WSSubscriptionMessage(
-                    action=WSAction.UPDATE,
-                    new_update_id=self.last_update_id,
-                    changed_data=data,
-                    new_obj=self.nvr,
-                    old_obj=old_nvr,
-                )
-            if model_type in ModelType.bootstrap_models() or model_type == ModelType.EVENT.value:
-                data = _remove_stats_keys(data, ignore_stats)
-                # nothing left to process
-                if len(data) == 0:
-                    self._create_stat(packet, [], True)
-                    return None
-
-                key = model_type + "s"
-                devices = getattr(self, key)
-                if action["id"] in devices:
-                    obj: ProtectModel = devices[action["id"]]
-                    data = obj.unifi_dict_to_dict(data)
-                    old_obj = obj.copy()
-                    obj = obj.update_from_dict(deepcopy(data))
-
-                    if isinstance(obj, Event):
-                        self.process_event(obj)
-
-                    devices[action["id"]] = obj
-
-                    self._create_stat(packet, list(data.keys()), False)
-                    return WSSubscriptionMessage(
-                        action=WSAction.UPDATE,
-                        new_update_id=self.last_update_id,
-                        changed_data=data,
-                        new_obj=obj,
-                        old_obj=old_obj,
-                    )
-
-                # ignore updates to events that phase out
-                if model_type != ModelType.EVENT.value:
-                    _LOGGER.debug("Unexpected %s: %s", key, action["id"])
-            else:
-                _LOGGER.debug("Unexpected bootstrap model type for update: %s", model_type)
+            if action["modelKey"] == ModelType.NVR.value:
+                return self._process_nvr_update(packet, data, ignore_stats)
+            if action["modelKey"] in ModelType.bootstrap_models() or action["modelKey"] == ModelType.EVENT.value:
+                return self._process_device_update(packet, action, data, ignore_stats)
+            _LOGGER.debug("Unexpected bootstrap model type for update: %s", action["modelKey"])
 
         self._create_stat(packet, [], True)
         return None
