@@ -432,6 +432,9 @@ def compare_objs(obj_type, expected, actual):
             del expected["apMac"]
         if "elementInfo" in expected:
             del expected["elementInfo"]
+        # voltage requires 1.21.1+
+        if "voltage" not in expected:
+            expected["voltage"] = None
         del expected["apRssi"]
         del expected["lastPrivacyZonePositionId"]
         del expected["recordingSchedules"]
@@ -465,10 +468,6 @@ def compare_objs(obj_type, expected, actual):
     # sometimes uptime comes back as a str...
     if "uptime" in expected and expected["uptime"] is not None:
         expected["uptime"] = int(expected["uptime"])
-
-    # voltage requires 1.21.1+
-    if "voltage" not in expected:
-        expected["voltage"] = None
 
     # force hardware revision to str to make sure types line up
     if "hardwareRevision" in expected and expected["hardwareRevision"] is not None:
