@@ -8,6 +8,7 @@ from typing import (
     Any,
     ClassVar,
     Dict,
+    Iterable,
     List,
     Optional,
     Set,
@@ -56,11 +57,11 @@ class ProtectBaseObject(BaseModel):
     _initial_data: Dict[str, Any] = PrivateAttr()
 
     _protect_objs: ClassVar[Optional[Dict[str, Type[ProtectBaseObject]]]] = None
-    _protect_objs_set: ClassVar[Optional[Set[str]]] = None
+    _protect_objs_set: ClassVar[Optional[Iterable[str]]] = None
     _protect_lists: ClassVar[Optional[Dict[str, Type[ProtectBaseObject]]]] = None
-    _protect_lists_set: ClassVar[Optional[Set[str]]] = None
+    _protect_lists_set: ClassVar[Optional[Iterable[str]]] = None
     _protect_dicts: ClassVar[Optional[Dict[str, Type[ProtectBaseObject]]]] = None
-    _protect_dicts_set: ClassVar[Optional[Set[str]]] = None
+    _protect_dicts_set: ClassVar[Optional[Iterable[str]]] = None
     _to_unifi_remaps: ClassVar[Optional[Dict[str, str]]] = None
 
     class Config:
@@ -207,7 +208,7 @@ class ProtectBaseObject(BaseModel):
         if cls._protect_objs_set is None:
             cls._protect_objs_set = set(cls._get_protect_objs().keys())
 
-        return cls._protect_objs_set
+        return cls._protect_objs_set  # type: ignore
 
     @classmethod
     def _get_protect_lists(cls) -> Dict[str, Type[ProtectBaseObject]]:
@@ -224,7 +225,7 @@ class ProtectBaseObject(BaseModel):
         if cls._protect_lists_set is None:
             cls._protect_lists_set = set(cls._get_protect_lists().keys())
 
-        return cls._protect_lists_set
+        return cls._protect_lists_set  # type: ignore
 
     @classmethod
     def _get_protect_dicts(cls) -> Dict[str, Type[ProtectBaseObject]]:
@@ -241,7 +242,7 @@ class ProtectBaseObject(BaseModel):
         if cls._protect_dicts_set is None:
             cls._protect_dicts_set = set(cls._get_protect_dicts().keys())
 
-        return cls._protect_dicts_set
+        return cls._protect_dicts_set  # type: ignore
 
     @classmethod
     def _get_api(cls, api: Optional[ProtectApiClient]) -> Optional[ProtectApiClient]:
