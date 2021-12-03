@@ -466,6 +466,10 @@ def compare_objs(obj_type, expected, actual):
     if "uptime" in expected and expected["uptime"] is not None:
         expected["uptime"] = int(expected["uptime"])
 
+    # voltage requires 1.21.1+
+    if "voltage" not in expected:
+        expected["voltage"] = None
+
     # force hardware revision to str to make sure types line up
     if "hardwareRevision" in expected and expected["hardwareRevision"] is not None:
         expected["hardwareRevision"] = str(expected["hardwareRevision"])
