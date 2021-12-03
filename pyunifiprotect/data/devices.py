@@ -630,6 +630,7 @@ class Camera(ProtectMotionDeviceModel):
     audio_bitrate: int
     can_manage: bool
     is_managed: bool
+    voltage: Optional[float]
 
     # TODO:
     # apMac
