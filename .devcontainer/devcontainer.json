@@ -28,7 +28,7 @@
         "python.linting.enabled": true,
         "python.linting.flake8Enabled": true,
         "python.linting.flake8Path": "pflake8",
-        "python.linting.mypyEnabled": false,
+        "python.linting.mypyEnabled": true,
         "python.linting.pylintEnabled": true,
         "python.linting.pylintArgs": [
             "--rcfile=${workspaceFolder}/pyproject.toml"

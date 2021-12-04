@@ -156,7 +156,7 @@ class Bootstrap(ProtectBaseObject):
             return deepcopy(packet.action_frame.data), deepcopy(packet.data_frame.data)
         return packet.action_frame.data, packet.data_frame.data
 
-    def _process_add_packet(self, packet: WSPacket, data: Dict[str, Any]) -> WSSubscriptionMessage:
+    def _process_add_packet(self, packet: WSPacket, data: Dict[str, Any]) -> Optional[WSSubscriptionMessage]:
         obj = create_from_unifi_dict(data, api=self._api)
 
         if isinstance(obj, Event):
@@ -172,6 +172,7 @@ class Bootstrap(ProtectBaseObject):
             getattr(self, key)[obj.id] = obj
         else:
             _LOGGER.debug("Unexpected bootstrap model type for add: %s", obj.model)
+            return None
 
         updated = obj.dict()
         self._create_stat(packet, list(updated.keys()), False)
@@ -215,7 +216,7 @@ class Bootstrap(ProtectBaseObject):
         key = model_type + "s"
         devices = getattr(self, key)
         if action["id"] in devices:
-            obj: ProtectModel = devices[action["id"]]
+            obj: ProtectModelWithId = devices[action["id"]]
             data = obj.unifi_dict_to_dict(data)
             old_obj = obj.copy()
             obj = obj.update_from_dict(deepcopy(data))

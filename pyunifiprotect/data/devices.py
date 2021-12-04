@@ -108,25 +108,25 @@ class Light(ProtectMotionDeviceModel):
         self.light_device_settings.is_indicator_enabled = enabled
         await self.save_device()
 
-    async def set_led_level(self, led_level: LEDLevel) -> None:
+    async def set_led_level(self, led_level: int) -> None:
         """Sets the LED level for the light"""
 
-        self.light_device_settings.led_level = led_level
+        self.light_device_settings.led_level = LEDLevel(led_level)
         await self.save_device()
 
-    async def set_light(self, enabled: bool, led_level: Optional[LEDLevel] = None) -> None:
+    async def set_light(self, enabled: bool, led_level: Optional[int] = None) -> None:
         """Force turns on/off the light"""
 
         self.light_on_settings.is_led_force_on = enabled
         if led_level is not None:
-            self.light_device_settings.led_level = led_level
+            self.light_device_settings.led_level = LEDLevel(led_level)
 
         await self.save_device()
 
-    async def set_sensitivity(self, sensitivity: PercentInt) -> None:
+    async def set_sensitivity(self, sensitivity: int) -> None:
         """Sets motion sensitivity"""
 
-        self.light_device_settings.pir_sensitivity = sensitivity
+        self.light_device_settings.pir_sensitivity = PercentInt(sensitivity)
         await self.save_device()
 
     async def set_duration(self, duration: timedelta) -> None:
@@ -817,49 +817,49 @@ class Camera(ProtectMotionDeviceModel):
         self.video_mode = mode
         await self.save_device()
 
-    async def set_camera_zoom(self, level: PercentInt) -> None:
+    async def set_camera_zoom(self, level: int) -> None:
         """Sets zoom level for camera"""
 
         if not self.feature_flags.can_optical_zoom:
             raise BadRequest("Camera cannot optical zoom")
 
-        self.isp_settings.zoom_position = level
+        self.isp_settings.zoom_position = PercentInt(level)
         await self.save_device()
 
-    async def set_wdr_level(self, level: WDRLevel) -> None:
+    async def set_wdr_level(self, level: int) -> None:
         """Sets WDR (Wide Dynamic Range) on camera"""
 
         if self.feature_flags.has_hdr:
             raise BadRequest("Cannot set WDR on cameras with HDR")
 
-        self.isp_settings.wdr = level
+        self.isp_settings.wdr = WDRLevel(level)
         await self.save_device()
 
-    async def set_mic_volume(self, level: PercentInt) -> None:
+    async def set_mic_volume(self, level: int) -> None:
         """Sets the mic sensitivity level on camera"""
 
         if not self.feature_flags.has_mic:
             raise BadRequest("Camera does not have mic")
 
-        self.mic_volume = level
+        self.mic_volume = PercentInt(level)
         await self.save_device()
 
-    async def set_speaker_volume(self, level: PercentInt) -> None:
+    async def set_speaker_volume(self, level: int) -> None:
         """Sets the speaker sensitivity level on camera"""
 
         if not self.feature_flags.has_speaker:
             raise BadRequest("Camera does not have speaker")
 
-        self.speaker_settings.volume = level
+        self.speaker_settings.volume = PercentInt(level)
         await self.save_device()
 
-    async def set_chime_duration(self, duration: ChimeDuration) -> None:
+    async def set_chime_duration(self, duration: int) -> None:
         """Sets chime duration for doorbell. Requires camera to be a doorbell"""
 
         if not self.feature_flags.has_chime:
             raise BadRequest("Camera does not have a chime")
 
-        self.chime_duration = duration
+        self.chime_duration = ChimeDuration(duration)
         await self.save_device()
 
     async def set_lcd_text(
@@ -891,7 +891,7 @@ class Camera(ProtectMotionDeviceModel):
         await self.save_device()
 
     async def set_privacy(
-        self, enabled: bool, mic_level: Optional[PercentInt] = None, recording_mode: Optional[RecordingMode] = None
+        self, enabled: bool, mic_level: Optional[int] = None, recording_mode: Optional[RecordingMode] = None
     ) -> None:
         """Adds/removes a privacy zone that blacks out the whole camera"""
 
@@ -904,7 +904,7 @@ class Camera(ProtectMotionDeviceModel):
             self.remove_privacy_zone()
 
         if mic_level is not None:
-            self.mic_volume = mic_level
+            self.mic_volume = PercentInt(mic_level)
 
         if recording_mode is not None:
             self.recording_settings.mode = recording_mode

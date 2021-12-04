@@ -14,7 +14,7 @@ from pyunifiprotect.data.types import ProtectWSPayloadFormat
 from pyunifiprotect.exceptions import WSDecodeError, WSEncodeError
 
 if TYPE_CHECKING:
-    from pyunifiprotect.data.base import ProtectModel
+    from pyunifiprotect.data.base import ProtectModelWithId
 
 WS_HEADER_SIZE = 8
 
@@ -39,8 +39,8 @@ class WSSubscriptionMessage:
     action: WSAction
     new_update_id: UUID
     changed_data: Dict[str, Any]
-    new_obj: ProtectModel
-    old_obj: Optional[ProtectModel] = None
+    new_obj: ProtectModelWithId
+    old_obj: Optional[ProtectModelWithId] = None
 
 
 class BaseWSPacketFrame:

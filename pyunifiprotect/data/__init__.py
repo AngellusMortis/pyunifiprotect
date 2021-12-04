@@ -1,9 +1,15 @@
-from pyunifiprotect.data.base import ProtectBaseObject, ProtectModel
+from pyunifiprotect.data.base import (
+    ProtectAdoptableDeviceModel,
+    ProtectBaseObject,
+    ProtectModel,
+    ProtectModelWithId,
+)
 from pyunifiprotect.data.bootstrap import Bootstrap
 from pyunifiprotect.data.convert import create_from_unifi_dict
 from pyunifiprotect.data.devices import (
     Bridge,
     Camera,
+    CameraChannel,
     LCDMessage,
     Light,
     Sensor,
@@ -40,6 +46,7 @@ from pyunifiprotect.data.types import (
     RecordingMode,
     SmartDetectObjectType,
     StateType,
+    Version,
     VideoMode,
     WDRLevel,
 )
@@ -57,6 +64,7 @@ __all__ = [
     "Bootstrap",
     "Bridge",
     "Camera",
+    "CameraChannel",
     "ChimeDuration",
     "CloudAccount",
     "Color",
@@ -80,8 +88,10 @@ __all__ = [
     "NVR",
     "NVRLocation",
     "Percent",
+    "ProtectAdoptableDeviceModel",
     "ProtectBaseObject",
     "ProtectModel",
+    "ProtectModelWithId",
     "ProtectWSPayloadFormat",
     "RecordingMode",
     "Sensor",
@@ -91,6 +101,7 @@ __all__ = [
     "StateType",
     "User",
     "UserLocation",
+    "Version",
     "VideoMode",
     "Viewer",
     "WDRLevel",
