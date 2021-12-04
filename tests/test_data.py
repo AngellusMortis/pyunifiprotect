@@ -20,9 +20,9 @@ from pyunifiprotect.data import (
     create_from_unifi_dict,
 )
 from pyunifiprotect.data.devices import LCDMessage
+from pyunifiprotect.data.types import DoorbellMessageType
 from pyunifiprotect.exceptions import BadRequest, StreamError
 from pyunifiprotect.utils import set_debug, set_no_debug
-from pyunifiprotect.data.types import DoorbellMessageType
 from tests.conftest import (
     TEST_BRIDGE_EXISTS,
     TEST_CAMERA_EXISTS,
