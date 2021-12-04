@@ -290,7 +290,7 @@ def ws_stat_summmary(stats: List[WSStat]) -> Tuple[List[WSStat], float, Counter[
     return unfiltered, percent, keys, models, actions
 
 
-def print_ws_stat_summary(stats: List[WSStat], output: Optional[Callable[[Any], None]] = None) -> None:
+def print_ws_stat_summary(stats: List[WSStat], output: Optional[Callable[[Any], Any]] = None) -> None:
     if output is None:
         output = typer.echo
 
