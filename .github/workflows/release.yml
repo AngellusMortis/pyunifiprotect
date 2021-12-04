@@ -16,7 +16,6 @@ jobs:
   deploy:
     name: Publish to PyPi
     runs-on: ubuntu-latest
-    environment: PyPi
 
     steps:
     - name: Check repo
