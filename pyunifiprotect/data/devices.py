@@ -351,7 +351,11 @@ class LCDMessage(ProtectBaseObject):
         if "resetAt" in data:
             data["resetAt"] = process_datetime(data, "resetAt")
         if "text" in data:
-            data["text"] = cls._fix_text(data["text"], data.get("type"))
+            # UniFi Protect bug: some times LCD messages can get into a bad state where message = DEFAULT MESSAGE, but no type
+            if "type" not in data:
+                data["type"] = DoorbellMessageType.CUSTOM_MESSAGE.value
+
+            data["text"] = cls._fix_text(data["text"], data["type"])
 
         return super().unifi_dict_to_dict(data)
 

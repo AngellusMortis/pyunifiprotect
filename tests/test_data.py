@@ -19,8 +19,10 @@ from pyunifiprotect.data import (
     WSPacket,
     create_from_unifi_dict,
 )
+from pyunifiprotect.data.devices import LCDMessage
 from pyunifiprotect.exceptions import BadRequest, StreamError
 from pyunifiprotect.utils import set_debug, set_no_debug
+from pyunifiprotect.data.types import DoorbellMessageType
 from tests.conftest import (
     TEST_BRIDGE_EXISTS,
     TEST_CAMERA_EXISTS,
@@ -317,3 +319,10 @@ async def test_get_smart_detect_zones(smart_dectect_obj: Optional[Event]):
         assert zone_id in zone_ids
         assert zone_id == zone.id
         assert zone in camera.smart_detect_zones
+
+
+def test_doorbell_bad_state():
+    message = LCDMessage.from_unifi_dict(text="Test")
+
+    assert message.text == "Test"
+    assert message.type == DoorbellMessageType.CUSTOM_MESSAGE
