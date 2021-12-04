@@ -143,7 +143,7 @@ class Light(ProtectMotionDeviceModel):
         mode: LightModeType,
         enable_at: Optional[LightModeEnableType] = None,
         duration: Optional[timedelta] = None,
-        sensitivity: Optional[PercentInt] = None,
+        sensitivity: Optional[int] = None,
     ) -> None:
         """Updates various Light settings.
 
@@ -164,7 +164,7 @@ class Light(ProtectMotionDeviceModel):
 
             self.light_device_settings.pir_duration = duration
         if sensitivity is not None:
-            self.light_device_settings.pir_sensitivity = sensitivity
+            self.light_device_settings.pir_sensitivity = PercentInt(sensitivity)
 
         await self.save_device()
 
