@@ -23,6 +23,8 @@ from pyunifiprotect.data.types import (
     EventType,
     ModelType,
     PercentInt,
+    RecordingType,
+    ResolutionStorageType,
     SmartDetectObjectType,
     Version,
 )
@@ -404,13 +406,13 @@ class DoorbellSettings(ProtectBaseObject):
 
 
 class RecordingTypeDistribution(ProtectBaseObject):
-    recording_type: str
+    recording_type: RecordingType
     size: int
     percentage: float
 
 
 class ResolutionDistribution(ProtectBaseObject):
-    resolution: str
+    resolution: ResolutionStorageType
     size: int
     percentage: float
 
@@ -419,13 +421,72 @@ class StorageDistribution(ProtectBaseObject):
     recording_type_distributions: List[RecordingTypeDistribution]
     resolution_distributions: List[ResolutionDistribution]
 
+    _recording_type_dict: Optional[Dict[RecordingType, RecordingTypeDistribution]] = PrivateAttr(None)
+    _resolution_dict: Optional[Dict[ResolutionStorageType, ResolutionDistribution]] = PrivateAttr(None)
+
+    def _get_recording_type_dict(self) -> Dict[RecordingType, RecordingTypeDistribution]:
+        if self._recording_type_dict is None:
+            self._recording_type_dict = {}
+            for recording_type in self.recording_type_distributions:
+                self._recording_type_dict[recording_type.recording_type] = recording_type
+
+        return self._recording_type_dict
+
+    def _get_resolution_dict(self) -> Dict[ResolutionStorageType, ResolutionDistribution]:
+        if self._resolution_dict is None:
+            self._resolution_dict = {}
+            for resolution in self.resolution_distributions:
+                self._resolution_dict[resolution.resolution] = resolution
+
+        return self._resolution_dict
+
+    @property
+    def timelapse_recordings(self) -> Optional[RecordingTypeDistribution]:
+        return self._get_recording_type_dict().get(RecordingType.TIMELAPSE)
+
+    @property
+    def continuous_recordings(self) -> Optional[RecordingTypeDistribution]:
+        return self._get_recording_type_dict().get(RecordingType.CONTINUOUS)
+
+    @property
+    def detections_recordings(self) -> Optional[RecordingTypeDistribution]:
+        return self._get_recording_type_dict().get(RecordingType.DETECTIONS)
+
+    @property
+    def uhd_usage(self) -> Optional[ResolutionDistribution]:
+        return self._get_resolution_dict().get(ResolutionStorageType.UHD)
+
+    @property
+    def hd_usage(self) -> Optional[ResolutionDistribution]:
+        return self._get_resolution_dict().get(ResolutionStorageType.HD)
+
+    @property
+    def free(self) -> Optional[ResolutionDistribution]:
+        return self._get_resolution_dict().get(ResolutionStorageType.FREE)
+
+    def update_from_dict(self, data: Dict[str, Any]) -> StorageDistribution:
+        # reset internal look ups when data changes
+        self._recording_type_dict = None
+        self._resolution_dict = None
+
+        return super().update_from_dict(data)
+
 
 class StorageStats(ProtectBaseObject):
     utilization: float
-    capacity: Optional[int]
-    remaining_capacity: Optional[int]
+    capacity: Optional[timedelta]
+    remaining_capacity: Optional[timedelta]
     recording_space: StorageSpace
     storage_distribution: StorageDistribution
+
+    @classmethod
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "capacity" in data and data["capacity"] is not None:
+            data["capacity"] = timedelta(milliseconds=data.pop("capacity"))
+        if "remainingCapacity" in data and data["remainingCapacity"] is not None:
+            data["remainingCapacity"] = timedelta(milliseconds=data.pop("remainingCapacity"))
+
+        return super().unifi_dict_to_dict(data)
 
 
 class NVRFeatureFlags(ProtectBaseObject):

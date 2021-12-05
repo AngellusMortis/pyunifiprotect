@@ -174,6 +174,20 @@ class RecordingMode(str, enum.Enum):
 
 
 @enum.unique
+class RecordingType(str, enum.Enum):
+    TIMELAPSE = "timelapse"
+    CONTINUOUS = "rotating"
+    DETECTIONS = "detections"
+
+
+@enum.unique
+class ResolutionStorageType(str, enum.Enum):
+    UHD = "4K"
+    HD = "HD"
+    FREE = "free"
+
+
+@enum.unique
 class IRLEDMode(str, enum.Enum):
     AUTO = "auto"
     ON = "on"
