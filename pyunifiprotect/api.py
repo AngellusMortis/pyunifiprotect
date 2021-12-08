@@ -59,6 +59,8 @@ NEVER_RAN = -1000
 DEVICE_UPDATE_INTERVAL = 900
 # how many seconds before before we check for an active WS connection
 WEBSOCKET_CHECK_INTERVAL = 120
+# retry timeout for thumbnails/heatmaps
+RETRY_TIMEOUT = 15
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -884,6 +886,20 @@ class ProtectApiClient(BaseApiClient):
 
         return await self.api_request_raw("video/export", params=params, raise_exception=False)
 
+    async def _get_image_with_retry(self, path: str, **kwargs: Any) -> Optional[bytes]:
+        """Retries image request until it returns or timesout. Used for event images like thumbnails and heatmaps"""
+
+        now = time.monotonic()
+        timeout = now + RETRY_TIMEOUT
+        data: Optional[bytes] = None
+        while data is None and now < timeout:
+            data = await self.api_request_raw(path, raise_exception=False, **kwargs)
+            if data is None:
+                now = time.monotonic()
+                await asyncio.sleep(0.5)
+
+        return data
+
     async def get_event_thumbnail(
         self, thumbnail_id: str, width: Optional[int] = None, height: Optional[int] = None
     ) -> Optional[bytes]:
@@ -897,12 +913,12 @@ class ProtectApiClient(BaseApiClient):
         if height is not None:
             params.update({"h": height})
 
-        return await self.api_request_raw(f"thumbnails/{thumbnail_id}", params=params, raise_exception=False)
+        return await self._get_image_with_retry(f"thumbnails/{thumbnail_id}", params=params)
 
     async def get_event_heatmap(self, heatmap_id: str) -> Optional[bytes]:
         """Gets given heatmap from a given event"""
 
-        return await self.api_request_raw(f"heatmaps/{heatmap_id}", raise_exception=False)
+        return await self._get_image_with_retry(f"heatmaps/{heatmap_id}")
 
     async def get_event_smart_detect_track_raw(self, event_id: str) -> Dict[str, Any]:
         """Gets raw Smart Detect Track for a Smart Detection"""
