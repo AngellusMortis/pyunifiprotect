@@ -895,8 +895,8 @@ class ProtectApiClient(BaseApiClient):
         while data is None and now < timeout:
             data = await self.api_request_raw(path, raise_exception=False, **kwargs)
             if data is None:
-                now = time.monotonic()
                 await asyncio.sleep(0.5)
+                now = time.monotonic()
 
         return data
 
