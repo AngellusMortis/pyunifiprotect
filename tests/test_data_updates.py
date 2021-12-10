@@ -52,6 +52,40 @@ async def test_device_reboot(camera_obj: Camera):
 
 
 @pytest.mark.skipif(not TEST_LIGHT_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
+async def test_light_set_paired_camera_none(light_obj: Light):
+    light_obj.api.api_request.reset_mock()
+
+    light_obj.camera_id = "bad_id"
+    light_obj._initial_data = light_obj.dict()
+
+    await light_obj.set_paired_camera(None)
+
+    light_obj.api.api_request.assert_called_with(
+        f"lights/{light_obj.id}",
+        method="patch",
+        json={"camera": None},
+    )
+
+
+@pytest.mark.skipif(not TEST_LIGHT_EXISTS or not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
+async def test_light_set_paired_camera(light_obj: Light, camera_obj: Camera):
+    light_obj.api.api_request.reset_mock()
+
+    light_obj.camera_id = None
+    light_obj._initial_data = light_obj.dict()
+
+    await light_obj.set_paired_camera(camera_obj)
+
+    light_obj.api.api_request.assert_called_with(
+        f"lights/{light_obj.id}",
+        method="patch",
+        json={"camera": camera_obj.id},
+    )
+
+
+@pytest.mark.skipif(not TEST_LIGHT_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("status", [True, False])
 @pytest.mark.asyncio
 async def test_light_set_status_light(light_obj: Light, status: bool):

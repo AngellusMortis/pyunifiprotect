@@ -102,6 +102,15 @@ class Light(ProtectMotionDeviceModel):
 
         return self.api.bootstrap.cameras[self.camera_id]
 
+    async def set_paired_camera(self, camera: Optional[Camera]) -> None:
+        """Sets the camera paired with the light"""
+
+        if camera is None:
+            self.camera_id = None
+        else:
+            self.camera_id = camera.id
+        await self.save_device(force_emit=True)
+
     async def set_status_light(self, enabled: bool) -> None:
         """Sets the status indicator light for the light"""
 
