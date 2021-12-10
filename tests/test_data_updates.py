@@ -21,7 +21,12 @@ from pyunifiprotect.data import (
 )
 from pyunifiprotect.data.devices import CameraZone
 from pyunifiprotect.data.nvr import NVR, DoorbellMessage
-from pyunifiprotect.data.types import DEFAULT, LightModeEnableType, LightModeType, SmartDetectObjectType
+from pyunifiprotect.data.types import (
+    DEFAULT,
+    LightModeEnableType,
+    LightModeType,
+    SmartDetectObjectType,
+)
 from pyunifiprotect.data.websocket import WSAction, WSSubscriptionMessage
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import to_js_time, to_ms
