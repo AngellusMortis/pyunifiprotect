@@ -747,6 +747,14 @@ class Camera(ProtectMotionDeviceModel):
         index, _ = self.get_privacy_zone()
         return index is not None
 
+    @property
+    def is_person_detection_on(self) -> bool:
+        return SmartDetectObjectType.PERSON in self.smart_detect_settings.object_types
+
+    @property
+    def is_vehicle_detection_on(self) -> bool:
+        return SmartDetectObjectType.VEHICLE in self.smart_detect_settings.object_types
+
     def get_privacy_zone(self) -> Tuple[Optional[int], Optional[CameraZone]]:
         for index, zone in enumerate(self.privacy_zones):
             if zone.name == PRIVACY_ZONE_NAME:
@@ -849,7 +857,7 @@ class Camera(ProtectMotionDeviceModel):
         await self.save_device()
 
     async def set_speaker_volume(self, level: int) -> None:
-        """Sets the speaker sensitivity level on camera"""
+        """Sets the speaker sensitivity level on camera. Requires camera to have speakers"""
 
         if not self.feature_flags.has_speaker:
             raise BadRequest("Camera does not have speaker")
@@ -865,6 +873,69 @@ class Camera(ProtectMotionDeviceModel):
 
         self.chime_duration = ChimeDuration(duration)
         await self.save_device()
+
+    async def set_system_sounds(self, enabled: bool) -> None:
+        """Sets system sound playback through speakers. Requires camera to have speakers"""
+
+        if not self.feature_flags.has_speaker:
+            raise BadRequest("Camera does not have speaker")
+
+        self.speaker_settings.are_system_sounds_enabled = enabled
+        await self.save_device()
+
+    async def set_osd_name(self, enabled: bool) -> None:
+        """Sets whether camera name is in the On Screen Display"""
+
+        self.osd_settings.is_name_enabled = enabled
+        await self.save_device()
+
+    async def set_osd_date(self, enabled: bool) -> None:
+        """Sets whether current date is in the On Screen Display"""
+
+        self.osd_settings.is_date_enabled = enabled
+        await self.save_device()
+
+    async def set_osd_logo(self, enabled: bool) -> None:
+        """Sets whether the UniFi logo is in the On Screen Display"""
+
+        self.osd_settings.is_logo_enabled = enabled
+        await self.save_device()
+
+    async def set_osd_bitrate(self, enabled: bool) -> None:
+        """Sets whether camera bitrate is in the On Screen Display"""
+
+        self.osd_settings.is_debug_enabled = enabled
+        await self.save_device()
+
+    async def set_smart_detect_types(self, types: List[SmartDetectObjectType]) -> None:
+        """Sets current enabled smart detection types. Requires camera to have smart detection"""
+
+        if not self.feature_flags.has_smart_detect:
+            raise BadRequest("Camera does not have a smart detections")
+
+        self.smart_detect_settings.object_types = types
+        await self.save_device()
+
+    async def _set_object_detect(self, obj_to_mod: SmartDetectObjectType, enabled: bool) -> None:
+
+        current_objects = self.smart_detect_settings.object_types
+        if enabled:
+            if obj_to_mod not in current_objects:
+                await self.set_smart_detect_types(current_objects + [obj_to_mod])
+        else:
+            if obj_to_mod in current_objects:
+                current_objects.remove(obj_to_mod)
+                await self.set_smart_detect_types(current_objects)
+
+    async def set_person_detection(self, enabled: bool) -> None:
+        """Toggles person smart detection. Requires camera to have smart detection"""
+
+        return await self._set_object_detect(SmartDetectObjectType.PERSON, enabled)
+
+    async def set_vehicle_detection(self, enabled: bool) -> None:
+        """Toggles vehicle smart detection. Requires camera to have smart detection"""
+
+        return await self._set_object_detect(SmartDetectObjectType.VEHICLE, enabled)
 
     async def set_lcd_text(
         self,

@@ -21,7 +21,7 @@ from pyunifiprotect.data import (
 )
 from pyunifiprotect.data.devices import CameraZone
 from pyunifiprotect.data.nvr import NVR, DoorbellMessage
-from pyunifiprotect.data.types import DEFAULT, LightModeEnableType, LightModeType
+from pyunifiprotect.data.types import DEFAULT, LightModeEnableType, LightModeType, SmartDetectObjectType
 from pyunifiprotect.data.websocket import WSAction, WSSubscriptionMessage
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import to_js_time, to_ms
@@ -717,6 +717,167 @@ async def test_camera_set_chime_duration_duration(camera_obj: Optional[Camera], 
             method="patch",
             json={"chimeDuration": duration},
         )
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
+async def test_camera_set_system_sounds_no_speaker(camera_obj: Optional[Camera]):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.feature_flags.has_speaker = False
+    camera_obj._initial_data = camera_obj.dict()
+
+    with pytest.raises(BadRequest):
+        await camera_obj.set_system_sounds(True)
+
+    assert not camera_obj.api.api_request.called
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.parametrize("status", [True, False])
+@pytest.mark.asyncio
+async def test_camera_set_system_sounds(camera_obj: Optional[Camera], status: bool):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.feature_flags.has_speaker = True
+    camera_obj.speaker_settings.are_system_sounds_enabled = not status
+    camera_obj._initial_data = camera_obj.dict()
+
+    await camera_obj.set_system_sounds(status)
+
+    camera_obj.api.api_request.assert_called_with(
+        f"cameras/{camera_obj.id}",
+        method="patch",
+        json={"speakerSettings": {"areSystemSoundsEnabled": status}},
+    )
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.parametrize("status", [True, False])
+@pytest.mark.asyncio
+async def test_camera_set_osd_name(camera_obj: Optional[Camera], status: bool):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.osd_settings.is_name_enabled = not status
+    camera_obj._initial_data = camera_obj.dict()
+
+    await camera_obj.set_osd_name(status)
+
+    camera_obj.api.api_request.assert_called_with(
+        f"cameras/{camera_obj.id}",
+        method="patch",
+        json={"osdSettings": {"isNameEnabled": status}},
+    )
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.parametrize("status", [True, False])
+@pytest.mark.asyncio
+async def test_camera_set_osd_date(camera_obj: Optional[Camera], status: bool):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.osd_settings.is_date_enabled = not status
+    camera_obj._initial_data = camera_obj.dict()
+
+    await camera_obj.set_osd_date(status)
+
+    camera_obj.api.api_request.assert_called_with(
+        f"cameras/{camera_obj.id}",
+        method="patch",
+        json={"osdSettings": {"isDateEnabled": status}},
+    )
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.parametrize("status", [True, False])
+@pytest.mark.asyncio
+async def test_camera_set_osd_logo(camera_obj: Optional[Camera], status: bool):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.osd_settings.is_logo_enabled = not status
+    camera_obj._initial_data = camera_obj.dict()
+
+    await camera_obj.set_osd_logo(status)
+
+    camera_obj.api.api_request.assert_called_with(
+        f"cameras/{camera_obj.id}",
+        method="patch",
+        json={"osdSettings": {"isLogoEnabled": status}},
+    )
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.parametrize("status", [True, False])
+@pytest.mark.asyncio
+async def test_camera_set_osd_bitrate(camera_obj: Optional[Camera], status: bool):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.osd_settings.is_debug_enabled = not status
+    camera_obj._initial_data = camera_obj.dict()
+
+    await camera_obj.set_osd_bitrate(status)
+
+    camera_obj.api.api_request.assert_called_with(
+        f"cameras/{camera_obj.id}",
+        method="patch",
+        json={"osdSettings": {"isDebugEnabled": status}},
+    )
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
+async def test_camera_set_smart_detect_types_no_smart(camera_obj: Optional[Camera]):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.feature_flags.has_smart_detect = False
+    camera_obj._initial_data = camera_obj.dict()
+
+    with pytest.raises(BadRequest):
+        await camera_obj.set_smart_detect_types([])
+
+    assert not camera_obj.api.api_request.called
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
+async def test_camera_set_smart_detect_types(camera_obj: Optional[Camera]):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.feature_flags.has_smart_detect = True
+    camera_obj.smart_detect_settings.object_types = []
+    camera_obj._initial_data = camera_obj.dict()
+
+    await camera_obj.set_smart_detect_types([SmartDetectObjectType.PERSON])
+
+    camera_obj.api.api_request.assert_called_with(
+        f"cameras/{camera_obj.id}",
+        method="patch",
+        json={"smartDetectSettings": {"objectTypes": ["person"]}},
+    )
 
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
