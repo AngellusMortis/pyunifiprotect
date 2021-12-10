@@ -904,6 +904,7 @@ class Camera(ProtectMotionDeviceModel):
     async def set_osd_bitrate(self, enabled: bool) -> None:
         """Sets whether camera bitrate is in the On Screen Display"""
 
+        # mismatch between UI internal data structure debug = bitrate data
         self.osd_settings.is_debug_enabled = enabled
         await self.save_device()
 
