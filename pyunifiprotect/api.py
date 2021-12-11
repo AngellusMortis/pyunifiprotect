@@ -60,7 +60,7 @@ DEVICE_UPDATE_INTERVAL = 900
 # how many seconds before before we check for an active WS connection
 WEBSOCKET_CHECK_INTERVAL = 120
 # retry timeout for thumbnails/heatmaps
-RETRY_TIMEOUT = 15
+RETRY_TIMEOUT = 30
 
 
 _LOGGER = logging.getLogger(__name__)
