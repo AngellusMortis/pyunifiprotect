@@ -60,7 +60,7 @@ DEVICE_UPDATE_INTERVAL = 900
 # how many seconds before before we check for an active WS connection
 WEBSOCKET_CHECK_INTERVAL = 120
 # retry timeout for thumbnails/heatmaps
-RETRY_TIMEOUT = 30
+RETRY_TIMEOUT = 10
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -880,11 +880,18 @@ class ProtectApiClient(BaseApiClient):
 
         return await self.api_request_raw("video/export", params=params, raise_exception=False)
 
-    async def _get_image_with_retry(self, path: str, **kwargs: Any) -> Optional[bytes]:
-        """Retries image request until it returns or timesout. Used for event images like thumbnails and heatmaps"""
+    async def _get_image_with_retry(
+        self, path: str, retry_timeout: int = RETRY_TIMEOUT, **kwargs: Any
+    ) -> Optional[bytes]:
+        """
+        Retries image request until it returns or timesout. Used for event images like thumbnails and heatmaps.
+
+        Note: thumbnails / heatmaps do not generate _until after the event ends_. Events that last longer then
+        your retry timeout will always return 404.
+        """
 
         now = time.monotonic()
-        timeout = now + RETRY_TIMEOUT
+        timeout = now + retry_timeout
         data: Optional[bytes] = None
         while data is None and now < timeout:
             data = await self.api_request_raw(path, raise_exception=False, **kwargs)
@@ -895,9 +902,18 @@ class ProtectApiClient(BaseApiClient):
         return data
 
     async def get_event_thumbnail(
-        self, thumbnail_id: str, width: Optional[int] = None, height: Optional[int] = None
+        self,
+        thumbnail_id: str,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        retry_timeout: int = RETRY_TIMEOUT,
     ) -> Optional[bytes]:
-        """Gets given thumbanil from a given event"""
+        """
+        Gets given thumbanil from a given event
+
+        Note: thumbnails / heatmaps do not generate _until after the event ends_. Events that last longer then
+        your retry timeout will always return 404.
+        """
 
         params: Dict[str, Any] = {}
 
@@ -907,12 +923,23 @@ class ProtectApiClient(BaseApiClient):
         if height is not None:
             params.update({"h": height})
 
-        return await self._get_image_with_retry(f"thumbnails/{thumbnail_id}", params=params)
+        return await self._get_image_with_retry(
+            f"thumbnails/{thumbnail_id}", params=params, retry_timeout=retry_timeout
+        )
 
-    async def get_event_heatmap(self, heatmap_id: str) -> Optional[bytes]:
-        """Gets given heatmap from a given event"""
+    async def get_event_heatmap(
+        self,
+        heatmap_id: str,
+        retry_timeout: int = RETRY_TIMEOUT,
+    ) -> Optional[bytes]:
+        """
+        Gets given heatmap from a given event
 
-        return await self._get_image_with_retry(f"heatmaps/{heatmap_id}")
+        Note: thumbnails / heatmaps do not generate _until after the event ends_. Events that last longer then
+        your retry timeout will always return 404.
+        """
+
+        return await self._get_image_with_retry(f"heatmaps/{heatmap_id}", retry_timeout=retry_timeout)
 
     async def get_event_smart_detect_track_raw(self, event_id: str) -> Dict[str, Any]:
         """Gets raw Smart Detect Track for a Smart Detection"""
