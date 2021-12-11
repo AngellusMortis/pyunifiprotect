@@ -207,7 +207,7 @@ class BaseApiClient:
                     if response.status in (401, 403):
                         raise NotAuthorized(msg % (url, response.status, reason))
                     raise NvrError(msg % (url, response.status, reason))
-                _LOGGER.warning(msg, url, response.status, reason)
+                _LOGGER.debug(msg, url, response.status, reason)
                 return None
 
             data: Optional[bytes] = await response.read()
