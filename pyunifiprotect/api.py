@@ -887,7 +887,7 @@ class ProtectApiClient(BaseApiClient):
         Retries image request until it returns or timesout. Used for event images like thumbnails and heatmaps.
 
         Note: thumbnails / heatmaps do not generate _until after the event ends_. Events that last longer then
-        your retry timeout will always return 404.
+        your retry timeout will always return None.
         """
 
         now = time.monotonic()
@@ -936,7 +936,7 @@ class ProtectApiClient(BaseApiClient):
         Gets given heatmap from a given event
 
         Note: thumbnails / heatmaps do not generate _until after the event ends_. Events that last longer then
-        your retry timeout will always return 404.
+        your retry timeout will always return None.
         """
 
         return await self._get_image_with_retry(f"heatmaps/{heatmap_id}", retry_timeout=retry_timeout)
