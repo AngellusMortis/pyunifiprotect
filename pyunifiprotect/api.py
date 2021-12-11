@@ -170,14 +170,6 @@ class BaseApiClient:
             try:
                 _LOGGER.debug("%s %s %s", response.status, response.content_type, response)
 
-                if response.status in (401, 403):
-                    raise NotAuthorized(
-                        f"Unifi Protect reported authorization failure on request: {url} received {response.status}"
-                    )
-
-                if response.status == 404:
-                    raise NvrError(f"Call {url} received 404 Not Found")
-
                 if auto_close:
                     response.release()
 
