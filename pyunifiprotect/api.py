@@ -204,6 +204,8 @@ class BaseApiClient:
                 reason = await get_response_reason(response)
                 msg = "Request failed: %s - Status: %s - Reason: %s"
                 if raise_exception:
+                    if response.status in (401, 403):
+                        raise NotAuthorized(msg % (url, response.status, reason))
                     raise NvrError(msg % (url, response.status, reason))
                 _LOGGER.warning(msg, url, response.status, reason)
                 return None
