@@ -184,6 +184,13 @@ def test_connection_host(protect_client: ProtectApiClient):
     assert protect_client.connection_host == IPv4Address("192.168.3.1")
 
 
+def test_connection_host_override():
+    protect = ProtectApiClient("127.0.0.1", 443, "test", "test", override_connection_host=True)
+
+    expected = IPv4Address("127.0.0.1")
+    assert protect._connection_host == expected
+
+
 @pytest.mark.asyncio
 async def test_force_update(protect_client: ProtectApiClient):
     protect_client._bootstrap = None

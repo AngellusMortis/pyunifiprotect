@@ -461,6 +461,7 @@ class ProtectApiClient(BaseApiClient):
     * `password`: UFP password
     * `verify_ssl`: Verify HTTPS certificate (default: `True`)
     * `session`: Optional aiohttp session to use (default: generate one)
+    * `override_connection_host`: Use `host` as your `connection_host` for RTSP stream instead of using the one provided by UniFi Protect.
     * `minimum_score`: minimum score for events (default: `0`)
     * `subscribed_models`: Model types you want to filter events for WS. You will need to manually check the bootstrap for updates for events that not subscibred.
     * `ignore_stats`: Ignore storage, system, etc. stats/metrics from NVR and cameras (default: false)
@@ -483,18 +484,27 @@ class ProtectApiClient(BaseApiClient):
         password: str,
         verify_ssl: bool = True,
         session: Optional[aiohttp.ClientSession] = None,
+        override_connection_host: bool = False,
         minimum_score: int = 0,
         subscribed_models: Optional[Set[ModelType]] = None,
         ignore_stats: bool = False,
         debug: bool = False,
     ) -> None:
         super().__init__(
-            host=host, port=port, username=username, password=password, verify_ssl=verify_ssl, session=session
+            host=host,
+            port=port,
+            username=username,
+            password=password,
+            verify_ssl=verify_ssl,
+            session=session,
         )
 
         self._minimum_score = minimum_score
         self._subscribed_models = subscribed_models or set()
         self._ignore_stats = ignore_stats
+
+        if override_connection_host:
+            self._connection_host = ip_from_host(self._host)
 
         if debug:
             set_debug()
