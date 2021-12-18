@@ -116,19 +116,17 @@ class TalkbackStream(FfmpegCommand):
         if len(input_args) > 0:
             input_args += " "
 
-        bitrate = int(
-            camera.talkback_settings.channels
-            * camera.talkback_settings.sampling_rate
-            * camera.talkback_settings.bits_per_sample
-            / 8
-        )
+        # vn = no video
+        # acodec = audio codec to encode output in (aac)
+        # ac = number of output channels (1)
+        # ar = output sampling rate (22050)
+        # b:a = set bit rate of output audio (48000 from Android app)
         cmd = (
             "-loglevel info -hide_banner "
-            f"{input_args}-i {content_url} "
-            "-flags +global_header -vn "
-            f"-acodec {camera.talkback_settings.type_fmt} -ac {camera.talkback_settings.channels} -ar {camera.talkback_settings.sampling_rate} "
-            f"-b:a {bitrate} -map 0:a "
-            f"-f adts udp://{camera.host}:{camera.talkback_settings.bind_port}"
+            f"{input_args}-i {content_url} -vn "
+            f"-acodec {camera.talkback_settings.type_fmt} -ac {camera.talkback_settings.channels} ",
+            f"-ar {camera.talkback_settings.sampling_rate} -b:a 48000 -map 0:a "
+            f"-f adts udp://{camera.host}:{camera.talkback_settings.bind_port}",
         )
 
         super().__init__(cmd, ffmpeg_path)
