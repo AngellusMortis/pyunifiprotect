@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from asyncio.streams import StreamReader
 from asyncio.subprocess import PIPE, Process, create_subprocess_exec
+import logging
 from pathlib import Path
 from shlex import split
 from typing import TYPE_CHECKING, List, Optional
@@ -13,6 +14,8 @@ from pyunifiprotect.exceptions import BadRequest, StreamError
 
 if TYPE_CHECKING:
     from pyunifiprotect.data import Camera
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class FfmpegCommand:
@@ -66,6 +69,7 @@ class FfmpegCommand:
         if not self.ffmpeg_path.exists():
             raise StreamError("Could not find ffmpeg")
 
+        _LOGGER.debug("ffmpeg: %s %s", self.ffmpeg_path, " ".join(self.args))
         self.process = await create_subprocess_exec(self.ffmpeg_path, *self.args, stdout=PIPE, stderr=PIPE)
 
     async def stop(self) -> None:
@@ -112,7 +116,20 @@ class TalkbackStream(FfmpegCommand):
         if len(input_args) > 0:
             input_args += " "
 
-        cmd = f"-loglevel info -hide_banner {input_args}-i {content_url} -vn -acodec {camera.talkback_settings.type_fmt} -ac {camera.talkback_settings.channels} -ar {camera.talkback_settings.sampling_rate} -bits_per_raw_sample {camera.talkback_settings.bits_per_sample} -map 0:a -aq {camera.talkback_settings.quality} -f adts udp://{camera.host}:{camera.talkback_settings.bind_port}"
+        bitrate = int(
+            camera.talkback_settings.channels
+            * camera.talkback_settings.sampling_rate
+            * camera.talkback_settings.bits_per_sample
+            / 8
+        )
+        cmd = (
+            "-loglevel info -hide_banner "
+            f"{input_args}-i {content_url} "
+            "-flags +global_header -vn "
+            f"-acodec {camera.talkback_settings.type_fmt} -ac {camera.talkback_settings.channels} -ar {camera.talkback_settings.sampling_rate} "
+            f"-b:a {bitrate} -map 0:a "
+            f"-f adts udp://{camera.host}:{camera.talkback_settings.bind_port}"
+        )
 
         super().__init__(cmd, ffmpeg_path)
 
