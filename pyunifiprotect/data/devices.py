@@ -1139,6 +1139,14 @@ class Sensor(ProtectAdoptableDeviceModel):
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "camera": "cameraId"}
 
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data, exclude=exclude)
+
+        if "lastMotionEventId" in data:
+            del data["lastMotionEventId"]
+
+        return data
+
     @property
     def camera(self) -> Optional[Camera]:
         """Paired Camera will always be none if no camera is paired"""
