@@ -1,14 +1,14 @@
 {
-    "server_name": "Trv Gyw",
-    "server_id": "01E29D57680A",
-    "server_version": "1.20.0-beta.7",
-    "server_ip": "192.168.150.211",
+    "server_name": "Wmhoe Btwdn",
+    "server_id": "8F1C4D2BB5A7",
+    "server_version": "1.21.0-beta.1",
+    "server_ip": "192.168.178.217",
     "server_model": "UNVR-PRO",
-    "last_update_id": "5d5a4389-9bf4-4bb8-af8f-fae6dddf23b0",
-    "user_id": "9bdd02b7088c9ebfd80b3868",
+    "last_update_id": "6e1b2b44-c205-43e4-8400-2ee2598ca72a",
+    "user_id": "92c2e26aeb6fc10f3563fb86",
     "counts": {
-        "camera": 6,
-        "user": 5,
+        "camera": 8,
+        "user": 6,
         "group": 2,
         "liveview": 1,
         "viewer": 1,
@@ -20,10 +20,10 @@
         "chime": 0,
         "schedule": 0
     },
-    "time": "2021-11-05T20:38:00.281553+00:00",
-    "event_count": 765,
-    "camera_online": true,
-    "camera_thumbnail": "e-0a871bdf8b5f29ad997c78b0",
-    "camera_heatmap": "e-0a871bdf8b5f29ad997c78b0",
-    "camera_video_length": 22
+    "time": "2021-12-20T18:11:47.329324+00:00",
+    "event_count": 795,
+    "camera_thumbnail": "e-efaf5a40014ad8dbff6411a3",
+    "camera_heatmap": "e-efaf5a40014ad8dbff6411a3",
+    "camera_video_length": 23,
+    "camera_online": true
 }

@@ -625,6 +625,8 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     can_adopt: bool
     is_attempting_to_connect: bool
     is_connected: bool
+    # requires 1.21+
+    market_name: Optional[str]
 
     wired_connection_state: Optional[WiredConnectionState] = None
     wifi_connection_state: Optional[WifiConnectionState] = None

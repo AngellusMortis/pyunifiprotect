@@ -740,6 +740,7 @@ async def test_camera_set_chime_duration_duration(camera_obj: Optional[Camera], 
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_chime = True
+    camera_obj.chime_duration = 300
     camera_obj.mic_volume = 10
     camera_obj._initial_data = camera_obj.dict()
 

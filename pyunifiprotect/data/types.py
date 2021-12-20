@@ -101,6 +101,8 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     FIRMWARE_UPDATE = "fwUpdate"
     INSTALLED_DISK = "installed"
     MOTION = "motion"
+    MOTION_LIGHT = "lightMotion"
+    MOTION_SENSOR = "sensorMotion"
     OFF = "off"
     OFFLINE = "offline"
     PROVISION = "provision"

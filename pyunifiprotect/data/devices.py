@@ -644,6 +644,7 @@ class Camera(ProtectMotionDeviceModel):
     can_manage: bool
     is_managed: bool
     voltage: Optional[float]
+    is_wireless_uplink_enabled: Optional[bool]
 
     # TODO:
     # apMac
@@ -1131,6 +1132,9 @@ class Sensor(ProtectAdoptableDeviceModel):
     # TODO:
     # mountType
 
+    # not directly from Unifi
+    last_motion_event_id: Optional[str] = None
+
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "camera": "cameraId"}
@@ -1143,3 +1147,10 @@ class Sensor(ProtectAdoptableDeviceModel):
             return None
 
         return self.api.bootstrap.cameras[self.camera_id]
+
+    @property
+    def last_motion_event(self) -> Optional[Event]:
+        if self.last_motion_event_id is None:
+            return None
+
+        return self.api.bootstrap.events.get(self.last_motion_event_id)

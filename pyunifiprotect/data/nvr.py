@@ -16,7 +16,7 @@ from pyunifiprotect.data.base import (
     ProtectModel,
     ProtectModelWithId,
 )
-from pyunifiprotect.data.devices import Camera, CameraZone
+from pyunifiprotect.data.devices import Camera, CameraZone, Light, Sensor
 from pyunifiprotect.data.types import (
     DoorbellMessageType,
     DoorbellText,
@@ -82,6 +82,53 @@ class SmartDetectTrack(ProtectBaseObject):
         return self.api.bootstrap.events.get(self.event_id)
 
 
+class EventMetadata(ProtectBaseObject):
+    client_platform: Optional[str]
+    reason: Optional[str]
+    app_update: Optional[str]
+    light_id: Optional[str]
+    light_name: Optional[str]
+    type: Optional[str]
+    sensor_id: Optional[str]
+    sensor_name: Optional[str]
+
+    @classmethod
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "lightId" in data:
+            data["lightId"] = data["lightId"]["text"]
+        if "lightName" in data:
+            data["lightName"] = data["lightName"]["text"]
+        if "type" in data:
+            data["type"] = data["type"]["text"]
+        if "sensorId" in data:
+            data["sensorId"] = data["sensorId"]["text"]
+        if "sensorName" in data:
+            data["sensorName"] = data["sensorName"]["text"]
+
+        return super().unifi_dict_to_dict(data)
+
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data, exclude=exclude)
+
+        # all metadata keys optionally appear
+        for key, value in list(data.items()):
+            if value is None:
+                del data[key]
+
+        if "lightId" in data:
+            data["lightId"] = {"text": data["lightId"]}
+        if "lightName" in data:
+            data["lightName"] = {"text": data["lightName"]}
+        if "type" in data:
+            data["type"] = {"text": data["type"]}
+        if "sensorId" in data:
+            data["sensorId"] = {"text": data["sensorId"]}
+        if "sensorName" in data:
+            data["sensorName"] = {"text": data["sensorName"]}
+
+        return data
+
+
 class Event(ProtectModelWithId):
     type: EventType
     start: datetime
@@ -93,9 +140,10 @@ class Event(ProtectModelWithId):
     smart_detect_event_ids: List[str]
     thumbnail_id: Optional[str]
     user_id: Optional[str]
+    timestamp: Optional[datetime]
+    metadata: Optional[EventMetadata]
 
     # TODO:
-    # metadata
     # partition
 
     _smart_detect_events: Optional[List[Event]] = PrivateAttr(None)
@@ -119,6 +167,8 @@ class Event(ProtectModelWithId):
             data["start"] = process_datetime(data, "start")
         if "end" in data:
             data["end"] = process_datetime(data, "end")
+        if "timestamp" in data:
+            data["timestamp"] = process_datetime(data, "timestamp")
 
         return super().unifi_dict_to_dict(data)
 
@@ -128,6 +178,20 @@ class Event(ProtectModelWithId):
             return None
 
         return self.api.bootstrap.cameras[self.camera_id]
+
+    @property
+    def light(self) -> Optional[Light]:
+        if self.metadata is None or self.metadata.light_id is None:
+            return None
+
+        return self.api.bootstrap.lights[self.metadata.light_id]
+
+    @property
+    def sensor(self) -> Optional[Sensor]:
+        if self.metadata is None or self.metadata.sensor_id is None:
+            return None
+
+        return self.api.bootstrap.sensors[self.metadata.sensor_id]
 
     @property
     def user(self) -> Optional[User]:
@@ -235,7 +299,7 @@ class CloudAccount(ProtectModelWithId):
     email: str
     user_id: str
     name: str
-    location: UserLocation
+    location: Optional[UserLocation]
 
     # TODO:
     # profileImg
@@ -250,6 +314,8 @@ class CloudAccount(ProtectModelWithId):
         # id and cloud ID are always the same
         if "id" in data:
             data["cloudId"] = data["id"]
+        if "location" in data and data["location"] is None:
+            del data["location"]
 
         return data
 
@@ -270,7 +336,7 @@ class User(ProtectModelWithId):
     enable_notifications: bool
     has_accepted_invite: bool
     all_permissions: List[str]
-    location: UserLocation
+    location: Optional[UserLocation]
     name: str
     first_name: str
     last_name: str
@@ -290,6 +356,14 @@ class User(ProtectModelWithId):
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "groups": "groupIds"}
+
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data, exclude=exclude)
+
+        if "location" in data and data["location"] is None:
+            del data["location"]
+
+        return data
 
     @property
     def groups(self) -> List[Group]:
@@ -538,6 +612,7 @@ class NVR(ProtectDeviceModel):
     is_recording_disabled: bool
     is_recording_motion_only: bool
     max_camera_capacity: Dict[Literal["4K", "2K", "HD"], int]
+    is_wireless_uplink_enabled: Optional[bool]
 
     # TODO:
     # uiVersion

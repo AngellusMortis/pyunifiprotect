@@ -38,7 +38,7 @@ STATS_KEYS = {
     "eventStats",
 }
 
-EVENT_ATTR_MAP: Dict[EventType, Tuple[str, str]] = {
+CAMERA_EVENT_ATTR_MAP: Dict[EventType, Tuple[str, str]] = {
     EventType.MOTION: ("last_motion", "last_motion_event_id"),
     EventType.SMART_DETECT: ("last_smart_detect", "last_smart_detect_event_id"),
     EventType.RING: ("last_ring", "last_ring_event_id"),
@@ -50,6 +50,34 @@ def _remove_stats_keys(data: Dict[str, Any], ignore_stats: bool) -> Dict[str, An
         for key in STATS_KEYS.intersection(data.keys()):
             del data[key]
     return data
+
+
+def _process_light_event(event: Event) -> None:
+    if event.light is None:
+        return
+
+    dt = event.light.last_motion
+    if dt is None or event.start >= dt or (event.end is not None and event.end >= dt):
+        event.light.last_motion_event_id = event.id
+
+
+def _process_sensor_event(event: Event) -> None:
+    if event.sensor is None:
+        return
+
+    dt = event.sensor.motion_detected_at
+    if dt is None or event.start >= dt or (event.end is not None and event.end >= dt):
+        event.sensor.last_motion_event_id = event.id
+
+
+def _process_camera_event(event: Event) -> None:
+    if event.camera is None:
+        return
+
+    dt_attr, event_attr = CAMERA_EVENT_ATTR_MAP[event.type]
+    dt = getattr(event.camera, dt_attr)
+    if dt is None or event.start >= dt or (event.end is not None and event.end >= dt):
+        setattr(event.camera, event_attr, event.id)
 
 
 @dataclass
@@ -127,14 +155,12 @@ class Bootstrap(ProtectBaseObject):
         return user
 
     def process_event(self, event: Event) -> None:
-        if event.camera is None:
-            return
-
-        if event.type in EVENT_ATTR_MAP:
-            dt_attr, event_attr = EVENT_ATTR_MAP[event.type]
-            dt = getattr(event.camera, dt_attr)
-            if dt is None or event.start >= dt or (event.end is not None and event.end >= dt):
-                setattr(event.camera, event_attr, event.id)
+        if event.type in CAMERA_EVENT_ATTR_MAP and event.camera is not None:
+            _process_camera_event(event)
+        elif event.type == EventType.MOTION_LIGHT and event.light is not None:
+            _process_light_event(event)
+        elif event.type == EventType.MOTION_SENSOR and event.sensor is not None:
+            _process_sensor_event(event)
 
         self.events[event.id] = event
 

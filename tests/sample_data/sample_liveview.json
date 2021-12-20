@@ -2,52 +2,71 @@
     "name": "Default",
     "isDefault": true,
     "isGlobal": true,
-    "layout": 6,
+    "layout": 9,
     "slots": [
         {
             "cameras": [
-                "600ff7813ea0cdc8218c1bda"
+                "0488c1538efb5cc9f73f77ca"
             ],
             "cycleMode": "time",
             "cycleInterval": 10
         },
         {
             "cameras": [
-                "8a0f3d0007784a7a6b0c334c"
+                "0de062b4f6922d489d3b312d"
             ],
             "cycleMode": "time",
             "cycleInterval": 10
         },
         {
             "cameras": [
-                "0a6ec595956ef5a5c5d646c3"
+                "193be66559c03ec5629f54cd"
             ],
             "cycleMode": "time",
             "cycleInterval": 10
         },
         {
             "cameras": [
-                "abbd0c98e15dde8a3b084698"
+                "16b0c551e36d872806f2806b"
             ],
             "cycleMode": "time",
             "cycleInterval": 10
         },
         {
             "cameras": [
-                "7a0d8d83b68921d80d3d2872"
+                "5becd64d90f1cae3a4146a0f"
             ],
             "cycleMode": "time",
             "cycleInterval": 10
         },
         {
             "cameras": [
-                "77008140644659cc47841a12"
+                "4f5fab885aca3f7c226b22b9"
             ],
+            "cycleMode": "time",
+            "cycleInterval": 10
+        },
+        {
+            "cameras": [
+                "cc7a572a0a8677baae933873"
+            ],
+            "cycleMode": "time",
+            "cycleInterval": 10
+        },
+        {
+            "cameras": [
+                "f4e9f4421209908c51284e67"
+            ],
+            "cycleMode": "time",
+            "cycleInterval": 10
+        },
+        {
+            "cameras": [],
             "cycleMode": "time",
             "cycleInterval": 10
         }
     ],
-    "owner": "d27ba769cc63a073634828f8",
-    "id": "d408011457716b18e80cf1a3",
+    "owner": "5a839670ad0a929bf8271c26",
+    "id": "ecb21f15e6d8fae65fea82f8",
     "modelKey": "liveview"
 }

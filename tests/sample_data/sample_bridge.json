@@ -1,16 +1,16 @@
 {
-    "mac": "F4C718B96D42",
-    "host": "192.168.37.140",
-    "connectionHost": "192.168.111.26",
+    "mac": "361E883A69F3",
+    "host": "192.168.150.46",
+    "connectionHost": "192.168.178.217",
     "type": "UFP-UAP-B",
-    "name": "Igqfljf Bfa",
-    "upSince": 1635657161082,
-    "uptime": 487498,
-    "lastSeen": 1636144659082,
-    "connectedSince": null,
-    "state": "DISCONNECTED",
+    "name": "Ulqizvp Ivkj",
+    "upSince": 1639807652332,
+    "uptime": null,
+    "lastSeen": 1639844856517,
+    "connectedSince": 1640020584084,
+    "state": "CONNECTED",
     "hardwareRevision": 19,
-    "firmwareVersion": "",
+    "firmwareVersion": "0.3.1",
     "latestFirmwareVersion": null,
     "firmwareBuild": null,
     "isUpdating": false,
@@ -25,8 +25,8 @@
     "wiredConnectionState": {
         "phyRate": null
     },
-    "id": "13bb0bd6bbcebb24f41bab03",
-    "isConnected": false,
+    "id": "bc4f4b105c83168972494e82",
+    "isConnected": true,
     "platform": "mt7621",
     "modelKey": "bridge"
 }

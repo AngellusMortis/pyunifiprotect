@@ -88,5 +88,6 @@
     "bridgeCandidates": [],
     "id": "5df53ed7ee7de9a43cfb0400",
     "isConnected": true,
-    "modelKey": "sensor"
+    "modelKey": "sensor",
+    "marketName": "UP Sense"
 }

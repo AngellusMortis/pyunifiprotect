@@ -459,11 +459,13 @@ def compare_objs(obj_type, expected, actual):
         if "lastLoginTime" not in expected:
             actual.pop("lastLoginTime", None)
     elif obj_type == ModelType.EVENT.value:
-        del expected["metadata"]
         del expected["partition"]
     elif obj_type == ModelType.SENSOR.value:
         del expected["bridgeCandidates"]
         del expected["mountType"]
+    elif obj_type == ModelType.BRIDGE.value:
+        if "marketName" in actual:
+            del actual["marketName"]
 
     # sometimes uptime comes back as a str...
     if "uptime" in expected and expected["uptime"] is not None:
