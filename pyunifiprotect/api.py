@@ -933,8 +933,10 @@ class ProtectApiClient(BaseApiClient):
         if height is not None:
             params.update({"h": height})
 
+        # old thumbnail URL use thumbnail ID, which is just `e-{event_id}`
+        thumbnail_id = thumbnail_id.replace("e-", "")
         return await self._get_image_with_retry(
-            f"thumbnails/{thumbnail_id}", params=params, retry_timeout=retry_timeout
+            f"events/{thumbnail_id}/thumbnail", params=params, retry_timeout=retry_timeout
         )
 
     async def get_event_heatmap(
@@ -949,7 +951,9 @@ class ProtectApiClient(BaseApiClient):
         your retry timeout will always return None.
         """
 
-        return await self._get_image_with_retry(f"heatmaps/{heatmap_id}", retry_timeout=retry_timeout)
+        # old heatmap URL use heatmap ID, which is just `e-{event_id}`
+        heatmap_id = heatmap_id.replace("e-", "")
+        return await self._get_image_with_retry(f"events/{heatmap_id}/heatmap", retry_timeout=retry_timeout)
 
     async def get_event_smart_detect_track_raw(self, event_id: str) -> Dict[str, Any]:
         """Gets raw Smart Detect Track for a Smart Detection"""

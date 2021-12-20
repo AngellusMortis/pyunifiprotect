@@ -71,11 +71,11 @@ def validate_video_file(filepath: Path, length: int):
 
 
 async def mock_api_request_raw(url: str, *args, **kwargs):
-    if url.startswith("thumbnails/"):
+    if url.startswith("thumbnails/") or url.endswith("thumbnail"):
         return read_binary_file("sample_camera_thumbnail")
     elif url.startswith("cameras/"):
         return read_binary_file("sample_camera_snapshot")
-    elif url.startswith("heatmaps/"):
+    elif url.startswith("heatmaps/") or url.endswith("heatmap"):
         return read_binary_file("sample_camera_heatmap")
     elif url == "video/export":
         return read_binary_file("sample_camera_video", "mp4")

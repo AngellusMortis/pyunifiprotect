@@ -543,11 +543,11 @@ async def test_get_camera_video(protect_client: ProtectApiClient, now, tmp_binar
 @pytest.mark.skipif(not TEST_THUMBNAIL_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_event_thumbnail(protect_client: ProtectApiClient):
-    data = await protect_client.get_event_thumbnail("test_id")
+    data = await protect_client.get_event_thumbnail("e-test_id")
     assert data is not None
 
     protect_client.api_request_raw.assert_called_with(  # type: ignore
-        "thumbnails/test_id",
+        "events/test_id/thumbnail",
         params={},
         raise_exception=False,
     )
@@ -563,7 +563,7 @@ async def test_get_event_thumbnail_args(protect_client: ProtectApiClient):
     assert data is not None
 
     protect_client.api_request_raw.assert_called_with(  # type: ignore
-        "thumbnails/test_id",
+        "events/test_id/thumbnail",
         params={
             "w": 1920,
             "h": 1080,
@@ -578,11 +578,11 @@ async def test_get_event_thumbnail_args(protect_client: ProtectApiClient):
 @pytest.mark.skipif(not TEST_HEATMAP_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_get_event_heatmap(protect_client: ProtectApiClient):
-    data = await protect_client.get_event_heatmap("test_id")
+    data = await protect_client.get_event_heatmap("e-test_id")
     assert data is not None
 
     protect_client.api_request_raw.assert_called_with(  # type: ignore
-        "heatmaps/test_id",
+        "events/test_id/heatmap",
         raise_exception=False,
     )
 
