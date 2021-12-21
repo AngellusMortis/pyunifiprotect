@@ -194,14 +194,14 @@ class Event(ProtectModelWithId):
         if self.metadata is None or self.metadata.light_id is None:
             return None
 
-        return self.api.bootstrap.lights[self.metadata.light_id]
+        return self.api.bootstrap.lights.get(self.metadata.light_id)
 
     @property
     def sensor(self) -> Optional[Sensor]:
         if self.metadata is None or self.metadata.sensor_id is None:
             return None
 
-        return self.api.bootstrap.sensors[self.metadata.sensor_id]
+        return self.api.bootstrap.sensors.get(self.metadata.sensor_id)
 
     @property
     def user(self) -> Optional[User]:
