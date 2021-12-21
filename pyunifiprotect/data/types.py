@@ -204,7 +204,7 @@ class DoorbellText(ConstrainedStr):
 
 
 class LEDLevel(ConstrainedInt):
-    ge = 1
+    ge = 0
     le = 6
 
 
