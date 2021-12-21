@@ -109,7 +109,7 @@ async def test_light_set_status_light(light_obj: Light, status: bool):
 
 
 @pytest.mark.skipif(not TEST_LIGHT_EXISTS, reason="Missing testdata")
-@pytest.mark.parametrize("level", [0, 1, 3, 6, 7])
+@pytest.mark.parametrize("level", [-1, 1, 3, 6, 7])
 @pytest.mark.asyncio
 async def test_light_set_led_level(light_obj: Light, level: int):
     light_obj.api.api_request.reset_mock()
