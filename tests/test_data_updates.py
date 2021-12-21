@@ -117,7 +117,7 @@ async def test_light_set_led_level(light_obj: Light, level: int):
     light_obj.light_device_settings.led_level = 2
     light_obj._initial_data = light_obj.dict()
 
-    if level in (0, 7):
+    if level in (-1, 7):
         with pytest.raises(ValidationError):
             await light_obj.set_led_level(level)
 
