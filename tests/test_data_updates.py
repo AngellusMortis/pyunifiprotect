@@ -134,7 +134,7 @@ async def test_light_set_led_level(light_obj: Light, level: int):
 
 @pytest.mark.skipif(not TEST_LIGHT_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("status", [True, False])
-@pytest.mark.parametrize("level", [None, 0, 1, 3, 6, 7])
+@pytest.mark.parametrize("level", [None, -1, 1, 3, 6, 7])
 @pytest.mark.asyncio
 async def test_light_set_light(light_obj: Light, status: bool, level: Optional[int]):
     light_obj.api.api_request.reset_mock()
@@ -144,7 +144,7 @@ async def test_light_set_light(light_obj: Light, status: bool, level: Optional[i
         light_obj.light_device_settings.led_level = 2
     light_obj._initial_data = light_obj.dict()
 
-    if level in (0, 7):
+    if level in (-1, 7):
         with pytest.raises(ValidationError):
             await light_obj.set_light(status, level)
 

@@ -114,8 +114,6 @@ class EventMetadata(ProtectBaseObject):
             data["sensorId"] = data["sensorId"]["text"]
         if "sensorName" in data:
             data["sensorName"] = data["sensorName"]["text"]
-        if "sensorName" in data:
-            data["sensorName"] = data["sensorName"]["text"]
 
         return super().unifi_dict_to_dict(data)
 
