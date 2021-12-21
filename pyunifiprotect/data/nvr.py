@@ -91,6 +91,8 @@ class EventMetadata(ProtectBaseObject):
     type: Optional[str]
     sensor_id: Optional[str]
     sensor_name: Optional[str]
+    from_value: Optional[str]
+    to_value: Optional[str]
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -104,6 +106,12 @@ class EventMetadata(ProtectBaseObject):
             data["sensorId"] = data["sensorId"]["text"]
         if "sensorName" in data:
             data["sensorName"] = data["sensorName"]["text"]
+        if "sensorName" in data:
+            data["sensorName"] = data["sensorName"]["text"]
+        if "from" in data:
+            data["fromValue"] = data["from"]
+        if "to" in data:
+            data["toValue"] = data["to"]
 
         return super().unifi_dict_to_dict(data)
 
@@ -125,6 +133,10 @@ class EventMetadata(ProtectBaseObject):
             data["sensorId"] = {"text": data["sensorId"]}
         if "sensorName" in data:
             data["sensorName"] = {"text": data["sensorName"]}
+        if "fromValue" in data:
+            data["from"] = data["fromValue"]
+        if "toValue" in data:
+            data["to"] = data["toValue"]
 
         return data
 

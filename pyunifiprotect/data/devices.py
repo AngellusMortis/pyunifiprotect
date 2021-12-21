@@ -644,6 +644,7 @@ class Camera(ProtectMotionDeviceModel):
     can_manage: bool
     is_managed: bool
     voltage: Optional[float]
+    # requires 1.21+
     is_wireless_uplink_enabled: Optional[bool]
 
     # TODO:
