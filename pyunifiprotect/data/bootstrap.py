@@ -118,10 +118,14 @@ class Bootstrap(ProtectBaseObject):
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        api = cls._get_api(data.get("api"))
         for model_type in ModelType.bootstrap_models():
             key = model_type + "s"
             items: Dict[str, ProtectModel] = {}
             for item in data[key]:
+                if api is not None and api.ignore_unadopted and not item.get("isAdopted"):
+                    continue
+
                 items[item["id"]] = item
             data[key] = items
 

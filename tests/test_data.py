@@ -9,6 +9,7 @@ from unittest.mock import Mock, patch
 import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
 
+from pyunifiprotect import ProtectApiClient
 from pyunifiprotect.data import (
     Bootstrap,
     Camera,
@@ -169,6 +170,46 @@ def test_bootstrap(bootstrap):
 
     assert bootstrap == obj_dict
     assert obj == obj_construct
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+def test_bootstrap_device_not_adopted(bootstrap, protect_client: ProtectApiClient):
+    bootstrap["cameras"][0]["isAdopted"] = False
+    obj = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
+
+    set_no_debug()
+    obj_construct = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
+    set_debug()
+
+    assert len(obj.cameras) == len(bootstrap["cameras"]) - 1
+    assert obj.cameras == obj_construct.cameras
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+def test_bootstrap_device_not_adopted_no_api(bootstrap):
+    bootstrap["cameras"][0]["isAdopted"] = False
+    obj = Bootstrap.from_unifi_dict(**deepcopy(bootstrap))
+
+    set_no_debug()
+    obj_construct = Bootstrap.from_unifi_dict(**deepcopy(bootstrap))
+    set_debug()
+
+    assert len(obj.cameras) == len(bootstrap["cameras"])
+    assert obj.cameras == obj_construct.cameras
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+def test_bootstrap_device_not_adopted_enabled(bootstrap, protect_client: ProtectApiClient):
+    bootstrap["cameras"][0]["isAdopted"] = False
+    protect_client.ignore_unadopted = False
+    obj = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
+
+    set_no_debug()
+    obj_construct = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
+    set_debug()
+
+    assert len(obj.cameras) == len(bootstrap["cameras"])
+    assert obj.cameras == obj_construct.cameras
 
 
 @pytest.mark.benchmark(group="construct")

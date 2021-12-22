@@ -368,6 +368,27 @@ async def test_get_device_mismatch(protect_client: ProtectApiClient, camera):
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
+async def test_get_device_not_adopted(protect_client: ProtectApiClient, camera):
+    camera["isAdopted"] = False
+    protect_client.api_request_obj = AsyncMock(return_value=camera)  # type: ignore
+
+    with pytest.raises(NvrError):
+        await protect_client.get_camera("test_id")
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
+async def test_get_device_not_adopted_enabled(protect_client: ProtectApiClient, camera):
+    camera["isAdopted"] = False
+    protect_client.ignore_unadopted = False
+    protect_client.api_request_obj = AsyncMock(return_value=camera)  # type: ignore
+
+    obj = create_from_unifi_dict(camera)
+    assert obj == await protect_client.get_camera("test_id")
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
 async def test_get_camera(protect_client: ProtectApiClient, camera):
     obj = create_from_unifi_dict(camera)
 
@@ -421,6 +442,25 @@ async def test_get_devices_mismatch(protect_client: ProtectApiClient, cameras):
 
     with pytest.raises(NvrError):
         await protect_client.get_bridges()
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
+async def test_get_devices_not_adopted(protect_client: ProtectApiClient, cameras):
+    cameras[0]["isAdopted"] = False
+    protect_client.api_request_list = AsyncMock(return_value=cameras)  # type: ignore
+
+    assert len(await protect_client.get_cameras()) == len(cameras) - 1
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
+async def test_get_devices_not_adopted_enabled(protect_client: ProtectApiClient, cameras):
+    cameras[0]["isAdopted"] = False
+    protect_client.ignore_unadopted = False
+    protect_client.api_request_list = AsyncMock(return_value=cameras)  # type: ignore
+
+    assert len(await protect_client.get_cameras()) == len(cameras)
 
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")

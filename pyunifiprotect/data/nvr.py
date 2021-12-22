@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, tzinfo
 from ipaddress import IPv4Address
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Literal, Optional, Set, Tuple
 from uuid import UUID
 
 from pydantic.fields import PrivateAttr
@@ -30,6 +30,9 @@ from pyunifiprotect.data.types import (
 )
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import process_datetime
+
+if TYPE_CHECKING:
+    from pydantic.typing import SetStr
 
 MAX_SUPPORTED_CAMERAS = 256
 MAX_EVENT_HISTORY_IN_STATE_MACHINE = MAX_SUPPORTED_CAMERAS * 2
@@ -94,6 +97,8 @@ class EventMetadata(ProtectBaseObject):
     from_value: Optional[str]
     to_value: Optional[str]
 
+    _collapse_keys: ClassVar[SetStr] = {"lightId", "lightName", "type", "sensorId", "sensorName"}
+
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {
@@ -104,16 +109,8 @@ class EventMetadata(ProtectBaseObject):
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
-        if "lightId" in data:
-            data["lightId"] = data["lightId"]["text"]
-        if "lightName" in data:
-            data["lightName"] = data["lightName"]["text"]
-        if "type" in data:
-            data["type"] = data["type"]["text"]
-        if "sensorId" in data:
-            data["sensorId"] = data["sensorId"]["text"]
-        if "sensorName" in data:
-            data["sensorName"] = data["sensorName"]["text"]
+        for key in cls._collapse_keys.intersection(data.keys()):
+            data[key] = data[key]["text"]
 
         return super().unifi_dict_to_dict(data)
 
@@ -125,16 +122,8 @@ class EventMetadata(ProtectBaseObject):
             if value is None:
                 del data[key]
 
-        if "lightId" in data:
-            data["lightId"] = {"text": data["lightId"]}
-        if "lightName" in data:
-            data["lightName"] = {"text": data["lightName"]}
-        if "type" in data:
-            data["type"] = {"text": data["type"]}
-        if "sensorId" in data:
-            data["sensorId"] = {"text": data["sensorId"]}
-        if "sensorName" in data:
-            data["sensorName"] = {"text": data["sensorName"]}
+        for key in self._collapse_keys.intersection(data.keys()):
+            data[key] = {"text": data[key]}
 
         return data
 
@@ -173,12 +162,8 @@ class Event(ProtectModelWithId):
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
-        if "start" in data:
-            data["start"] = process_datetime(data, "start")
-        if "end" in data:
-            data["end"] = process_datetime(data, "end")
-        if "timestamp" in data:
-            data["timestamp"] = process_datetime(data, "timestamp")
+        for key in {"start", "end", "timestamp"}.intersection(data.keys()):
+            data[key] = process_datetime(data, key)
 
         return super().unifi_dict_to_dict(data)
 
@@ -187,7 +172,7 @@ class Event(ProtectModelWithId):
         if self.camera_id is None:
             return None
 
-        return self.api.bootstrap.cameras[self.camera_id]
+        return self.api.bootstrap.cameras.get(self.camera_id)
 
     @property
     def light(self) -> Optional[Light]:
