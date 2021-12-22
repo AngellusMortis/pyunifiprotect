@@ -123,7 +123,7 @@ class Bootstrap(ProtectBaseObject):
             key = model_type + "s"
             items: Dict[str, ProtectModel] = {}
             for item in data[key]:
-                if api is not None and api.ignore_unadopted and not item.get("isAdopted"):
+                if api is not None and api.ignore_unadopted and not item.get("isAdopted", True):
                     continue
 
                 items[item["id"]] = item
