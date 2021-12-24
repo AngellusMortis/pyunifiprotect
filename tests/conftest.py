@@ -469,8 +469,8 @@ def compare_objs(obj_type, expected, actual):
     elif obj_type == ModelType.EVENT.value:
         del expected["partition"]
 
-        expected_keys = expected.get("metadata", {}).keys()
-        actual_keys = actual.get("metadata", {}).keys()
+        expected_keys = (expected.get("metadata") or {}).keys()
+        actual_keys = (actual.get("metadata") or {}).keys()
         # delete all extra metadata keys, many of which are not modeled
         for key in set(expected_keys).difference(actual_keys):
             del expected["metadata"][key]
