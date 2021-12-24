@@ -468,6 +468,12 @@ def compare_objs(obj_type, expected, actual):
             actual.pop("lastLoginTime", None)
     elif obj_type == ModelType.EVENT.value:
         del expected["partition"]
+
+        expected_keys = expected.get("metadata", {}).keys()
+        actual_keys = actual.get("metadata", {}).keys()
+        # delete all extra metadata keys, many of which are not modeled
+        for key in set(expected_keys).difference(actual_keys):
+            del expected["metadata"][key]
     elif obj_type == ModelType.SENSOR.value:
         del expected["bridgeCandidates"]
         del expected["mountType"]
