@@ -2,6 +2,7 @@
 # pylint: disable=pointless-statement
 # pylint: disable=protected-access
 
+from copy import deepcopy
 from datetime import datetime, timedelta
 from io import BytesIO
 from ipaddress import IPv4Address
@@ -159,6 +160,26 @@ def test_early_bootstrap():
 
     with pytest.raises(BadRequest):
         client.bootstrap
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+async def test_bootstrap_fix_record_mode(bootstrap):
+    expected_updates = 1
+    orig_bootstrap = deepcopy(bootstrap)
+    bootstrap["cameras"][0]["recordingSettings"]["mode"] = "motion"
+    if len(bootstrap["cameras"]) > 1:
+        expected_updates = 2
+        bootstrap["cameras"][1]["recordingSettings"]["mode"] = "smartDetect"
+
+    client = ProtectApiClient("127.0.0.1", 0, "username", "password", debug=True)
+    client.api_request_obj = AsyncMock(side_effect=[bootstrap, orig_bootstrap])
+    client.update_device = AsyncMock()
+
+    await client.get_bootstrap()
+
+    assert client.api_request_obj.call_count == 2
+    assert client.update_device.call_count == expected_updates
 
 
 def test_connection_host(protect_client: ProtectApiClient):

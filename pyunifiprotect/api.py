@@ -46,6 +46,7 @@ from pyunifiprotect.data import (
     WSSubscriptionMessage,
     create_from_unifi_dict,
 )
+from pyunifiprotect.data.types import RecordingMode
 from pyunifiprotect.exceptions import BadRequest, NotAuthorized, NvrError
 from pyunifiprotect.utils import (
     get_response_reason,
@@ -701,6 +702,18 @@ class ProtectApiClient(BaseApiClient):
         """
 
         data = await self.api_request_obj("bootstrap")
+        # fix for UniFi Protect bug, some cameras may come back with and old recording mode
+        # "motion" and "smartDetect" recording modes was combined into "detections" in Protect 1.20.0
+        call_again = False
+        for camera_dict in data["cameras"]:
+            if camera_dict.get("recordingSettings", {}).get("mode", "detections") in ("motion", "smartDetect"):
+                await self.update_device(
+                    ModelType.CAMERA, camera_dict["id"], {"recordingSettings": {"mode": RecordingMode.DETECTIONS.value}}
+                )
+                call_again = True
+
+        if call_again:
+            data = await self.api_request_obj("bootstrap")
         return Bootstrap.from_unifi_dict(**data, api=self)
 
     async def get_devices_raw(self, model_type: ModelType) -> List[Dict[str, Any]]:
