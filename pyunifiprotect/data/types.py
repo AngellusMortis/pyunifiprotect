@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 import enum
-from typing import TYPE_CHECKING, Any, Generic, List, Literal, Optional, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generic,
+    List,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from packaging.version import Version as BaseVersion
 from pydantic import ConstrainedDecimal, ConstrainedInt
@@ -45,12 +55,23 @@ class FixSizeOrderedDict(FixSizeOrderedDictBase[KT, VT]):
 
 class ValuesEnumMixin:
     _values: Optional[List[str]] = None
+    _values_normalized: Optional[Dict[str, str]] = None
 
     @classmethod
     def values(cls) -> List[str]:
         if cls._values is None:
             cls._values = [e.value for e in cls]  # type: ignore
         return cls._values
+
+    @classmethod
+    def _missing_(cls, value: Any) -> Optional[Any]:
+        if cls._values_normalized is None:
+            cls._values_normalized = {e.value.lower(): e for e in cls}  # type: ignore
+
+        value_normal = value
+        if isinstance(value, str):
+            value_normal = value.lower()
+        return cls._values_normalized.get(value_normal)
 
 
 @enum.unique
@@ -124,7 +145,7 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
 
 
 @enum.unique
-class StateType(str, enum.Enum):
+class StateType(str, ValuesEnumMixin, enum.Enum):
     CONNECTED = "CONNECTED"
     CONNECTING = "CONNECTING"
     DISCONNECTED = "DISCONNECTED"
@@ -140,34 +161,34 @@ class ProtectWSPayloadFormat(int, enum.Enum):
 
 
 @enum.unique
-class SmartDetectObjectType(str, enum.Enum):
+class SmartDetectObjectType(str, ValuesEnumMixin, enum.Enum):
     PERSON = "person"
     VEHICLE = "vehicle"
     FACE = "face"
 
 
 @enum.unique
-class DoorbellMessageType(str, enum.Enum):
+class DoorbellMessageType(str, ValuesEnumMixin, enum.Enum):
     LEAVE_PACKAGE_AT_DOOR = "LEAVE_PACKAGE_AT_DOOR"
     DO_NOT_DISTURB = "DO_NOT_DISTURB"
     CUSTOM_MESSAGE = "CUSTOM_MESSAGE"
 
 
 @enum.unique
-class LightModeEnableType(str, enum.Enum):
+class LightModeEnableType(str, ValuesEnumMixin, enum.Enum):
     DARK = "dark"
     ALWAYS = "fulltime"
 
 
 @enum.unique
-class LightModeType(str, enum.Enum):
+class LightModeType(str, ValuesEnumMixin, enum.Enum):
     MOTION = "motion"
     WHEN_DARK = "always"
     MANUAL = "off"
 
 
 @enum.unique
-class VideoMode(str, enum.Enum):
+class VideoMode(str, ValuesEnumMixin, enum.Enum):
     DEFAULT = "default"
     HIGH_FPS = "highFps"
     # should only be for unadopted devices
@@ -175,28 +196,28 @@ class VideoMode(str, enum.Enum):
 
 
 @enum.unique
-class RecordingMode(str, enum.Enum):
+class RecordingMode(str, ValuesEnumMixin, enum.Enum):
     ALWAYS = "always"
     NEVER = "never"
     DETECTIONS = "detections"
 
 
 @enum.unique
-class RecordingType(str, enum.Enum):
+class RecordingType(str, ValuesEnumMixin, enum.Enum):
     TIMELAPSE = "timelapse"
     CONTINUOUS = "rotating"
     DETECTIONS = "detections"
 
 
 @enum.unique
-class ResolutionStorageType(str, enum.Enum):
+class ResolutionStorageType(str, ValuesEnumMixin, enum.Enum):
     UHD = "4K"
     HD = "HD"
     FREE = "free"
 
 
 @enum.unique
-class IRLEDMode(str, enum.Enum):
+class IRLEDMode(str, ValuesEnumMixin, enum.Enum):
     AUTO = "auto"
     ON = "on"
     AUTO_NO_LED = "autoFilterOnly"

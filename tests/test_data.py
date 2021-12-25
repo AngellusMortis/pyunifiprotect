@@ -13,15 +13,18 @@ from pyunifiprotect import ProtectApiClient
 from pyunifiprotect.data import (
     Bootstrap,
     Camera,
+    DoorbellMessageType,
     Event,
     EventType,
     FixSizeOrderedDict,
     ModelType,
+    RecordingMode,
+    VideoMode,
     WSPacket,
     create_from_unifi_dict,
 )
 from pyunifiprotect.data.devices import LCDMessage
-from pyunifiprotect.data.types import DoorbellMessageType
+from pyunifiprotect.data.types import RecordingType, ResolutionStorageType
 from pyunifiprotect.exceptions import BadRequest, StreamError
 from pyunifiprotect.utils import set_debug, set_no_debug
 from tests.conftest import (
@@ -263,6 +266,13 @@ def test_fix_order_size_dict_negative_max():
     del d["test2"]
 
     assert d == {"test": 1, "test3": 3}
+
+
+def test_case_str_enum():
+    assert RecordingMode("always") == RecordingMode.ALWAYS
+    assert ResolutionStorageType("4K") == ResolutionStorageType.UHD
+    assert VideoMode("highFps") == VideoMode.HIGH_FPS
+    assert RecordingType("roTating") == RecordingType.CONTINUOUS
 
 
 @pytest.mark.asyncio
