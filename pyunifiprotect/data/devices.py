@@ -1055,7 +1055,7 @@ class Camera(ProtectMotionDeviceModel):
             error = "\n".join(stream.stderr)
             raise StreamError("Error while playing audio (ffmpeg): \n" + error)
 
-    async def stop_audio(self):
+    async def stop_audio(self) -> None:
         """Stop currently playing audio."""
         stream = self.talkback_stream
         if stream is None:
