@@ -330,6 +330,9 @@ async def test_play_audio_no_blocking(mock_talkback, camera_obj: Camera):
     assert mock_instance.start.called
     assert not mock_instance.run_until_complete.called
 
+    await camera_obj.wait_until_audio_completes()
+    assert mock_instance.run_until_complete.called
+
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("disable_camera_validation")
