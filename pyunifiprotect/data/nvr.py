@@ -14,6 +14,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    Union,
 )
 from uuid import UUID
 
@@ -587,7 +588,7 @@ class NVR(ProtectDeviceModel):
     enable_automatic_backups: bool
     enable_stats_reporting: bool
     release_channel: str
-    hosts: List[IPv4Address]
+    hosts: List[Union[IPv4Address, str]]
     enable_bridge_auto_adoption: bool
     hardware_id: UUID
     host_type: int

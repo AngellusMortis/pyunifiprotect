@@ -13,6 +13,7 @@ from typing import (
     Set,
     Type,
     TypeVar,
+    Union,
 )
 
 from pydantic import BaseModel
@@ -570,7 +571,7 @@ class ProtectDeviceModel(ProtectModelWithId):
     name: str
     type: str
     mac: str
-    host: Optional[IPv4Address]
+    host: Optional[Union[IPv4Address, str]]
     up_since: Optional[datetime]
     uptime: Optional[timedelta]
     last_seen: Optional[datetime]

@@ -3,6 +3,7 @@
 
 import base64
 from copy import deepcopy
+from ipaddress import IPv4Address
 from typing import Optional, Set
 from unittest.mock import Mock, patch
 
@@ -377,3 +378,31 @@ def test_doorbell_bad_state():
 
     assert message.text == "Test"
     assert message.type == DoorbellMessageType.CUSTOM_MESSAGE
+
+
+def test_camera_ip_host(camera):
+    camera["host"] = "1.1.1.1"
+
+    camera_obj = Camera.from_unifi_dict(**camera)
+    assert camera_obj.host == IPv4Address("1.1.1.1")
+
+
+def test_camera_dns_host(camera):
+    camera["host"] = "se-gw.local"
+
+    camera_obj = Camera.from_unifi_dict(**camera)
+    assert camera_obj.host == "se-gw.local"
+
+
+def test_bootstrap_ip_host(bootstrap):
+    bootstrap["nvr"]["hosts"] = ["1.1.1.1"]
+
+    bootstrap_obj = Bootstrap.from_unifi_dict(**bootstrap)
+    assert bootstrap_obj.nvr.hosts == [IPv4Address("1.1.1.1")]
+
+
+def test_bootstrap_dns_host(bootstrap):
+    bootstrap["nvr"]["hosts"] = ["se-gw.local"]
+
+    bootstrap_obj = Bootstrap.from_unifi_dict(**bootstrap)
+    assert bootstrap_obj.nvr.hosts == ["se-gw.local"]

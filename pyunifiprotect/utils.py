@@ -147,34 +147,26 @@ def convert_unifi_data(value: Any, field: ModelField) -> Any:
         ProtectBaseObject,
     )
 
-    if (
+    if field.shape == SHAPE_LIST and isinstance(value, list):
+        value = [convert_unifi_data(v, field) for v in value]
+    elif field.shape == SHAPE_DICT and isinstance(value, dict):
+        value = {k: convert_unifi_data(v, field) for k, v in value.items()}
+    elif field.type_ in (Union[IPv4Address, str, None], Union[IPv4Address, str]) and value is not None:
+        try:
+            value = IPv4Address(value)
+        except AddressValueError:
+            pass
+    elif (
         value is None
         or not isclass(field.type_)
         or issubclass(field.type_, ProtectBaseObject)
         or isinstance(value, field.type_)
     ):
         return value
-
-    if field.shape == SHAPE_LIST and isinstance(value, list):
-        value = [convert_unifi_data(v, field) for v in value]
-    elif field.shape == SHAPE_DICT and isinstance(value, dict):
-        value = {k: convert_unifi_data(v, field) for k, v in value.items()}
-    elif field.type_ == IPv4Address:
-        value = IPv4Address(value)
-    elif field.type_ == UUID:
-        value = UUID(value)
+    elif field.type_ in (IPv4Address, UUID, Color, Decimal, Path, Version) or issubclass(field.type_, Enum):
+        value = field.type_(value)
     elif field.type_ == datetime:
         value = from_js_time(value)
-    elif field.type_ == Color:
-        value = Color(value)
-    elif field.type_ == Decimal:
-        value = Decimal(value)
-    elif field.type_ == Path:
-        value = Path(value)
-    elif field.type_ == Version:
-        value = Version(value)
-    elif issubclass(field.type_, Enum):
-        value = field.type_(value)
 
     return value
 
