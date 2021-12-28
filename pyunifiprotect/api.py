@@ -430,11 +430,7 @@ class BaseApiClient:
                 log = _LOGGER.warning
             log("Websocket connection not active, failing back to polling")
 
-        if self._ws_connection or self._last_websocket_check == now:
-            new_status = True
-        else:
-            new_status = False
-
+        new_status = self.is_ws_connected or self._last_websocket_check == now
         if not self._last_websocket_status and new_status:
             _LOGGER.info("Websocket connection successfully connected")
 
