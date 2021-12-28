@@ -84,6 +84,7 @@ class BaseApiClient:
     _is_authenticated: bool = False
     _last_update: float = NEVER_RAN
     _last_websocket_check: float = NEVER_RAN
+    _last_websocket_status: bool = False
     _session: Optional[aiohttp.ClientSession] = None
     _ws_session: Optional[aiohttp.ClientSession] = None
     _ws_connection: Optional[aiohttp.ClientWebSocketResponse] = None
@@ -416,24 +417,29 @@ class BaseApiClient:
         now = time.monotonic()
 
         first_check = self._last_websocket_check == NEVER_RAN
-        connect_ws = False
         if now - self._last_websocket_check > WEBSOCKET_CHECK_INTERVAL:
             _LOGGER.debug("Checking websocket")
             self._last_websocket_check = now
-            connect_ws = True
             await self.async_connect_ws()
 
         # log if no active WS
-        if not self._ws_connection and not first_check:
+        if not self.is_ws_connected and not first_check:
             log = _LOGGER.debug
             # but only warn if a reconnect attempt was made
-            if connect_ws:
+            if self._last_websocket_status:
                 log = _LOGGER.warning
-            log("Unifi OS: Websocket connection not active, failing back to polling")
+            log("Websocket connection not active, failing back to polling")
 
         if self._ws_connection or self._last_websocket_check == now:
-            return True
-        return False
+            new_status = True
+        else:
+            new_status = False
+
+        if not self._last_websocket_status and new_status:
+            _LOGGER.info("Websocket connection successfully connected")
+
+        self._last_websocket_status = new_status
+        return self._last_websocket_status
 
     def _process_ws_message(self, msg: aiohttp.WSMessage) -> None:
         raise NotImplementedError()

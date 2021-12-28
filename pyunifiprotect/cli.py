@@ -176,6 +176,8 @@ def shell(
 
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter("%(levelname)s: %(message)s")
+    console_handler.setFormatter(formatter)
     _LOGGER.setLevel(logging.DEBUG)
     _LOGGER.addHandler(console_handler)
 
