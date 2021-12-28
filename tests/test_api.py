@@ -351,6 +351,7 @@ async def test_check_ws_initial(protect_client: ProtectApiClient, caplog: pytest
 async def test_check_ws_no_ws(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
     caplog.set_level(logging.DEBUG)
 
+    protect_client._last_websocket_status = True
     protect_client._last_websocket_check = time.monotonic()
     protect_client.reset_ws()
 
@@ -358,24 +359,29 @@ async def test_check_ws_no_ws(protect_client: ProtectApiClient, caplog: pytest.L
 
     assert active_ws is False
 
-    expected_logs = ["Unifi OS: Websocket connection not active, failing back to polling"]
+    expected_logs = ["Websocket connection not active, failing back to polling"]
     assert expected_logs == [rec.message for rec in caplog.records]
-    assert caplog.records[0].levelname == "DEBUG"
+    assert caplog.records[0].levelname == "WARNING"
 
 
 @pytest.mark.asyncio
 async def test_check_ws_reconnect(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
     caplog.set_level(logging.DEBUG)
 
+    protect_client._last_websocket_status = False
     protect_client._last_websocket_check = time.monotonic() - WEBSOCKET_CHECK_INTERVAL - 1
     protect_client.reset_ws()
 
     active_ws = await protect_client.check_ws()
 
     assert active_ws is True
-    expected_logs = ["Checking websocket", "Unifi OS: Websocket connection not active, failing back to polling"]
+    expected_logs = [
+        "Checking websocket",
+        "Websocket connection not active, failing back to polling",
+        "Websocket connection successfully connected",
+    ]
     assert expected_logs == [rec.message for rec in caplog.records]
-    assert caplog.records[1].levelname == "WARNING"
+    assert caplog.records[1].levelname == "DEBUG"
 
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
