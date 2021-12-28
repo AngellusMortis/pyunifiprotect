@@ -508,5 +508,7 @@ class MockTalkback:
     stdout: List[str] = []
     stderr: List[str] = []
 
-    start = AsyncMock()
-    run_until_complete = AsyncMock()
+    def __init__(self) -> None:
+        self.start = AsyncMock()
+        self.stop = AsyncMock()
+        self.run_until_complete = AsyncMock()
