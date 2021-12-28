@@ -91,10 +91,9 @@ class FfmpegCommand:
                 break
 
     async def run_until_complete(self) -> None:
-        if self.is_started:
-            raise StreamError("ffmpeg command already started")
+        if not self.is_started:
+            await self.start()
 
-        await self.start()
         if self.process is None:
             raise StreamError("Could not start stream")
 

@@ -508,4 +508,5 @@ class MockTalkback:
     stdout: List[str] = []
     stderr: List[str] = []
 
+    start = AsyncMock()
     run_until_complete = AsyncMock()

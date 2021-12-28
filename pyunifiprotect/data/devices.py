@@ -1021,7 +1021,7 @@ class Camera(ProtectMotionDeviceModel):
         self.talkback_stream = TalkbackStream(self, content_url, ffmpeg_path)
         return self.talkback_stream
 
-    async def play_audio(self, content_url: str, ffmpeg_path: Optional[Path] = None) -> None:
+    async def play_audio(self, content_url: str, ffmpeg_path: Optional[Path] = None, blocking: bool = True) -> None:
         """
         Plays audio to a camera through its speaker.
 
@@ -1031,9 +1031,21 @@ class Camera(ProtectMotionDeviceModel):
 
         * `content_url`: Either a URL accessible by python or a path to a file (ffmepg's `-i` parameter)
         * `ffmpeg_path`: Optional path to ffmpeg binary
+        * `blocking`: Awaits stream completion and logs stdout/stderr
         """
 
         stream = self.create_talkback_stream(content_url, ffmpeg_path)
+        await stream.start()
+
+        if blocking:
+            await self.wait_until_audio_completes()
+
+    async def wait_until_audio_completes(self) -> None:
+        """Awaits stream completion of audio and logs stdout/stderr."""
+
+        stream = self.talkback_stream
+        if stream is None:
+            raise StreamError("No audio playing to wait for")
 
         await stream.run_until_complete()
 
