@@ -423,16 +423,20 @@ def test_doorbell_bad_state():
 
 def test_camera_ip_host(camera):
     camera["host"] = "1.1.1.1"
+    camera["connectionHost"] = "1.1.1.1"
 
     camera_obj = Camera.from_unifi_dict(**camera)
     assert camera_obj.host == IPv4Address("1.1.1.1")
+    assert camera_obj.connection_host == IPv4Address("1.1.1.1")
 
 
 def test_camera_dns_host(camera):
     camera["host"] = "se-gw.local"
+    camera["connectionHost"] = "se-gw.local"
 
     camera_obj = Camera.from_unifi_dict(**camera)
     assert camera_obj.host == "se-gw.local"
+    assert camera_obj.connection_host == "se-gw.local"
 
 
 def test_bootstrap_ip_host(bootstrap):
