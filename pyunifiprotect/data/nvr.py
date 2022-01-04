@@ -4,18 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, tzinfo
 from ipaddress import IPv4Address
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 from uuid import UUID
 
 from pydantic.fields import PrivateAttr
@@ -56,20 +45,20 @@ class SmartDetectItem(ProtectBaseObject):
     id: str
     timestamp: datetime
     level: PercentInt
-    coord: Tuple[int, int, int, int]
+    coord: tuple[int, int, int, int]
     object_type: SmartDetectObjectType
-    zone_ids: List[int]
+    zone_ids: list[int]
     duration: timedelta
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {
             **super()._get_unifi_remaps(),
             "zones": "zoneIds",
         }
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         if "duration" in data:
             data["duration"] = timedelta(milliseconds=data["duration"])
 
@@ -78,12 +67,12 @@ class SmartDetectItem(ProtectBaseObject):
 
 class SmartDetectTrack(ProtectBaseObject):
     id: str
-    payload: List[SmartDetectItem]
+    payload: list[SmartDetectItem]
     camera_id: str
     event_id: str
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {
             **super()._get_unifi_remaps(),
             "camera": "cameraId",
@@ -95,25 +84,25 @@ class SmartDetectTrack(ProtectBaseObject):
         return self.api.bootstrap.cameras[self.camera_id]
 
     @property
-    def event(self) -> Optional[Event]:
+    def event(self) -> Event | None:
         return self.api.bootstrap.events.get(self.event_id)
 
 
 class EventMetadata(ProtectBaseObject):
-    client_platform: Optional[str]
-    reason: Optional[str]
-    app_update: Optional[str]
-    light_id: Optional[str]
-    light_name: Optional[str]
-    type: Optional[str]
-    sensor_id: Optional[str]
-    sensor_name: Optional[str]
-    sensor_type: Optional[SensorType]
-    from_value: Optional[str]
-    to_value: Optional[str]
-    mount_type: Optional[MountType]
-    status: Optional[SensorStatusType]
-    alarm_type: Optional[str]
+    client_platform: str | None
+    reason: str | None
+    app_update: str | None
+    light_id: str | None
+    light_name: str | None
+    type: str | None
+    sensor_id: str | None
+    sensor_name: str | None
+    sensor_type: SensorType | None
+    from_value: str | None
+    to_value: str | None
+    mount_type: MountType | None
+    status: SensorStatusType | None
+    alarm_type: str | None
 
     _collapse_keys: ClassVar[SetStr] = {
         "lightId",
@@ -128,7 +117,7 @@ class EventMetadata(ProtectBaseObject):
     }
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {
             **super()._get_unifi_remaps(),
             "from": "fromValue",
@@ -136,13 +125,13 @@ class EventMetadata(ProtectBaseObject):
         }
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         for key in cls._collapse_keys.intersection(data.keys()):
             data[key] = data[key]["text"]
 
         return super().unifi_dict_to_dict(data)
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
         # all metadata keys optionally appear
@@ -159,26 +148,26 @@ class EventMetadata(ProtectBaseObject):
 class Event(ProtectModelWithId):
     type: EventType
     start: datetime
-    end: Optional[datetime]
+    end: datetime | None
     score: int
-    heatmap_id: Optional[str]
-    camera_id: Optional[str]
-    smart_detect_types: List[SmartDetectObjectType]
-    smart_detect_event_ids: List[str]
-    thumbnail_id: Optional[str]
-    user_id: Optional[str]
-    timestamp: Optional[datetime]
-    metadata: Optional[EventMetadata]
+    heatmap_id: str | None
+    camera_id: str | None
+    smart_detect_types: list[SmartDetectObjectType]
+    smart_detect_event_ids: list[str]
+    thumbnail_id: str | None
+    user_id: str | None
+    timestamp: datetime | None
+    metadata: EventMetadata | None
 
     # TODO:
     # partition
 
-    _smart_detect_events: Optional[List[Event]] = PrivateAttr(None)
-    _smart_detect_track: Optional[SmartDetectTrack] = PrivateAttr(None)
-    _smart_detect_zones: Optional[Dict[int, CameraZone]] = PrivateAttr(None)
+    _smart_detect_events: list[Event] | None = PrivateAttr(None)
+    _smart_detect_track: SmartDetectTrack | None = PrivateAttr(None)
+    _smart_detect_zones: dict[int, CameraZone] | None = PrivateAttr(None)
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {
             **super()._get_unifi_remaps(),
             "camera": "cameraId",
@@ -189,42 +178,42 @@ class Event(ProtectModelWithId):
         }
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         for key in {"start", "end", "timestamp"}.intersection(data.keys()):
             data[key] = process_datetime(data, key)
 
         return super().unifi_dict_to_dict(data)
 
     @property
-    def camera(self) -> Optional[Camera]:
+    def camera(self) -> Camera | None:
         if self.camera_id is None:
             return None
 
         return self.api.bootstrap.cameras.get(self.camera_id)
 
     @property
-    def light(self) -> Optional[Light]:
+    def light(self) -> Light | None:
         if self.metadata is None or self.metadata.light_id is None:
             return None
 
         return self.api.bootstrap.lights.get(self.metadata.light_id)
 
     @property
-    def sensor(self) -> Optional[Sensor]:
+    def sensor(self) -> Sensor | None:
         if self.metadata is None or self.metadata.sensor_id is None:
             return None
 
         return self.api.bootstrap.sensors.get(self.metadata.sensor_id)
 
     @property
-    def user(self) -> Optional[User]:
+    def user(self) -> User | None:
         if self.user_id is None:
             return None
 
         return self.api.bootstrap.users.get(self.user_id)
 
     @property
-    def smart_detect_events(self) -> List[Event]:
+    def smart_detect_events(self) -> list[Event]:
         if self._smart_detect_events is not None:
             return self._smart_detect_events
 
@@ -233,21 +222,21 @@ class Event(ProtectModelWithId):
         ]
         return self._smart_detect_events
 
-    async def get_thumbnail(self, width: Optional[int] = None, height: Optional[int] = None) -> Optional[bytes]:
+    async def get_thumbnail(self, width: int | None = None, height: int | None = None) -> bytes | None:
         """Gets thumbnail for event"""
 
         if self.thumbnail_id is None:
             return None
         return await self.api.get_event_thumbnail(self.thumbnail_id, width, height)
 
-    async def get_heatmap(self) -> Optional[bytes]:
+    async def get_heatmap(self) -> bytes | None:
         """Gets heatmap for event"""
 
         if self.heatmap_id is None:
             return None
         return await self.api.get_event_heatmap(self.heatmap_id)
 
-    async def get_video(self, channel_index: int = 0) -> Optional[bytes]:
+    async def get_video(self, channel_index: int = 0) -> bytes | None:
         """Get the MP4 video clip for this given event
 
         Args:
@@ -279,7 +268,7 @@ class Event(ProtectModelWithId):
 
         return self._smart_detect_track
 
-    async def get_smart_detect_zones(self) -> Dict[int, CameraZone]:
+    async def get_smart_detect_zones(self) -> dict[int, CameraZone]:
         """Gets the triggering zones for the smart detection"""
 
         if self.camera is None:
@@ -288,7 +277,7 @@ class Event(ProtectModelWithId):
         if self._smart_detect_zones is None:
             smart_track = await self.get_smart_detect_track()
 
-            ids: Set[int] = set()
+            ids: set[int] = set()
             for item in smart_track.payload:
                 ids = ids | set(item.zone_ids)
 
@@ -299,21 +288,21 @@ class Event(ProtectModelWithId):
 
 class Group(ProtectModelWithId):
     name: str
-    permissions: List[str]
+    permissions: list[str]
     type: str
     is_default: bool
 
 
 class UserLocation(ProtectModel):
     is_away: bool
-    latitude: Optional[float]
-    longitude: Optional[float]
+    latitude: float | None
+    longitude: float | None
 
 
 class NVRLocation(UserLocation):
     is_geofencing_enabled: bool
     radius: int
-    model: Optional[ModelType] = None
+    model: ModelType | None = None
 
 
 class CloudAccount(ProtectModelWithId):
@@ -322,16 +311,16 @@ class CloudAccount(ProtectModelWithId):
     email: str
     user_id: str
     name: str
-    location: Optional[UserLocation]
+    location: UserLocation | None
 
     # TODO:
     # profileImg
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {**super()._get_unifi_remaps(), "user": "userId"}
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
         # id and cloud ID are always the same
@@ -352,21 +341,21 @@ class UserFeatureFlags(ProtectBaseObject):
 
 
 class User(ProtectModelWithId):
-    permissions: List[str]
-    last_login_ip: Optional[str]
-    last_login_time: Optional[datetime]
+    permissions: list[str]
+    last_login_ip: str | None
+    last_login_time: datetime | None
     is_owner: bool
     enable_notifications: bool
     has_accepted_invite: bool
-    all_permissions: List[str]
-    location: Optional[UserLocation]
+    all_permissions: list[str]
+    location: UserLocation | None
     name: str
     first_name: str
     last_name: str
     email: str
     local_username: str
-    group_ids: List[str]
-    cloud_account: Optional[CloudAccount]
+    group_ids: list[str]
+    cloud_account: CloudAccount | None
     feature_flags: UserFeatureFlags
 
     # TODO:
@@ -374,13 +363,13 @@ class User(ProtectModelWithId):
     # alertRules
     # notificationsV2
 
-    _groups: Optional[List[Group]] = PrivateAttr(None)
+    _groups: list[Group] | None = PrivateAttr(None)
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {**super()._get_unifi_remaps(), "groups": "groupIds"}
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
         if "location" in data and data["location"] is None:
@@ -389,7 +378,7 @@ class User(ProtectModelWithId):
         return data
 
     @property
-    def groups(self) -> List[Group]:
+    def groups(self) -> list[Group]:
         """
         Groups the user is in
 
@@ -425,7 +414,7 @@ class PortConfig(ProtectBaseObject):
     discovery_client: int
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {
             **super()._get_unifi_remaps(),
             "emsCLI": "emsCli",
@@ -456,7 +445,7 @@ class StorageInfo(ProtectBaseObject):
     size: int
     type: str
     used: int
-    devices: List[StorageDevice]
+    devices: list[StorageDevice]
 
 
 class StorageSpace(ProtectBaseObject):
@@ -487,15 +476,15 @@ class DoorbellMessage(ProtectBaseObject):
 class DoorbellSettings(ProtectBaseObject):
     default_message_text: DoorbellText
     default_message_reset_timeout: timedelta
-    all_messages: List[DoorbellMessage]
-    custom_messages: List[DoorbellText]
+    all_messages: list[DoorbellMessage]
+    custom_messages: list[DoorbellText]
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {**super()._get_unifi_remaps(), "defaultMessageResetTimeoutMs": "defaultMessageResetTimeout"}
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         if "defaultMessageResetTimeoutMs" in data:
             data["defaultMessageResetTimeout"] = timedelta(milliseconds=data.pop("defaultMessageResetTimeoutMs"))
 
@@ -515,13 +504,13 @@ class ResolutionDistribution(ProtectBaseObject):
 
 
 class StorageDistribution(ProtectBaseObject):
-    recording_type_distributions: List[RecordingTypeDistribution]
-    resolution_distributions: List[ResolutionDistribution]
+    recording_type_distributions: list[RecordingTypeDistribution]
+    resolution_distributions: list[ResolutionDistribution]
 
-    _recording_type_dict: Optional[Dict[RecordingType, RecordingTypeDistribution]] = PrivateAttr(None)
-    _resolution_dict: Optional[Dict[ResolutionStorageType, ResolutionDistribution]] = PrivateAttr(None)
+    _recording_type_dict: dict[RecordingType, RecordingTypeDistribution] | None = PrivateAttr(None)
+    _resolution_dict: dict[ResolutionStorageType, ResolutionDistribution] | None = PrivateAttr(None)
 
-    def _get_recording_type_dict(self) -> Dict[RecordingType, RecordingTypeDistribution]:
+    def _get_recording_type_dict(self) -> dict[RecordingType, RecordingTypeDistribution]:
         if self._recording_type_dict is None:
             self._recording_type_dict = {}
             for recording_type in self.recording_type_distributions:
@@ -529,7 +518,7 @@ class StorageDistribution(ProtectBaseObject):
 
         return self._recording_type_dict
 
-    def _get_resolution_dict(self) -> Dict[ResolutionStorageType, ResolutionDistribution]:
+    def _get_resolution_dict(self) -> dict[ResolutionStorageType, ResolutionDistribution]:
         if self._resolution_dict is None:
             self._resolution_dict = {}
             for resolution in self.resolution_distributions:
@@ -538,30 +527,30 @@ class StorageDistribution(ProtectBaseObject):
         return self._resolution_dict
 
     @property
-    def timelapse_recordings(self) -> Optional[RecordingTypeDistribution]:
+    def timelapse_recordings(self) -> RecordingTypeDistribution | None:
         return self._get_recording_type_dict().get(RecordingType.TIMELAPSE)
 
     @property
-    def continuous_recordings(self) -> Optional[RecordingTypeDistribution]:
+    def continuous_recordings(self) -> RecordingTypeDistribution | None:
         return self._get_recording_type_dict().get(RecordingType.CONTINUOUS)
 
     @property
-    def detections_recordings(self) -> Optional[RecordingTypeDistribution]:
+    def detections_recordings(self) -> RecordingTypeDistribution | None:
         return self._get_recording_type_dict().get(RecordingType.DETECTIONS)
 
     @property
-    def uhd_usage(self) -> Optional[ResolutionDistribution]:
+    def uhd_usage(self) -> ResolutionDistribution | None:
         return self._get_resolution_dict().get(ResolutionStorageType.UHD)
 
     @property
-    def hd_usage(self) -> Optional[ResolutionDistribution]:
+    def hd_usage(self) -> ResolutionDistribution | None:
         return self._get_resolution_dict().get(ResolutionStorageType.HD)
 
     @property
-    def free(self) -> Optional[ResolutionDistribution]:
+    def free(self) -> ResolutionDistribution | None:
         return self._get_resolution_dict().get(ResolutionStorageType.FREE)
 
-    def update_from_dict(self, data: Dict[str, Any]) -> StorageDistribution:
+    def update_from_dict(self, data: dict[str, Any]) -> StorageDistribution:
         # reset internal look ups when data changes
         self._recording_type_dict = None
         self._resolution_dict = None
@@ -571,13 +560,13 @@ class StorageDistribution(ProtectBaseObject):
 
 class StorageStats(ProtectBaseObject):
     utilization: float
-    capacity: Optional[timedelta]
-    remaining_capacity: Optional[timedelta]
+    capacity: timedelta | None
+    remaining_capacity: timedelta | None
     recording_space: StorageSpace
     storage_distribution: StorageDistribution
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         if "capacity" in data and data["capacity"] is not None:
             data["capacity"] = timedelta(milliseconds=data.pop("capacity"))
         if "remainingCapacity" in data and data["remainingCapacity"] is not None:
@@ -600,12 +589,12 @@ class NVR(ProtectDeviceModel):
     ucore_version: str
     hardware_platform: str
     ports: PortConfig
-    last_update_at: Optional[datetime]
+    last_update_at: datetime | None
     is_station: bool
     enable_automatic_backups: bool
     enable_stats_reporting: bool
     release_channel: str
-    hosts: List[Union[IPv4Address, str]]
+    hosts: list[IPv4Address | str]
     enable_bridge_auto_adoption: bool
     hardware_id: UUID
     host_type: int
@@ -614,14 +603,14 @@ class NVR(ProtectDeviceModel):
     is_wireless_uplink_enabled: bool
     time_format: Literal["12h", "24h"]
     temperature_unit: Literal["C", "F"]
-    recording_retention_duration: Optional[timedelta]
+    recording_retention_duration: timedelta | None
     enable_crash_reporting: bool
     disable_audio: bool
     analytics_data: str
     anonymous_device_id: UUID
     camera_utilization: int
     is_recycling: bool
-    avg_motions: List[float]
+    avg_motions: list[float]
     disable_auto_link: bool
     skip_firmware_update: bool
     location_settings: NVRLocation
@@ -634,8 +623,8 @@ class NVR(ProtectDeviceModel):
     network: str
     is_recording_disabled: bool
     is_recording_motion_only: bool
-    max_camera_capacity: Dict[Literal["4K", "2K", "HD"], int]
-    is_wireless_uplink_enabled: Optional[bool]
+    max_camera_capacity: dict[Literal["4K", "2K", "HD"], int]
+    is_wireless_uplink_enabled: bool | None
 
     # TODO:
     # uiVersion
@@ -645,11 +634,11 @@ class NVR(ProtectDeviceModel):
     # ssoChannel
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {**super()._get_unifi_remaps(), "recordingRetentionDurationMs": "recordingRetentionDuration"}
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         if "lastUpdateAt" in data:
             data["lastUpdateAt"] = process_datetime(data, "lastUpdateAt")
         if "recordingRetentionDurationMs" in data and data["recordingRetentionDurationMs"] is not None:
@@ -659,7 +648,7 @@ class NVR(ProtectDeviceModel):
 
         return super().unifi_dict_to_dict(data)
 
-    async def _api_update(self, data: Dict[str, Any]) -> None:
+    async def _api_update(self, data: dict[str, Any]) -> None:
         return await self.api.update_nvr(data)
 
     @property
@@ -726,18 +715,18 @@ class NVR(ProtectDeviceModel):
 
 
 class LiveviewSlot(ProtectBaseObject):
-    camera_ids: List[str]
+    camera_ids: list[str]
     cycle_mode: str
     cycle_interval: int
 
-    _cameras: Optional[List[Camera]] = PrivateAttr(None)
+    _cameras: list[Camera] | None = PrivateAttr(None)
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {**super()._get_unifi_remaps(), "cameras": "cameraIds"}
 
     @property
-    def cameras(self) -> List[Camera]:
+    def cameras(self) -> list[Camera]:
         if self._cameras is not None:
             return self._cameras
 
@@ -751,15 +740,15 @@ class Liveview(ProtectModelWithId):
     is_default: bool
     is_global: bool
     layout: int
-    slots: List[LiveviewSlot]
+    slots: list[LiveviewSlot]
     owner_id: str
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {**super()._get_unifi_remaps(), "owner": "ownerId"}
 
     @property
-    def owner(self) -> Optional[User]:
+    def owner(self) -> User | None:
         """
         Owner of liveview.
 

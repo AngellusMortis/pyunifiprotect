@@ -1,4 +1,5 @@
 # pylint: disable=protected-access
+from __future__ import annotations
 
 import asyncio
 import base64
@@ -10,7 +11,7 @@ from pathlib import Path
 from shlex import split
 from subprocess import run
 from tempfile import NamedTemporaryFile
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 import aiohttp
@@ -122,7 +123,7 @@ async def mock_api_request(url: str, *args, **kwargs):
 class SimpleMockWebsocket:
     is_closed: bool = False
     now: float = 0
-    events: Dict[str, Any]
+    events: dict[str, Any]
     count = 0
 
     def __init__(self):
@@ -505,8 +506,8 @@ def disable_camera_validation():
 
 class MockTalkback:
     is_error: bool = False
-    stdout: List[str] = []
-    stderr: List[str] = []
+    stdout: list[str] = []
+    stderr: list[str] = []
 
     def __init__(self) -> None:
         self.start = AsyncMock()

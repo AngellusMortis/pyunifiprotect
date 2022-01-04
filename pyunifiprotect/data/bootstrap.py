@@ -4,7 +4,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
 import logging
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 from uuid import UUID
 
 from pydantic.fields import PrivateAttr
@@ -38,14 +38,14 @@ STATS_KEYS = {
     "eventStats",
 }
 
-CAMERA_EVENT_ATTR_MAP: Dict[EventType, Tuple[str, str]] = {
+CAMERA_EVENT_ATTR_MAP: dict[EventType, tuple[str, str]] = {
     EventType.MOTION: ("last_motion", "last_motion_event_id"),
     EventType.SMART_DETECT: ("last_smart_detect", "last_smart_detect_event_id"),
     EventType.RING: ("last_ring", "last_ring_event_id"),
 }
 
 
-def _remove_stats_keys(data: Dict[str, Any], ignore_stats: bool) -> Dict[str, Any]:
+def _remove_stats_keys(data: dict[str, Any], ignore_stats: bool) -> dict[str, Any]:
     if ignore_stats:
         for key in STATS_KEYS.intersection(data.keys()):
             del data[key]
@@ -100,8 +100,8 @@ def _process_camera_event(event: Event) -> None:
 class WSStat:
     model: str
     action: str
-    keys: List[str]
-    keys_set: List[str]
+    keys: list[str]
+    keys_set: list[str]
     size: int
     filtered: bool
 
@@ -109,15 +109,15 @@ class WSStat:
 class Bootstrap(ProtectBaseObject):
     auth_user_id: str
     access_key: str
-    cameras: Dict[str, Camera]
-    users: Dict[str, User]
-    groups: Dict[str, Group]
-    liveviews: Dict[str, Liveview]
+    cameras: dict[str, Camera]
+    users: dict[str, User]
+    groups: dict[str, Group]
+    liveviews: dict[str, Liveview]
     nvr: NVR
-    viewers: Dict[str, Viewer]
-    lights: Dict[str, Light]
-    bridges: Dict[str, Bridge]
-    sensors: Dict[str, Sensor]
+    viewers: dict[str, Viewer]
+    lights: dict[str, Light]
+    bridges: dict[str, Bridge]
+    sensors: dict[str, Sensor]
     last_update_id: UUID
 
     # TODO:
@@ -128,16 +128,16 @@ class Bootstrap(ProtectBaseObject):
     # schedules
 
     # not directly from Unifi
-    events: Dict[str, Event] = FixSizeOrderedDict()
+    events: dict[str, Event] = FixSizeOrderedDict()
     capture_ws_stats: bool = False
-    _ws_stats: List[WSStat] = PrivateAttr([])
+    _ws_stats: list[WSStat] = PrivateAttr([])
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         api = cls._get_api(data.get("api"))
         for model_type in ModelType.bootstrap_models():
             key = model_type + "s"
-            items: Dict[str, ProtectModel] = {}
+            items: dict[str, ProtectModel] = {}
             for item in data[key]:
                 if api is not None and api.ignore_unadopted and not item.get("isAdopted", True):
                     continue
@@ -147,7 +147,7 @@ class Bootstrap(ProtectBaseObject):
 
         return super().unifi_dict_to_dict(data)
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
         if "events" in data:
@@ -163,7 +163,7 @@ class Bootstrap(ProtectBaseObject):
         return data
 
     @property
-    def ws_stats(self) -> List[WSStat]:
+    def ws_stats(self) -> list[WSStat]:
         return self._ws_stats
 
     def clear_ws_stats(self) -> None:
@@ -184,7 +184,7 @@ class Bootstrap(ProtectBaseObject):
 
         self.events[event.id] = event
 
-    def _create_stat(self, packet: WSPacket, keys_set: List[str], filtered: bool) -> None:
+    def _create_stat(self, packet: WSPacket, keys_set: list[str], filtered: bool) -> None:
         if self.capture_ws_stats:
             self._ws_stats.append(
                 WSStat(
@@ -197,12 +197,12 @@ class Bootstrap(ProtectBaseObject):
                 )
             )
 
-    def _get_frame_data(self, packet: WSPacket) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def _get_frame_data(self, packet: WSPacket) -> tuple[dict[str, Any], dict[str, Any]]:
         if self.capture_ws_stats:
             return deepcopy(packet.action_frame.data), deepcopy(packet.data_frame.data)
         return packet.action_frame.data, packet.data_frame.data
 
-    def _process_add_packet(self, packet: WSPacket, data: Dict[str, Any]) -> Optional[WSSubscriptionMessage]:
+    def _process_add_packet(self, packet: WSPacket, data: dict[str, Any]) -> WSSubscriptionMessage | None:
         obj = create_from_unifi_dict(data, api=self._api)
 
         if isinstance(obj, Event):
@@ -227,8 +227,8 @@ class Bootstrap(ProtectBaseObject):
         )
 
     def _process_nvr_update(
-        self, packet: WSPacket, data: Dict[str, Any], ignore_stats: bool
-    ) -> Optional[WSSubscriptionMessage]:
+        self, packet: WSPacket, data: dict[str, Any], ignore_stats: bool
+    ) -> WSSubscriptionMessage | None:
         data = _remove_stats_keys(data, ignore_stats)
         # nothing left to process
         if len(data) == 0:
@@ -249,8 +249,8 @@ class Bootstrap(ProtectBaseObject):
         )
 
     def _process_device_update(
-        self, packet: WSPacket, action: Dict[str, Any], data: Dict[str, Any], ignore_stats: bool
-    ) -> Optional[WSSubscriptionMessage]:
+        self, packet: WSPacket, action: dict[str, Any], data: dict[str, Any], ignore_stats: bool
+    ) -> WSSubscriptionMessage | None:
         model_type = action["modelKey"]
 
         data = _remove_stats_keys(data, ignore_stats)
@@ -287,8 +287,8 @@ class Bootstrap(ProtectBaseObject):
         return None
 
     def process_ws_packet(
-        self, packet: WSPacket, models: Optional[Set[ModelType]] = None, ignore_stats: bool = False
-    ) -> Optional[WSSubscriptionMessage]:
+        self, packet: WSPacket, models: set[ModelType] | None = None, ignore_stats: bool = False
+    ) -> WSSubscriptionMessage | None:
         if models is None:
             models = set()
 

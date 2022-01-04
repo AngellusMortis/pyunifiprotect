@@ -7,7 +7,7 @@ from ipaddress import IPv4Address
 import json as pjson
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional, Set, Type, Union, cast
+from typing import Any, Callable, cast
 from urllib.parse import urljoin
 from uuid import UUID
 
@@ -67,14 +67,14 @@ class BaseApiClient:
     _last_update: float = NEVER_RAN
     _last_websocket_check: float = NEVER_RAN
     _last_websocket_status: bool = False
-    _session: Optional[aiohttp.ClientSession] = None
-    _ws_session: Optional[aiohttp.ClientSession] = None
-    _ws_connection: Optional[aiohttp.ClientWebSocketResponse] = None
-    _ws_task: Optional[asyncio.Task[None]] = None
-    _ws_raw_subscriptions: List[Callable[[aiohttp.WSMessage], None]] = []
+    _session: aiohttp.ClientSession | None = None
+    _ws_session: aiohttp.ClientSession | None = None
+    _ws_connection: aiohttp.ClientWebSocketResponse | None = None
+    _ws_task: asyncio.Task[None] | None = None
+    _ws_raw_subscriptions: list[Callable[[aiohttp.WSMessage], None]] = []
 
-    headers: Optional[Dict[str, str]] = None
-    last_update_id: Optional[UUID] = None
+    headers: dict[str, str] | None = None
+    last_update_id: UUID | None = None
 
     api_path: str = "/proxy/protect/api/"
     ws_path: str = "/proxy/protect/ws/"
@@ -86,7 +86,7 @@ class BaseApiClient:
         username: str,
         password: str,
         verify_ssl: bool = True,
-        session: Optional[aiohttp.ClientSession] = None,
+        session: aiohttp.ClientSession | None = None,
     ) -> None:
         self._host = host
         self._port = port
@@ -175,7 +175,7 @@ class BaseApiClient:
         require_auth: bool = True,
         raise_exception: bool = True,
         **kwargs: Any,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         """Make a request to Unifi Protect API"""
 
         if require_auth:
@@ -195,7 +195,7 @@ class BaseApiClient:
                 _LOGGER.debug(msg, url, response.status, reason)
                 return None
 
-            data: Optional[bytes] = await response.read()
+            data: bytes | None = await response.read()
             response.release()
 
             return data
@@ -212,13 +212,13 @@ class BaseApiClient:
         require_auth: bool = True,
         raise_exception: bool = True,
         **kwargs: Any,
-    ) -> Optional[Union[List[Any], Dict[str, Any]]]:
+    ) -> list[Any] | dict[str, Any] | None:
         data = await self.api_request_raw(
             url=url, method=method, require_auth=require_auth, raise_exception=raise_exception, **kwargs
         )
 
         if data is not None:
-            json_data: Union[List[Any], Dict[str, Any]] = pjson.loads(data)
+            json_data: list[Any] | dict[str, Any] = pjson.loads(data)
             return json_data
         return None
 
@@ -229,7 +229,7 @@ class BaseApiClient:
         require_auth: bool = True,
         raise_exception: bool = True,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         data = await self.api_request(
             url=url, method=method, require_auth=require_auth, raise_exception=raise_exception, **kwargs
         )
@@ -246,7 +246,7 @@ class BaseApiClient:
         require_auth: bool = True,
         raise_exception: bool = True,
         **kwargs: Any,
-    ) -> List[Any]:
+    ) -> list[Any]:
         data = await self.api_request(
             url=url, method=method, require_auth=require_auth, raise_exception=raise_exception, **kwargs
         )
@@ -455,12 +455,12 @@ class ProtectApiClient(BaseApiClient):
     """
 
     _minimum_score: int
-    _subscribed_models: Set[ModelType]
+    _subscribed_models: set[ModelType]
     _ignore_stats: bool
-    _bootstrap: Optional[Bootstrap] = None
-    _last_update_dt: Optional[datetime] = None
-    _ws_subscriptions: List[Callable[[WSSubscriptionMessage], None]] = []
-    _connection_host: Optional[Union[IPv4Address, str]] = None
+    _bootstrap: Bootstrap | None = None
+    _last_update_dt: datetime | None = None
+    _ws_subscriptions: list[Callable[[WSSubscriptionMessage], None]] = []
+    _connection_host: IPv4Address | str | None = None
 
     ignore_unadopted: bool
 
@@ -471,10 +471,10 @@ class ProtectApiClient(BaseApiClient):
         username: str,
         password: str,
         verify_ssl: bool = True,
-        session: Optional[aiohttp.ClientSession] = None,
+        session: aiohttp.ClientSession | None = None,
         override_connection_host: bool = False,
         minimum_score: int = 0,
-        subscribed_models: Optional[Set[ModelType]] = None,
+        subscribed_models: set[ModelType] | None = None,
         ignore_stats: bool = False,
         ignore_unadopted: bool = True,
         debug: bool = False,
@@ -511,7 +511,7 @@ class ProtectApiClient(BaseApiClient):
         return self._bootstrap
 
     @property
-    def connection_host(self) -> Union[IPv4Address, str]:
+    def connection_host(self) -> IPv4Address | str:
         """Connection host to use for generating RTSP URLs"""
 
         if self._connection_host is None:
@@ -532,7 +532,7 @@ class ProtectApiClient(BaseApiClient):
 
         return self._connection_host
 
-    async def update(self, force: bool = False) -> Optional[Bootstrap]:
+    async def update(self, force: bool = False) -> Bootstrap | None:
         """
         Updates the state of devices, initalizes `.bootstrap` and
         connects to UFP Websocket for real time updates
@@ -591,11 +591,11 @@ class ProtectApiClient(BaseApiClient):
 
     async def get_events_raw(
         self,
-        start: Optional[datetime] = None,
-        end: Optional[datetime] = None,
-        limit: Optional[int] = None,
-        types: Optional[List[EventType]] = None,
-    ) -> List[Dict[str, Any]]:
+        start: datetime | None = None,
+        end: datetime | None = None,
+        limit: int | None = None,
+        types: list[EventType] | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Get list of events from Protect
 
@@ -617,7 +617,7 @@ class ProtectApiClient(BaseApiClient):
             end = utc_now() + timedelta(seconds=10)
             start = end - timedelta(hours=24)
 
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if limit is not None:
             params["limit"] = limit
 
@@ -634,11 +634,11 @@ class ProtectApiClient(BaseApiClient):
 
     async def get_events(
         self,
-        start: Optional[datetime] = None,
-        end: Optional[datetime] = None,
-        limit: Optional[int] = None,
-        types: Optional[List[EventType]] = None,
-    ) -> List[Event]:
+        start: datetime | None = None,
+        end: datetime | None = None,
+        limit: int | None = None,
+        types: list[EventType] | None = None,
+    ) -> list[Event]:
         """
         Same as `get_events_raw`, except
 
@@ -715,15 +715,15 @@ class ProtectApiClient(BaseApiClient):
             data = await self.api_request_obj("bootstrap")
         return Bootstrap.from_unifi_dict(**data, api=self)
 
-    async def get_devices_raw(self, model_type: ModelType) -> List[Dict[str, Any]]:
+    async def get_devices_raw(self, model_type: ModelType) -> list[dict[str, Any]]:
         """Gets a raw device list given a model_type"""
         return await self.api_request_list(f"{model_type.value}s")
 
     async def get_devices(
-        self, model_type: ModelType, expected_type: Optional[Type[ProtectModel]] = None
-    ) -> List[ProtectModel]:
+        self, model_type: ModelType, expected_type: type[ProtectModel] | None = None
+    ) -> list[ProtectModel]:
         """Gets a device list given a model_type, converted into Python objects"""
-        objs: List[ProtectModel] = []
+        objs: list[ProtectModel] = []
 
         for obj_dict in await self.get_devices_raw(model_type):
             obj = create_from_unifi_dict(obj_dict)
@@ -737,60 +737,60 @@ class ProtectApiClient(BaseApiClient):
 
         return objs
 
-    async def get_cameras(self) -> List[Camera]:
+    async def get_cameras(self) -> list[Camera]:
         """
         Gets the list of cameras straight from the NVR.
 
         The websocket is connected and running, you likely just want to use `self.bootstrap.cameras`
         """
-        return cast(List[Camera], await self.get_devices(ModelType.CAMERA, Camera))
+        return cast(list[Camera], await self.get_devices(ModelType.CAMERA, Camera))
 
-    async def get_lights(self) -> List[Light]:
+    async def get_lights(self) -> list[Light]:
         """
         Gets the list of lights straight from the NVR.
 
         The websocket is connected and running, you likely just want to use `self.bootstrap.lights`
         """
-        return cast(List[Light], await self.get_devices(ModelType.LIGHT, Light))
+        return cast(list[Light], await self.get_devices(ModelType.LIGHT, Light))
 
-    async def get_sensors(self) -> List[Sensor]:
+    async def get_sensors(self) -> list[Sensor]:
         """
         Gets the list of sensors straight from the NVR.
 
         The websocket is connected and running, you likely just want to use `self.bootstrap.sensors`
         """
-        return cast(List[Sensor], await self.get_devices(ModelType.SENSOR, Sensor))
+        return cast(list[Sensor], await self.get_devices(ModelType.SENSOR, Sensor))
 
-    async def get_viewers(self) -> List[Viewer]:
+    async def get_viewers(self) -> list[Viewer]:
         """
         Gets the list of viewers straight from the NVR.
 
         The websocket is connected and running, you likely just want to use `self.bootstrap.viewers`
         """
-        return cast(List[Viewer], await self.get_devices(ModelType.VIEWPORT, Viewer))
+        return cast(list[Viewer], await self.get_devices(ModelType.VIEWPORT, Viewer))
 
-    async def get_bridges(self) -> List[Bridge]:
+    async def get_bridges(self) -> list[Bridge]:
         """
         Gets the list of bridges straight from the NVR.
 
         The websocket is connected and running, you likely just want to use `self.bootstrap.bridges`
         """
-        return cast(List[Bridge], await self.get_devices(ModelType.BRIDGE, Bridge))
+        return cast(list[Bridge], await self.get_devices(ModelType.BRIDGE, Bridge))
 
-    async def get_liveviews(self) -> List[Liveview]:
+    async def get_liveviews(self) -> list[Liveview]:
         """
         Gets the list of liveviews straight from the NVR.
 
         The websocket is connected and running, you likely just want to use `self.bootstrap.liveviews`
         """
-        return cast(List[Liveview], await self.get_devices(ModelType.LIVEVIEW, Liveview))
+        return cast(list[Liveview], await self.get_devices(ModelType.LIVEVIEW, Liveview))
 
-    async def get_device_raw(self, model_type: ModelType, device_id: str) -> Dict[str, Any]:
+    async def get_device_raw(self, model_type: ModelType, device_id: str) -> dict[str, Any]:
         """Gets a raw device give the device model_type and id"""
         return await self.api_request_obj(f"{model_type.value}s/{device_id}")
 
     async def get_device(
-        self, model_type: ModelType, device_id: str, expected_type: Optional[Type[ProtectModel]] = None
+        self, model_type: ModelType, device_id: str, expected_type: type[ProtectModel] | None = None
     ) -> ProtectModel:
         """Gets a device give the device model_type and id, converted into Python object"""
         obj = create_from_unifi_dict(await self.get_device_raw(model_type, device_id), api=self)
@@ -871,9 +871,9 @@ class ProtectApiClient(BaseApiClient):
     async def get_camera_snapshot(
         self,
         camera_id: str,
-        width: Optional[int] = None,
-        height: Optional[int] = None,
-    ) -> Optional[bytes]:
+        width: int | None = None,
+        height: int | None = None,
+    ) -> bytes | None:
         """Gets a snapshot from a camera"""
 
         dt = utc_now()  # ts is only used as a cache buster
@@ -892,7 +892,7 @@ class ProtectApiClient(BaseApiClient):
 
     async def get_camera_video(
         self, camera_id: str, start: datetime, end: datetime, channel_index: int = 0, validate_channel_id: bool = True
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         """Exports MP4 video from a given camera at a specific time"""
 
         if validate_channel_id and self._bootstrap is not None:
@@ -911,9 +911,7 @@ class ProtectApiClient(BaseApiClient):
 
         return await self.api_request_raw("video/export", params=params, raise_exception=False)
 
-    async def _get_image_with_retry(
-        self, path: str, retry_timeout: int = RETRY_TIMEOUT, **kwargs: Any
-    ) -> Optional[bytes]:
+    async def _get_image_with_retry(self, path: str, retry_timeout: int = RETRY_TIMEOUT, **kwargs: Any) -> bytes | None:
         """
         Retries image request until it returns or timesout. Used for event images like thumbnails and heatmaps.
 
@@ -923,7 +921,7 @@ class ProtectApiClient(BaseApiClient):
 
         now = time.monotonic()
         timeout = now + retry_timeout
-        data: Optional[bytes] = None
+        data: bytes | None = None
         while data is None and now < timeout:
             data = await self.api_request_raw(path, raise_exception=False, **kwargs)
             if data is None:
@@ -935,10 +933,10 @@ class ProtectApiClient(BaseApiClient):
     async def get_event_thumbnail(
         self,
         thumbnail_id: str,
-        width: Optional[int] = None,
-        height: Optional[int] = None,
+        width: int | None = None,
+        height: int | None = None,
         retry_timeout: int = RETRY_TIMEOUT,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         """
         Gets given thumbanil from a given event
 
@@ -946,7 +944,7 @@ class ProtectApiClient(BaseApiClient):
         your retry timeout will always return 404.
         """
 
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
 
         if width is not None:
             params.update({"w": width})
@@ -964,7 +962,7 @@ class ProtectApiClient(BaseApiClient):
         self,
         heatmap_id: str,
         retry_timeout: int = RETRY_TIMEOUT,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         """
         Gets given heatmap from a given event
 
@@ -976,7 +974,7 @@ class ProtectApiClient(BaseApiClient):
         heatmap_id = heatmap_id.replace("e-", "")
         return await self._get_image_with_retry(f"events/{heatmap_id}/heatmap", retry_timeout=retry_timeout)
 
-    async def get_event_smart_detect_track_raw(self, event_id: str) -> Dict[str, Any]:
+    async def get_event_smart_detect_track_raw(self, event_id: str) -> dict[str, Any]:
         """Gets raw Smart Detect Track for a Smart Detection"""
 
         return await self.api_request_obj(f"events/{event_id}/smartDetectTrack")
@@ -988,7 +986,7 @@ class ProtectApiClient(BaseApiClient):
 
         return SmartDetectTrack.from_unifi_dict(api=self, **data)
 
-    async def update_device(self, model_type: ModelType, device_id: str, data: Dict[str, Any]) -> None:
+    async def update_device(self, model_type: ModelType, device_id: str, data: dict[str, Any]) -> None:
         """
         Sends an update for a device back to UFP
 
@@ -1000,7 +998,7 @@ class ProtectApiClient(BaseApiClient):
 
         await self.api_request(f"{model_type.value}s/{device_id}", method="patch", json=data)
 
-    async def update_nvr(self, data: Dict[str, Any]) -> None:
+    async def update_nvr(self, data: dict[str, Any]) -> None:
         """
         Sends an update for main UFP NVR device
 

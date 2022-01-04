@@ -6,7 +6,7 @@ from asyncio.subprocess import PIPE, Process, create_subprocess_exec
 import logging
 from pathlib import Path
 from shlex import split
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from aioshutil import which
 
@@ -19,14 +19,14 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class FfmpegCommand:
-    ffmpeg_path: Optional[Path]
-    args: List[str]
-    process: Optional[Process] = None
+    ffmpeg_path: Path | None
+    args: list[str]
+    process: Process | None = None
 
-    stdout: List[str] = []
-    stderr: List[str] = []
+    stdout: list[str] = []
+    stderr: list[str] = []
 
-    def __init__(self, cmd: str, ffmpeg_path: Optional[Path] = None) -> None:
+    def __init__(self, cmd: str, ffmpeg_path: Path | None = None) -> None:
         self.args = split(cmd)
 
         if "ffmpeg" in self.args[0] and ffmpeg_path is None:
@@ -79,7 +79,7 @@ class FfmpegCommand:
         self.process.kill()
         await self.process.wait()
 
-    async def _read_stream(self, stream: Optional[StreamReader], attr: str) -> None:
+    async def _read_stream(self, stream: StreamReader | None, attr: str) -> None:
         if stream is None:
             return
 
@@ -107,7 +107,7 @@ class TalkbackStream(FfmpegCommand):
     camera: Camera
     content_url: str
 
-    def __init__(self, camera: Camera, content_url: str, ffmpeg_path: Optional[Path] = None):
+    def __init__(self, camera: Camera, content_url: str, ffmpeg_path: Path | None = None):
         if not camera.feature_flags.has_speaker:
             raise BadRequest("Camera does not have a speaker for talkback")
 

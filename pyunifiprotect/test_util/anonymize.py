@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import secrets
 import string
-from typing import Any, Dict, List, Optional
+from typing import Any
 from urllib.parse import urlparse
 import uuid
 
@@ -8,10 +10,10 @@ import typer
 
 from pyunifiprotect.data import ModelType
 
-object_id_mapping: Dict[str, str] = {}
+object_id_mapping: dict[str, str] = {}
 
 
-def anonymize_data(value: Any, name: Optional[str] = None) -> Any:
+def anonymize_data(value: Any, name: str | None = None) -> Any:
     if isinstance(value, list):
         value = anonymize_list(value, name=name)
     elif isinstance(value, dict):
@@ -22,7 +24,7 @@ def anonymize_data(value: Any, name: Optional[str] = None) -> Any:
     return value
 
 
-def anonymize_user(user_dict: Dict[str, Any]) -> Dict[str, Any]:
+def anonymize_user(user_dict: dict[str, Any]) -> dict[str, Any]:
     for index, group_id in enumerate(user_dict.get("groups", [])):
         user_dict["groups"][index] = anonymize_object_id(group_id)
 
@@ -58,7 +60,7 @@ def anonymize_user(user_dict: Dict[str, Any]) -> Dict[str, Any]:
     return user_dict
 
 
-def anonymize_value(value: Any, name: Optional[str] = None) -> Any:
+def anonymize_value(value: Any, name: str | None = None) -> Any:
     if isinstance(value, str):
         if name == "accessKey":
             value = f"{random_number(13)}:{random_hex(24)}:{random_hex(128)}"
@@ -83,7 +85,7 @@ def anonymize_value(value: Any, name: Optional[str] = None) -> Any:
     return value
 
 
-def anonymize_dict(obj: Dict[str, Any], name: Optional[str] = None) -> Dict[str, Any]:
+def anonymize_dict(obj: dict[str, Any], name: str | None = None) -> dict[str, Any]:
     obj_type = None
     if "modelKey" in obj:
         if obj["modelKey"] in [m.value for m in ModelType]:
@@ -116,7 +118,7 @@ def anonymize_dict(obj: Dict[str, Any], name: Optional[str] = None) -> Dict[str,
     return obj
 
 
-def anonymize_list(items: List[Any], name: Optional[str] = None) -> List[Any]:
+def anonymize_list(items: list[Any], name: str | None = None) -> list[Any]:
     for index, value in enumerate(items):
         handled = False
 

@@ -1,10 +1,10 @@
 """Tests for pyunifiprotect.data"""
 # pylint: disable=protected-access
+from __future__ import annotations
 
 import base64
 from copy import deepcopy
 from ipaddress import IPv4Address
-from typing import Optional, Set
 from unittest.mock import Mock, patch
 
 import pytest
@@ -376,7 +376,7 @@ async def test_play_audio_error(mock_talkback, camera_obj: Camera):
 
 
 @pytest.mark.asyncio
-async def test_get_smart_detect_track_bad_type(smart_dectect_obj: Optional[Event]):
+async def test_get_smart_detect_track_bad_type(smart_dectect_obj: Event | None):
     if smart_dectect_obj is None:
         pytest.skip("No smart detection object found")
 
@@ -387,7 +387,7 @@ async def test_get_smart_detect_track_bad_type(smart_dectect_obj: Optional[Event
 
 
 @pytest.mark.asyncio
-async def test_get_smart_detect_track(smart_dectect_obj: Optional[Event]):
+async def test_get_smart_detect_track(smart_dectect_obj: Event | None):
     if smart_dectect_obj is None:
         pytest.skip("No smart detection object found")
 
@@ -396,7 +396,7 @@ async def test_get_smart_detect_track(smart_dectect_obj: Optional[Event]):
 
 
 @pytest.mark.asyncio
-async def test_get_smart_detect_zones(smart_dectect_obj: Optional[Event]):
+async def test_get_smart_detect_zones(smart_dectect_obj: Event | None):
     if smart_dectect_obj is None:
         pytest.skip("No smart detection object found")
 
@@ -405,7 +405,7 @@ async def test_get_smart_detect_zones(smart_dectect_obj: Optional[Event]):
         pytest.skip("Camera not found for smart detection")
 
     track = await smart_dectect_obj.get_smart_detect_track()
-    zone_ids: Set[int] = set()
+    zone_ids: set[int] = set()
     for item in track.payload:
         zone_ids = zone_ids | set(item.zone_ids)
 

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import enum
 import json
 import struct
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 import zlib
 
@@ -38,15 +38,15 @@ class WSAction(str, enum.Enum):
 class WSSubscriptionMessage:
     action: WSAction
     new_update_id: UUID
-    changed_data: Dict[str, Any]
+    changed_data: dict[str, Any]
     new_obj: ProtectModelWithId
-    old_obj: Optional[ProtectModelWithId] = None
+    old_obj: ProtectModelWithId | None = None
 
 
 class BaseWSPacketFrame:
     data: Any
     position: int = 0
-    header: Optional[WSPacketFrameHeader] = None
+    header: WSPacketFrameHeader | None = None
     payload_format: ProtectWSPayloadFormat = ProtectWSPayloadFormat.NodeBuffer
     is_deflated: bool = False
     length: int = 0
@@ -60,7 +60,7 @@ class BaseWSPacketFrame:
         raise NotImplementedError()
 
     @staticmethod
-    def klass_from_format(format_raw: int) -> Type[BaseWSPacketFrame]:
+    def klass_from_format(format_raw: int) -> type[BaseWSPacketFrame]:
         payload_format = ProtectWSPayloadFormat(format_raw)
 
         if payload_format == ProtectWSPayloadFormat.JSON:
@@ -69,9 +69,7 @@ class BaseWSPacketFrame:
         return WSRawPacketFrame
 
     @staticmethod
-    def from_binary(
-        data: bytes, position: int = 0, klass: Optional[Type[WSRawPacketFrame]] = None
-    ) -> BaseWSPacketFrame:
+    def from_binary(data: bytes, position: int = 0, klass: type[WSRawPacketFrame] | None = None) -> BaseWSPacketFrame:
         """Decode a unifi updates websocket frame."""
         # The format of the frame is
         # b: packet_type
@@ -139,7 +137,7 @@ class WSRawPacketFrame(BaseWSPacketFrame):
 
 
 class WSJSONPacketFrame(BaseWSPacketFrame):
-    data: Dict[str, Any] = {}
+    data: dict[str, Any] = {}
     payload_format: ProtectWSPayloadFormat = ProtectWSPayloadFormat.NodeBuffer
 
     def set_data_from_binary(self, data: bytes) -> None:
@@ -162,10 +160,10 @@ class WSJSONPacketFrame(BaseWSPacketFrame):
 
 class WSPacket:
     _raw: bytes
-    _raw_encoded: Optional[str] = None
+    _raw_encoded: str | None = None
 
-    _action_frame: Optional[BaseWSPacketFrame] = None
-    _data_frame: Optional[BaseWSPacketFrame] = None
+    _action_frame: BaseWSPacketFrame | None = None
+    _data_frame: BaseWSPacketFrame | None = None
 
     def __init__(self, data: bytes):
         self._raw = data

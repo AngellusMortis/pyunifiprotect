@@ -183,6 +183,8 @@ python-dotenv==0.19.2
     # via pyunifiprotect (setup.cfg)
 pytz==2021.3
     # via pyunifiprotect (setup.cfg)
+pyupgrade==2.31.0
+    # via pyunifiprotect (setup.cfg)
 six==1.16.0
     # via
     #   tox
@@ -193,6 +195,8 @@ termcolor==1.1.0
     # via
     #   pytest-sugar
     #   pyunifiprotect (setup.cfg)
+tokenize-rt==4.2.1
+    # via pyupgrade
 toml==0.10.2
     # via
     #   pylint

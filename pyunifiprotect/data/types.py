@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Any, Dict, List, Literal, Optional, TypeVar, Union
+from typing import Any, Literal, TypeVar, Union
 
 from packaging.version import Version as BaseVersion
 from pydantic import ConstrainedDecimal, ConstrainedInt
@@ -32,17 +32,17 @@ class FixSizeOrderedDict(dict[KT, VT]):
 
 
 class ValuesEnumMixin:
-    _values: Optional[List[str]] = None
-    _values_normalized: Optional[Dict[str, str]] = None
+    _values: list[str] | None = None
+    _values_normalized: dict[str, str] | None = None
 
     @classmethod
-    def values(cls) -> List[str]:
+    def values(cls) -> list[str]:
         if cls._values is None:
             cls._values = [e.value for e in cls]  # type: ignore
         return cls._values
 
     @classmethod
-    def _missing_(cls, value: Any) -> Optional[Any]:
+    def _missing_(cls, value: Any) -> Any | None:
         if cls._values_normalized is None:
             cls._values_normalized = {e.value.lower(): e for e in cls}  # type: ignore
 
@@ -72,7 +72,7 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
     CHIME = "chime"
 
     @staticmethod
-    def bootstrap_models() -> List[str]:
+    def bootstrap_models() -> list[str]:
         # TODO:
         # legacyUFV
         # display
@@ -118,11 +118,11 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     SENSOR_ALARM = "sensorAlarm"
 
     @staticmethod
-    def device_events() -> List[str]:
+    def device_events() -> list[str]:
         return [EventType.MOTION.value, EventType.RING.value, EventType.SMART_DETECT.value]
 
     @staticmethod
-    def motion_events() -> List[str]:
+    def motion_events() -> list[str]:
         return [EventType.MOTION.value, EventType.SMART_DETECT.value]
 
 
@@ -257,8 +257,6 @@ class WDRLevel(ConstrainedInt):
 class Percent(ConstrainedDecimal):
     ge = 0
     le = 1
-    max_digits = 4
-    decimal_places = 3
 
 
 CoordType = Union[Percent, int, float]

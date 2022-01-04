@@ -1,6 +1,7 @@
 """Tests for pyunifiprotect.unifi_protect_server."""
 # pylint: disable=pointless-statement
 # pylint: disable=protected-access
+from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timedelta

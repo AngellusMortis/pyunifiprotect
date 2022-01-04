@@ -3,18 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from ipaddress import IPv4Address
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
 from pydantic import BaseModel
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, PrivateAttr
@@ -55,22 +44,22 @@ class ProtectBaseObject(BaseModel):
     * Provides `.unifi_dict` to convert object back into UFP JSON
     """
 
-    _api: Optional[ProtectApiClient] = PrivateAttr(None)
-    _initial_data: Dict[str, Any] = PrivateAttr()
+    _api: ProtectApiClient | None = PrivateAttr(None)
+    _initial_data: dict[str, Any] = PrivateAttr()
 
-    _protect_objs: ClassVar[Optional[Dict[str, Type[ProtectBaseObject]]]] = None
-    _protect_objs_set: ClassVar[Optional[SetStr]] = None
-    _protect_lists: ClassVar[Optional[Dict[str, Type[ProtectBaseObject]]]] = None
-    _protect_lists_set: ClassVar[Optional[SetStr]] = None
-    _protect_dicts: ClassVar[Optional[Dict[str, Type[ProtectBaseObject]]]] = None
-    _protect_dicts_set: ClassVar[Optional[SetStr]] = None
-    _to_unifi_remaps: ClassVar[Optional[DictStrAny]] = None
+    _protect_objs: ClassVar[dict[str, type[ProtectBaseObject]] | None] = None
+    _protect_objs_set: ClassVar[SetStr | None] = None
+    _protect_lists: ClassVar[dict[str, type[ProtectBaseObject]] | None] = None
+    _protect_lists_set: ClassVar[SetStr | None] = None
+    _protect_dicts: ClassVar[dict[str, type[ProtectBaseObject]] | None] = None
+    _protect_dicts_set: ClassVar[SetStr | None] = None
+    _to_unifi_remaps: ClassVar[DictStrAny | None] = None
 
     class Config:
         arbitrary_types_allowed = True
         validate_assignment = True
 
-    def __init__(self, api: Optional[ProtectApiClient] = None, **data: Any) -> None:
+    def __init__(self, api: ProtectApiClient | None = None, **data: Any) -> None:
         """
         Base class for creating Python objects from UFP JSON data.
 
@@ -82,7 +71,7 @@ class ProtectBaseObject(BaseModel):
         self._api = api
 
     @classmethod
-    def from_unifi_dict(cls, api: Optional[ProtectApiClient] = None, **data: Any) -> ProtectObject:
+    def from_unifi_dict(cls, api: ProtectApiClient | None = None, **data: Any) -> ProtectObject:
         """
         Main constructor for `ProtectBaseObject`
 
@@ -108,7 +97,7 @@ class ProtectBaseObject(BaseModel):
         return obj  # type: ignore
 
     @classmethod
-    def construct(cls, _fields_set: Optional[Set[str]] = None, **values: Any) -> ProtectObject:
+    def construct(cls, _fields_set: set[str] | None = None, **values: Any) -> ProtectObject:
         api = values.pop("api", None)
         values_set = set(values)
 
@@ -136,7 +125,7 @@ class ProtectBaseObject(BaseModel):
         return obj  # type: ignore
 
     @classmethod
-    def _get_excluded_changed_fields(cls) -> Set[str]:
+    def _get_excluded_changed_fields(cls) -> set[str]:
         """
         Helper method for override in child classes for fields that excluded from calculating "changed" state for a
         model (`.initial_data` and `.get_changed()`)
@@ -144,7 +133,7 @@ class ProtectBaseObject(BaseModel):
         return set()
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         """
         Helper method for overriding in child classes for remapping UFP JSON keys to Python ones that do not fit the
         simple camel case to snake case formula.
@@ -158,7 +147,7 @@ class ProtectBaseObject(BaseModel):
         return {}
 
     @classmethod
-    def _get_to_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_to_unifi_remaps(cls) -> dict[str, str]:
         """
         Helper method for overriding in child classes for reversing remap UFP
         JSON keys to Python ones that do not fit the simple camel case to
@@ -196,7 +185,7 @@ class ProtectBaseObject(BaseModel):
                 pass
 
     @classmethod
-    def _get_protect_objs(cls) -> Dict[str, Type[ProtectBaseObject]]:
+    def _get_protect_objs(cls) -> dict[str, type[ProtectBaseObject]]:
         """Helper method to get all child UFP objects"""
         if cls._protect_objs is not None:
             return cls._protect_objs
@@ -205,7 +194,7 @@ class ProtectBaseObject(BaseModel):
         return cls._protect_objs  # type: ignore
 
     @classmethod
-    def _get_protect_objs_set(cls) -> Set[str]:
+    def _get_protect_objs_set(cls) -> set[str]:
         """Helper method to get all child UFP objects"""
         if cls._protect_objs_set is None:
             cls._protect_objs_set = set(cls._get_protect_objs().keys())
@@ -213,7 +202,7 @@ class ProtectBaseObject(BaseModel):
         return cls._protect_objs_set
 
     @classmethod
-    def _get_protect_lists(cls) -> Dict[str, Type[ProtectBaseObject]]:
+    def _get_protect_lists(cls) -> dict[str, type[ProtectBaseObject]]:
         """Helper method to get all child of UFP objects (lists)"""
         if cls._protect_lists is not None:
             return cls._protect_lists
@@ -222,7 +211,7 @@ class ProtectBaseObject(BaseModel):
         return cls._protect_lists  # type: ignore
 
     @classmethod
-    def _get_protect_lists_set(cls) -> Set[str]:
+    def _get_protect_lists_set(cls) -> set[str]:
         """Helper method to get all child UFP objects"""
         if cls._protect_lists_set is None:
             cls._protect_lists_set = set(cls._get_protect_lists().keys())
@@ -230,7 +219,7 @@ class ProtectBaseObject(BaseModel):
         return cls._protect_lists_set
 
     @classmethod
-    def _get_protect_dicts(cls) -> Dict[str, Type[ProtectBaseObject]]:
+    def _get_protect_dicts(cls) -> dict[str, type[ProtectBaseObject]]:
         """Helper method to get all child of UFP objects (dicts)"""
         if cls._protect_dicts is not None:
             return cls._protect_dicts
@@ -239,7 +228,7 @@ class ProtectBaseObject(BaseModel):
         return cls._protect_dicts  # type: ignore
 
     @classmethod
-    def _get_protect_dicts_set(cls) -> Set[str]:
+    def _get_protect_dicts_set(cls) -> set[str]:
         """Helper method to get all child UFP objects"""
         if cls._protect_dicts_set is None:
             cls._protect_dicts_set = set(cls._get_protect_dicts().keys())
@@ -247,7 +236,7 @@ class ProtectBaseObject(BaseModel):
         return cls._protect_dicts_set
 
     @classmethod
-    def _get_api(cls, api: Optional[ProtectApiClient]) -> Optional[ProtectApiClient]:
+    def _get_api(cls, api: ProtectApiClient | None) -> ProtectApiClient | None:
         """Helper method to try to find and the current ProjtectAPIClient instance from given data"""
         if api is None and isinstance(cls, ProtectBaseObject) and hasattr(cls, "_api"):
             api = cls._api
@@ -255,7 +244,7 @@ class ProtectBaseObject(BaseModel):
         return api
 
     @classmethod
-    def _clean_protect_obj(cls, data: Any, klass: Type[ProtectBaseObject], api: Optional[ProtectApiClient]) -> Any:
+    def _clean_protect_obj(cls, data: Any, klass: type[ProtectBaseObject], api: ProtectApiClient | None) -> Any:
         if isinstance(data, dict):
             if api is not None:
                 data["api"] = api
@@ -264,22 +253,22 @@ class ProtectBaseObject(BaseModel):
 
     @classmethod
     def _clean_protect_obj_list(
-        cls, items: List[Any], klass: Type[ProtectBaseObject], api: Optional[ProtectApiClient]
-    ) -> List[Any]:
+        cls, items: list[Any], klass: type[ProtectBaseObject], api: ProtectApiClient | None
+    ) -> list[Any]:
         for index, item in enumerate(items):
             items[index] = cls._clean_protect_obj(item, klass, api)
         return items
 
     @classmethod
     def _clean_protect_obj_dict(
-        cls, items: Dict[Any, Any], klass: Type[ProtectBaseObject], api: Optional[ProtectApiClient]
-    ) -> Dict[Any, Any]:
+        cls, items: dict[Any, Any], klass: type[ProtectBaseObject], api: ProtectApiClient | None
+    ) -> dict[Any, Any]:
         for key, value in items.items():
             items[key] = cls._clean_protect_obj(value, klass, api)
         return items
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         """
         Takes a decoded UFP JSON dict and converts it into a Python dict
 
@@ -334,8 +323,8 @@ class ProtectBaseObject(BaseModel):
 
         return data
 
-    def _unifi_dict_protect_obj(self, data: Dict[str, Any], key: str, use_obj: bool) -> Any:
-        value: Optional[Any] = data.get(key)
+    def _unifi_dict_protect_obj(self, data: dict[str, Any], key: str, use_obj: bool) -> Any:
+        value: Any | None = data.get(key)
         if use_obj:
             value = getattr(self, key)
 
@@ -344,15 +333,15 @@ class ProtectBaseObject(BaseModel):
 
         return value
 
-    def _unifi_dict_protect_obj_list(self, data: Dict[str, Any], key: str, use_obj: bool) -> Any:
-        value: Optional[Any] = data.get(key)
+    def _unifi_dict_protect_obj_list(self, data: dict[str, Any], key: str, use_obj: bool) -> Any:
+        value: Any | None = data.get(key)
         if use_obj:
             value = getattr(self, key)
 
         if not isinstance(value, list):
             return value
 
-        items: List[Any] = []
+        items: list[Any] = []
         for item in value:
             if isinstance(item, ProtectBaseObject):
                 item = item.unifi_dict()
@@ -360,15 +349,15 @@ class ProtectBaseObject(BaseModel):
 
         return items
 
-    def _unifi_dict_protect_obj_dict(self, data: Dict[str, Any], key: str, use_obj: bool) -> Any:
-        value: Optional[Any] = data.get(key)
+    def _unifi_dict_protect_obj_dict(self, data: dict[str, Any], key: str, use_obj: bool) -> Any:
+        value: Any | None = data.get(key)
         if use_obj:
             value = getattr(self, key)
 
         if not isinstance(value, dict):
             return value
 
-        items: Dict[Any, Any] = {}
+        items: dict[Any, Any] = {}
         for obj_key, obj in value.items():
             if isinstance(obj, ProtectBaseObject):
                 obj = obj.unifi_dict()
@@ -376,7 +365,7 @@ class ProtectBaseObject(BaseModel):
 
         return items
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
         """
         Can either convert current Python object into UFP JSON dict or take the output of a `.dict()` call and convert it.
 
@@ -412,7 +401,7 @@ class ProtectBaseObject(BaseModel):
             if use_obj or key in data:
                 data[key] = self._unifi_dict_protect_obj_dict(data, key, use_obj)
 
-        data: Dict[str, Any] = serialize_unifi_obj(data)
+        data: dict[str, Any] = serialize_unifi_obj(data)
         remaps = self._get_to_unifi_remaps()
         for to_key in set(data).intersection(remaps):
             data[remaps[to_key]] = data.pop(to_key)
@@ -422,12 +411,12 @@ class ProtectBaseObject(BaseModel):
 
         return data
 
-    def _inject_api(self, data: Dict[str, Any], api: Optional[ProtectApiClient]) -> Dict[str, Any]:
+    def _inject_api(self, data: dict[str, Any], api: ProtectApiClient | None) -> dict[str, Any]:
         data["api"] = api
         data_set = set(data)
 
         for key in self._get_protect_objs_set().intersection(data_set):
-            unifi_obj: Optional[Any] = getattr(self, key)
+            unifi_obj: Any | None = getattr(self, key)
             if unifi_obj is not None and isinstance(unifi_obj, dict):
                 unifi_obj["api"] = api
 
@@ -447,11 +436,11 @@ class ProtectBaseObject(BaseModel):
 
         return data
 
-    def update_from_dict(self: ProtectObject, data: Dict[str, Any]) -> ProtectObject:
+    def update_from_dict(self: ProtectObject, data: dict[str, Any]) -> ProtectObject:
         """Updates current object from a cleaned UFP JSON dict"""
         data_set = set(data)
         for key in self._get_protect_objs_set().intersection(data_set):
-            unifi_obj: Optional[Any] = getattr(self, key)
+            unifi_obj: Any | None = getattr(self, key)
             if unifi_obj is not None and isinstance(unifi_obj, ProtectBaseObject):
                 setattr(self, key, unifi_obj.update_from_dict(data.pop(key)))
 
@@ -478,7 +467,7 @@ class ProtectBaseObject(BaseModel):
         self._initial_data = self.dict(exclude=self._get_excluded_changed_fields())
         return self
 
-    def get_changed(self: ProtectObject) -> Dict[str, Any]:
+    def get_changed(self: ProtectObject) -> dict[str, Any]:
         return dict_diff(self._initial_data, self.dict())
 
     @property
@@ -499,13 +488,13 @@ class ProtectModel(ProtectBaseObject):
     automatically decoding a `modelKey` object into the correct UFP object and type
     """
 
-    model: Optional[ModelType]
+    model: ModelType | None
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {**super()._get_unifi_remaps(), "modelKey": "model"}
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
         if "modelKey" in data and data["modelKey"] is None:
@@ -517,7 +506,7 @@ class ProtectModel(ProtectBaseObject):
 class ProtectModelWithId(ProtectModel):
     id: str
 
-    async def _api_update(self, data: Dict[str, Any]) -> None:
+    async def _api_update(self, data: dict[str, Any]) -> None:
         raise NotImplementedError()
 
     async def save_device(self, force_emit: bool = False) -> None:
@@ -571,17 +560,17 @@ class ProtectDeviceModel(ProtectModelWithId):
     name: str
     type: str
     mac: str
-    host: Optional[Union[IPv4Address, str]]
-    up_since: Optional[datetime]
-    uptime: Optional[timedelta]
-    last_seen: Optional[datetime]
-    hardware_revision: Optional[str]
+    host: IPv4Address | str | None
+    up_since: datetime | None
+    uptime: timedelta | None
+    last_seen: datetime | None
+    hardware_revision: str | None
     firmware_version: str
     is_updating: bool
     is_ssh_enabled: bool
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         if "lastSeen" in data:
             data["lastSeen"] = process_datetime(data, "lastSeen")
         if "upSince" in data and data["upSince"] is not None:
@@ -597,27 +586,27 @@ class ProtectDeviceModel(ProtectModelWithId):
 
 
 class WiredConnectionState(ProtectBaseObject):
-    phy_rate: Optional[int]
+    phy_rate: int | None
 
 
 class WirelessConnectionState(ProtectBaseObject):
-    signal_quality: Optional[int]
-    signal_strength: Optional[int]
+    signal_quality: int | None
+    signal_strength: int | None
 
 
 class WifiConnectionState(WirelessConnectionState):
-    phy_rate: Optional[int]
-    channel: Optional[int]
-    frequency: Optional[int]
-    ssid: Optional[str]
+    phy_rate: int | None
+    channel: int | None
+    frequency: int | None
+    ssid: str | None
 
 
 class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     state: StateType
-    connection_host: Union[IPv4Address, str]
-    connected_since: Optional[datetime]
-    latest_firmware_version: Optional[str]
-    firmware_build: Optional[str]
+    connection_host: IPv4Address | str
+    connected_since: datetime | None
+    latest_firmware_version: str | None
+    firmware_build: str | None
     is_adopting: bool
     is_adopted: bool
     is_adopted_by_other: bool
@@ -627,25 +616,25 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     is_attempting_to_connect: bool
     is_connected: bool
     # requires 1.21+
-    market_name: Optional[str]
+    market_name: str | None
 
-    wired_connection_state: Optional[WiredConnectionState] = None
-    wifi_connection_state: Optional[WifiConnectionState] = None
-    bluetooth_connection_state: Optional[WirelessConnectionState] = None
-    bridge_id: Optional[str]
+    wired_connection_state: WiredConnectionState | None = None
+    wifi_connection_state: WifiConnectionState | None = None
+    bluetooth_connection_state: WirelessConnectionState | None = None
+    bridge_id: str | None
 
     # TODO:
     # bridgeCandidates
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {**super()._get_unifi_remaps(), "bridge": "bridgeId"}
 
-    async def _api_update(self, data: Dict[str, Any]) -> None:
+    async def _api_update(self, data: dict[str, Any]) -> None:
         if self.model is not None:
             return await self.api.update_device(self.model, self.id, data)
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
         if "wiredConnectionState" in data and data["wiredConnectionState"] is None:
@@ -672,7 +661,7 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
         return self.bluetooth_connection_state is not None
 
     @property
-    def bridge(self) -> Optional[Bridge]:
+    def bridge(self) -> Bridge | None:
         if self.bridge_id is None:
             return None
 
@@ -684,7 +673,7 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
 
         return f"{self.api.base_url}/protect/devices/{self.id}"
 
-    def get_changed(self) -> Dict[str, Any]:
+    def get_changed(self) -> dict[str, Any]:
         """Gets dictionary of all changed fields"""
 
         new_data = self.dict(exclude=self._get_excluded_changed_fields())
@@ -706,13 +695,13 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
 
 
 class ProtectMotionDeviceModel(ProtectAdoptableDeviceModel):
-    last_motion: Optional[datetime]
+    last_motion: datetime | None
     is_dark: bool
 
     # not directly from Unifi
-    last_motion_event_id: Optional[str] = None
+    last_motion_event_id: str | None = None
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
         if "lastMotionEventId" in data:
@@ -721,7 +710,7 @@ class ProtectMotionDeviceModel(ProtectAdoptableDeviceModel):
         return data
 
     @property
-    def last_motion_event(self) -> Optional[Event]:
+    def last_motion_event(self) -> Event | None:
         if self.last_motion_event_id is None:
             return None
 

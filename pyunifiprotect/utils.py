@@ -13,25 +13,15 @@ from pathlib import Path
 import re
 import socket
 import time
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Iterable
 from uuid import UUID
 
 from aiohttp import ClientResponse
-from pydantic.fields import SHAPE_DICT, SHAPE_LIST, ModelField
+from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_TUPLE, ModelField
 from pydantic.utils import to_camel
 import typer
 
-from pyunifiprotect.data.types import Version
+from pyunifiprotect.data.types import Percent, Version
 
 if TYPE_CHECKING:
     from pyunifiprotect.data import CoordType
@@ -69,7 +59,7 @@ async def get_response_reason(response: ClientResponse) -> str:
     return reason
 
 
-def to_js_time(dt: Optional[datetime]) -> Optional[int]:
+def to_js_time(dt: datetime | None) -> int | None:
     """Converts Python datetime to Javascript timestamp"""
 
     if dt is None:
@@ -81,7 +71,7 @@ def to_js_time(dt: Optional[datetime]) -> Optional[int]:
     return int(dt.astimezone(timezone.utc).timestamp() * 1000)
 
 
-def to_ms(duration: Optional[timedelta]) -> Optional[int]:
+def to_ms(duration: timedelta | None) -> int | None:
     """Converts python timedelta to Milliseconds"""
 
     if duration is None:
@@ -94,7 +84,7 @@ def utc_now() -> datetime:
     return datetime.utcnow().replace(tzinfo=timezone.utc)
 
 
-def from_js_time(num: Union[int, float, str, datetime]) -> datetime:
+def from_js_time(num: int | float | str | datetime) -> datetime:
     """Converts Javascript timestamp to Python datetime"""
 
     if isinstance(num, datetime):
@@ -103,23 +93,23 @@ def from_js_time(num: Union[int, float, str, datetime]) -> datetime:
     return datetime.fromtimestamp(int(num) / 1000, tz=timezone.utc)
 
 
-def process_datetime(data: Dict[str, Any], key: str) -> Optional[datetime]:
+def process_datetime(data: dict[str, Any], key: str) -> datetime | None:
     """Extracts datetime object from Protect dictionary"""
 
     return None if data[key] is None else from_js_time(data[key])
 
 
-def format_datetime(dt: Optional[datetime], default: Optional[str] = None) -> Optional[str]:
+def format_datetime(dt: datetime | None, default: str | None = None) -> str | None:
     """Formats a datetime object in a consisent format"""
 
     return default if dt is None else dt.strftime(DATETIME_FORMAT)
 
 
-def is_online(data: Dict[str, Any]) -> bool:
+def is_online(data: dict[str, Any]) -> bool:
     return bool(data["state"] == "CONNECTED")
 
 
-def is_doorbell(data: Dict[str, Any]) -> bool:
+def is_doorbell(data: dict[str, Any]) -> bool:
     return "doorbell" in str(data["type"]).lower()
 
 
@@ -151,7 +141,9 @@ def convert_unifi_data(value: Any, field: ModelField) -> Any:
         value = [convert_unifi_data(v, field) for v in value]
     elif field.shape == SHAPE_DICT and isinstance(value, dict):
         value = {k: convert_unifi_data(v, field) for k, v in value.items()}
-    elif field.type_ in (Union[IPv4Address, str, None], Union[IPv4Address, str]) and value is not None:
+    elif field.shape == SHAPE_TUPLE and isinstance(value, (list, tuple)) and field.sub_fields is not None:
+        value = [convert_unifi_data(v, field.sub_fields[k]) for k, v in enumerate(value)]
+    elif field.type_ in (IPv4Address | str | None, IPv4Address | str) and value is not None:
         try:
             value = IPv4Address(value)
         except AddressValueError:
@@ -198,7 +190,7 @@ def serialize_unifi_obj(value: Any) -> Any:
     return value
 
 
-def serialize_dict(data: Dict[str, Any]) -> Dict[str, Any]:
+def serialize_dict(data: dict[str, Any]) -> dict[str, Any]:
     """Serializes UFP data dict"""
     for key in list(data.keys()):
         data[to_camel_case(key)] = serialize_unifi_obj(data.pop(key))
@@ -206,9 +198,8 @@ def serialize_dict(data: Dict[str, Any]) -> Dict[str, Any]:
     return data
 
 
-def serialize_coord(coord: CoordType) -> Union[int, float]:
+def serialize_coord(coord: CoordType) -> int | float:
     """Serializes UFP zone coordinate"""
-    from pyunifiprotect.data import Percent  # pylint: disable=import-outside-toplevel
 
     if not isinstance(coord, (Percent, Decimal)):
         return coord
@@ -218,7 +209,7 @@ def serialize_coord(coord: CoordType) -> Union[int, float]:
     return float(coord)
 
 
-def serialize_point(point: Tuple[CoordType, CoordType]) -> List[Union[int, float]]:
+def serialize_point(point: tuple[CoordType, CoordType]) -> list[int | float]:
     """Serializes UFP zone coordinate point"""
     return [
         serialize_coord(point[0]),
@@ -226,16 +217,16 @@ def serialize_point(point: Tuple[CoordType, CoordType]) -> List[Union[int, float
     ]
 
 
-def serialize_list(items: Iterable[Any]) -> List[Any]:
+def serialize_list(items: Iterable[Any]) -> list[Any]:
     """Serializes UFP data list"""
-    new_items: List[Any] = []
+    new_items: list[Any] = []
     for item in items:
         new_items.append(serialize_unifi_obj(item))
 
     return new_items
 
 
-def round_decimal(num: Union[int, float], digits: int) -> Decimal:
+def round_decimal(num: int | float, digits: int) -> Decimal:
     """Rounds a decimal to a set precision"""
     return Decimal(str(round(num, digits)))
 
@@ -249,8 +240,8 @@ def ip_from_host(host: str) -> IPv4Address:
     return IPv4Address(socket.gethostbyname(host))
 
 
-def dict_diff(orig: Optional[Dict[str, Any]], new: Dict[str, Any]) -> Dict[str, Any]:
-    changed: Dict[str, Any] = {}
+def dict_diff(orig: dict[str, Any] | None, new: dict[str, Any]) -> dict[str, Any]:
+    changed: dict[str, Any] = {}
 
     if orig is None:
         return new
@@ -272,7 +263,7 @@ def dict_diff(orig: Optional[Dict[str, Any]], new: Dict[str, Any]) -> Dict[str, 
     return changed
 
 
-def ws_stat_summmary(stats: List[WSStat]) -> Tuple[List[WSStat], float, Counter[str], Counter[str], Counter[str]]:
+def ws_stat_summmary(stats: list[WSStat]) -> tuple[list[WSStat], float, Counter[str], Counter[str], Counter[str]]:
     unfiltered = [s for s in stats if not s.filtered]
     percent = (1 - len(unfiltered) / len(stats)) * 100
     keys = Counter(k for s in unfiltered for k in s.keys_set)
@@ -282,7 +273,7 @@ def ws_stat_summmary(stats: List[WSStat]) -> Tuple[List[WSStat], float, Counter[
     return unfiltered, percent, keys, models, actions
 
 
-def print_ws_stat_summary(stats: List[WSStat], output: Optional[Callable[[Any], Any]] = None) -> None:
+def print_ws_stat_summary(stats: list[WSStat], output: Callable[[Any], Any] | None = None) -> None:
     if output is None:
         output = typer.echo
 

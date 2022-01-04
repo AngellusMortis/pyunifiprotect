@@ -1,12 +1,12 @@
 """Tests for pyunifiprotect.unifi_protect_server."""
 # pylint: disable=protected-access
-
+from __future__ import annotations
 
 import asyncio
 import base64
 from copy import deepcopy
 from datetime import timedelta
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -35,7 +35,7 @@ def packet_fixture():
 
 class SubscriptionTest:
     callback_count: int = 0
-    unsub: Optional[Callable[[], None]] = None
+    unsub: Callable[[], None] | None = None
 
     def callback(self, msg: WSSubscriptionMessage):
         self.callback_count += 1
@@ -58,7 +58,7 @@ class SubscriptionTest:
 @pytest.mark.benchmark(group="websockets")
 @pytest.mark.asyncio
 async def test_ws_all(
-    protect_client_ws: ProtectApiClient, ws_messages: Dict[str, Dict[str, Any]], benchmark: BenchmarkFixture
+    protect_client_ws: ProtectApiClient, ws_messages: dict[str, dict[str, Any]], benchmark: BenchmarkFixture
 ):
     protect_client = protect_client_ws
     sub = SubscriptionTest()
@@ -83,7 +83,7 @@ async def test_ws_all(
             break
         await asyncio.sleep(0.5)
 
-    ws_connect: Optional[MockWebsocket] = protect_client._ws_connection  # type: ignore
+    ws_connect: MockWebsocket | None = protect_client._ws_connection  # type: ignore
     assert ws_connect is not None
 
     while protect_client.is_ws_connected:
@@ -130,7 +130,7 @@ async def test_ws_filtered(protect_client_ws: ProtectApiClient, benchmark: Bench
             break
         await asyncio.sleep(0.5)
 
-    ws_connect: Optional[MockWebsocket] = protect_client._ws_connection  # type: ignore
+    ws_connect: MockWebsocket | None = protect_client._ws_connection  # type: ignore
     assert ws_connect is not None
 
     while protect_client.is_ws_connected:

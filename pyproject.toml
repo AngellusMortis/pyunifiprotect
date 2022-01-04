@@ -129,6 +129,9 @@ disable = [
 enable = [
     #"useless-suppression",  # temporarily every now and then to clean them up
     "use-symbolic-message-instead",
+    "deprecated-typing-alias",
+    "consider-using-alias",
+    "consider-alternative-union-syntax",
 ]
 extension-pkg-whitelist = "pydantic"
 

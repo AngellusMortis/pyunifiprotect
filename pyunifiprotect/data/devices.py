@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from ipaddress import IPv4Address
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from pyunifiprotect.data.base import (
@@ -63,7 +63,7 @@ class LightDeviceSettings(ProtectBaseObject):
     pir_sensitivity: PercentInt
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         if "pirDuration" in data and not isinstance(data["pirDuration"], timedelta):
             data["pirDuration"] = timedelta(milliseconds=data["pirDuration"])
 
@@ -88,15 +88,15 @@ class Light(ProtectMotionDeviceModel):
     light_device_settings: LightDeviceSettings
     light_on_settings: LightOnSettings
     light_mode_settings: LightModeSettings
-    camera_id: Optional[str]
+    camera_id: str | None
     is_camera_paired: bool
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {**super()._get_unifi_remaps(), "camera": "cameraId"}
 
     @property
-    def camera(self) -> Optional[Camera]:
+    def camera(self) -> Camera | None:
         """Paired Camera will always be none if no camera is paired"""
 
         if self.camera_id is None:
@@ -104,7 +104,7 @@ class Light(ProtectMotionDeviceModel):
 
         return self.api.bootstrap.cameras[self.camera_id]
 
-    async def set_paired_camera(self, camera: Optional[Camera]) -> None:
+    async def set_paired_camera(self, camera: Camera | None) -> None:
         """Sets the camera paired with the light"""
 
         if camera is None:
@@ -125,7 +125,7 @@ class Light(ProtectMotionDeviceModel):
         self.light_device_settings.led_level = LEDLevel(led_level)
         await self.save_device()
 
-    async def set_light(self, enabled: bool, led_level: Optional[int] = None) -> None:
+    async def set_light(self, enabled: bool, led_level: int | None = None) -> None:
         """Force turns on/off the light"""
 
         self.light_on_settings.is_led_force_on = enabled
@@ -152,9 +152,9 @@ class Light(ProtectMotionDeviceModel):
     async def set_light_settings(
         self,
         mode: LightModeType,
-        enable_at: Optional[LightModeEnableType] = None,
-        duration: Optional[timedelta] = None,
-        sensitivity: Optional[int] = None,
+        enable_at: LightModeEnableType | None = None,
+        duration: timedelta | None = None,
+        sensitivity: int | None = None,
     ) -> None:
         """Updates various Light settings.
 
@@ -183,11 +183,11 @@ class Light(ProtectMotionDeviceModel):
 class EventStats(ProtectBaseObject):
     today: int
     average: int
-    last_days: List[int]
-    recent_hours: List[int] = []
+    last_days: list[int]
+    recent_hours: list[int] = []
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         data = super().unifi_dict_to_dict(data)
 
         if "recent_hours" not in data:
@@ -195,7 +195,7 @@ class EventStats(ProtectBaseObject):
 
         return data
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
         if "recentHours" in data and len(data["recentHours"]) == 0:
@@ -215,7 +215,7 @@ class CameraChannel(ProtectBaseObject):
     name: str
     enabled: bool
     is_rtsp_enabled: bool
-    rtsp_alias: Optional[str]
+    rtsp_alias: str | None
     width: int
     height: int
     fps: int
@@ -224,18 +224,18 @@ class CameraChannel(ProtectBaseObject):
     max_bitrate: int
     min_client_adaptive_bit_rate: int
     min_motion_adaptive_bit_rate: int
-    fps_values: List[int]
+    fps_values: list[int]
     idr_interval: int
 
     @property
-    def rtsp_url(self) -> Optional[str]:
+    def rtsp_url(self) -> str | None:
         if not self.is_rtsp_enabled or self.rtsp_alias is None:
             return None
 
         return f"rtsp://{self.api.connection_host}:{self.api.bootstrap.nvr.ports.rtsp}/{self.rtsp_alias}"
 
     @property
-    def rtsps_url(self) -> Optional[str]:
+    def rtsps_url(self) -> str | None:
         if not self.is_rtsp_enabled or self.rtsp_alias is None:
             return None
 
@@ -314,7 +314,7 @@ class RecordingSettings(ProtectBaseObject):
     use_new_motion_algorithm: bool
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         if "prePaddingSecs" in data:
             data["prePadding"] = timedelta(seconds=data.pop("prePaddingSecs"))
         if "postPaddingSecs" in data:
@@ -326,7 +326,7 @@ class RecordingSettings(ProtectBaseObject):
 
         return super().unifi_dict_to_dict(data)
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
         if "prePadding" in data:
@@ -342,7 +342,7 @@ class RecordingSettings(ProtectBaseObject):
 
 
 class SmartDetectSettings(ProtectBaseObject):
-    object_types: List[SmartDetectObjectType]
+    object_types: list[SmartDetectObjectType]
 
 
 class PIRSettings(ProtectBaseObject):
@@ -355,10 +355,10 @@ class PIRSettings(ProtectBaseObject):
 class LCDMessage(ProtectBaseObject):
     type: DoorbellMessageType
     text: str
-    reset_at: Optional[datetime] = None
+    reset_at: datetime | None = None
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         if "resetAt" in data:
             data["resetAt"] = process_datetime(data, "resetAt")
         if "text" in data:
@@ -371,7 +371,7 @@ class LCDMessage(ProtectBaseObject):
         return super().unifi_dict_to_dict(data)
 
     @classmethod
-    def _fix_text(cls, text: str, text_type: Optional[str]) -> str:
+    def _fix_text(cls, text: str, text_type: str | None) -> str:
         if text_type is None:
             text_type = cls.type.value
 
@@ -380,7 +380,7 @@ class LCDMessage(ProtectBaseObject):
 
         return text
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
         if "text" in data:
@@ -396,8 +396,8 @@ class TalkbackSettings(ProtectBaseObject):
     type_in: str
     bind_addr: IPv4Address
     bind_port: int
-    filter_addr: Optional[str]
-    filter_port: Optional[int]
+    filter_addr: str | None
+    filter_port: int | None
     channels: int
     sampling_rate: int
     bits_per_sample: int
@@ -405,31 +405,31 @@ class TalkbackSettings(ProtectBaseObject):
 
 
 class WifiStats(ProtectBaseObject):
-    channel: Optional[int]
-    frequency: Optional[int]
-    link_speed_mbps: Optional[str]
+    channel: int | None
+    frequency: int | None
+    link_speed_mbps: str | None
     signal_quality: PercentInt
     signal_strength: int
 
 
 class BatteryStats(ProtectBaseObject):
-    percentage: Optional[PercentInt]
+    percentage: PercentInt | None
     is_charging: bool
     sleep_state: str
 
 
 class VideoStats(ProtectBaseObject):
-    recording_start: Optional[datetime]
-    recording_end: Optional[datetime]
-    recording_start_lq: Optional[datetime]
-    recording_end_lq: Optional[datetime]
-    timelapse_start: Optional[datetime]
-    timelapse_end: Optional[datetime]
-    timelapse_start_lq: Optional[datetime]
-    timelapse_end_lq: Optional[datetime]
+    recording_start: datetime | None
+    recording_end: datetime | None
+    recording_start_lq: datetime | None
+    recording_end_lq: datetime | None
+    timelapse_start: datetime | None
+    timelapse_end: datetime | None
+    timelapse_start_lq: datetime | None
+    timelapse_end_lq: datetime | None
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {
             **super()._get_unifi_remaps(),
             "recordingStartLQ": "recordingStartLq",
@@ -439,7 +439,7 @@ class VideoStats(ProtectBaseObject):
         }
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         if "recordingStart" in data:
             data["recordingStart"] = process_datetime(data, "recordingStart")
         if "recordingEnd" in data:
@@ -461,17 +461,17 @@ class VideoStats(ProtectBaseObject):
 
 
 class StorageStats(ProtectBaseObject):
-    used: Optional[int]
-    rate: Optional[float]
+    used: int | None
+    rate: float | None
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         if "rate" not in data:
             data["rate"] = None
 
         return super().unifi_dict_to_dict(data)
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
         if "rate" in data and data["rate"] is None:
@@ -486,18 +486,18 @@ class CameraStats(ProtectBaseObject):
     wifi: WifiStats
     battery: BatteryStats
     video: VideoStats
-    storage: Optional[StorageStats]
+    storage: StorageStats | None
     wifi_quality: PercentInt
     wifi_strength: int
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         if "storage" in data and data["storage"] == {}:
             del data["storage"]
 
         return super().unifi_dict_to_dict(data)
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
         if "storage" in data and data["storage"] is None:
@@ -510,10 +510,10 @@ class CameraZone(ProtectBaseObject):
     id: int
     name: str
     color: Color
-    points: List[Tuple[Percent, Percent]]
+    points: list[tuple[Percent, Percent]]
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         data = super().unifi_dict_to_dict(data)
 
         if not is_debug():
@@ -522,7 +522,7 @@ class CameraZone(ProtectBaseObject):
 
         return data
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
         if "points" in data:
@@ -542,7 +542,7 @@ class MotionZone(CameraZone):
 
 
 class SmartMotionZone(MotionZone):
-    object_types: List[SmartDetectObjectType]
+    object_types: list[SmartDetectObjectType]
 
 
 class PrivacyMaskCapability(ProtectBaseObject):
@@ -574,12 +574,12 @@ class FeatureFlags(ProtectBaseObject):
     has_wifi: bool
     has_hdr: bool
     has_auto_icr_only: bool
-    video_modes: List[VideoMode]
-    video_mode_max_fps: List[int]
+    video_modes: list[VideoMode]
+    video_mode_max_fps: list[int]
     has_motion_zones: bool
     has_lcd_screen: bool
-    smart_detect_types: List[SmartDetectObjectType]
-    motion_algorithms: List[str]
+    smart_detect_types: list[SmartDetectObjectType]
+    motion_algorithms: list[str]
     has_square_event_thumbnail: bool
     has_package_camera: bool
     privacy_mask_capability: PrivacyMaskCapability
@@ -593,7 +593,7 @@ class FeatureFlags(ProtectBaseObject):
     # zoom
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {**super()._get_unifi_remaps(), "hasAutoICROnly": "hasAutoIcrOnly"}
 
     @property
@@ -619,12 +619,12 @@ class Camera(ProtectMotionDeviceModel):
     video_mode: VideoMode
     is_probing_for_wifi: bool
     chime_duration: ChimeDuration
-    last_ring: Optional[datetime]
+    last_ring: datetime | None
     is_live_heatmap_enabled: bool
     anonymous_device_id: UUID
     event_stats: CameraEventStats
     video_reconfiguration_in_progress: bool
-    channels: List[CameraChannel]
+    channels: list[CameraChannel]
     isp_settings: ISPSettings
     talkback_settings: TalkbackSettings
     osd_settings: OSDSettings
@@ -632,22 +632,22 @@ class Camera(ProtectMotionDeviceModel):
     speaker_settings: SpeakerSettings
     recording_settings: RecordingSettings
     smart_detect_settings: SmartDetectSettings
-    motion_zones: List[MotionZone]
-    privacy_zones: List[CameraZone]
-    smart_detect_zones: List[SmartMotionZone]
+    motion_zones: list[MotionZone]
+    privacy_zones: list[CameraZone]
+    smart_detect_zones: list[SmartMotionZone]
     stats: CameraStats
     feature_flags: FeatureFlags
     pir_settings: PIRSettings
-    lcd_message: Optional[LCDMessage]
+    lcd_message: LCDMessage | None
     platform: str
     has_speaker: bool
     has_wifi: bool
     audio_bitrate: int
     can_manage: bool
     is_managed: bool
-    voltage: Optional[float]
+    voltage: float | None
     # requires 1.21+
-    is_wireless_uplink_enabled: Optional[bool]
+    is_wireless_uplink_enabled: bool | None
 
     # TODO:
     # apMac
@@ -659,13 +659,13 @@ class Camera(ProtectMotionDeviceModel):
     # lenses
 
     # not directly from Unifi
-    last_ring_event_id: Optional[str] = None
-    last_smart_detect: Optional[datetime] = None
-    last_smart_detect_event_id: Optional[str] = None
-    talkback_stream: Optional[TalkbackStream] = None
+    last_ring_event_id: str | None = None
+    last_smart_detect: datetime | None = None
+    last_smart_detect_event_id: str | None = None
+    talkback_stream: TalkbackStream | None = None
 
     @classmethod
-    def _get_excluded_changed_fields(cls) -> Set[str]:
+    def _get_excluded_changed_fields(cls) -> set[str]:
         return super()._get_excluded_changed_fields() | {
             "last_ring_event_id",
             "last_smart_detect",
@@ -674,14 +674,14 @@ class Camera(ProtectMotionDeviceModel):
         }
 
     @classmethod
-    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         # LCD messages comes back as empty dict {}
         if "lcdMessage" in data and len(data["lcdMessage"].keys()) == 0:
             del data["lcdMessage"]
 
         return super().unifi_dict_to_dict(data)
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
 
         if data is not None:
             if "motion_zones" in data:
@@ -706,7 +706,7 @@ class Camera(ProtectMotionDeviceModel):
 
         return data
 
-    def get_changed(self) -> Dict[str, Any]:
+    def get_changed(self) -> dict[str, Any]:
         updated = super().get_changed()
 
         if "lcd_message" in updated:
@@ -728,13 +728,13 @@ class Camera(ProtectMotionDeviceModel):
         return updated
 
     @property
-    def last_ring_event(self) -> Optional[Event]:
+    def last_ring_event(self) -> Event | None:
         if self.last_ring_event_id is None:
             return None
 
         return self.api.bootstrap.events.get(self.last_ring_event_id)
 
-    def update_from_dict(self, data: Dict[str, Any]) -> Camera:
+    def update_from_dict(self, data: dict[str, Any]) -> Camera:
         # a message in the past is actually a singal to wipe the message
         reset_at = data.get("lcd_message", {}).get("reset_at")
         if reset_at is not None:
@@ -745,7 +745,7 @@ class Camera(ProtectMotionDeviceModel):
         return super().update_from_dict(data)
 
     @property
-    def last_smart_detect_event(self) -> Optional[Event]:
+    def last_smart_detect_event(self) -> Event | None:
         if self.last_smart_detect_event_id is None:
             return None
 
@@ -768,7 +768,7 @@ class Camera(ProtectMotionDeviceModel):
     def is_vehicle_detection_on(self) -> bool:
         return SmartDetectObjectType.VEHICLE in self.smart_detect_settings.object_types
 
-    def get_privacy_zone(self) -> Tuple[Optional[int], Optional[CameraZone]]:
+    def get_privacy_zone(self) -> tuple[int | None, CameraZone | None]:
         for index, zone in enumerate(self.privacy_zones):
             if zone.name == PRIVACY_ZONE_NAME:
                 return index, zone
@@ -789,12 +789,12 @@ class Camera(ProtectMotionDeviceModel):
         if index is not None:
             self.privacy_zones.pop(index)
 
-    async def get_snapshot(self, width: Optional[int] = None, height: Optional[int] = None) -> Optional[bytes]:
+    async def get_snapshot(self, width: int | None = None, height: int | None = None) -> bytes | None:
         """Gets snapshot for camera"""
 
         return await self.api.get_camera_snapshot(self.id, width, height)
 
-    async def get_video(self, start: datetime, end: datetime, channel_index: int = 0) -> Optional[bytes]:
+    async def get_video(self, start: datetime, end: datetime, channel_index: int = 0) -> bytes | None:
         """Gets video clip for camera at a given time"""
 
         return await self.api.get_camera_video(self.id, start, end, channel_index)
@@ -921,7 +921,7 @@ class Camera(ProtectMotionDeviceModel):
         self.osd_settings.is_debug_enabled = enabled
         await self.save_device()
 
-    async def set_smart_detect_types(self, types: List[SmartDetectObjectType]) -> None:
+    async def set_smart_detect_types(self, types: list[SmartDetectObjectType]) -> None:
         """Sets current enabled smart detection types. Requires camera to have smart detection"""
 
         if not self.feature_flags.has_smart_detect:
@@ -953,9 +953,9 @@ class Camera(ProtectMotionDeviceModel):
 
     async def set_lcd_text(
         self,
-        text_type: Optional[DoorbellMessageType],
-        text: Optional[str] = None,
-        reset_at: Union[None, datetime, DEFAULT_TYPE] = None,
+        text_type: DoorbellMessageType | None,
+        text: str | None = None,
+        reset_at: None | datetime | DEFAULT_TYPE = None,
     ) -> None:
         """Sets doorbell LCD text. Requires camera to be doorbell"""
 
@@ -980,7 +980,7 @@ class Camera(ProtectMotionDeviceModel):
         await self.save_device()
 
     async def set_privacy(
-        self, enabled: bool, mic_level: Optional[int] = None, recording_mode: Optional[RecordingMode] = None
+        self, enabled: bool, mic_level: int | None = None, recording_mode: RecordingMode | None = None
     ) -> None:
         """Adds/removes a privacy zone that blacks out the whole camera"""
 
@@ -1000,7 +1000,7 @@ class Camera(ProtectMotionDeviceModel):
 
         await self.save_device()
 
-    def create_talkback_stream(self, content_url: str, ffmpeg_path: Optional[Path] = None) -> TalkbackStream:
+    def create_talkback_stream(self, content_url: str, ffmpeg_path: Path | None = None) -> TalkbackStream:
         """
         Creates a subprocess to play audio to a camera through its speaker.
 
@@ -1023,7 +1023,7 @@ class Camera(ProtectMotionDeviceModel):
         self.talkback_stream = TalkbackStream(self, content_url, ffmpeg_path)
         return self.talkback_stream
 
-    async def play_audio(self, content_url: str, ffmpeg_path: Optional[Path] = None, blocking: bool = True) -> None:
+    async def play_audio(self, content_url: str, ffmpeg_path: Path | None = None, blocking: bool = True) -> None:
         """
         Plays audio to a camera through its speaker.
 
@@ -1072,11 +1072,11 @@ class Viewer(ProtectAdoptableDeviceModel):
     liveview_id: str
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {**super()._get_unifi_remaps(), "liveview": "liveviewId"}
 
     @property
-    def liveview(self) -> Optional[Liveview]:
+    def liveview(self) -> Liveview | None:
         # user may not have permission to see the liveview
         return self.api.bootstrap.liveviews.get(self.liveview_id)
 
@@ -1110,8 +1110,8 @@ class SensorThresholdSettings(SensorSettingsBase):
     margin: float
     # "safe" thresholds for alerting
     # anything below/above will trigger alert
-    low_threshold: Optional[float]
-    high_threshold: Optional[float]
+    low_threshold: float | None
+    high_threshold: float | None
 
 
 class SensorSensitivitySettings(SensorSettingsBase):
@@ -1124,7 +1124,7 @@ class SensorBatteryStatus(ProtectBaseObject):
 
 
 class SensorStat(ProtectBaseObject):
-    value: Optional[float]
+    value: float | None
     status: SensorStatusType
 
 
@@ -1136,35 +1136,35 @@ class SensorStats(ProtectBaseObject):
 
 class Sensor(ProtectAdoptableDeviceModel):
     alarm_settings: SensorSettingsBase
-    alarm_triggered_at: Optional[datetime]
+    alarm_triggered_at: datetime | None
     battery_status: SensorBatteryStatus
-    camera_id: Optional[str]
+    camera_id: str | None
     humidity_settings: SensorThresholdSettings
     is_motion_detected: bool
     is_opened: bool
-    leak_detected_at: Optional[datetime]
+    leak_detected_at: datetime | None
     led_settings: SensorSettingsBase
     light_settings: SensorThresholdSettings
-    motion_detected_at: Optional[datetime]
+    motion_detected_at: datetime | None
     motion_settings: SensorSensitivitySettings
-    open_status_changed_at: Optional[datetime]
+    open_status_changed_at: datetime | None
     stats: SensorStats
-    tampering_detected_at: Optional[datetime]
+    tampering_detected_at: datetime | None
     temperature_settings: SensorThresholdSettings
     mount_type: MountType
 
     # not directly from Unifi
-    last_motion_event_id: Optional[str] = None
-    last_contact_event_id: Optional[str] = None
-    last_value_event_id: Optional[str] = None
-    last_alarm_event_id: Optional[str] = None
-    extreme_value_detected_at: Optional[datetime] = None
+    last_motion_event_id: str | None = None
+    last_contact_event_id: str | None = None
+    last_value_event_id: str | None = None
+    last_alarm_event_id: str | None = None
+    extreme_value_detected_at: datetime | None = None
 
     @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
+    def _get_unifi_remaps(cls) -> dict[str, str]:
         return {**super()._get_unifi_remaps(), "camera": "cameraId"}
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def unifi_dict(self, data: dict[str, Any] | None = None, exclude: set[str] | None = None) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
         if "lastMotionEventId" in data:
@@ -1183,7 +1183,7 @@ class Sensor(ProtectAdoptableDeviceModel):
         return data
 
     @property
-    def camera(self) -> Optional[Camera]:
+    def camera(self) -> Camera | None:
         """Paired Camera will always be none if no camera is paired"""
 
         if self.camera_id is None:
@@ -1192,28 +1192,28 @@ class Sensor(ProtectAdoptableDeviceModel):
         return self.api.bootstrap.cameras[self.camera_id]
 
     @property
-    def last_motion_event(self) -> Optional[Event]:
+    def last_motion_event(self) -> Event | None:
         if self.last_motion_event_id is None:
             return None
 
         return self.api.bootstrap.events.get(self.last_motion_event_id)
 
     @property
-    def last_contact_event(self) -> Optional[Event]:
+    def last_contact_event(self) -> Event | None:
         if self.last_contact_event_id is None:
             return None
 
         return self.api.bootstrap.events.get(self.last_contact_event_id)
 
     @property
-    def last_value_event(self) -> Optional[Event]:
+    def last_value_event(self) -> Event | None:
         if self.last_value_event_id is None:
             return None
 
         return self.api.bootstrap.events.get(self.last_value_event_id)
 
     @property
-    def last_alarm_event(self) -> Optional[Event]:
+    def last_alarm_event(self) -> Event | None:
         if self.last_alarm_event_id is None:
             return None
 
@@ -1330,7 +1330,7 @@ class Sensor(ProtectAdoptableDeviceModel):
         self.alarm_settings.is_enabled = enabled
         await self.save_device()
 
-    async def set_paired_camera(self, camera: Optional[Camera]) -> None:
+    async def set_paired_camera(self, camera: Camera | None) -> None:
         """Sets the camera paired with the sensor"""
 
         if camera is None:
