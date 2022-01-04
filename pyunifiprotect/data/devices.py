@@ -1246,6 +1246,8 @@ class Sensor(ProtectAdoptableDeviceModel):
             raise BadRequest("Minimum value is 0°C")
         if high > 45.0:
             raise BadRequest("Maximum value is 45°C")
+        if high <= low:
+            raise BadRequest("High value must be above low value")
 
         self.temperature_settings.low_threshold = low
         self.temperature_settings.high_threshold = high
@@ -1271,6 +1273,8 @@ class Sensor(ProtectAdoptableDeviceModel):
             raise BadRequest("Minimum value is 1%")
         if high > 99.0:
             raise BadRequest("Maximum value is 99%")
+        if high <= low:
+            raise BadRequest("High value must be above low value")
 
         self.humidity_settings.low_threshold = low
         self.humidity_settings.high_threshold = high
@@ -1296,6 +1300,8 @@ class Sensor(ProtectAdoptableDeviceModel):
             raise BadRequest("Minimum value is 1 lux")
         if high > 1000.0:
             raise BadRequest("Maximum value is 1000 lux")
+        if high <= low:
+            raise BadRequest("High value must be above low value")
 
         self.light_settings.low_threshold = low
         self.light_settings.high_threshold = high

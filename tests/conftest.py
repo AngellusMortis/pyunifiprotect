@@ -274,6 +274,15 @@ async def viewer_obj(protect_client: ProtectApiClient):  # pylint: disable=redef
 
 @pytest.fixture
 @pytest.mark.asyncio
+async def sensor_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+    if not TEST_SENSOR_EXISTS:
+        return None
+
+    return list(protect_client.bootstrap.sensors.values())[0]
+
+
+@pytest.fixture
+@pytest.mark.asyncio
 async def liveview_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
     if not TEST_LIVEVIEW_EXISTS:
         return None
