@@ -1157,6 +1157,7 @@ class Sensor(ProtectAdoptableDeviceModel):
     last_motion_event_id: Optional[str] = None
     last_contact_event_id: Optional[str] = None
     last_value_event_id: Optional[str] = None
+    last_alarm_event_id: Optional[str] = None
     extreme_value_detected_at: Optional[datetime] = None
 
     @classmethod
@@ -1172,6 +1173,8 @@ class Sensor(ProtectAdoptableDeviceModel):
             del data["lastContactEventId"]
         if "lastValueEventId" in data:
             del data["lastValueEventId"]
+        if "lastAlarmEventId" in data:
+            del data["lastAlarmEventId"]
         if "extremeValueDetectedAt" in data:
             del data["extremeValueDetectedAt"]
         if "host" in data and data["host"] is None:
@@ -1203,11 +1206,18 @@ class Sensor(ProtectAdoptableDeviceModel):
         return self.api.bootstrap.events.get(self.last_contact_event_id)
 
     @property
-    def last_value_event_id(self) -> Optional[Event]:
+    def last_value_event(self) -> Optional[Event]:
         if self.last_value_event_id is None:
             return None
 
         return self.api.bootstrap.events.get(self.last_value_event_id)
+
+    @property
+    def last_alarm_event(self) -> Optional[Event]:
+        if self.last_alarm_event_id is None:
+            return None
+
+        return self.api.bootstrap.events.get(self.last_alarm_event_id)
 
     async def set_status_light(self, enabled: bool) -> None:
         """Sets the status indicator light for the sensor"""

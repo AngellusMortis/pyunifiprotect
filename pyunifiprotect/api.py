@@ -612,7 +612,7 @@ class ProtectApiClient(BaseApiClient):
         start: Optional[datetime] = None,
         end: Optional[datetime] = None,
         limit: Optional[int] = None,
-        camera_ids: Optional[List[str]] = None,
+        types: Optional[List[EventType]] = None,
     ) -> List[Dict[str, Any]]:
         """
         Get list of events from Protect
@@ -622,14 +622,12 @@ class ProtectApiClient(BaseApiClient):
         * `start`: start time for events
         * `end`: end time for events
         * `limit`: max number of events to return
-        * `camera_ids`: list of Cameras to get events for
+        * `types`: list of EventTypes to get events for
 
         If `limit`, `start` and `end` are not provided, it will default to all events in the last 24 hours.
 
         If `start` is provided, then `end` or `limit` must be provided. If `end` is provided, then `start` or
         `limit` must be provided. Otherwise, you will get a 400 error from Unifi Protect
-
-        Providing a list of Camera IDs will not prevent non-camera events from returning.
         """
 
         # if no parameters are passed in, default to all events from last 24 hours
@@ -647,8 +645,8 @@ class ProtectApiClient(BaseApiClient):
         if end is not None:
             params["end"] = to_js_time(end)
 
-        if camera_ids is not None:
-            params["cameras"] = ",".join(camera_ids)
+        if types is not None:
+            params["types"] = [e.value for e in types]
 
         return await self.api_request_list("events", params=params)
 
@@ -657,7 +655,7 @@ class ProtectApiClient(BaseApiClient):
         start: Optional[datetime] = None,
         end: Optional[datetime] = None,
         limit: Optional[int] = None,
-        camera_ids: Optional[List[str]] = None,
+        types: Optional[List[EventType]] = None,
     ) -> List[Event]:
         """
         Same as `get_events_raw`, except
@@ -665,9 +663,21 @@ class ProtectApiClient(BaseApiClient):
         * returns actual `Event` objects instead of raw Python dictionaries
         * filers out non-device events
         * filters out events with too low of a score
+
+        Args:
+
+        * `start`: start time for events
+        * `end`: end time for events
+        * `limit`: max number of events to return
+        * `types`: list of EventTypes to get events for
+
+        If `limit`, `start` and `end` are not provided, it will default to all events in the last 24 hours.
+
+        If `start` is provided, then `end` or `limit` must be provided. If `end` is provided, then `start` or
+        `limit` must be provided. Otherwise, you will get a 400 error from Unifi Protect
         """
 
-        response = await self.get_events_raw(start=start, end=end, limit=limit, camera_ids=camera_ids)
+        response = await self.get_events_raw(start=start, end=end, limit=limit, types=types)
         events = []
 
         for event_dict in response:

@@ -137,6 +137,7 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     SENSOR_OPENED = "sensorOpened"
     SENSOR_CLOSED = "sensorClosed"
     SENSOR_EXTREME_VALUE = "sensorExtremeValues"
+    SENSOR_ALARM = "sensorAlarm"
 
     @staticmethod
     def device_events() -> List[str]:
