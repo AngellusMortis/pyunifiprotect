@@ -1,15 +1,14 @@
 {
-    "mac": "E1AEFD38EBB5",
-    "host": null,
-    "connectionHost": "192.168.137.32",
+    "mac": "26DBAFF133A4",
+    "connectionHost": "192.168.216.198",
     "type": "UFP-SENSE",
-    "name": "Vmhsffu Epfx",
-    "upSince": 1633775315427,
+    "name": "Egdczv Urg",
+    "upSince": 1641256963255,
     "uptime": null,
-    "lastSeen": 1635645979105,
-    "connectedSince": 1635646114427,
+    "lastSeen": 1641259127934,
+    "connectedSince": 1641259139255,
     "state": "CONNECTED",
-    "hardwareRevision": 5,
+    "hardwareRevision": 6,
     "firmwareVersion": "1.0.2",
     "latestFirmwareVersion": "1.0.2",
     "firmwareBuild": null,
@@ -22,41 +21,41 @@
     "isSshEnabled": false,
     "canAdopt": false,
     "isAttemptingToConnect": false,
-    "isMotionDetected": true,
+    "isMotionDetected": false,
     "mountType": "door",
     "leakDetectedAt": null,
     "tamperingDetectedAt": null,
     "isOpened": true,
-    "openStatusChangedAt": 1635647109850,
+    "openStatusChangedAt": 1641269036582,
     "alarmTriggeredAt": null,
-    "motionDetectedAt": 1635654005086,
+    "motionDetectedAt": 1641269044824,
     "wiredConnectionState": {
         "phyRate": null
     },
     "stats": {
         "light": {
-            "value": 20,
+            "value": 0,
             "status": "neutral"
         },
         "humidity": {
-            "value": 38,
+            "value": 35,
             "status": "neutral"
         },
         "temperature": {
-            "value": 22.58,
+            "value": 17.23,
             "status": "neutral"
         }
     },
     "bluetoothConnectionState": {
-        "signalQuality": 30,
-        "signalStrength": -78
+        "signalQuality": 15,
+        "signalStrength": -84
     },
     "batteryStatus": {
-        "percentage": 80,
+        "percentage": 100,
         "isLow": false
     },
     "alarmSettings": {
-        "isEnabled": true
+        "isEnabled": false
     },
     "lightSettings": {
         "isEnabled": true,
@@ -83,11 +82,11 @@
     "ledSettings": {
         "isEnabled": true
     },
-    "bridge": "60958bf101760a03e70003f3",
-    "camera": null,
+    "bridge": "61b3f5c90050a703e700042a",
+    "camera": "2f9beb2e6f79af3c32c22d49",
     "bridgeCandidates": [],
-    "id": "5df53ed7ee7de9a43cfb0400",
+    "id": "f6ecbe829f81cc79ad6e0c9a",
     "isConnected": true,
-    "modelKey": "sensor",
-    "marketName": "UP Sense"
+    "marketName": "UP Sense",
+    "modelKey": "sensor"
 }

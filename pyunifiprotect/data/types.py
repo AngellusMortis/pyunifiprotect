@@ -134,6 +134,10 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     DEVICE_ADOPTED = "deviceAdopted"
     DEVICE_UNADOPTED = "deviceUnadopted"
     RECORDING_MODE_CHANGED = "recordingModeChanged"
+    SENSOR_OPENED = "sensorOpened"
+    SENSOR_CLOSED = "sensorClosed"
+    SENSOR_EXTREME_VALUE = "sensorExtremeValues"
+    SENSOR_ALARM = "sensorAlarm"
 
     @staticmethod
     def device_events() -> List[str]:
@@ -222,6 +226,30 @@ class IRLEDMode(str, ValuesEnumMixin, enum.Enum):
     ON = "on"
     AUTO_NO_LED = "autoFilterOnly"
     OFF = "off"
+
+
+@enum.unique
+class MountType(str, ValuesEnumMixin, enum.Enum):
+    NONE = "none"
+    LEAK = "leak"
+    DOOR = "door"
+    WINDOW = "window"
+    GARAGE = "garage"
+
+
+@enum.unique
+class SensorType(str, ValuesEnumMixin, enum.Enum):
+    TEMPERATURE = "temperature"
+    LIGHT = "light"
+    HUMIDITY = "humidity"
+
+
+@enum.unique
+class SensorStatusType(str, ValuesEnumMixin, enum.Enum):
+    UNKNOWN = "unknown"
+    NEUTRAL = "neutral"
+    LOW = "low"
+    HIGH = "high"
 
 
 class DoorbellText(ConstrainedStr):

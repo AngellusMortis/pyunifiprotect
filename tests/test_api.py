@@ -293,15 +293,15 @@ async def test_get_events_raw_limit(protect_client: ProtectApiClient):
 
 
 @pytest.mark.asyncio
-async def test_get_events_raw_cameras(protect_client: ProtectApiClient):
-    await protect_client.get_events_raw(limit=10, camera_ids=["test1", "test2"])
+async def test_get_events_raw_types(protect_client: ProtectApiClient):
+    await protect_client.get_events_raw(limit=10, types=[EventType.MOTION, EventType.SMART_DETECT])
 
     protect_client.api_request.assert_called_with(  # type: ignore
         url="events",
         method="get",
         require_auth=True,
         raise_exception=True,
-        params={"limit": 10, "cameras": "test1,test2"},
+        params={"limit": 10, "types": ["motion", "smartDetectZone"]},
     )
 
 

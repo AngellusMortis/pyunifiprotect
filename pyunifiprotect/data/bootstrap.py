@@ -65,9 +65,25 @@ def _process_sensor_event(event: Event) -> None:
     if event.sensor is None:
         return
 
-    dt = event.sensor.motion_detected_at
-    if dt is None or event.start >= dt or (event.end is not None and event.end >= dt):
-        event.sensor.last_motion_event_id = event.id
+    if event.type == EventType.MOTION_SENSOR:
+        dt = event.sensor.motion_detected_at
+        if dt is None or event.start >= dt or (event.end is not None and event.end >= dt):
+            event.sensor.last_motion_event_id = event.id
+    elif event.type in (EventType.SENSOR_CLOSED, EventType.SENSOR_OPENED):
+        dt = event.sensor.open_status_changed_at
+        if dt is None or event.start >= dt or (event.end is not None and event.end >= dt):
+            event.sensor.last_contact_event_id = event.id
+    elif event.type == EventType.SENSOR_EXTREME_VALUE:
+        dt = event.sensor.extreme_value_detected_at
+        if dt is None or event.start >= dt or (event.end is not None and event.end >= dt):
+            event.sensor.extreme_value_detected_at = event.end
+            event.sensor.last_value_event_id = event.id
+    elif event.type == EventType.SENSOR_ALARM:
+        dt = event.sensor.alarm_triggered_at
+        if dt is None or event.start >= dt or (event.end is not None and event.end >= dt):
+            # UniFi Protect Bug: alarm triggered at does not update
+            event.sensor.alarm_triggered_at = event.end
+            event.sensor.last_value_event_id = event.id
 
 
 def _process_camera_event(event: Event) -> None:

@@ -10,42 +10,42 @@ aioshutil==1.1
     # via pyunifiprotect (setup.cfg)
 aiosignal==1.2.0
     # via aiohttp
-astroid==2.9.0
+astroid==2.9.2
     # via pylint
-async-timeout==4.0.1
+async-timeout==4.0.2
     # via aiohttp
 asyncio==3.4.3
     # via pyunifiprotect (setup.cfg)
-attrs==21.2.0
+attrs==21.4.0
     # via
     #   aiohttp
     #   pytest
 backcall==0.2.0
     # via ipython
-backports.entry-points-selectable==1.1.1
-    # via virtualenv
 base36==0.1.1
     # via pyunifiprotect (setup.cfg)
-black==21.11b1
+black==21.12b0
     # via pyunifiprotect (setup.cfg)
 build==0.7.0
     # via pyunifiprotect (setup.cfg)
-charset-normalizer==2.0.8
+charset-normalizer==2.0.9
     # via aiohttp
 click==8.0.3
     # via
     #   black
     #   pip-tools
     #   typer
-coverage[toml]==6.1.2
+coverage[toml]==6.2
     # via
     #   pytest-cov
     #   pyunifiprotect (setup.cfg)
 decorator==5.1.0
     # via ipython
-distlib==0.3.3
+distlib==0.3.4
     # via virtualenv
-filelock==3.4.0
+execnet==1.9.0
+    # via pytest-xdist
+filelock==3.4.2
     # via
     #   tox
     #   virtualenv
@@ -70,7 +70,7 @@ isort==5.10.1
     # via pylint
 jedi==0.18.1
     # via ipython
-lazy-object-proxy==1.6.0
+lazy-object-proxy==1.7.1
     # via astroid
 matplotlib-inline==0.1.3
     # via ipython
@@ -82,7 +82,7 @@ multidict==5.2.0
     # via
     #   aiohttp
     #   yarl
-mypy==0.910
+mypy==0.930
     # via pyunifiprotect (setup.cfg)
 mypy-extensions==0.4.3
     # via
@@ -95,7 +95,7 @@ packaging==21.3
     #   pytest-sugar
     #   pyunifiprotect (setup.cfg)
     #   tox
-parso==0.8.2
+parso==0.8.3
     # via jedi
 pathspec==0.9.0
     # via black
@@ -107,11 +107,11 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==8.4.0
+pillow==9.0.0
     # via pyunifiprotect (setup.cfg)
 pip-tools==6.4.0
     # via pyunifiprotect (setup.cfg)
-platformdirs==2.4.0
+platformdirs==2.4.1
     # via
     #   black
     #   pylint
@@ -120,19 +120,20 @@ pluggy==1.0.0
     # via
     #   pytest
     #   tox
-prompt-toolkit==3.0.22
+prompt-toolkit==3.0.24
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
 py==1.11.0
     # via
     #   pytest
+    #   pytest-forked
     #   tox
 py-cpuinfo==8.0.0
     # via pytest-benchmark
 pycodestyle==2.8.0
     # via flake8
-pydantic==1.8.2
+pydantic==1.9.0
     # via pyunifiprotect (setup.cfg)
 pydocstyle==6.1.1
     # via
@@ -140,11 +141,11 @@ pydocstyle==6.1.1
     #   pyunifiprotect (setup.cfg)
 pyflakes==2.4.0
     # via flake8
-pygments==2.10.0
+pygments==2.11.1
     # via ipython
 pyjwt==2.3.0
     # via pyunifiprotect (setup.cfg)
-pylint==2.12.1
+pylint==2.12.2
     # via
     #   pylint-strict-informational
     #   pyunifiprotect (setup.cfg)
@@ -159,8 +160,10 @@ pytest==6.2.5
     #   pytest-asyncio
     #   pytest-benchmark
     #   pytest-cov
+    #   pytest-forked
     #   pytest-sugar
     #   pytest-timeout
+    #   pytest-xdist
     #   pyunifiprotect (setup.cfg)
 pytest-asyncio==0.16.0
     # via pyunifiprotect (setup.cfg)
@@ -168,16 +171,18 @@ pytest-benchmark==3.4.1
     # via pyunifiprotect (setup.cfg)
 pytest-cov==3.0.0
     # via pyunifiprotect (setup.cfg)
+pytest-forked==1.4.0
+    # via pytest-xdist
 pytest-sugar==0.9.4
     # via pyunifiprotect (setup.cfg)
-pytest-timeout==2.0.1
+pytest-timeout==2.0.2
+    # via pyunifiprotect (setup.cfg)
+pytest-xdist==2.5.0
     # via pyunifiprotect (setup.cfg)
 python-dotenv==0.19.2
     # via pyunifiprotect (setup.cfg)
 pytz==2021.3
     # via pyunifiprotect (setup.cfg)
-regex==2021.11.10
-    # via black
 six==1.16.0
     # via
     #   tox
@@ -190,18 +195,18 @@ termcolor==1.1.0
     #   pyunifiprotect (setup.cfg)
 toml==0.10.2
     # via
-    #   mypy
     #   pylint
     #   pyproject-flake8
     #   pytest
     #   tox
-tomli==1.2.2
+tomli==1.2.3
     # via
     #   black
     #   build
     #   coverage
+    #   mypy
     #   pep517
-tox==3.24.4
+tox==3.24.5
     # via pyunifiprotect (setup.cfg)
 traitlets==5.1.1
     # via
@@ -209,23 +214,22 @@ traitlets==5.1.1
     #   matplotlib-inline
 typer==0.4.0
     # via pyunifiprotect (setup.cfg)
-types-pillow==8.3.7
+types-pillow==8.3.11
     # via pyunifiprotect (setup.cfg)
-types-pytz==2021.3.1
+types-pytz==2021.3.3
     # via pyunifiprotect (setup.cfg)
 types-termcolor==1.1.2
     # via pyunifiprotect (setup.cfg)
-typing-extensions==4.0.0
+typing-extensions==4.0.1
     # via
-    #   async-timeout
     #   black
     #   mypy
     #   pydantic
-virtualenv==20.10.0
+virtualenv==20.13.0
     # via tox
 wcwidth==0.2.5
     # via prompt-toolkit
-wheel==0.37.0
+wheel==0.37.1
     # via pip-tools
 wrapt==1.13.3
     # via astroid

@@ -274,6 +274,15 @@ async def viewer_obj(protect_client: ProtectApiClient):  # pylint: disable=redef
 
 @pytest.fixture
 @pytest.mark.asyncio
+async def sensor_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+    if not TEST_SENSOR_EXISTS:
+        return None
+
+    return list(protect_client.bootstrap.sensors.values())[0]
+
+
+@pytest.fixture
+@pytest.mark.asyncio
 async def liveview_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
     if not TEST_LIVEVIEW_EXISTS:
         return None
@@ -476,7 +485,6 @@ def compare_objs(obj_type, expected, actual):
             del expected["metadata"][key]
     elif obj_type == ModelType.SENSOR.value:
         del expected["bridgeCandidates"]
-        del expected["mountType"]
 
     # sometimes uptime comes back as a str...
     if "uptime" in expected and expected["uptime"] is not None:

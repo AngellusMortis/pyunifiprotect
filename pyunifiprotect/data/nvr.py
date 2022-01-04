@@ -33,9 +33,12 @@ from pyunifiprotect.data.types import (
     DoorbellText,
     EventType,
     ModelType,
+    MountType,
     PercentInt,
     RecordingType,
     ResolutionStorageType,
+    SensorStatusType,
+    SensorType,
     SmartDetectObjectType,
     Version,
 )
@@ -105,10 +108,24 @@ class EventMetadata(ProtectBaseObject):
     type: Optional[str]
     sensor_id: Optional[str]
     sensor_name: Optional[str]
+    sensor_type: Optional[SensorType]
     from_value: Optional[str]
     to_value: Optional[str]
+    mount_type: Optional[MountType]
+    status: Optional[SensorStatusType]
+    alarm_type: Optional[str]
 
-    _collapse_keys: ClassVar[SetStr] = {"lightId", "lightName", "type", "sensorId", "sensorName"}
+    _collapse_keys: ClassVar[SetStr] = {
+        "lightId",
+        "lightName",
+        "type",
+        "sensorId",
+        "sensorName",
+        "sensorType",
+        "mountType",
+        "status",
+        "alarmType",
+    }
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:

@@ -338,7 +338,6 @@ class SampleDataGenerator:
 
         obj = await self.client.api_request_obj(f"sensors/{device_id}")
         self.write_json_file("sample_sensor", obj)
-        self.write_json_file("sample_sensors", objs)
 
     async def generate_bridge_data(self) -> None:
         objs = await self.client.api_request_list("bridges")

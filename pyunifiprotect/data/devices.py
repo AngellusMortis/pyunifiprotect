@@ -23,9 +23,11 @@ from pyunifiprotect.data.types import (
     LEDLevel,
     LightModeEnableType,
     LightModeType,
+    MountType,
     Percent,
     PercentInt,
     RecordingMode,
+    SensorStatusType,
     SmartDetectObjectType,
     VideoMode,
     WDRLevel,
@@ -1123,7 +1125,7 @@ class SensorBatteryStatus(ProtectBaseObject):
 
 class SensorStat(ProtectBaseObject):
     value: Optional[float]
-    status: str
+    status: SensorStatusType
 
 
 class SensorStats(ProtectBaseObject):
@@ -1149,12 +1151,14 @@ class Sensor(ProtectAdoptableDeviceModel):
     stats: SensorStats
     tampering_detected_at: Optional[datetime]
     temperature_settings: SensorThresholdSettings
-
-    # TODO:
-    # mountType
+    mount_type: MountType
 
     # not directly from Unifi
     last_motion_event_id: Optional[str] = None
+    last_contact_event_id: Optional[str] = None
+    last_value_event_id: Optional[str] = None
+    last_alarm_event_id: Optional[str] = None
+    extreme_value_detected_at: Optional[datetime] = None
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
@@ -1165,6 +1169,16 @@ class Sensor(ProtectAdoptableDeviceModel):
 
         if "lastMotionEventId" in data:
             del data["lastMotionEventId"]
+        if "lastContactEventId" in data:
+            del data["lastContactEventId"]
+        if "lastValueEventId" in data:
+            del data["lastValueEventId"]
+        if "lastAlarmEventId" in data:
+            del data["lastAlarmEventId"]
+        if "extremeValueDetectedAt" in data:
+            del data["extremeValueDetectedAt"]
+        if "host" in data and data["host"] is None:
+            del data["host"]
 
         return data
 
@@ -1183,3 +1197,144 @@ class Sensor(ProtectAdoptableDeviceModel):
             return None
 
         return self.api.bootstrap.events.get(self.last_motion_event_id)
+
+    @property
+    def last_contact_event(self) -> Optional[Event]:
+        if self.last_contact_event_id is None:
+            return None
+
+        return self.api.bootstrap.events.get(self.last_contact_event_id)
+
+    @property
+    def last_value_event(self) -> Optional[Event]:
+        if self.last_value_event_id is None:
+            return None
+
+        return self.api.bootstrap.events.get(self.last_value_event_id)
+
+    @property
+    def last_alarm_event(self) -> Optional[Event]:
+        if self.last_alarm_event_id is None:
+            return None
+
+        return self.api.bootstrap.events.get(self.last_alarm_event_id)
+
+    async def set_status_light(self, enabled: bool) -> None:
+        """Sets the status indicator light for the sensor"""
+
+        self.led_settings.is_enabled = enabled
+        await self.save_device()
+
+    async def set_mount_type(self, mount_type: MountType) -> None:
+        """Sets current mount type for sensor"""
+
+        self.mount_type = mount_type
+        await self.save_device()
+
+    async def set_motion_status(self, enabled: bool) -> None:
+        """Sets the motion detection type for the sensor"""
+
+        self.motion_settings.is_enabled = enabled
+        await self.save_device()
+
+    async def set_motion_sensitivity(self, sensitivity: int) -> None:
+        """Sets the motion sensitivity for the sensor"""
+
+        self.motion_settings.sensitivity = PercentInt(sensitivity)
+        await self.save_device()
+
+    async def set_temperature_status(self, enabled: bool) -> None:
+        """Sets the temperature detection type for the sensor"""
+
+        self.temperature_settings.is_enabled = enabled
+        await self.save_device()
+
+    async def set_temperature_safe_range(self, low: float, high: float) -> None:
+        """Sets the temperature safe range for the sensor"""
+
+        if low < 0.0:
+            raise BadRequest("Minimum value is 0°C")
+        if high > 45.0:
+            raise BadRequest("Maximum value is 45°C")
+        if high <= low:
+            raise BadRequest("High value must be above low value")
+
+        self.temperature_settings.low_threshold = low
+        self.temperature_settings.high_threshold = high
+        await self.save_device()
+
+    async def remove_temperature_safe_range(self) -> None:
+        """Removes the temperature safe range for the sensor"""
+
+        self.temperature_settings.low_threshold = None
+        self.temperature_settings.high_threshold = None
+        await self.save_device()
+
+    async def set_humidity_status(self, enabled: bool) -> None:
+        """Sets the humidity detection type for the sensor"""
+
+        self.humidity_settings.is_enabled = enabled
+        await self.save_device()
+
+    async def set_humidity_safe_range(self, low: float, high: float) -> None:
+        """Sets the humidity safe range for the sensor"""
+
+        if low < 1.0:
+            raise BadRequest("Minimum value is 1%")
+        if high > 99.0:
+            raise BadRequest("Maximum value is 99%")
+        if high <= low:
+            raise BadRequest("High value must be above low value")
+
+        self.humidity_settings.low_threshold = low
+        self.humidity_settings.high_threshold = high
+        await self.save_device()
+
+    async def remove_humidity_safe_range(self) -> None:
+        """Removes the humidity safe range for the sensor"""
+
+        self.humidity_settings.low_threshold = None
+        self.humidity_settings.high_threshold = None
+        await self.save_device()
+
+    async def set_light_status(self, enabled: bool) -> None:
+        """Sets the light detection type for the sensor"""
+
+        self.light_settings.is_enabled = enabled
+        await self.save_device()
+
+    async def set_light_safe_range(self, low: float, high: float) -> None:
+        """Sets the light safe range for the sensor"""
+
+        if low < 1.0:
+            raise BadRequest("Minimum value is 1 lux")
+        if high > 1000.0:
+            raise BadRequest("Maximum value is 1000 lux")
+        if high <= low:
+            raise BadRequest("High value must be above low value")
+
+        self.light_settings.low_threshold = low
+        self.light_settings.high_threshold = high
+        await self.save_device()
+
+    async def remove_light_safe_range(self) -> None:
+        """Removes the light safe range for the sensor"""
+
+        self.light_settings.low_threshold = None
+        self.light_settings.high_threshold = None
+        await self.save_device()
+
+    async def set_alarm_status(self, enabled: bool) -> None:
+        """Sets the alarm detection type for the sensor"""
+
+        self.alarm_settings.is_enabled = enabled
+        await self.save_device()
+
+    async def set_paired_camera(self, camera: Optional[Camera]) -> None:
+        """Sets the camera paired with the sensor"""
+
+        if camera is None:
+            self.camera_id = None
+        else:
+            self.camera_id = camera.id
+        await self.save_device()
