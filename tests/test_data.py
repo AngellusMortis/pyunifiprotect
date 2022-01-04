@@ -217,6 +217,7 @@ def test_bootstrap_device_not_adopted_enabled(bootstrap, protect_client: Protect
 
 
 @pytest.mark.benchmark(group="construct")
+@pytest.mark.timeout(0)
 def test_bootstrap_benchmark(bootstrap, benchmark: BenchmarkFixture):
     def create():
         Bootstrap.from_unifi_dict(**deepcopy(bootstrap))
@@ -225,6 +226,7 @@ def test_bootstrap_benchmark(bootstrap, benchmark: BenchmarkFixture):
 
 
 @pytest.mark.benchmark(group="construct")
+@pytest.mark.timeout(0)
 def test_bootstrap_benchmark_construct(bootstrap, benchmark: BenchmarkFixture):
     set_no_debug()
 
