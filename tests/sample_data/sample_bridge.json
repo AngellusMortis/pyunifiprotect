@@ -1,13 +1,13 @@
 {
-    "mac": "361E883A69F3",
-    "host": "192.168.150.46",
-    "connectionHost": "192.168.178.217",
+    "mac": "B0B2A1612A7F",
+    "host": "192.168.69.79",
+    "connectionHost": "192.168.216.198",
     "type": "UFP-UAP-B",
-    "name": "Ulqizvp Ivkj",
-    "upSince": 1639807652332,
-    "uptime": null,
-    "lastSeen": 1639844856517,
-    "connectedSince": 1640020584084,
+    "name": "Lim Kgv",
+    "upSince": 1639807964408,
+    "uptime": 1461064,
+    "lastSeen": 1641269028408,
+    "connectedSince": 1641259128101,
     "state": "CONNECTED",
     "hardwareRevision": 19,
     "firmwareVersion": "0.3.1",
@@ -25,7 +25,7 @@
     "wiredConnectionState": {
         "phyRate": null
     },
-    "id": "bc4f4b105c83168972494e82",
+    "id": "7d8ace1179cbd7ab8249602d",
     "isConnected": true,
     "platform": "mt7621",
     "modelKey": "bridge"

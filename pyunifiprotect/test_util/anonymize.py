@@ -100,9 +100,15 @@ def anonymize_dict(obj: Dict[str, Any], name: Optional[str] = None) -> Dict[str,
             if key == "id":
                 obj[key] = anonymize_object_id(value)
                 handled = True
-            elif obj_type == ModelType.EVENT and key in ("thumbnail", "heatmap"):
-                obj[key] = anonymize_prefixed_event_id(value)
-                handled = True
+            elif obj_type == ModelType.EVENT:
+                if key in ("thumbnail", "heatmap"):
+                    obj[key] = anonymize_prefixed_event_id(value)
+                    handled = True
+                elif key == "metadata":
+                    if "sensorId" in obj[key]:
+                        obj[key]["sensorId"] = anonymize_object_id(obj[key]["sensorId"])
+                    if "sensorName" in obj[key]:
+                        obj[key]["sensorName"] = f"{random_word()} {random_word()}".title()
 
         if not handled:
             obj[key] = anonymize_data(value, name=key)

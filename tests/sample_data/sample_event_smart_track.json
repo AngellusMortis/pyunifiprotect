@@ -1,253 +1,49 @@
 {
-    "id": "27c6b760ee9e77f0608bab43",
+    "id": "de56166e7db8456a2c91094a",
     "payload": [
         {
-            "id": "16",
-            "timestamp": 1640022020301,
-            "level": 84,
+            "id": "1",
+            "timestamp": 1641266332643,
+            "level": 88,
             "coord": [
                 329,
-                258,
-                106,
-                436
+                352,
+                170,
+                602
             ],
             "objectType": "person",
             "zones": [
                 1
             ],
             "lines": [],
-            "duration": 342
+            "duration": 337
         },
         {
-            "id": "16",
-            "timestamp": 1640022020657,
-            "level": 86,
+            "id": "1",
+            "timestamp": 1641266333008,
+            "level": 82,
             "coord": [
-                340,
-                249,
-                115,
-                447
+                237,
+                305,
+                270,
+                697
             ],
             "objectType": "person",
             "zones": [
                 1
             ],
             "lines": [],
-            "duration": 343
+            "duration": 339
         },
         {
-            "id": "16",
-            "timestamp": 1640022021037,
-            "level": 86,
-            "coord": [
-                323,
-                241,
-                125,
-                441
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 346
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022021402,
-            "level": 84,
-            "coord": [
-                312,
-                238,
-                120,
-                438
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 347
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022021766,
-            "level": 87,
-            "coord": [
-                290,
-                233,
-                128,
-                441
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 346
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022022187,
-            "level": 85,
-            "coord": [
-                284,
-                233,
-                132,
-                444
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 353
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022022521,
-            "level": 86,
-            "coord": [
-                284,
-                236,
-                132,
-                438
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 351
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022022854,
-            "level": 84,
-            "coord": [
-                292,
-                249,
-                126,
-                444
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 349
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022023232,
-            "level": 84,
-            "coord": [
-                296,
-                258,
-                120,
-                436
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 351
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022023577,
-            "level": 86,
-            "coord": [
-                287,
-                261,
-                123,
-                436
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 350
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022023938,
+            "id": "1",
+            "timestamp": 1641266333373,
             "level": 88,
             "coord": [
-                279,
-                258,
-                125,
-                438
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 351
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022024261,
-            "level": 86,
-            "coord": [
-                275,
-                252,
-                129,
-                444
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 348
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022024598,
-            "level": 87,
-            "coord": [
-                271,
-                252,
-                131,
-                444
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 346
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022024919,
-            "level": 87,
-            "coord": [
-                285,
-                263,
-                123,
-                444
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 343
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022025248,
-            "level": 88,
-            "coord": [
-                303,
-                283,
-                125,
-                438
+                183,
+                219,
+                341,
+                788
             ],
             "objectType": "person",
             "zones": [
@@ -257,414 +53,57 @@
             "duration": 341
         },
         {
-            "id": "16",
-            "timestamp": 1640022025558,
-            "level": 87,
-            "coord": [
-                320,
-                313,
-                129,
-                452
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 337
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022025865,
-            "level": 87,
-            "coord": [
-                326,
-                341,
-                139,
-                472
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 334
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022026230,
-            "level": 91,
-            "coord": [
-                351,
-                372,
-                145,
-                486
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 337
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022026554,
-            "level": 88,
-            "coord": [
-                389,
-                386,
-                142,
-                502
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 335
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022026888,
-            "level": 90,
-            "coord": [
-                435,
-                422,
-                148,
-                527
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 334
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022027247,
-            "level": 80,
-            "coord": [
-                484,
-                436,
-                151,
-                541
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 336
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022027602,
+            "id": "1",
+            "timestamp": 1641266333733,
             "level": 89,
             "coord": [
-                521,
-                438,
-                167,
-                550
+                181,
+                144,
+                385,
+                863
             ],
             "objectType": "person",
             "zones": [
                 1
             ],
             "lines": [],
-            "duration": 337
+            "duration": 342
         },
         {
-            "id": "16",
-            "timestamp": 1640022027955,
-            "level": 84,
+            "id": "1",
+            "timestamp": 1641266334129,
+            "level": 87,
             "coord": [
-                575,
-                419,
-                168,
-                558
+                170,
+                86,
+                447,
+                922
             ],
             "objectType": "person",
             "zones": [
                 1
             ],
             "lines": [],
-            "duration": 338
+            "duration": 347
         },
         {
-            "id": "16",
-            "timestamp": 1640022028275,
-            "level": 86,
+            "id": "1",
+            "timestamp": 1641266334570,
+            "level": 43,
             "coord": [
-                609,
-                411,
-                175,
-                558
+                39,
+                30,
+                502,
+                980
             ],
             "objectType": "person",
             "zones": [
                 1
             ],
             "lines": [],
-            "duration": 336
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022028622,
-            "level": 86,
-            "coord": [
-                651,
-                416,
-                175,
-                552
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 337
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022028964,
-            "level": 89,
-            "coord": [
-                665,
-                427,
-                176,
-                538
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 337
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022029354,
-            "level": 83,
-            "coord": [
-                671,
-                436,
-                176,
-                508
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 338
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022029688,
-            "level": 85,
-            "coord": [
-                676,
-                455,
-                173,
-                486
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 334
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022030005,
-            "level": 83,
-            "coord": [
-                685,
-                474,
-                167,
-                463
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 332
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022030350,
-            "level": 37,
-            "coord": [
-                682,
-                497,
-                165,
-                436
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 331
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022030692,
-            "level": 84,
-            "coord": [
-                682,
-                516,
-                154,
-                416
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 332
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022031025,
-            "level": 80,
-            "coord": [
-                685,
-                527,
-                148,
-                400
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 332
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022031351,
-            "level": 50,
-            "coord": [
-                695,
-                547,
-                139,
-                380
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 331
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022031693,
-            "level": 71,
-            "coord": [
-                709,
-                541,
-                126,
-                363
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 332
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022032057,
-            "level": 79,
-            "coord": [
-                723,
-                541,
-                120,
-                350
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 335
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022032414,
-            "level": 74,
-            "coord": [
-                735,
-                536,
-                115,
-                336
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 337
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022032750,
-            "level": 82,
-            "coord": [
-                737,
-                533,
-                114,
-                341
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 336
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022033104,
-            "level": 86,
-            "coord": [
-                737,
-                527,
-                114,
-                336
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 337
-        },
-        {
-            "id": "16",
-            "timestamp": 1640022033443,
-            "level": 83,
-            "coord": [
-                737,
-                538,
-                114,
-                322
-            ],
-            "objectType": "person",
-            "zones": [
-                1
-            ],
-            "lines": [],
-            "duration": 337
+            "duration": 356
         }
     ],
-    "camera": "4f5fab885aca3f7c226b22b9",
-    "event": "23ef4f8142d5f24556a5be86"
+    "camera": "8ef0d27bf2f7a1ff5029305f",
+    "event": "5d03b9029aeea0ab57a3afdd"
 }

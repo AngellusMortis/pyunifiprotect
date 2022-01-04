@@ -476,7 +476,6 @@ def compare_objs(obj_type, expected, actual):
             del expected["metadata"][key]
     elif obj_type == ModelType.SENSOR.value:
         del expected["bridgeCandidates"]
-        del expected["mountType"]
 
     # sometimes uptime comes back as a str...
     if "uptime" in expected and expected["uptime"] is not None:
