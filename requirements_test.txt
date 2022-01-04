@@ -64,7 +64,7 @@ idna==3.3
     # via yarl
 iniconfig==1.1.1
     # via pytest
-ipython==7.30.1
+ipython==7.29.0
     # via pyunifiprotect (setup.cfg)
 isort==5.10.1
     # via pylint

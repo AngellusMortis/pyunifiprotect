@@ -30,7 +30,7 @@ frozenlist==1.2.0
     #   aiosignal
 idna==3.3
     # via yarl
-ipython==7.30.1
+ipython==7.29.0
     # via pyunifiprotect (setup.cfg)
 jedi==0.18.1
     # via ipython
