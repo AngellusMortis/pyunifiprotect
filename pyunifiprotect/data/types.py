@@ -1,17 +1,7 @@
 from __future__ import annotations
 
 import enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Generic,
-    List,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import Any, Dict, List, Literal, Optional, TypeVar, Union
 
 from packaging.version import Version as BaseVersion
 from pydantic import ConstrainedDecimal, ConstrainedInt
@@ -22,23 +12,11 @@ KT = TypeVar("KT")
 VT = TypeVar("VT")
 
 
-# TODO: Remove when 3.8 support is dropped
-if TYPE_CHECKING:
-
-    class FixSizeOrderedDictBase(dict[KT, VT]):
-        pass
-
-else:
-
-    class FixSizeOrderedDictBase(Generic[KT, VT], dict):
-        pass
-
-
 DEFAULT = "DEFAULT_VALUE"
 DEFAULT_TYPE = Literal["DEFAULT_VALUE"]
 
 
-class FixSizeOrderedDict(FixSizeOrderedDictBase[KT, VT]):
+class FixSizeOrderedDict(dict[KT, VT]):
     """A fixed size ordered dict."""
 
     def __init__(self, *args: Any, max_size: int = 0, **kwargs: Any) -> None:

@@ -165,3 +165,35 @@ addopts = "--cov=pyunifiprotect --cov-append -rP"
 exclude = ".eggs, .git, .tox, dist"
 ignore = "D10, D202, D210, D205, D4, E501, E126, E128, W504, W503, E203"
 max-line-length = 120
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_configs = true
+plugins = "pydantic.mypy"
+disable_error_code = "no-redef"
+exclude = "dist"
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+no_implicit_reexport = true
+strict_equality = true
+implicit_reexport = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "pytest_benchmark.fixture"
+ignore_missing_imports = true

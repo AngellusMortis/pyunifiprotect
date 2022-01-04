@@ -18,7 +18,7 @@ Use `/config/ufp-data` for your `-o` argument below.
 
 ### Without Home Assistant
 
-1. Ensure Python 3.8+ is installed
+1. Ensure Python 3.9+ is installed
 2. Install pyunifiprotect by issuing this command: `pip3 install pyunifiprotect`
 
 Use `./ufp-data` for your `-o` argument below.

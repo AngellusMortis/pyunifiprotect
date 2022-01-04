@@ -4,14 +4,13 @@ import json
 import logging
 from pathlib import Path
 import sys
-from typing import Any, Optional, Union
+from typing import Optional
 
 import typer
 
 from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.data import WSPacket
 from pyunifiprotect.test_util import SampleDataGenerator
-from pyunifiprotect.unifi_protect_server import UpvServer
 
 _LOGGER = logging.getLogger("pyunifiprotect")
 
@@ -59,97 +58,11 @@ OPTION_OUTPUT = typer.Option(
     help="Output folder, defaults to `tests` folder one level above this file",
     envvar="UFP_SAMPLE_DIR",
 )
-OPTION_NEW = typer.Option(False, "--new-client", "-n", help="New Beta API Client")
 OPTION_WS_FILE = typer.Option(None, "--file", "-f", help="Path or raw binary Websocket message")
 ARG_WS_DATA = typer.Argument(None, help="base64 encoded Websocket message")
 
 
 app = typer.Typer()
-
-
-def _call_unifi(protect: Union[UpvServer, ProtectApiClient], method: str, *args: Any, repeat: int = 1) -> None:
-    async def callback() -> None:
-        for _ in range(repeat):
-            res = await getattr(protect, method)(*args)
-            typer.echo(json.dumps(res, indent=2))
-
-            if repeat > 1:
-                await asyncio.sleep(2)
-
-        # Close the Session
-        await protect.close_session()
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(callback())
-
-
-def _listen_to_ws(protect: UpvServer) -> None:
-    async def callback() -> None:
-        await protect.ensure_authenticated()
-        await protect.update()
-
-        typer.echo("Listening websocket...")
-        unsub = protect.subscribe_websocket(lambda u: typer.echo(f"Subscription: updated={u}"))
-
-        for _ in range(15000):
-            await asyncio.sleep(1)
-
-        # Close the Session
-        await protect.async_disconnect_ws()
-        await protect.close_session()
-        unsub()
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(callback())
-
-
-@app.command()
-def sensor(
-    username: str = OPTION_USERNAME,
-    password: str = OPTION_PASSWORD,
-    address: str = OPTION_ADDRESS,
-    port: int = OPTION_PORT,
-    verify: bool = OPTION_VERIFY,
-) -> None:
-    protect = UpvServer(None, address, port, username, password, verify_ssl=verify)
-    _call_unifi(protect, "update", True)
-
-
-@app.command()
-def raw_data(
-    username: str = OPTION_USERNAME,
-    password: str = OPTION_PASSWORD,
-    address: str = OPTION_ADDRESS,
-    port: int = OPTION_PORT,
-    verify: bool = OPTION_VERIFY,
-) -> None:
-    protect = UpvServer(None, address, port, username, password, verify_ssl=verify)
-    _call_unifi(protect, "get_raw_device_info")
-
-
-@app.command()
-def event_data(
-    username: str = OPTION_USERNAME,
-    password: str = OPTION_PASSWORD,
-    address: str = OPTION_ADDRESS,
-    port: int = OPTION_PORT,
-    verify: bool = OPTION_VERIFY,
-    seconds: int = OPTION_SECONDS,
-) -> None:
-    protect = UpvServer(None, address, port, username, password, verify_ssl=verify)
-    _call_unifi(protect, "get_raw_events", 10, repeat=seconds)
-
-
-@app.command()
-def websocket_data(
-    username: str = OPTION_USERNAME,
-    password: str = OPTION_PASSWORD,
-    address: str = OPTION_ADDRESS,
-    port: int = OPTION_PORT,
-    verify: bool = OPTION_VERIFY,
-) -> None:
-    protect = UpvServer(None, address, port, username, password, verify_ssl=verify)
-    _listen_to_ws(protect)
 
 
 @app.command()
@@ -159,18 +72,12 @@ def shell(
     address: str = OPTION_ADDRESS,
     port: int = OPTION_PORT,
     verify: bool = OPTION_VERIFY,
-    new: bool = OPTION_NEW,
 ) -> None:
     if embed is None or colored is None:
         typer.echo("ipython and termcolor required for shell subcommand")
         sys.exit(1)
 
-    if new:
-        protect: Union[UpvServer, ProtectApiClient] = ProtectApiClient(
-            address, port, username, password, verify_ssl=verify
-        )
-    else:
-        protect = UpvServer(None, address, port, username, password, verify_ssl=verify)
+    protect = ProtectApiClient(address, port, username, password, verify_ssl=verify)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(protect.update(True))
 
@@ -181,13 +88,9 @@ def shell(
     _LOGGER.setLevel(logging.DEBUG)
     _LOGGER.addHandler(console_handler)
 
-    klass = "UpvServer"
-    if new:
-        klass = "ProtectApiClient"
-
     c = get_config()
     c.InteractiveShellEmbed.colors = "Linux"
-    embed(header=colored(f"protect = {klass}(*args)", "green"), config=c, using="asyncio")
+    embed(header=colored("protect = ProtectApiClient(*args)", "green"), config=c, using="asyncio")
 
 
 @app.command()

@@ -20,7 +20,6 @@ from pyunifiprotect.test_util.anonymize import (
     anonymize_data,
     anonymize_prefixed_event_id,
 )
-from pyunifiprotect.unifi_data import process_camera
 from pyunifiprotect.utils import from_js_time, is_online
 
 SLEEP_INTERVAL = 2
@@ -229,17 +228,14 @@ class SampleDataGenerator:
             typer.echo("Camera is not online, skipping snapshot, thumbnail and heatmap generation")
 
         # snapshot
-        processd_camera = process_camera(None, self.client._host, deepcopy(obj), False)
+        width = obj["channels"][0]["width"]
+        height = obj["channels"][0]["height"]
         filename = "sample_camera_snapshot"
         if self.anonymize:
             typer.echo(f"Writing {filename}...")
-            placeholder_image(
-                self.output_folder / f"{filename}.png", processd_camera["image_width"], processd_camera["image_height"]
-            )
+            placeholder_image(self.output_folder / f"{filename}.png", width, height)
         else:
-            snapshot = await self.client.get_camera_snapshot(
-                obj["id"], processd_camera["image_width"], processd_camera["image_height"]
-            )
+            snapshot = await self.client.get_camera_snapshot(obj["id"], width, height)
             self.write_image_file(filename, snapshot)
 
     async def generate_motion_data(self, motion_event: Optional[Dict[str, Any]]) -> None:

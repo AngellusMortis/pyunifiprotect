@@ -9,7 +9,7 @@ The API is not documented by Ubiquiti, so there might be misses and/or frequent 
 
 The module is primarily written for the purpose of being used in Home Assistant for the Custom Integration called `unifiprotect` but might be used for other purposes also.
 
-Requires Unifi Protect version 1.20 or higher and Python 3.8+.
+Requires Unifi Protect version 1.20 or higher and Python 3.9+.
 
 ## Install
 

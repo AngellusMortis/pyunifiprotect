@@ -10,13 +10,13 @@ from pathlib import Path
 from shlex import split
 from subprocess import run
 from tempfile import NamedTemporaryFile
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 from unittest.mock import AsyncMock, Mock
 
 import aiohttp
 import pytest
 
-from pyunifiprotect import ProtectApiClient, UpvServer
+from pyunifiprotect import ProtectApiClient
 from pyunifiprotect.data import Camera, ModelType
 from pyunifiprotect.data.nvr import Event
 from pyunifiprotect.data.types import EventType
@@ -165,7 +165,7 @@ def ensure_debug():
     set_debug()
 
 
-async def setup_client(client: Union[ProtectApiClient, UpvServer], websocket: SimpleMockWebsocket):
+async def setup_client(client: ProtectApiClient, websocket: SimpleMockWebsocket):
     client.api_request = AsyncMock(side_effect=mock_api_request)  # type: ignore
     client.api_request_raw = AsyncMock(side_effect=mock_api_request_raw)  # type: ignore
     client.ensure_authenticated = AsyncMock()  # type: ignore
@@ -176,7 +176,7 @@ async def setup_client(client: Union[ProtectApiClient, UpvServer], websocket: Si
     return client
 
 
-async def cleanup_client(client: Union[ProtectApiClient, UpvServer]):
+async def cleanup_client(client: ProtectApiClient):
     await client.async_disconnect_ws()
     with contextlib.suppress(asyncio.CancelledError):
         if client._ws_task is not None:
@@ -186,14 +186,6 @@ async def cleanup_client(client: Union[ProtectApiClient, UpvServer]):
             await client._ws_task
 
     await client.close_session()
-
-
-@pytest.fixture
-@pytest.mark.asyncio
-async def old_protect_client():
-    client = UpvServer(None, "127.0.0.1", 0, "username", "password")
-    yield await setup_client(client, MockWebsocket())
-    await cleanup_client(client)
 
 
 @pytest.fixture

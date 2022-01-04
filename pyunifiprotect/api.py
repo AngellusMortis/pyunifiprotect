@@ -7,18 +7,7 @@ from ipaddress import IPv4Address
 import json as pjson
 import logging
 import time
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Type,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Dict, List, Optional, Set, Type, Union, cast
 from urllib.parse import urljoin
 from uuid import UUID
 
@@ -68,13 +57,6 @@ RETRY_TIMEOUT = 10
 _LOGGER = logging.getLogger(__name__)
 
 
-# TODO: Remove when 3.8 support is dropped
-if TYPE_CHECKING:
-    TaskClass = asyncio.Task[None]
-else:
-    TaskClass = asyncio.Task
-
-
 class BaseApiClient:
     _host: str
     _port: int
@@ -88,7 +70,7 @@ class BaseApiClient:
     _session: Optional[aiohttp.ClientSession] = None
     _ws_session: Optional[aiohttp.ClientSession] = None
     _ws_connection: Optional[aiohttp.ClientWebSocketResponse] = None
-    _ws_task: Optional[TaskClass] = None
+    _ws_task: Optional[asyncio.Task[None]] = None
     _ws_raw_subscriptions: List[Callable[[aiohttp.WSMessage], None]] = []
 
     headers: Optional[Dict[str, str]] = None
