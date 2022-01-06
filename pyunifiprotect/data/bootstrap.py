@@ -109,6 +109,12 @@ def _process_camera_event(event: Event) -> None:
         setattr(event.camera, event_attr, event.id)
 
 
+def _event_callback_ping(obj: ProtectDeviceModel, data: Dict[str, Any]) -> None:
+    data = obj.unifi_dict(data)
+    loop = asyncio.get_event_loop()
+    loop.call_later(EVENT_PING_INTERVAL.total_seconds(), obj.emit_message, data)
+
+
 @dataclass
 class WSStat:
     model: str
@@ -261,11 +267,6 @@ class Bootstrap(ProtectBaseObject):
             old_obj=old_nvr,
         )
 
-    def _event_callback_ping(self, obj: ProtectDeviceModel, data: Dict[str, Any]) -> None:
-        data = obj.unifi_dict(data)
-        loop = asyncio.get_event_loop()
-        loop.call_later(EVENT_PING_INTERVAL.total_seconds(), obj.emit_message, data)
-
     def _process_device_update(
         self, packet: WSPacket, action: Dict[str, Any], data: Dict[str, Any], ignore_stats: bool
     ) -> Optional[WSSubscriptionMessage]:
@@ -289,12 +290,12 @@ class Bootstrap(ProtectBaseObject):
                 self.process_event(obj)
             elif isinstance(obj, Camera):
                 if "last_ring" in data and obj.is_ringing:
-                    self._event_callback_ping(obj, {"last_ring": obj.last_ring})
+                    _event_callback_ping(obj, {"last_ring": obj.last_ring})
             elif isinstance(obj, Sensor):
                 if "alarm_triggered_at" in data and obj.is_alarm_detected:
-                    self._event_callback_ping(obj, {"alarm_triggered_at": obj.alarm_triggered_at})
+                    _event_callback_ping(obj, {"alarm_triggered_at": obj.alarm_triggered_at})
                 elif "tampering_detected_at" in data and obj.is_tampering_detected:
-                    self._event_callback_ping(obj, {"tampering_detected_at": obj.is_tampering_detected})
+                    _event_callback_ping(obj, {"tampering_detected_at": obj.is_tampering_detected})
 
             devices[action["id"]] = obj
 
