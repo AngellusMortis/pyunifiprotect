@@ -15,7 +15,7 @@ from pytest_benchmark.fixture import BenchmarkFixture
 from pyunifiprotect import ProtectApiClient
 from pyunifiprotect.data import EventType, WSPacket
 from pyunifiprotect.data.base import ProtectModel
-from pyunifiprotect.data.devices import Camera
+from pyunifiprotect.data.devices import EVENT_PING_INTERVAL, Camera
 from pyunifiprotect.data.types import ModelType
 from pyunifiprotect.data.websocket import (
     WSAction,
@@ -370,16 +370,20 @@ async def test_ws_event_update(protect_client_no_debug: ProtectApiClient, now, c
     assert bootstrap == bootstrap_before
 
 
+@patch("pyunifiprotect.data.devices.utc_now")
 @pytest.mark.asyncio
 async def test_ws_emit_ring_callback(
-    protect_client_no_debug: ProtectApiClient, now: datetime, camera, packet: WSPacket
+    mock_now, protect_client_no_debug: ProtectApiClient, now: datetime, camera, packet: WSPacket
 ):
+    mock_now.return_value = now
     protect_client = protect_client_no_debug
     protect_client.emit_message = Mock()  # type: ignore
 
     obj = protect_client.bootstrap.cameras[camera["id"]]
-    obj.last_ring = now
+    obj.last_ring = now - EVENT_PING_INTERVAL - timedelta(seconds=1)
+    assert not obj.is_ringing
 
+    obj.last_ring = now
     assert obj.is_ringing
 
     expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"
@@ -405,16 +409,20 @@ async def test_ws_emit_ring_callback(
     protect_client.emit_message.assert_called_once()
 
 
+@patch("pyunifiprotect.data.devices.utc_now")
 @pytest.mark.asyncio
 async def test_ws_emit_tamper_callback(
-    protect_client_no_debug: ProtectApiClient, now: datetime, sensor, packet: WSPacket
+    mock_now, protect_client_no_debug: ProtectApiClient, now: datetime, sensor, packet: WSPacket
 ):
+    mock_now.return_value = now
     protect_client = protect_client_no_debug
     protect_client.emit_message = Mock()  # type: ignore
 
     obj = protect_client.bootstrap.sensors[sensor["id"]]
-    obj.tampering_detected_at = now
+    obj.tampering_detected_at = now - EVENT_PING_INTERVAL - timedelta(seconds=1)
+    assert not obj.is_tampering_detected
 
+    obj.tampering_detected_at = now
     assert obj.is_tampering_detected
 
     expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"
@@ -440,16 +448,20 @@ async def test_ws_emit_tamper_callback(
     protect_client.emit_message.assert_called_once()
 
 
+@patch("pyunifiprotect.data.devices.utc_now")
 @pytest.mark.asyncio
 async def test_ws_emit_alarm_callback(
-    protect_client_no_debug: ProtectApiClient, now: datetime, sensor, packet: WSPacket
+    mock_now, protect_client_no_debug: ProtectApiClient, now: datetime, sensor, packet: WSPacket
 ):
+    mock_now.return_value = now
     protect_client = protect_client_no_debug
     protect_client.emit_message = Mock()  # type: ignore
 
     obj = protect_client.bootstrap.sensors[sensor["id"]]
-    obj.alarm_triggered_at = now
+    obj.alarm_triggered_at = now - EVENT_PING_INTERVAL - timedelta(seconds=1)
+    assert not obj.is_alarm_detected
 
+    obj.alarm_triggered_at = now
     assert obj.is_alarm_detected
 
     expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"

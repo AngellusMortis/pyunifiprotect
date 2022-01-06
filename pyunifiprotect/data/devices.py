@@ -767,7 +767,7 @@ class Camera(ProtectMotionDeviceModel):
             return False
 
         now = utc_now()
-        return self.last_ring + EVENT_PING_INTERVAL < now
+        return self.last_ring + EVENT_PING_INTERVAL >= now
 
     @property
     def is_person_detection_on(self) -> bool:
@@ -1206,7 +1206,7 @@ class Sensor(ProtectAdoptableDeviceModel):
             return False
 
         now = utc_now()
-        return self.tampering_detected_at + EVENT_PING_INTERVAL < now
+        return self.tampering_detected_at + EVENT_PING_INTERVAL >= now
 
     @property
     def is_alarm_detected(self) -> bool:
@@ -1214,7 +1214,7 @@ class Sensor(ProtectAdoptableDeviceModel):
             return False
 
         now = utc_now()
-        return self.alarm_triggered_at + EVENT_PING_INTERVAL < now
+        return self.alarm_triggered_at + EVENT_PING_INTERVAL >= now
 
     @property
     def last_motion_event(self) -> Optional[Event]:
