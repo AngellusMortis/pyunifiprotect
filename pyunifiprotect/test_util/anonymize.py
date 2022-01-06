@@ -106,9 +106,9 @@ def anonymize_dict(obj: Dict[str, Any], name: Optional[str] = None) -> Dict[str,
                     handled = True
                 elif key == "metadata":
                     if "sensorId" in obj[key]:
-                        obj[key]["sensorId"] = anonymize_object_id(obj[key]["sensorId"])
+                        obj[key]["sensorId"]["text"] = anonymize_object_id(obj[key]["sensorId"]["text"])
                     if "sensorName" in obj[key]:
-                        obj[key]["sensorName"] = f"{random_word()} {random_word()}".title()
+                        obj[key]["sensorName"]["text"] = f"{random_word()} {random_word()}".title()
 
         if not handled:
             obj[key] = anonymize_data(value, name=key)

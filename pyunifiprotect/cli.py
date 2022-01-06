@@ -63,6 +63,8 @@ OPTION_NEW = typer.Option(False, "--new-client", "-n", help="New Beta API Client
 OPTION_WS_FILE = typer.Option(None, "--file", "-f", help="Path or raw binary Websocket message")
 ARG_WS_DATA = typer.Argument(None, help="base64 encoded Websocket message")
 
+SLEEP_INTERVAL = 2
+
 
 app = typer.Typer()
 
@@ -210,7 +212,22 @@ def generate_sample_data(
         output_folder = (tests_folder / "sample_data").absolute()
 
     protect = ProtectApiClient(address, port, username, password, verify_ssl=verify, debug=True)
-    SampleDataGenerator(protect, output_folder, anonymize, wait_type).generate()
+
+    def log(msg: str) -> None:
+        typer.echo(msg)
+
+    def log_warning(msg: str) -> None:
+        typer.secho(msg, fg="yellow")
+
+    async def progress(wait_time: int, label: str) -> None:
+        with typer.progressbar(range(wait_time // SLEEP_INTERVAL), label=label) as progress:
+            for i in progress:
+                if i > 0:
+                    await asyncio.sleep(SLEEP_INTERVAL)
+
+    SampleDataGenerator(
+        protect, output_folder, anonymize, wait_type, log=log, log_warning=log_warning, ws_progress=progress
+    ).generate()
 
 
 @app.command()
