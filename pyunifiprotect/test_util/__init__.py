@@ -4,6 +4,7 @@ import asyncio
 from copy import deepcopy
 from datetime import datetime, timezone
 import json
+import logging
 from pathlib import Path
 from shlex import split
 from subprocess import run
@@ -34,6 +35,9 @@ def placeholder_image(output_path: Path, width: int, height: Optional[int] = Non
     image.save(output_path, "PNG")
 
 
+_LOGGER = logging.getLogger(__name__)
+
+
 class SampleDataGenerator:
     """Generate sample data for debugging and testing purposes"""
 
@@ -41,6 +45,7 @@ class SampleDataGenerator:
     _record_ws_start_time: float = time.monotonic()
     _record_listen_for_events: bool = False
     _record_ws_messages: Dict[str, Dict[str, Any]] = {}
+    _cli_mode: bool = False
 
     constants: Dict[str, Any] = {}
     client: ProtectApiClient
@@ -48,22 +53,31 @@ class SampleDataGenerator:
     anonymize: bool
     wait_time: int
 
-    def __init__(self, client: ProtectApiClient, output: Path, anonymize: bool, wait_time: int) -> None:
+    def __init__(
+        self, client: ProtectApiClient, output: Path, anonymize: bool, wait_time: int, cli: bool = False
+    ) -> None:
         self.client = client
         self.output_folder = output
         self.anonymize = anonymize
         self.wait_time = wait_time
+        self._cli_mode = cli
+
+    def log(self, msg: str):
+        if self._cli_mode:
+            typer.echo(msg)
+        else:
+            _LOGGER.debug(msg)
 
     def generate(self) -> None:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(self.async_generate())
 
     async def async_generate(self, close_session: bool = True) -> None:
-        typer.echo(f"Output folder: {self.output_folder}")
+        self.log(f"Output folder: {self.output_folder}")
         self.output_folder.mkdir(parents=True, exist_ok=True)
         self.client.subscribe_raw_websocket(self._handle_ws_message)
 
-        typer.echo("Updating devices...")
+        self.log("Updating devices...")
         await self.client.update(True)
 
         bootstrap: Dict[str, Any] = await self.client.api_request_obj("bootstrap")
@@ -101,7 +115,7 @@ class SampleDataGenerator:
 
     async def record_ws_events(self) -> None:
         if self.wait_time <= 0:
-            typer.echo("Skipping recording Websocket messages...")
+            self.log("Skipping recording Websocket messages...")
             return
 
         self._record_num_ws = 0
@@ -109,11 +123,16 @@ class SampleDataGenerator:
         self._record_listen_for_events = True
         self._record_ws_messages = {}
 
-        typer.echo(f"Waiting {self.wait_time} seconds for WS messages...")
-        with typer.progressbar(range(self.wait_time // SLEEP_INTERVAL), label="Waiting for WS messages") as progress:
-            for i in progress:
-                if i > 0:
-                    await asyncio.sleep(SLEEP_INTERVAL)
+        self.log(f"Waiting {self.wait_time} seconds for WS messages...")
+        if self._cli_mode:
+            with typer.progressbar(
+                range(self.wait_time // SLEEP_INTERVAL), label="Waiting for WS messages"
+            ) as progress:
+                for i in progress:
+                    if i > 0:
+                        await asyncio.sleep(SLEEP_INTERVAL)
+        else:
+            await asyncio.sleep(self.wait_time)
 
         self._record_listen_for_events = False
         await self.client.async_disconnect_ws()
@@ -136,7 +155,7 @@ class SampleDataGenerator:
         if anonymize:
             data = anonymize_data(data)
 
-        typer.echo(f"Writing {name}...")
+        self.log(f"Writing {name}...")
         with open(self.output_folder / f"{name}.json", "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
             f.write("\n")
@@ -145,10 +164,10 @@ class SampleDataGenerator:
 
     def write_binary_file(self, name: str, ext: str, raw: Optional[bytes]) -> None:
         if raw is None:
-            typer.echo(f"No image data, skipping {name}...")
+            self.log(f"No image data, skipping {name}...")
             return
 
-        typer.echo(f"Writing {name}...")
+        self.log(f"Writing {name}...")
         with open(self.output_folder / f"{name}.{ext}", "wb") as f:
             f.write(raw)
 
@@ -173,7 +192,7 @@ class SampleDataGenerator:
                 and event_dict["end"] is not None
             ):
                 motion_event = deepcopy(event_dict)
-                typer.echo(f"Using motion event: {motion_event['id']}...")
+                self.log(f"Using motion event: {motion_event['id']}...")
             elif (
                 smart_detection is None
                 and event_dict["type"] == EventType.SMART_DETECT.value
@@ -181,7 +200,7 @@ class SampleDataGenerator:
                 and event_dict["end"] is not None
             ):
                 smart_detection = deepcopy(event_dict)
-                typer.echo(f"Using smart detection event: {smart_detection['id']}...")
+                self.log(f"Using smart detection event: {smart_detection['id']}...")
 
             if motion_event is not None and smart_detection is not None:
                 break
@@ -216,7 +235,7 @@ class SampleDataGenerator:
                 break
 
         if device_id is None:
-            typer.echo("No camera found. Skipping camera endpoints...")
+            self.log("No camera found. Skipping camera endpoints...")
             return
 
         # json data
@@ -225,14 +244,14 @@ class SampleDataGenerator:
         self.constants["camera_online"] = camera_is_online
 
         if not camera_is_online:
-            typer.echo("Camera is not online, skipping snapshot, thumbnail and heatmap generation")
+            self.log("Camera is not online, skipping snapshot, thumbnail and heatmap generation")
 
         # snapshot
         width = obj["channels"][0]["width"]
         height = obj["channels"][0]["height"]
         filename = "sample_camera_snapshot"
         if self.anonymize:
-            typer.echo(f"Writing {filename}...")
+            self.log(f"Writing {filename}...")
             placeholder_image(self.output_folder / f"{filename}.png", width, height)
         else:
             snapshot = await self.client.get_camera_snapshot(obj["id"], width, height)
@@ -240,14 +259,14 @@ class SampleDataGenerator:
 
     async def generate_motion_data(self, motion_event: Optional[Dict[str, Any]]) -> None:
         if motion_event is None:
-            typer.echo("No motion event, skipping thumbnail and heatmap generation...")
+            self.log("No motion event, skipping thumbnail and heatmap generation...")
             return
 
         # event thumbnail
         filename = "sample_camera_thumbnail"
         thumbnail_id = motion_event["thumbnail"]
         if self.anonymize:
-            typer.echo(f"Writing {filename}...")
+            self.log(f"Writing {filename}...")
             placeholder_image(self.output_folder / f"{filename}.png", 640, 360)
             thumbnail_id = anonymize_prefixed_event_id(thumbnail_id)
         else:
@@ -259,7 +278,7 @@ class SampleDataGenerator:
         filename = "sample_camera_heatmap"
         heatmap_id = motion_event["heatmap"]
         if self.anonymize:
-            typer.echo(f"Writing {filename}...")
+            self.log(f"Writing {filename}...")
             placeholder_image(self.output_folder / f"{filename}.png", 640, 360)
             heatmap_id = anonymize_prefixed_event_id(heatmap_id)
         else:
@@ -284,7 +303,7 @@ class SampleDataGenerator:
 
     async def generate_smart_detection_data(self, smart_detection: Optional[Dict[str, Any]]) -> None:
         if smart_detection is None:
-            typer.echo("No smart detection event, skipping smart detection data...")
+            self.log("No smart detection event, skipping smart detection data...")
             return
 
         data = await self.client.get_event_smart_detect_track_raw(smart_detection["id"])
@@ -299,7 +318,7 @@ class SampleDataGenerator:
                 break
 
         if device_id is None:
-            typer.echo("No light found. Skipping light endpoints...")
+            self.log("No light found. Skipping light endpoints...")
             return
 
         obj = await self.client.api_request_obj(f"lights/{device_id}")
@@ -314,7 +333,7 @@ class SampleDataGenerator:
                 break
 
         if device_id is None:
-            typer.echo("No viewer found. Skipping viewer endpoints...")
+            self.log("No viewer found. Skipping viewer endpoints...")
             return
 
         obj = await self.client.api_request_obj(f"viewers/{device_id}")
@@ -329,7 +348,7 @@ class SampleDataGenerator:
                 break
 
         if device_id is None:
-            typer.echo("No sensor found. Skipping sensor endpoints...")
+            self.log("No sensor found. Skipping sensor endpoints...")
             return
 
         obj = await self.client.api_request_obj(f"sensors/{device_id}")
@@ -344,7 +363,7 @@ class SampleDataGenerator:
                 break
 
         if device_id is None:
-            typer.echo("No bridge found. Skipping bridge endpoints...")
+            self.log("No bridge found. Skipping bridge endpoints...")
             return
 
         obj = await self.client.api_request_obj(f"bridges/{device_id}")
@@ -358,7 +377,7 @@ class SampleDataGenerator:
             break
 
         if device_id is None:
-            typer.echo("No liveview found. Skipping liveview endpoints...")
+            self.log("No liveview found. Skipping liveview endpoints...")
             return
 
         obj = await self.client.api_request_obj(f"liveviews/{device_id}")

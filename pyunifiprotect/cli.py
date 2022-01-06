@@ -113,7 +113,7 @@ def generate_sample_data(
         output_folder = (tests_folder / "sample_data").absolute()
 
     protect = ProtectApiClient(address, port, username, password, verify_ssl=verify, debug=True)
-    SampleDataGenerator(protect, output_folder, anonymize, wait_type).generate()
+    SampleDataGenerator(protect, output_folder, anonymize, wait_type, cli=True).generate()
 
 
 @app.command()
