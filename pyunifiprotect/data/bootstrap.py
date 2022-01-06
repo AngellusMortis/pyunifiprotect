@@ -1,6 +1,7 @@
 """Unifi Protect Bootstrap."""
 from __future__ import annotations
 
+import asyncio
 from copy import deepcopy
 from dataclasses import dataclass
 import logging
@@ -9,9 +10,21 @@ from uuid import UUID
 
 from pydantic.fields import PrivateAttr
 
-from pyunifiprotect.data.base import ProtectBaseObject, ProtectModel, ProtectModelWithId
+from pyunifiprotect.data.base import (
+    ProtectBaseObject,
+    ProtectDeviceModel,
+    ProtectModel,
+    ProtectModelWithId,
+)
 from pyunifiprotect.data.convert import create_from_unifi_dict
-from pyunifiprotect.data.devices import Bridge, Camera, Light, Sensor, Viewer
+from pyunifiprotect.data.devices import (
+    EVENT_PING_INTERVAL,
+    Bridge,
+    Camera,
+    Light,
+    Sensor,
+    Viewer,
+)
 from pyunifiprotect.data.nvr import NVR, Event, Group, Liveview, User
 from pyunifiprotect.data.types import EventType, FixSizeOrderedDict, ModelType
 from pyunifiprotect.data.websocket import (
@@ -94,6 +107,12 @@ def _process_camera_event(event: Event) -> None:
     dt = getattr(event.camera, dt_attr)
     if dt is None or event.start >= dt or (event.end is not None and event.end >= dt):
         setattr(event.camera, event_attr, event.id)
+
+
+def _event_callback_ping(obj: ProtectDeviceModel, data: Dict[str, Any]) -> None:
+    data = obj.unifi_dict(data)
+    loop = asyncio.get_event_loop()
+    loop.call_later(EVENT_PING_INTERVAL.total_seconds(), obj.emit_message, data)
 
 
 @dataclass
@@ -269,6 +288,14 @@ class Bootstrap(ProtectBaseObject):
 
             if isinstance(obj, Event):
                 self.process_event(obj)
+            elif isinstance(obj, Camera):
+                if "last_ring" in data and obj.is_ringing:
+                    _event_callback_ping(obj, {"last_ring": obj.last_ring})
+            elif isinstance(obj, Sensor):
+                if "alarm_triggered_at" in data and obj.is_alarm_detected:
+                    _event_callback_ping(obj, {"alarm_triggered_at": obj.alarm_triggered_at})
+                elif "tampering_detected_at" in data and obj.is_tampering_detected:
+                    _event_callback_ping(obj, {"tampering_detected_at": obj.is_tampering_detected})
 
             devices[action["id"]] = obj
 

@@ -48,6 +48,7 @@ if TYPE_CHECKING:
     from pyunifiprotect.data.nvr import Event, Liveview
 
 PRIVACY_ZONE_NAME = "pyufp_privacy_zone"
+EVENT_PING_INTERVAL = timedelta(seconds=3)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -727,13 +728,6 @@ class Camera(ProtectMotionDeviceModel):
 
         return updated
 
-    @property
-    def last_ring_event(self) -> Optional[Event]:
-        if self.last_ring_event_id is None:
-            return None
-
-        return self.api.bootstrap.events.get(self.last_ring_event_id)
-
     def update_from_dict(self, data: Dict[str, Any]) -> Camera:
         # a message in the past is actually a singal to wipe the message
         reset_at = data.get("lcd_message", {}).get("reset_at")
@@ -743,6 +737,13 @@ class Camera(ProtectMotionDeviceModel):
                 data["lcd_message"] = None
 
         return super().update_from_dict(data)
+
+    @property
+    def last_ring_event(self) -> Optional[Event]:
+        if self.last_ring_event_id is None:
+            return None
+
+        return self.api.bootstrap.events.get(self.last_ring_event_id)
 
     @property
     def last_smart_detect_event(self) -> Optional[Event]:
@@ -759,6 +760,14 @@ class Camera(ProtectMotionDeviceModel):
     def is_privacy_on(self) -> bool:
         index, _ = self.get_privacy_zone()
         return index is not None
+
+    @property
+    def is_ringing(self) -> bool:
+        if self.last_ring is None:
+            return False
+
+        now = utc_now()
+        return self.last_ring + EVENT_PING_INTERVAL < now
 
     @property
     def is_person_detection_on(self) -> bool:
@@ -1190,6 +1199,22 @@ class Sensor(ProtectAdoptableDeviceModel):
             return None
 
         return self.api.bootstrap.cameras[self.camera_id]
+
+    @property
+    def is_tampering_detected(self) -> bool:
+        if self.tampering_detected_at is None:
+            return False
+
+        now = utc_now()
+        return self.tampering_detected_at + EVENT_PING_INTERVAL < now
+
+    @property
+    def is_alarm_detected(self) -> bool:
+        if self.alarm_triggered_at is None:
+            return False
+
+        now = utc_now()
+        return self.alarm_triggered_at + EVENT_PING_INTERVAL < now
 
     @property
     def last_motion_event(self) -> Optional[Event]:
