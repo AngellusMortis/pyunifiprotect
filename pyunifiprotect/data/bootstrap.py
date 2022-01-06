@@ -109,10 +109,9 @@ def _process_camera_event(event: Event) -> None:
         setattr(event.camera, event_attr, event.id)
 
 
-def _event_callback_ping(obj: ProtectDeviceModel, data: Dict[str, Any]) -> None:
-    data = obj.unifi_dict(data)
+def _event_callback_ping(obj: ProtectDeviceModel) -> None:
     loop = asyncio.get_event_loop()
-    loop.call_later(EVENT_PING_INTERVAL.total_seconds(), obj.emit_message, data)
+    loop.call_later(EVENT_PING_INTERVAL.total_seconds(), obj.emit_message, {})
 
 
 @dataclass
@@ -290,12 +289,12 @@ class Bootstrap(ProtectBaseObject):
                 self.process_event(obj)
             elif isinstance(obj, Camera):
                 if "last_ring" in data and obj.is_ringing:
-                    _event_callback_ping(obj, {"last_ring": obj.last_ring})
+                    _event_callback_ping(obj)
             elif isinstance(obj, Sensor):
                 if "alarm_triggered_at" in data and obj.is_alarm_detected:
-                    _event_callback_ping(obj, {"alarm_triggered_at": obj.alarm_triggered_at})
+                    _event_callback_ping(obj)
                 elif "tampering_detected_at" in data and obj.is_tampering_detected:
-                    _event_callback_ping(obj, {"tampering_detected_at": obj.is_tampering_detected})
+                    _event_callback_ping(obj)
 
             devices[action["id"]] = obj
 

@@ -48,7 +48,7 @@ if TYPE_CHECKING:
     from pyunifiprotect.data.nvr import Event, Liveview
 
 PRIVACY_ZONE_NAME = "pyufp_privacy_zone"
-EVENT_PING_INTERVAL = timedelta(seconds=3)
+EVENT_PING_INTERVAL = timedelta(seconds=30)
 
 _LOGGER = logging.getLogger(__name__)
 
