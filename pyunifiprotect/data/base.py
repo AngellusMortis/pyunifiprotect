@@ -550,6 +550,14 @@ class ProtectModelWithId(ProtectModel):
         if not force_emit:
             return
 
+        await self.emit_message(updated)
+
+    async def emit_message(self, updated: Dict[str, Any]) -> None:
+        """Emites fake WS message for ProtectApiClient to process."""
+
+        if self.model is None:
+            raise BadRequest("Unknown model type")
+
         header = WSPacketFrameHeader(
             packet_type=1, payload_format=ProtectWSPayloadFormat.JSON.value, deflated=0, unknown=1, payload_size=1
         )
