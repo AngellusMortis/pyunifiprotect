@@ -10,9 +10,21 @@ from uuid import UUID
 
 from pydantic.fields import PrivateAttr
 
-from pyunifiprotect.data.base import ProtectBaseObject, ProtectDeviceModel, ProtectModel, ProtectModelWithId
+from pyunifiprotect.data.base import (
+    ProtectBaseObject,
+    ProtectDeviceModel,
+    ProtectModel,
+    ProtectModelWithId,
+)
 from pyunifiprotect.data.convert import create_from_unifi_dict
-from pyunifiprotect.data.devices import EVENT_PING_INTERVAL, Bridge, Camera, Light, Sensor, Viewer
+from pyunifiprotect.data.devices import (
+    EVENT_PING_INTERVAL,
+    Bridge,
+    Camera,
+    Light,
+    Sensor,
+    Viewer,
+)
 from pyunifiprotect.data.nvr import NVR, Event, Group, Liveview, User
 from pyunifiprotect.data.types import EventType, FixSizeOrderedDict, ModelType
 from pyunifiprotect.data.websocket import (
