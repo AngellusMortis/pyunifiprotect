@@ -388,7 +388,7 @@ async def test_ws_emit_ring_callback(
 
     expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"
 
-    action_frame: WSJSONPacketFrame = packet.action_frame  # type: ignore
+    action_frame: WSJSONPacketFrame = packet.action_frame
     action_frame.data = {
         "action": "update",
         "newUpdateId": expected_updated_id,
@@ -396,7 +396,7 @@ async def test_ws_emit_ring_callback(
         "id": camera["id"],
     }
 
-    data_frame: WSJSONPacketFrame = packet.data_frame  # type: ignore
+    data_frame: WSJSONPacketFrame = packet.data_frame
     data_frame.data = {"lastRing": to_js_time(obj.last_ring)}
 
     msg = MagicMock()
@@ -427,7 +427,7 @@ async def test_ws_emit_tamper_callback(
 
     expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"
 
-    action_frame: WSJSONPacketFrame = packet.action_frame  # type: ignore
+    action_frame: WSJSONPacketFrame = packet.action_frame
     action_frame.data = {
         "action": "update",
         "newUpdateId": expected_updated_id,
@@ -435,7 +435,7 @@ async def test_ws_emit_tamper_callback(
         "id": sensor["id"],
     }
 
-    data_frame: WSJSONPacketFrame = packet.data_frame  # type: ignore
+    data_frame: WSJSONPacketFrame = packet.data_frame
     data_frame.data = {"tamperingDetectedAt": to_js_time(obj.tampering_detected_at)}
 
     msg = MagicMock()
@@ -466,7 +466,7 @@ async def test_ws_emit_alarm_callback(
 
     expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"
 
-    action_frame: WSJSONPacketFrame = packet.action_frame  # type: ignore
+    action_frame: WSJSONPacketFrame = packet.action_frame
     action_frame.data = {
         "action": "update",
         "newUpdateId": expected_updated_id,
@@ -474,7 +474,7 @@ async def test_ws_emit_alarm_callback(
         "id": sensor["id"],
     }
 
-    data_frame: WSJSONPacketFrame = packet.data_frame  # type: ignore
+    data_frame: WSJSONPacketFrame = packet.data_frame
     data_frame.data = {"alarmTriggeredAt": to_js_time(obj.alarm_triggered_at)}
 
     msg = MagicMock()
