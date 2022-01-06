@@ -9,11 +9,20 @@ from pathlib import Path
 from shlex import split
 from subprocess import run
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    overload,
+)
 
 from PIL import Image
 import aiohttp
-import typer
 
 from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.data import EventType, WSJSONPacketFrame, WSPacket
@@ -23,7 +32,6 @@ from pyunifiprotect.test_util.anonymize import (
 )
 from pyunifiprotect.utils import from_js_time, is_online
 
-SLEEP_INTERVAL = 2
 BLANK_VIDEO_CMD = "ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=size=1280x720:rate=25:color=black -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -t {length} {filename}"
 
 
@@ -36,6 +44,8 @@ def placeholder_image(output_path: Path, width: int, height: Optional[int] = Non
 
 
 _LOGGER = logging.getLogger(__name__)
+LOG_CALLABLE = Callable[[str], None]
+PROGRESS_CALLABLE = Callable[[int, str], Coroutine[Any, Any, None]]
 
 
 class SampleDataGenerator:
@@ -45,7 +55,9 @@ class SampleDataGenerator:
     _record_ws_start_time: float = time.monotonic()
     _record_listen_for_events: bool = False
     _record_ws_messages: Dict[str, Dict[str, Any]] = {}
-    _cli_mode: bool = False
+    _log: Optional[LOG_CALLABLE] = None
+    _log_warning: Optional[LOG_CALLABLE] = None
+    _ws_progress: Optional[PROGRESS_CALLABLE] = None
 
     constants: Dict[str, Any] = {}
     client: ProtectApiClient
@@ -54,19 +66,37 @@ class SampleDataGenerator:
     wait_time: int
 
     def __init__(
-        self, client: ProtectApiClient, output: Path, anonymize: bool, wait_time: int, cli: bool = False
+        self,
+        client: ProtectApiClient,
+        output: Path,
+        anonymize: bool,
+        wait_time: int,
+        log: Optional[LOG_CALLABLE] = None,
+        log_warning: Optional[LOG_CALLABLE] = None,
+        ws_progress: Optional[PROGRESS_CALLABLE] = None,
     ) -> None:
         self.client = client
         self.output_folder = output
         self.anonymize = anonymize
         self.wait_time = wait_time
-        self._cli_mode = cli
+        self._log = log
+        self._log_warning = log_warning
+        self._ws_progress = ws_progress
+
+        if self._log_warning is None and self._log is not None:
+            self._log_warning = self._log
 
     def log(self, msg: str) -> None:
-        if self._cli_mode:
-            typer.echo(msg)
+        if self._log is not None:
+            self._log(msg)
         else:
             _LOGGER.debug(msg)
+
+    def log_warning(self, msg: str) -> None:
+        if self._log_warning is not None:
+            self._log_warning(msg)
+        else:
+            _LOGGER.warning(msg)
 
     def generate(self) -> None:
         loop = asyncio.get_event_loop()
@@ -124,13 +154,8 @@ class SampleDataGenerator:
         self._record_ws_messages = {}
 
         self.log(f"Waiting {self.wait_time} seconds for WS messages...")
-        if self._cli_mode:
-            with typer.progressbar(
-                range(self.wait_time // SLEEP_INTERVAL), label="Waiting for WS messages"
-            ) as progress:
-                for i in progress:
-                    if i > 0:
-                        await asyncio.sleep(SLEEP_INTERVAL)
+        if self._ws_progress is not None:
+            await self._ws_progress(self.wait_time, "Waiting for WS messages")
         else:
             await asyncio.sleep(self.wait_time)
 
@@ -395,11 +420,11 @@ class SampleDataGenerator:
             packet = WSPacket(msg.data)
 
             if not isinstance(packet.action_frame, WSJSONPacketFrame):
-                typer.secho(f"Got non-JSON action frame: {packet.action_frame.payload_format}", fg="yellow")
+                self.log_warning(f"Got non-JSON action frame: {packet.action_frame.payload_format}")
                 return
 
             if not isinstance(packet.data_frame, WSJSONPacketFrame):
-                typer.secho(f"Got non-JSON data frame: {packet.data_frame.payload_format}", fg="yellow")
+                self.log_warning(f"Got non-JSON data frame: {packet.data_frame.payload_format}")
                 return
 
             if self.anonymize:
@@ -413,4 +438,4 @@ class SampleDataGenerator:
                 "data": packet.data_frame.data,
             }
         else:
-            typer.secho(f"Got non-binary message: {msg.type}", fg="yellow")
+            self.log_warning(f"Got non-binary message: {msg.type}")
