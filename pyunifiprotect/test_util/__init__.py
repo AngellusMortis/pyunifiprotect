@@ -62,7 +62,7 @@ class SampleDataGenerator:
         self.wait_time = wait_time
         self._cli_mode = cli
 
-    def log(self, msg: str):
+    def log(self, msg: str) -> None:
         if self._cli_mode:
             typer.echo(msg)
         else:
