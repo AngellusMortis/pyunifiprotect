@@ -277,7 +277,6 @@ class Bootstrap(ProtectBaseObject):
             if isinstance(obj, Event):
                 self.process_event(obj)
             elif isinstance(obj, Camera):
-                print("last_ring", obj.last_ring, now)
                 if "last_ring" in data and obj.last_ring and obj.last_ring + RECENT_EVENT_MAX >= now:
                     print("set_ring_timeout")
                     obj.set_ring_timeout()

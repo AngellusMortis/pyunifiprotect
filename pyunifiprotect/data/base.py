@@ -573,6 +573,7 @@ class ProtectModelWithId(ProtectModel):
         data_frame.header = header
         data_frame.data = updated
 
+        print("emit_message")
         message = self.api.bootstrap.process_ws_packet(WSPacket(action_frame.packed + data_frame.packed))
         if message is not None:
             self.api.emit_message(message)
@@ -608,6 +609,7 @@ class ProtectDeviceModel(ProtectModelWithId):
 
     def _event_callback_ping(self) -> None:
         loop = asyncio.get_event_loop()
+        print("create_ping_task")
         loop.call_later(EVENT_PING_INTERVAL.total_seconds(), asyncio.create_task, self.emit_message({}))
 
 
