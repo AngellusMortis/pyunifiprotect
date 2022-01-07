@@ -8,7 +8,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union
 from uuid import UUID
 
+from pydantic.fields import PrivateAttr
+
 from pyunifiprotect.data.base import (
+    EVENT_PING_INTERVAL,
     ProtectAdoptableDeviceModel,
     ProtectBaseObject,
     ProtectMotionDeviceModel,
@@ -48,7 +51,6 @@ if TYPE_CHECKING:
     from pyunifiprotect.data.nvr import Event, Liveview
 
 PRIVACY_ZONE_NAME = "pyufp_privacy_zone"
-EVENT_PING_INTERVAL = timedelta(seconds=30)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -664,6 +666,7 @@ class Camera(ProtectMotionDeviceModel):
     last_smart_detect: Optional[datetime] = None
     last_smart_detect_event_id: Optional[str] = None
     talkback_stream: Optional[TalkbackStream] = None
+    _last_ring_timeout: Optional[datetime] = PrivateAttr(None)
 
     @classmethod
     def _get_excluded_changed_fields(cls) -> Set[str]:
@@ -762,20 +765,22 @@ class Camera(ProtectMotionDeviceModel):
         return index is not None
 
     @property
-    def is_ringing(self) -> bool:
-        if self.last_ring is None:
-            return False
-
-        now = utc_now()
-        return self.last_ring + EVENT_PING_INTERVAL >= now
-
-    @property
     def is_person_detection_on(self) -> bool:
         return SmartDetectObjectType.PERSON in self.smart_detect_settings.object_types
 
     @property
     def is_vehicle_detection_on(self) -> bool:
         return SmartDetectObjectType.VEHICLE in self.smart_detect_settings.object_types
+
+    @property
+    def is_ringing(self) -> bool:
+        if self._last_ring_timeout is None:
+            return False
+        return utc_now() < self._last_ring_timeout
+
+    def set_ring_timeout(self) -> None:
+        self._last_ring_timeout = utc_now() + EVENT_PING_INTERVAL
+        self._event_callback_ping()
 
     def get_privacy_zone(self) -> Tuple[Optional[int], Optional[CameraZone]]:
         for index, zone in enumerate(self.privacy_zones):
@@ -1168,6 +1173,8 @@ class Sensor(ProtectAdoptableDeviceModel):
     last_value_event_id: Optional[str] = None
     last_alarm_event_id: Optional[str] = None
     extreme_value_detected_at: Optional[datetime] = None
+    _tamper_timeout: Optional[datetime] = PrivateAttr(None)
+    _alarm_timeout: Optional[datetime] = PrivateAttr(None)
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
@@ -1186,8 +1193,6 @@ class Sensor(ProtectAdoptableDeviceModel):
             del data["lastAlarmEventId"]
         if "extremeValueDetectedAt" in data:
             del data["extremeValueDetectedAt"]
-        if "host" in data and data["host"] is None:
-            del data["host"]
 
         return data
 
@@ -1202,19 +1207,23 @@ class Sensor(ProtectAdoptableDeviceModel):
 
     @property
     def is_tampering_detected(self) -> bool:
-        if self.tampering_detected_at is None:
+        if self._tamper_timeout is None:
             return False
-
-        now = utc_now()
-        return self.tampering_detected_at + EVENT_PING_INTERVAL >= now
+        return utc_now() < self._tamper_timeout
 
     @property
     def is_alarm_detected(self) -> bool:
-        if self.alarm_triggered_at is None:
+        if self._alarm_timeout is None:
             return False
+        return utc_now() < self._alarm_timeout
 
-        now = utc_now()
-        return self.alarm_triggered_at + EVENT_PING_INTERVAL >= now
+    def set_tampering_timeout(self) -> None:
+        self._tamper_timeout = utc_now() + EVENT_PING_INTERVAL
+        self._event_callback_ping()
+
+    def set_alarm_timeout(self) -> None:
+        self._alarm_timeout = utc_now() + EVENT_PING_INTERVAL
+        self._event_callback_ping()
 
     @property
     def last_motion_event(self) -> Optional[Event]:

@@ -1,7 +1,6 @@
 """Unifi Protect Bootstrap."""
 from __future__ import annotations
 
-import asyncio
 from copy import deepcopy
 from dataclasses import dataclass
 import logging
@@ -11,20 +10,13 @@ from uuid import UUID
 from pydantic.fields import PrivateAttr
 
 from pyunifiprotect.data.base import (
+    RECENT_EVENT_MAX,
     ProtectBaseObject,
-    ProtectDeviceModel,
     ProtectModel,
     ProtectModelWithId,
 )
 from pyunifiprotect.data.convert import create_from_unifi_dict
-from pyunifiprotect.data.devices import (
-    EVENT_PING_INTERVAL,
-    Bridge,
-    Camera,
-    Light,
-    Sensor,
-    Viewer,
-)
+from pyunifiprotect.data.devices import Bridge, Camera, Light, Sensor, Viewer
 from pyunifiprotect.data.nvr import NVR, Event, Group, Liveview, User
 from pyunifiprotect.data.types import EventType, FixSizeOrderedDict, ModelType
 from pyunifiprotect.data.websocket import (
@@ -33,6 +25,7 @@ from pyunifiprotect.data.websocket import (
     WSPacket,
     WSSubscriptionMessage,
 )
+from pyunifiprotect.utils import utc_now
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -107,11 +100,6 @@ def _process_camera_event(event: Event) -> None:
     dt = getattr(event.camera, dt_attr)
     if dt is None or event.start >= dt or (event.end is not None and event.end >= dt):
         setattr(event.camera, event_attr, event.id)
-
-
-def _event_callback_ping(obj: ProtectDeviceModel) -> None:
-    loop = asyncio.get_event_loop()
-    loop.call_later(EVENT_PING_INTERVAL.total_seconds(), obj.emit_message, {})
 
 
 @dataclass
@@ -284,17 +272,26 @@ class Bootstrap(ProtectBaseObject):
             data = obj.unifi_dict_to_dict(data)
             old_obj = obj.copy()
             obj = obj.update_from_dict(deepcopy(data))
+            now = utc_now()
 
             if isinstance(obj, Event):
                 self.process_event(obj)
             elif isinstance(obj, Camera):
-                if "last_ring" in data and obj.is_ringing:
-                    _event_callback_ping(obj)
+                if "last_ring" in data and obj.last_ring and obj.last_ring + RECENT_EVENT_MAX >= now:
+                    obj.set_ring_timeout()
             elif isinstance(obj, Sensor):
-                if "alarm_triggered_at" in data and obj.is_alarm_detected:
-                    _event_callback_ping(obj)
-                elif "tampering_detected_at" in data and obj.is_tampering_detected:
-                    _event_callback_ping(obj)
+                if (
+                    "alarm_triggered_at" in data
+                    and obj.alarm_triggered_at
+                    and obj.alarm_triggered_at + RECENT_EVENT_MAX >= now
+                ):
+                    obj.set_alarm_timeout()
+                elif (
+                    "tampering_detected_at" in data
+                    and obj.tampering_detected_at
+                    and obj.tampering_detected_at + RECENT_EVENT_MAX >= now
+                ):
+                    obj.set_tampering_timeout()
 
             devices[action["id"]] = obj
 

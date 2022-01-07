@@ -1,6 +1,7 @@
 """Unifi Protect Data."""
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timedelta
 from ipaddress import IPv4Address
 from typing import (
@@ -44,6 +45,8 @@ if TYPE_CHECKING:
 
 
 ProtectObject = TypeVar("ProtectObject", bound="ProtectBaseObject")
+RECENT_EVENT_MAX = timedelta(seconds=30)
+EVENT_PING_INTERVAL = timedelta(seconds=3)
 
 
 class ProtectBaseObject(BaseModel):
@@ -602,6 +605,10 @@ class ProtectDeviceModel(ProtectModelWithId):
             data["hardwareRevision"] = str(data["hardwareRevision"])
 
         return super().unifi_dict_to_dict(data)
+
+    def _event_callback_ping(self) -> None:
+        loop = asyncio.get_event_loop()
+        loop.call_later(EVENT_PING_INTERVAL.total_seconds(), asyncio.create_task, self.emit_message({}))
 
 
 class WiredConnectionState(ProtectBaseObject):

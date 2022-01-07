@@ -6,6 +6,8 @@ import asyncio
 import base64
 from copy import deepcopy
 from datetime import datetime, timedelta
+import logging
+import time
 from typing import Any, Callable, Dict, Optional
 from unittest.mock import MagicMock, Mock, patch
 
@@ -13,6 +15,7 @@ import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
 
 from pyunifiprotect import ProtectApiClient
+from pyunifiprotect.api import NEVER_RAN, WEBSOCKET_CHECK_INTERVAL
 from pyunifiprotect.data import EventType, WSPacket
 from pyunifiprotect.data.base import ProtectModel
 from pyunifiprotect.data.devices import EVENT_PING_INTERVAL, Camera
@@ -22,8 +25,13 @@ from pyunifiprotect.data.websocket import (
     WSJSONPacketFrame,
     WSSubscriptionMessage,
 )
-from pyunifiprotect.utils import print_ws_stat_summary, to_js_time
-from tests.conftest import MockDatetime, MockWebsocket
+from pyunifiprotect.utils import print_ws_stat_summary, to_js_time, utc_now
+from tests.conftest import (
+    TEST_CAMERA_EXISTS,
+    TEST_SENSOR_EXISTS,
+    MockDatetime,
+    MockWebsocket,
+)
 
 PACKET_RAW = "AQEBAAAAAHR4nCXMQQrCMBBA0auUWRvIpJOm8Qbi2gNMZiZQ0NRFqIh4dwluP7z/AZa+7Q3OE7AqnCZo9ro9lbtddFRPhCayuOorOyqYXfEJXcprEqQZ55UHe+xq96u9h7HDWh9x+y+UqeZAsUrQrCFajFQWgu8PBLYjMAIBAQAAAAC2eJxVjr0KwzAMhF8leO6QOLZDOrdT126lg2PLxRA7wVYKIeTdK1PoD2jQfTodtzFcZ2DHiiUfH+xQsYw6IYFGtbyplaKRnDhE+0u7N81mSuW9LnugzxMgGLxSaCZ8u//z8xMifg4BUFuNmvS2kzY6QCqKdaaXsrNOcSN1ywfbgXGtg1JwpjSPfopkjMs4EloypK/ypSirrRau50I6w21vuQQpxaBEiQiThfECa/FBqcT2F6ZyTac="
 
@@ -370,6 +378,7 @@ async def test_ws_event_update(protect_client_no_debug: ProtectApiClient, now, c
     assert bootstrap == bootstrap_before
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @patch("pyunifiprotect.data.devices.utc_now")
 @pytest.mark.asyncio
 async def test_ws_emit_ring_callback(
@@ -380,15 +389,10 @@ async def test_ws_emit_ring_callback(
     protect_client.emit_message = Mock()  # type: ignore
 
     obj = protect_client.bootstrap.cameras[camera["id"]]
-    obj.last_ring = now - EVENT_PING_INTERVAL - timedelta(seconds=1)
-    assert not obj.is_ringing
-
-    obj.last_ring = now
-    assert obj.is_ringing
 
     expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"
 
-    action_frame: WSJSONPacketFrame = packet.action_frame
+    action_frame: WSJSONPacketFrame = packet.action_frame  # type: ignore
     action_frame.data = {
         "action": "update",
         "newUpdateId": expected_updated_id,
@@ -396,19 +400,23 @@ async def test_ws_emit_ring_callback(
         "id": camera["id"],
     }
 
-    data_frame: WSJSONPacketFrame = packet.data_frame
-    data_frame.data = {"lastRing": to_js_time(obj.last_ring)}
+    data_frame: WSJSONPacketFrame = packet.data_frame  # type: ignore
+    data_frame.data = {"lastRing": to_js_time(now)}
 
     msg = MagicMock()
     msg.data = packet.pack_frames()
 
-    with patch("pyunifiprotect.data.bootstrap.EVENT_PING_INTERVAL", timedelta(seconds=0.1)):
+    assert not obj.is_ringing
+    with patch("pyunifiprotect.data.bootstrap.utc_now", mock_now):
         protect_client._process_ws_message(msg)
-        await asyncio.sleep(0.3)
+    assert obj.is_ringing
+    mock_now.return_value = utc_now() + EVENT_PING_INTERVAL
+    assert not obj.is_ringing
 
     protect_client.emit_message.assert_called_once()
 
 
+@pytest.mark.skipif(not TEST_SENSOR_EXISTS, reason="Missing testdata")
 @patch("pyunifiprotect.data.devices.utc_now")
 @pytest.mark.asyncio
 async def test_ws_emit_tamper_callback(
@@ -419,15 +427,10 @@ async def test_ws_emit_tamper_callback(
     protect_client.emit_message = Mock()  # type: ignore
 
     obj = protect_client.bootstrap.sensors[sensor["id"]]
-    obj.tampering_detected_at = now - EVENT_PING_INTERVAL - timedelta(seconds=1)
-    assert not obj.is_tampering_detected
-
-    obj.tampering_detected_at = now
-    assert obj.is_tampering_detected
 
     expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"
 
-    action_frame: WSJSONPacketFrame = packet.action_frame
+    action_frame: WSJSONPacketFrame = packet.action_frame  # type: ignore
     action_frame.data = {
         "action": "update",
         "newUpdateId": expected_updated_id,
@@ -435,19 +438,23 @@ async def test_ws_emit_tamper_callback(
         "id": sensor["id"],
     }
 
-    data_frame: WSJSONPacketFrame = packet.data_frame
-    data_frame.data = {"tamperingDetectedAt": to_js_time(obj.tampering_detected_at)}
+    data_frame: WSJSONPacketFrame = packet.data_frame  # type: ignore
+    data_frame.data = {"tamperingDetectedAt": to_js_time(now)}
 
     msg = MagicMock()
     msg.data = packet.pack_frames()
 
-    with patch("pyunifiprotect.data.bootstrap.EVENT_PING_INTERVAL", timedelta(seconds=0.1)):
+    assert not obj.is_tampering_detected
+    with patch("pyunifiprotect.data.bootstrap.utc_now", mock_now):
         protect_client._process_ws_message(msg)
-        await asyncio.sleep(0.3)
+    assert obj.is_tampering_detected
+    mock_now.return_value = utc_now() + EVENT_PING_INTERVAL
+    assert not obj.is_tampering_detected
 
     protect_client.emit_message.assert_called_once()
 
 
+@pytest.mark.skipif(not TEST_SENSOR_EXISTS, reason="Missing testdata")
 @patch("pyunifiprotect.data.devices.utc_now")
 @pytest.mark.asyncio
 async def test_ws_emit_alarm_callback(
@@ -458,15 +465,10 @@ async def test_ws_emit_alarm_callback(
     protect_client.emit_message = Mock()  # type: ignore
 
     obj = protect_client.bootstrap.sensors[sensor["id"]]
-    obj.alarm_triggered_at = now - EVENT_PING_INTERVAL - timedelta(seconds=1)
-    assert not obj.is_alarm_detected
-
-    obj.alarm_triggered_at = now
-    assert obj.is_alarm_detected
 
     expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"
 
-    action_frame: WSJSONPacketFrame = packet.action_frame
+    action_frame: WSJSONPacketFrame = packet.action_frame  # type: ignore
     action_frame.data = {
         "action": "update",
         "newUpdateId": expected_updated_id,
@@ -474,14 +476,68 @@ async def test_ws_emit_alarm_callback(
         "id": sensor["id"],
     }
 
-    data_frame: WSJSONPacketFrame = packet.data_frame
-    data_frame.data = {"alarmTriggeredAt": to_js_time(obj.alarm_triggered_at)}
+    data_frame: WSJSONPacketFrame = packet.data_frame  # type: ignore
+    data_frame.data = {"alarmTriggeredAt": to_js_time(now)}
 
     msg = MagicMock()
     msg.data = packet.pack_frames()
 
-    with patch("pyunifiprotect.data.bootstrap.EVENT_PING_INTERVAL", timedelta(seconds=0.1)):
+    assert not obj.is_alarm_detected
+    with patch("pyunifiprotect.data.bootstrap.utc_now", mock_now):
         protect_client._process_ws_message(msg)
-        await asyncio.sleep(0.3)
+    assert obj.is_alarm_detected
+    mock_now.return_value = utc_now() + EVENT_PING_INTERVAL
+    assert not obj.is_alarm_detected
 
     protect_client.emit_message.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_check_ws_initial(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
+    caplog.set_level(logging.DEBUG)
+
+    protect_client._last_websocket_check = NEVER_RAN
+    protect_client.reset_ws()
+
+    active_ws = await protect_client.check_ws()
+
+    assert active_ws is True
+    assert ["Checking websocket", "Scheduling WS connect..."] == [rec.message for rec in caplog.records]
+
+
+@pytest.mark.asyncio
+async def test_check_ws_no_ws(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
+    caplog.set_level(logging.DEBUG)
+
+    protect_client._last_websocket_status = True
+    protect_client._last_websocket_check = time.monotonic()
+    protect_client.reset_ws()
+
+    active_ws = await protect_client.check_ws()
+
+    assert active_ws is False
+
+    expected_logs = ["Websocket connection not active, failing back to polling"]
+    assert expected_logs == [rec.message for rec in caplog.records]
+    assert caplog.records[0].levelname == "WARNING"
+
+
+@pytest.mark.asyncio
+async def test_check_ws_reconnect(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
+    caplog.set_level(logging.DEBUG)
+
+    protect_client._last_websocket_status = False
+    protect_client._last_websocket_check = time.monotonic() - WEBSOCKET_CHECK_INTERVAL - 1
+    protect_client.reset_ws()
+
+    active_ws = await protect_client.check_ws()
+
+    assert active_ws is True
+    expected_logs = [
+        "Checking websocket",
+        "Scheduling WS connect...",
+        "Websocket connection not active, failing back to polling",
+        "Websocket connection successfully connected",
+    ]
+    assert expected_logs == [rec.message for rec in caplog.records]
+    assert caplog.records[1].levelname == "DEBUG"

@@ -439,9 +439,9 @@ class CPUInfo(ProtectBaseObject):
 
 
 class MemoryInfo(ProtectBaseObject):
-    available: int
-    free: int
-    total: int
+    available: Optional[int]
+    free: Optional[int]
+    total: Optional[int]
 
 
 class StorageDevice(ProtectBaseObject):
