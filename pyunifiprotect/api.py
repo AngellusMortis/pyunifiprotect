@@ -324,6 +324,8 @@ class BaseApiClient:
             try:
                 self._ws_task.cancel()
                 self._ws_connection = None
+                self._ws_session.close()
+                self._ws_session = None
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Could not cancel WS task")
 
