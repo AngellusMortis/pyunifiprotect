@@ -26,7 +26,7 @@ from pyunifiprotect.data.websocket import (
     WSSubscriptionMessage,
 )
 from pyunifiprotect.utils import print_ws_stat_summary, to_js_time, utc_now
-from tests.conftest import MockDatetime, MockWebsocket
+from tests.conftest import TEST_CAMERA_EXISTS, TEST_SENSOR_EXISTS, MockDatetime, MockWebsocket
 
 PACKET_RAW = "AQEBAAAAAHR4nCXMQQrCMBBA0auUWRvIpJOm8Qbi2gNMZiZQ0NRFqIh4dwluP7z/AZa+7Q3OE7AqnCZo9ro9lbtddFRPhCayuOorOyqYXfEJXcprEqQZ55UHe+xq96u9h7HDWh9x+y+UqeZAsUrQrCFajFQWgu8PBLYjMAIBAQAAAAC2eJxVjr0KwzAMhF8leO6QOLZDOrdT126lg2PLxRA7wVYKIeTdK1PoD2jQfTodtzFcZ2DHiiUfH+xQsYw6IYFGtbyplaKRnDhE+0u7N81mSuW9LnugzxMgGLxSaCZ8u//z8xMifg4BUFuNmvS2kzY6QCqKdaaXsrNOcSN1ywfbgXGtg1JwpjSPfopkjMs4EloypK/ypSirrRau50I6w21vuQQpxaBEiQiThfECa/FBqcT2F6ZyTac="
 
@@ -373,6 +373,7 @@ async def test_ws_event_update(protect_client_no_debug: ProtectApiClient, now, c
     assert bootstrap == bootstrap_before
 
 
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @patch("pyunifiprotect.data.devices.utc_now")
 @pytest.mark.asyncio
 async def test_ws_emit_ring_callback(
@@ -410,6 +411,7 @@ async def test_ws_emit_ring_callback(
     protect_client.emit_message.assert_called_once()
 
 
+@pytest.mark.skipif(not TEST_SENSOR_EXISTS, reason="Missing testdata")
 @patch("pyunifiprotect.data.devices.utc_now")
 @pytest.mark.asyncio
 async def test_ws_emit_tamper_callback(
@@ -447,6 +449,7 @@ async def test_ws_emit_tamper_callback(
     protect_client.emit_message.assert_called_once()
 
 
+@pytest.mark.skipif(not TEST_SENSOR_EXISTS, reason="Missing testdata")
 @patch("pyunifiprotect.data.devices.utc_now")
 @pytest.mark.asyncio
 async def test_ws_emit_alarm_callback(
