@@ -7,7 +7,7 @@ import base64
 from copy import deepcopy
 from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, Optional
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
@@ -377,7 +377,7 @@ async def test_ws_emit_ring_callback(
 ):
     mock_now.return_value = now
     protect_client = protect_client_no_debug
-    protect_client.emit_message = AsyncMock()  # type: ignore
+    protect_client.emit_message = Mock()  # type: ignore
 
     obj = protect_client.bootstrap.cameras[camera["id"]]
 
@@ -398,7 +398,8 @@ async def test_ws_emit_ring_callback(
     msg.data = packet.pack_frames()
 
     assert not obj.is_ringing
-    protect_client._process_ws_message(msg)
+    with patch("pyunifiprotect.data.bootstrap.utc_now", mock_now):
+        protect_client._process_ws_message(msg)
     assert obj.is_ringing
     mock_now.return_value = utc_now() + EVENT_PING_INTERVAL
     assert not obj.is_ringing
@@ -413,7 +414,7 @@ async def test_ws_emit_tamper_callback(
 ):
     mock_now.return_value = now
     protect_client = protect_client_no_debug
-    protect_client.emit_message = AsyncMock()  # type: ignore
+    protect_client.emit_message = Mock()  # type: ignore
 
     obj = protect_client.bootstrap.sensors[sensor["id"]]
 
@@ -434,7 +435,8 @@ async def test_ws_emit_tamper_callback(
     msg.data = packet.pack_frames()
 
     assert not obj.is_tampering_detected
-    protect_client._process_ws_message(msg)
+    with patch("pyunifiprotect.data.bootstrap.utc_now", mock_now):
+        protect_client._process_ws_message(msg)
     assert obj.is_tampering_detected
     mock_now.return_value = utc_now() + EVENT_PING_INTERVAL
     assert not obj.is_tampering_detected
@@ -449,7 +451,7 @@ async def test_ws_emit_alarm_callback(
 ):
     mock_now.return_value = now
     protect_client = protect_client_no_debug
-    protect_client.emit_message = AsyncMock()  # type: ignore
+    protect_client.emit_message = Mock()  # type: ignore
 
     obj = protect_client.bootstrap.sensors[sensor["id"]]
 
@@ -470,7 +472,8 @@ async def test_ws_emit_alarm_callback(
     msg.data = packet.pack_frames()
 
     assert not obj.is_alarm_detected
-    protect_client._process_ws_message(msg)
+    with patch("pyunifiprotect.data.bootstrap.utc_now", mock_now):
+        protect_client._process_ws_message(msg)
     assert obj.is_alarm_detected
     mock_now.return_value = utc_now() + EVENT_PING_INTERVAL
     assert not obj.is_alarm_detected

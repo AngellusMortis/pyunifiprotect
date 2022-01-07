@@ -277,19 +277,21 @@ class Bootstrap(ProtectBaseObject):
             if isinstance(obj, Event):
                 self.process_event(obj)
             elif isinstance(obj, Camera):
-                if "last_ring" in data and obj.last_ring and obj.last_ring + RECENT_EVENT_MAX < now:
+                print("last_ring", obj.last_ring, now)
+                if "last_ring" in data and obj.last_ring and obj.last_ring + RECENT_EVENT_MAX >= now:
+                    print("set_ring_timeout")
                     obj.set_ring_timeout()
             elif isinstance(obj, Sensor):
                 if (
                     "alarm_triggered_at" in data
                     and obj.alarm_triggered_at
-                    and obj.alarm_triggered_at + RECENT_EVENT_MAX < now
+                    and obj.alarm_triggered_at + RECENT_EVENT_MAX >= now
                 ):
                     obj.set_alarm_timeout()
                 elif (
                     "tampering_detected_at" in data
                     and obj.tampering_detected_at
-                    and obj.tampering_detected_at + RECENT_EVENT_MAX < now
+                    and obj.tampering_detected_at + RECENT_EVENT_MAX >= now
                 ):
                     obj.set_tampering_timeout()
 
