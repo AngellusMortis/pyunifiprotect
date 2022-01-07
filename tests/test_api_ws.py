@@ -7,7 +7,7 @@ import base64
 from copy import deepcopy
 from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, Optional
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
@@ -22,7 +22,7 @@ from pyunifiprotect.data.websocket import (
     WSJSONPacketFrame,
     WSSubscriptionMessage,
 )
-from pyunifiprotect.utils import print_ws_stat_summary, to_js_time
+from pyunifiprotect.utils import print_ws_stat_summary, to_js_time, utc_now
 from tests.conftest import MockDatetime, MockWebsocket
 
 PACKET_RAW = "AQEBAAAAAHR4nCXMQQrCMBBA0auUWRvIpJOm8Qbi2gNMZiZQ0NRFqIh4dwluP7z/AZa+7Q3OE7AqnCZo9ro9lbtddFRPhCayuOorOyqYXfEJXcprEqQZ55UHe+xq96u9h7HDWh9x+y+UqeZAsUrQrCFajFQWgu8PBLYjMAIBAQAAAAC2eJxVjr0KwzAMhF8leO6QOLZDOrdT126lg2PLxRA7wVYKIeTdK1PoD2jQfTodtzFcZ2DHiiUfH+xQsYw6IYFGtbyplaKRnDhE+0u7N81mSuW9LnugzxMgGLxSaCZ8u//z8xMifg4BUFuNmvS2kzY6QCqKdaaXsrNOcSN1ywfbgXGtg1JwpjSPfopkjMs4EloypK/ypSirrRau50I6w21vuQQpxaBEiQiThfECa/FBqcT2F6ZyTac="
@@ -377,18 +377,13 @@ async def test_ws_emit_ring_callback(
 ):
     mock_now.return_value = now
     protect_client = protect_client_no_debug
-    protect_client.emit_message = Mock()  # type: ignore
+    protect_client.emit_message = AsyncMock()  # type: ignore
 
     obj = protect_client.bootstrap.cameras[camera["id"]]
-    obj.last_ring = now - EVENT_PING_INTERVAL - timedelta(seconds=1)
-    assert not obj.is_ringing
-
-    obj.last_ring = now
-    assert obj.is_ringing
 
     expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"
 
-    action_frame: WSJSONPacketFrame = packet.action_frame
+    action_frame: WSJSONPacketFrame = packet.action_frame  # type: ignore
     action_frame.data = {
         "action": "update",
         "newUpdateId": expected_updated_id,
@@ -396,15 +391,17 @@ async def test_ws_emit_ring_callback(
         "id": camera["id"],
     }
 
-    data_frame: WSJSONPacketFrame = packet.data_frame
-    data_frame.data = {"lastRing": to_js_time(obj.last_ring)}
+    data_frame: WSJSONPacketFrame = packet.data_frame  # type: ignore
+    data_frame.data = {"lastRing": to_js_time(now)}
 
     msg = MagicMock()
     msg.data = packet.pack_frames()
 
-    with patch("pyunifiprotect.data.bootstrap.EVENT_PING_INTERVAL", timedelta(seconds=0.1)):
-        protect_client._process_ws_message(msg)
-        await asyncio.sleep(0.3)
+    assert not obj.is_ringing
+    protect_client._process_ws_message(msg)
+    assert obj.is_ringing
+    mock_now.return_value = utc_now() + EVENT_PING_INTERVAL
+    assert not obj.is_ringing
 
     protect_client.emit_message.assert_called_once()
 
@@ -416,18 +413,13 @@ async def test_ws_emit_tamper_callback(
 ):
     mock_now.return_value = now
     protect_client = protect_client_no_debug
-    protect_client.emit_message = Mock()  # type: ignore
+    protect_client.emit_message = AsyncMock()  # type: ignore
 
     obj = protect_client.bootstrap.sensors[sensor["id"]]
-    obj.tampering_detected_at = now - EVENT_PING_INTERVAL - timedelta(seconds=1)
-    assert not obj.is_tampering_detected
-
-    obj.tampering_detected_at = now
-    assert obj.is_tampering_detected
 
     expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"
 
-    action_frame: WSJSONPacketFrame = packet.action_frame
+    action_frame: WSJSONPacketFrame = packet.action_frame  # type: ignore
     action_frame.data = {
         "action": "update",
         "newUpdateId": expected_updated_id,
@@ -435,15 +427,17 @@ async def test_ws_emit_tamper_callback(
         "id": sensor["id"],
     }
 
-    data_frame: WSJSONPacketFrame = packet.data_frame
-    data_frame.data = {"tamperingDetectedAt": to_js_time(obj.tampering_detected_at)}
+    data_frame: WSJSONPacketFrame = packet.data_frame  # type: ignore
+    data_frame.data = {"tamperingDetectedAt": to_js_time(now)}
 
     msg = MagicMock()
     msg.data = packet.pack_frames()
 
-    with patch("pyunifiprotect.data.bootstrap.EVENT_PING_INTERVAL", timedelta(seconds=0.1)):
-        protect_client._process_ws_message(msg)
-        await asyncio.sleep(0.3)
+    assert not obj.is_tampering_detected
+    protect_client._process_ws_message(msg)
+    assert obj.is_tampering_detected
+    mock_now.return_value = utc_now() + EVENT_PING_INTERVAL
+    assert not obj.is_tampering_detected
 
     protect_client.emit_message.assert_called_once()
 
@@ -455,18 +449,13 @@ async def test_ws_emit_alarm_callback(
 ):
     mock_now.return_value = now
     protect_client = protect_client_no_debug
-    protect_client.emit_message = Mock()  # type: ignore
+    protect_client.emit_message = AsyncMock()  # type: ignore
 
     obj = protect_client.bootstrap.sensors[sensor["id"]]
-    obj.alarm_triggered_at = now - EVENT_PING_INTERVAL - timedelta(seconds=1)
-    assert not obj.is_alarm_detected
-
-    obj.alarm_triggered_at = now
-    assert obj.is_alarm_detected
 
     expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"
 
-    action_frame: WSJSONPacketFrame = packet.action_frame
+    action_frame: WSJSONPacketFrame = packet.action_frame  # type: ignore
     action_frame.data = {
         "action": "update",
         "newUpdateId": expected_updated_id,
@@ -474,14 +463,16 @@ async def test_ws_emit_alarm_callback(
         "id": sensor["id"],
     }
 
-    data_frame: WSJSONPacketFrame = packet.data_frame
-    data_frame.data = {"alarmTriggeredAt": to_js_time(obj.alarm_triggered_at)}
+    data_frame: WSJSONPacketFrame = packet.data_frame  # type: ignore
+    data_frame.data = {"alarmTriggeredAt": to_js_time(now)}
 
     msg = MagicMock()
     msg.data = packet.pack_frames()
 
-    with patch("pyunifiprotect.data.bootstrap.EVENT_PING_INTERVAL", timedelta(seconds=0.1)):
-        protect_client._process_ws_message(msg)
-        await asyncio.sleep(0.3)
+    assert not obj.is_alarm_detected
+    protect_client._process_ws_message(msg)
+    assert obj.is_alarm_detected
+    mock_now.return_value = utc_now() + EVENT_PING_INTERVAL
+    assert not obj.is_alarm_detected
 
     protect_client.emit_message.assert_called_once()
