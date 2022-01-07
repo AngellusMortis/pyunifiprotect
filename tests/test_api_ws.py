@@ -6,6 +6,8 @@ import asyncio
 import base64
 from copy import deepcopy
 from datetime import datetime, timedelta
+import logging
+import time
 from typing import Any, Callable, Dict, Optional
 from unittest.mock import MagicMock, Mock, patch
 
@@ -13,6 +15,7 @@ import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
 
 from pyunifiprotect import ProtectApiClient
+from pyunifiprotect.api import NEVER_RAN, WEBSOCKET_CHECK_INTERVAL
 from pyunifiprotect.data import EventType, WSPacket
 from pyunifiprotect.data.base import ProtectModel
 from pyunifiprotect.data.devices import EVENT_PING_INTERVAL, Camera
@@ -479,3 +482,54 @@ async def test_ws_emit_alarm_callback(
     assert not obj.is_alarm_detected
 
     protect_client.emit_message.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_check_ws_initial(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
+    caplog.set_level(logging.DEBUG)
+
+    protect_client._last_websocket_check = NEVER_RAN
+    protect_client.reset_ws()
+
+    active_ws = await protect_client.check_ws()
+
+    assert active_ws is True
+    assert ["Checking websocket", "Scheduling WS connect..."] == [rec.message for rec in caplog.records]
+
+
+@pytest.mark.asyncio
+async def test_check_ws_no_ws(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
+    caplog.set_level(logging.DEBUG)
+
+    protect_client._last_websocket_status = True
+    protect_client._last_websocket_check = time.monotonic()
+    protect_client.reset_ws()
+
+    active_ws = await protect_client.check_ws()
+
+    assert active_ws is False
+
+    expected_logs = ["Websocket connection not active, failing back to polling"]
+    assert expected_logs == [rec.message for rec in caplog.records]
+    assert caplog.records[0].levelname == "WARNING"
+
+
+@pytest.mark.asyncio
+async def test_check_ws_reconnect(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
+    caplog.set_level(logging.DEBUG)
+
+    protect_client._last_websocket_status = False
+    protect_client._last_websocket_check = time.monotonic() - WEBSOCKET_CHECK_INTERVAL - 1
+    protect_client.reset_ws()
+
+    active_ws = await protect_client.check_ws()
+
+    assert active_ws is True
+    expected_logs = [
+        "Checking websocket",
+        "Scheduling WS connect...",
+        "Websocket connection not active, failing back to polling",
+        "Websocket connection successfully connected",
+    ]
+    assert expected_logs == [rec.message for rec in caplog.records]
+    assert caplog.records[1].levelname == "DEBUG"

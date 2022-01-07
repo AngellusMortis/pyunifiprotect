@@ -6,14 +6,12 @@ from copy import deepcopy
 from datetime import datetime, timedelta
 from io import BytesIO
 from ipaddress import IPv4Address
-import logging
-import time
 from unittest.mock import AsyncMock, patch
 
 from PIL import Image
 import pytest
 
-from pyunifiprotect.api import NEVER_RAN, WEBSOCKET_CHECK_INTERVAL, ProtectApiClient
+from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.data import (
     Camera,
     Event,
@@ -338,56 +336,6 @@ async def test_get_events_not_event_with_type(protect_client: ProtectApiClient, 
     protect_client.get_events_raw = AsyncMock(return_value=[camera])  # type: ignore
 
     assert await protect_client.get_events() == []
-
-
-@pytest.mark.asyncio
-async def test_check_ws_initial(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
-    caplog.set_level(logging.DEBUG)
-
-    protect_client._last_websocket_check = NEVER_RAN
-    protect_client.reset_ws()
-
-    active_ws = await protect_client.check_ws()
-
-    assert active_ws is True
-    assert ["Checking websocket"] == [rec.message for rec in caplog.records]
-
-
-@pytest.mark.asyncio
-async def test_check_ws_no_ws(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
-    caplog.set_level(logging.DEBUG)
-
-    protect_client._last_websocket_status = True
-    protect_client._last_websocket_check = time.monotonic()
-    protect_client.reset_ws()
-
-    active_ws = await protect_client.check_ws()
-
-    assert active_ws is False
-
-    expected_logs = ["Websocket connection not active, failing back to polling"]
-    assert expected_logs == [rec.message for rec in caplog.records]
-    assert caplog.records[0].levelname == "WARNING"
-
-
-@pytest.mark.asyncio
-async def test_check_ws_reconnect(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
-    caplog.set_level(logging.DEBUG)
-
-    protect_client._last_websocket_status = False
-    protect_client._last_websocket_check = time.monotonic() - WEBSOCKET_CHECK_INTERVAL - 1
-    protect_client.reset_ws()
-
-    active_ws = await protect_client.check_ws()
-
-    assert active_ws is True
-    expected_logs = [
-        "Checking websocket",
-        "Websocket connection not active, failing back to polling",
-        "Websocket connection successfully connected",
-    ]
-    assert expected_logs == [rec.message for rec in caplog.records]
-    assert caplog.records[1].levelname == "DEBUG"
 
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
