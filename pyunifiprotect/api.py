@@ -49,7 +49,7 @@ NEVER_RAN = -1000
 # how many seconds before the bootstrap is refreshed from Protect
 DEVICE_UPDATE_INTERVAL = 900
 # how many seconds before before we check for an active WS connection
-WEBSOCKET_CHECK_INTERVAL = 120
+WEBSOCKET_CHECK_INTERVAL = 30
 # retry timeout for thumbnails/heatmaps
 RETRY_TIMEOUT = 10
 
@@ -68,7 +68,6 @@ class BaseApiClient:
     _last_websocket_check: float = NEVER_RAN
     _last_websocket_status: bool = False
     _session: Optional[aiohttp.ClientSession] = None
-    _ws_session: Optional[aiohttp.ClientSession] = None
     _ws_connection: Optional[aiohttp.ClientWebSocketResponse] = None
     _ws_task: Optional[asyncio.Task[None]] = None
     _ws_raw_subscriptions: List[Callable[[aiohttp.WSMessage], None]] = []
@@ -324,9 +323,6 @@ class BaseApiClient:
             try:
                 self._ws_task.cancel()
                 self._ws_connection = None
-                if self._ws_session is not None:
-                    self._ws_session.close()
-                    self._ws_session = None
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Could not cancel WS task")
 
@@ -339,7 +335,7 @@ class BaseApiClient:
 
         self.reset_ws()
         _LOGGER.debug("Scheduling WS connect...")
-        self._ws_task = asyncio.ensure_future(self._setup_websocket())
+        self._ws_task = asyncio.create_task(self._setup_websocket())
 
     async def async_disconnect_ws(self) -> None:
         """Disconnect the websocket."""
@@ -348,9 +344,6 @@ class BaseApiClient:
             return
 
         await self._ws_connection.close()
-        if self._ws_session is not None:
-            await self._ws_session.close()
-            self._ws_session = None
 
     async def _message_loop(self, msg: aiohttp.WSMessage) -> bool:
         for sub in self._ws_raw_subscriptions:
@@ -374,11 +367,9 @@ class BaseApiClient:
         if self.last_update_id:
             url += f"?lastUpdateId={self.last_update_id}"
 
-        if not self._ws_session:
-            self._ws_session = aiohttp.ClientSession()
         _LOGGER.debug("WS connecting to: %s", url)
 
-        self._ws_connection = await self._ws_session.ws_connect(url, ssl=self._verify_ssl, headers=self.headers)
+        self._ws_connection = await self.get_session().ws_connect(url, ssl=self._verify_ssl, headers=self.headers)
         try:
             async for msg in self._ws_connection:
                 if not await self._message_loop(msg):
