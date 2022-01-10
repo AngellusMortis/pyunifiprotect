@@ -60,7 +60,7 @@ NEVER_RAN = -1000
 # how many seconds before the bootstrap is refreshed from Protect
 DEVICE_UPDATE_INTERVAL = 900
 # how many seconds before before we check for an active WS connection
-WEBSOCKET_CHECK_INTERVAL = 120
+WEBSOCKET_CHECK_INTERVAL = 30
 # retry timeout for thumbnails/heatmaps
 RETRY_TIMEOUT = 10
 
@@ -357,7 +357,7 @@ class BaseApiClient:
 
         self.reset_ws()
         _LOGGER.debug("Scheduling WS connect...")
-        self._ws_task = asyncio.ensure_future(self._setup_websocket())
+        self._ws_task = asyncio.create_task(self._setup_websocket())
 
     async def async_disconnect_ws(self) -> None:
         """Disconnect the websocket."""
@@ -386,6 +386,7 @@ class BaseApiClient:
         return True
 
     async def _setup_websocket(self) -> None:
+        _LOGGER.debug("Setting up WS")
         await self.ensure_authenticated()
 
         url = urljoin(f"{self.base_ws_url}{self.ws_path}", "updates")
