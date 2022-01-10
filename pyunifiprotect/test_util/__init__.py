@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import json
 import logging
 from pathlib import Path
+import shutil
 from shlex import split
 from subprocess import run
 import time
@@ -63,6 +64,7 @@ class SampleDataGenerator:
     constants: Dict[str, Any] = {}
     client: ProtectApiClient
     output_folder: Path
+    do_zip: bool
     anonymize: bool
     wait_time: int
 
@@ -75,9 +77,11 @@ class SampleDataGenerator:
         log: Optional[LOG_CALLABLE] = None,
         log_warning: Optional[LOG_CALLABLE] = None,
         ws_progress: Optional[PROGRESS_CALLABLE] = None,
+        do_zip: bool = False,
     ) -> None:
         self.client = client
         self.output_folder = output
+        self.do_zip = do_zip
         self.anonymize = anonymize
         self.wait_time = wait_time
         self._log = log
@@ -112,7 +116,7 @@ class SampleDataGenerator:
         await self.client.update(True)
 
         bootstrap: Dict[str, Any] = await self.client.api_request_obj("bootstrap")
-        bootstrap = self.write_json_file("sample_bootstrap", bootstrap)
+        bootstrap = await self.write_json_file("sample_bootstrap", bootstrap)
         self.constants["server_name"] = bootstrap["nvr"]["name"]
         self.constants["server_id"] = bootstrap["nvr"]["mac"]
         self.constants["server_version"] = bootstrap["nvr"]["version"]
@@ -142,7 +146,17 @@ class SampleDataGenerator:
         if close_session:
             await self.client.close_session()
 
-        self.write_json_file("sample_constants", self.constants, anonymize=False)
+        await self.write_json_file("sample_constants", self.constants, anonymize=False)
+
+        if self.do_zip:
+            self.log("Zipping files...")
+
+            def zip_files() -> None:
+                shutil.make_archive(str(self.output_folder), "zip", self.output_folder)
+                shutil.rmtree(self.output_folder)
+
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(None, zip_files)
 
     async def record_ws_events(self) -> None:
         if self.wait_time <= 0:
@@ -162,17 +176,19 @@ class SampleDataGenerator:
 
         self._record_listen_for_events = False
         await self.client.async_disconnect_ws()
-        self.write_json_file("sample_ws_messages", self._record_ws_messages, anonymize=False)
+        await self.write_json_file("sample_ws_messages", self._record_ws_messages, anonymize=False)
 
     @overload
-    def write_json_file(self, name: str, data: List[Any], anonymize: Optional[bool] = None) -> List[Any]:
+    async def write_json_file(self, name: str, data: List[Any], anonymize: Optional[bool] = None) -> List[Any]:
         ...
 
     @overload
-    def write_json_file(self, name: str, data: Dict[str, Any], anonymize: Optional[bool] = None) -> Dict[str, Any]:
+    async def write_json_file(
+        self, name: str, data: Dict[str, Any], anonymize: Optional[bool] = None
+    ) -> Dict[str, Any]:
         ...
 
-    def write_json_file(
+    async def write_json_file(
         self, name: str, data: Union[List[Any], Dict[str, Any]], anonymize: Optional[bool] = None
     ) -> Union[List[Any], Dict[str, Any]]:
         if anonymize is None:
@@ -182,23 +198,32 @@ class SampleDataGenerator:
             data = anonymize_data(data)
 
         self.log(f"Writing {name}...")
-        with open(self.output_folder / f"{name}.json", "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4)
-            f.write("\n")
+
+        def write() -> None:
+            with open(self.output_folder / f"{name}.json", "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4)
+                f.write("\n")
+
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, write)
 
         return data
 
-    def write_binary_file(self, name: str, ext: str, raw: Optional[bytes]) -> None:
-        if raw is None:
-            self.log(f"No image data, skipping {name}...")
-            return
+    async def write_binary_file(self, name: str, ext: str, raw: Optional[bytes]) -> None:
+        def write() -> None:
+            if raw is None:
+                self.log(f"No image data, skipping {name}...")
+                return
 
-        self.log(f"Writing {name}...")
-        with open(self.output_folder / f"{name}.{ext}", "wb") as f:
-            f.write(raw)
+            self.log(f"Writing {name}...")
+            with open(self.output_folder / f"{name}.{ext}", "wb") as f:
+                f.write(raw)
 
-    def write_image_file(self, name: str, raw: Optional[bytes]) -> None:
-        self.write_binary_file(name, "png", raw)
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, write)
+
+    async def write_image_file(self, name: str, raw: Optional[bytes]) -> None:
+        await self.write_binary_file(name, "png", raw)
 
     async def generate_event_data(self) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         data = await self.client.get_events_raw()
@@ -232,7 +257,7 @@ class SampleDataGenerator:
                 break
 
         # anonymize data after pulling events
-        data = self.write_json_file("sample_raw_events", data)
+        data = await self.write_json_file("sample_raw_events", data)
 
         return motion_event, smart_detection
 
@@ -266,7 +291,7 @@ class SampleDataGenerator:
 
         # json data
         obj = await self.client.api_request_obj(f"cameras/{device_id}")
-        self.write_json_file("sample_camera", deepcopy(obj))
+        await self.write_json_file("sample_camera", deepcopy(obj))
         self.constants["camera_online"] = camera_is_online
 
         if not camera_is_online:
@@ -284,7 +309,7 @@ class SampleDataGenerator:
             snapshot = await self.client.get_camera_snapshot(
                 obj["id"], processd_camera["image_width"], processd_camera["image_height"]
             )
-            self.write_image_file(filename, snapshot)
+            await self.write_image_file(filename, snapshot)
 
     async def generate_motion_data(self, motion_event: Optional[Dict[str, Any]]) -> None:
         if motion_event is None:
@@ -300,7 +325,7 @@ class SampleDataGenerator:
             thumbnail_id = anonymize_prefixed_event_id(thumbnail_id)
         else:
             img = await self.client.get_event_thumbnail(thumbnail_id)
-            self.write_image_file(filename, img)
+            await self.write_image_file(filename, img)
         self.constants["camera_thumbnail"] = thumbnail_id
 
         # event heatmap
@@ -312,7 +337,7 @@ class SampleDataGenerator:
             heatmap_id = anonymize_prefixed_event_id(heatmap_id)
         else:
             img = await self.client.get_event_heatmap(heatmap_id)
-            self.write_image_file(filename, img)
+            await self.write_image_file(filename, img)
         self.constants["camera_heatmap"] = heatmap_id
 
         # event video
@@ -327,7 +352,7 @@ class SampleDataGenerator:
             video = await self.client.get_camera_video(
                 motion_event["camera"], from_js_time(motion_event["start"]), from_js_time(motion_event["end"]), 2
             )
-            self.write_binary_file(filename, "mp4", video)
+            await self.write_binary_file(filename, "mp4", video)
         self.constants["camera_video_length"] = length
 
     async def generate_smart_detection_data(self, smart_detection: Optional[Dict[str, Any]]) -> None:
@@ -336,7 +361,7 @@ class SampleDataGenerator:
             return
 
         data = await self.client.get_event_smart_detect_track_raw(smart_detection["id"])
-        self.write_json_file("sample_event_smart_track", data)
+        await self.write_json_file("sample_event_smart_track", data)
 
     async def generate_light_data(self) -> None:
         objs = await self.client.api_request_list("lights")
@@ -351,7 +376,7 @@ class SampleDataGenerator:
             return
 
         obj = await self.client.api_request_obj(f"lights/{device_id}")
-        self.write_json_file("sample_light", obj)
+        await self.write_json_file("sample_light", obj)
 
     async def generate_viewport_data(self) -> None:
         objs = await self.client.api_request_list("viewers")
@@ -366,7 +391,7 @@ class SampleDataGenerator:
             return
 
         obj = await self.client.api_request_obj(f"viewers/{device_id}")
-        self.write_json_file("sample_viewport", obj)
+        await self.write_json_file("sample_viewport", obj)
 
     async def generate_sensor_data(self) -> None:
         objs = await self.client.api_request_list("sensors")
@@ -381,7 +406,7 @@ class SampleDataGenerator:
             return
 
         obj = await self.client.api_request_obj(f"sensors/{device_id}")
-        self.write_json_file("sample_sensor", obj)
+        await self.write_json_file("sample_sensor", obj)
 
     async def generate_bridge_data(self) -> None:
         objs = await self.client.api_request_list("bridges")
@@ -396,7 +421,7 @@ class SampleDataGenerator:
             return
 
         obj = await self.client.api_request_obj(f"bridges/{device_id}")
-        self.write_json_file("sample_bridge", obj)
+        await self.write_json_file("sample_bridge", obj)
 
     async def generate_liveview_data(self) -> None:
         objs = await self.client.api_request_list("liveviews")
@@ -410,7 +435,7 @@ class SampleDataGenerator:
             return
 
         obj = await self.client.api_request_obj(f"liveviews/{device_id}")
-        self.write_json_file("sample_liveview", obj)
+        await self.write_json_file("sample_liveview", obj)
 
     def _handle_ws_message(self, msg: aiohttp.WSMessage) -> None:
         if not self._record_listen_for_events:
