@@ -20,6 +20,7 @@ from pyunifiprotect.data.types import (
     DEFAULT,
     DEFAULT_TYPE,
     ChimeDuration,
+    ChimeType,
     Color,
     DoorbellMessageType,
     IRLEDMode,
@@ -225,8 +226,8 @@ class CameraChannel(ProtectBaseObject):
     bitrate: int
     min_bitrate: int
     max_bitrate: int
-    min_client_adaptive_bit_rate: int
-    min_motion_adaptive_bit_rate: int
+    min_client_adaptive_bit_rate: Optional[int]
+    min_motion_adaptive_bit_rate: Optional[int]
     fps_values: List[int]
     idr_interval: int
 
@@ -608,6 +609,11 @@ class FeatureFlags(ProtectBaseObject):
         return not self.has_hdr
 
 
+class CameraLenses(ProtectBaseObject):
+    id: int
+    video: VideoStats
+
+
 class Camera(ProtectMotionDeviceModel):
     is_deleting: bool
     # Microphone Sensitivity
@@ -651,6 +657,7 @@ class Camera(ProtectMotionDeviceModel):
     voltage: Optional[float]
     # requires 1.21+
     is_wireless_uplink_enabled: Optional[bool]
+    lenses: List[CameraLenses]
 
     # TODO:
     # apMac
@@ -659,7 +666,6 @@ class Camera(ProtectMotionDeviceModel):
     # lastPrivacyZonePositionId
     # recordingSchedule
     # smartDetectLines
-    # lenses
 
     # not directly from Unifi
     last_ring_event_id: Optional[str] = None
@@ -778,6 +784,44 @@ class Camera(ProtectMotionDeviceModel):
             return False
         return utc_now() < self._last_ring_timeout
 
+    @property
+    def chime_type(self) -> Optional[ChimeType]:
+        try:
+            return ChimeType(self.chime_duration)
+        except ValueError:
+            return None
+
+    @property
+    def high_camera_channel(self) -> Optional[CameraChannel]:
+        if len(self.channels) == 3:
+            return self.channels[0]
+        return None
+
+    @property
+    def medium_camera_channel(self) -> Optional[CameraChannel]:
+        if len(self.channels) == 3:
+            return self.channels[1]
+        return None
+
+    @property
+    def low_camera_channel(self) -> Optional[CameraChannel]:
+        if len(self.channels) == 3:
+            return self.channels[2]
+        return None
+
+    @property
+    def default_camera_channel(self) -> Optional[CameraChannel]:
+        for channel in [self.high_camera_channel, self.medium_camera_channel, self.low_camera_channel]:
+            if channel is not None and channel.is_rtsp_enabled:
+                return channel
+        return self.high_camera_channel
+
+    @property
+    def package_camera_channel(self) -> Optional[CameraChannel]:
+        if self.feature_flags.has_package_camera and len(self.channels) == 4:
+            return self.channels[3]
+        return None
+
     def set_ring_timeout(self) -> None:
         self._last_ring_timeout = utc_now() + EVENT_PING_INTERVAL
         self._event_callback_ping()
@@ -891,6 +935,11 @@ class Camera(ProtectMotionDeviceModel):
 
         self.speaker_settings.volume = PercentInt(level)
         await self.save_device()
+
+    async def set_chime_type(self, chime_type: ChimeType) -> None:
+        """Sets chime type for doorbell. Requires camera to be a doorbell"""
+
+        await self.set_chime_duration(chime_type.value)
 
     async def set_chime_duration(self, duration: int) -> None:
         """Sets chime duration for doorbell. Requires camera to be a doorbell"""

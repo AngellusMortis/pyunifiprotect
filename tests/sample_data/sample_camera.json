@@ -199,6 +199,27 @@
                 30
             ],
             "idrInterval": 5
+        },
+        {
+            "id": 3,
+            "videoId": "video4",
+            "name": "Package Camera",
+            "enabled": true,
+            "isRtspEnabled": true,
+            "rtspAlias": "UJcKvWSmZ8OTOMLA",
+            "width": 1600,
+            "height": 1200,
+            "fps": 2,
+            "bitrate": 1000000,
+            "minBitrate": 32000,
+            "maxBitrate": 2000000,
+            "minClientAdaptiveBitRate": null,
+            "minMotionAdaptiveBitRate": null,
+            "fpsValues": [
+                1,
+                2
+            ],
+            "idrInterval": 1
         }
     ],
     "ispSettings": {
@@ -419,7 +440,7 @@
             "enhanced"
         ],
         "hasSquareEventThumbnail": true,
-        "hasPackageCamera": false,
+        "hasPackageCamera": true,
         "privacyMaskCapability": {
             "maxMasks": 16,
             "rectangleOnly": false
@@ -493,7 +514,21 @@
         "signalStrength": -59,
         "ssid": "Mortis Camera"
     },
-    "lenses": [],
+    "lenses": [
+        {
+            "id": 2,
+            "video": {
+                "recordingStart": 1641836571312,
+                "recordingEnd": 1641839060505,
+                "recordingStartLQ": null,
+                "recordingEndLQ": null,
+                "timelapseStart": 1641836571312,
+                "timelapseEnd": 1641838896182,
+                "timelapseStartLQ": null,
+                "timelapseEndLQ": null
+            }
+        }
+    ],
     "id": "46ba311ab6a61ddae765d652",
     "isConnected": true,
     "platform": "s5l",
