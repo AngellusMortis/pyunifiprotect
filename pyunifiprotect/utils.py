@@ -291,6 +291,16 @@ def ws_stat_summmary(stats: List[WSStat]) -> Tuple[List[WSStat], float, Counter[
     return unfiltered, percent, keys, models, actions
 
 
+async def write_json(output_path: Path, data: Union[List[Any], Dict[str, Any]]) -> None:
+    def write() -> None:
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+            f.write("\n")
+
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, write)
+
+
 def print_ws_stat_summary(stats: List[WSStat], output: Optional[Callable[[Any], Any]] = None) -> None:
     if output is None:
         output = typer.echo
@@ -348,15 +358,7 @@ async def profile_ws(
 
     if output_path:
         json_data = [s.__dict__ for s in protect.bootstrap.ws_stats]
-
-        def write() -> None:
-            if output_path:
-                with open(output_path, "w", encoding="utf8") as outfile:
-                    json.dump(json_data, outfile, indent=4)
-
-        _LOGGER.debug("Writing json to %s...", output_path)
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, write)
+        await write_json(output_path, json_data)
 
     if do_print:
         print_ws_stat_summary(protect.bootstrap.ws_stats, output=print_output)

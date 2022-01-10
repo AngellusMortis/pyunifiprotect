@@ -3,7 +3,6 @@
 import asyncio
 from copy import deepcopy
 from datetime import datetime, timezone
-import json
 import logging
 from pathlib import Path
 from shlex import split
@@ -32,7 +31,7 @@ from pyunifiprotect.test_util.anonymize import (
     anonymize_prefixed_event_id,
 )
 from pyunifiprotect.unifi_data import process_camera
-from pyunifiprotect.utils import from_js_time, is_online
+from pyunifiprotect.utils import from_js_time, is_online, write_json
 
 BLANK_VIDEO_CMD = "ffmpeg -y -hide_banner -loglevel error -f lavfi -i color=size=1280x720:rate=25:color=black -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -t {length} {filename}"
 
@@ -198,14 +197,7 @@ class SampleDataGenerator:
             data = anonymize_data(data)
 
         self.log(f"Writing {name}...")
-
-        def write() -> None:
-            with open(self.output_folder / f"{name}.json", "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=4)
-                f.write("\n")
-
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, write)
+        await write_json(self.output_folder / f"{name}.json", data)
 
         return data
 
