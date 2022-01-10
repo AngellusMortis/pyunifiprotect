@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections import Counter
 import contextlib
 from copy import deepcopy
@@ -8,6 +9,8 @@ from decimal import Decimal
 from enum import Enum
 from inspect import isclass
 from ipaddress import AddressValueError, IPv4Address
+import json
+import logging
 import os
 from pathlib import Path
 import re
@@ -17,6 +20,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Coroutine,
     Dict,
     Iterable,
     List,
@@ -32,13 +36,18 @@ from pydantic.utils import to_camel
 import typer
 
 from pyunifiprotect.data.types import Version
+from pyunifiprotect.exceptions import NvrError
 
 if TYPE_CHECKING:
+    from pyunifiprotect.api import ProtectApiClient
     from pyunifiprotect.data import CoordType
     from pyunifiprotect.data.bootstrap import WSStat
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 DEBUG_ENV = "UFP_DEBUG"
+PROGRESS_CALLABLE = Callable[[int, str], Coroutine[Any, Any, None]]
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def set_debug() -> None:
@@ -60,8 +69,8 @@ async def get_response_reason(response: ClientResponse) -> str:
     reason = str(response.reason)
 
     try:
-        json = await response.json()
-        reason = json.get("error", str(json))
+        data = await response.json()
+        reason = data.get("error", str(data))
     except Exception:  # pylint: disable=broad-except
         with contextlib.suppress(Exception):
             reason = await response.text()
@@ -282,6 +291,16 @@ def ws_stat_summmary(stats: List[WSStat]) -> Tuple[List[WSStat], float, Counter[
     return unfiltered, percent, keys, models, actions
 
 
+async def write_json(output_path: Path, data: Union[List[Any], Dict[str, Any]]) -> None:
+    def write() -> None:
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+            f.write("\n")
+
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, write)
+
+
 def print_ws_stat_summary(stats: List[WSStat], output: Optional[Callable[[Any], Any]] = None) -> None:
     if output is None:
         output = typer.echo
@@ -311,3 +330,35 @@ def print_ws_stat_summary(stats: List[WSStat], output: Optional[Callable[[Any], 
     lines.append("-" * 80)
 
     output("\n".join(lines))
+
+
+async def profile_ws(
+    protect: ProtectApiClient,
+    duration: int,
+    output_path: Optional[Path] = None,
+    ws_progress: Optional[PROGRESS_CALLABLE] = None,
+    do_print: bool = True,
+    print_output: Optional[Callable[[Any], Any]] = None,
+) -> None:
+
+    if protect.bootstrap.capture_ws_stats:
+        raise NvrError("Profile already in progress")
+
+    _LOGGER.debug("Starting profile...")
+    protect.bootstrap.clear_ws_stats()
+    protect.bootstrap.capture_ws_stats = True
+
+    if ws_progress is not None:
+        await ws_progress(duration, "Waiting for WS messages")
+    else:
+        await asyncio.sleep(duration)
+
+    protect.bootstrap.capture_ws_stats = False
+    _LOGGER.debug("Finished profile...")
+
+    if output_path:
+        json_data = [s.__dict__ for s in protect.bootstrap.ws_stats]
+        await write_json(output_path, json_data)
+
+    if do_print:
+        print_ws_stat_summary(protect.bootstrap.ws_stats, output=print_output)
