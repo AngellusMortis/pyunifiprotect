@@ -68,6 +68,7 @@ class BaseApiClient:
     _last_websocket_check: float = NEVER_RAN
     _last_websocket_status: bool = False
     _session: Optional[aiohttp.ClientSession] = None
+    _ws_session: Optional[aiohttp.ClientSession] = None
     _ws_connection: Optional[aiohttp.ClientWebSocketResponse] = None
     _ws_task: Optional[asyncio.Task[None]] = None
     _ws_raw_subscriptions: List[Callable[[aiohttp.WSMessage], None]] = []
@@ -323,6 +324,9 @@ class BaseApiClient:
             try:
                 self._ws_task.cancel()
                 self._ws_connection = None
+                if self._ws_session is not None:
+                    self._ws_session.close()
+                    self._ws_session = None
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Could not cancel WS task")
 
@@ -344,6 +348,9 @@ class BaseApiClient:
             return
 
         await self._ws_connection.close()
+        if self._ws_session is not None:
+            await self._ws_session.close()
+            self._ws_session = None
 
     async def _message_loop(self, msg: aiohttp.WSMessage) -> bool:
         for sub in self._ws_raw_subscriptions:
@@ -361,15 +368,18 @@ class BaseApiClient:
         return True
 
     async def _setup_websocket(self) -> None:
+        _LOGGER.debug("Setting up WS")
         await self.ensure_authenticated()
 
         url = urljoin(f"{self.base_ws_url}{self.ws_path}", "updates")
         if self.last_update_id:
             url += f"?lastUpdateId={self.last_update_id}"
 
+        if not self._ws_session:
+            self._ws_session = aiohttp.ClientSession()
         _LOGGER.debug("WS connecting to: %s", url)
 
-        self._ws_connection = await self.get_session().ws_connect(url, ssl=self._verify_ssl, headers=self.headers)
+        self._ws_connection = await self._ws_session.ws_connect(url, ssl=self._verify_ssl, headers=self.headers)
         try:
             async for msg in self._ws_connection:
                 if not await self._message_loop(msg):
