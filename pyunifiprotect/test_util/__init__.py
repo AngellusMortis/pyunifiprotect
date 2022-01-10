@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 import json
 import logging
 from pathlib import Path
-import shutil
 from shlex import split
+import shutil
 from subprocess import run
 import time
 from typing import (

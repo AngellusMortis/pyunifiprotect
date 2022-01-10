@@ -107,7 +107,7 @@ def _listen_to_ws(protect: UpvServer) -> None:
     loop.run_until_complete(callback())
 
 
-def _setup_logger(level: str = logging.DEBUG, show_level: bool = False) -> None:
+def _setup_logger(level: int = logging.DEBUG, show_level: bool = False) -> None:
     console_handler = logging.StreamHandler()
     console_handler.setLevel(level)
     if show_level:
