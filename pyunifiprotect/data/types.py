@@ -271,6 +271,13 @@ class SensorStatusType(str, ValuesEnumMixin, enum.Enum):
     HIGH = "high"
 
 
+@enum.unique
+class ChimeType(int, enum.Enum):
+    NONE = 0
+    MECHINCAL = 300
+    DIGITAL = 1000
+
+
 class DoorbellText(ConstrainedStr):
     max_length = 30
 

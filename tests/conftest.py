@@ -456,7 +456,6 @@ def compare_objs(obj_type, expected, actual):
         del expected["lastPrivacyZonePositionId"]
         del expected["recordingSchedules"]
         del expected["smartDetectLines"]
-        del expected["lenses"]
         del expected["featureFlags"]["mountPositions"]
         del expected["featureFlags"]["focus"]
         del expected["featureFlags"]["pan"]
