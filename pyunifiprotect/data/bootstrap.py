@@ -87,8 +87,6 @@ def _process_sensor_event(event: Event) -> None:
     elif event.type == EventType.SENSOR_ALARM:
         dt = event.sensor.alarm_triggered_at
         if dt is None or event.start >= dt or (event.end is not None and event.end >= dt):
-            # UniFi Protect Bug: alarm triggered at does not update
-            event.sensor.alarm_triggered_at = event.end
             event.sensor.last_value_event_id = event.id
 
 
