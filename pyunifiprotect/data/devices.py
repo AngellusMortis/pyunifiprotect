@@ -245,6 +245,10 @@ class CameraChannel(ProtectBaseObject):
 
         return f"rtsps://{self.api.connection_host}:{self.api.bootstrap.nvr.ports.rtsps}/{self.rtsp_alias}?enableSrtp"
 
+    @property
+    def is_package(self) -> bool:
+        return self.fps <= 2
+
 
 class ISPSettings(ProtectBaseObject):
     ae_mode: str
