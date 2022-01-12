@@ -274,7 +274,7 @@ class SensorStatusType(str, ValuesEnumMixin, enum.Enum):
 @enum.unique
 class ChimeType(int, enum.Enum):
     NONE = 0
-    MECHINCAL = 300
+    MECHANICAL = 300
     DIGITAL = 1000
 
 
