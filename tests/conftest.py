@@ -441,6 +441,8 @@ NEW_FIELDS = {
     "timestamp",
     "isWirelessUplinkEnabled",
     "marketName",
+    # 1.21.0-beta3
+    "isPoorNetwork",
 }
 
 

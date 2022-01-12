@@ -648,6 +648,7 @@ class Camera(ProtectMotionDeviceModel):
     feature_flags: FeatureFlags
     pir_settings: PIRSettings
     lcd_message: Optional[LCDMessage]
+    lenses: List[CameraLenses]
     platform: str
     has_speaker: bool
     has_wifi: bool
@@ -656,8 +657,8 @@ class Camera(ProtectMotionDeviceModel):
     is_managed: bool
     voltage: Optional[float]
     # requires 1.21+
+    is_poor_network: Optional[bool]
     is_wireless_uplink_enabled: Optional[bool]
-    lenses: List[CameraLenses]
 
     # TODO:
     # apMac
