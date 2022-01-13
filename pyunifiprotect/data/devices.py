@@ -1271,6 +1271,30 @@ class Sensor(ProtectAdoptableDeviceModel):
             return False
         return utc_now() < self._alarm_timeout
 
+    @property
+    def is_contact_sensor_enabled(self) -> bool:
+        return self.mount_type in [MountType.DOOR, MountType.WINDOW, MountType.GARAGE]
+
+    @property
+    def is_motion_sensor_enabled(self) -> bool:
+        return self.mount_type != MountType.LEAK and self.motion_settings.is_enabled
+
+    @property
+    def is_alarm_sensor_enabled(self) -> bool:
+        return self.mount_type != MountType.LEAK and self.alarm_settings.is_enabled
+
+    @property
+    def is_light_sensor_enabled(self) -> bool:
+        return self.mount_type != MountType.LEAK and self.light_settings.is_enabled
+
+    @property
+    def is_temperature_sensor_enabled(self) -> bool:
+        return self.mount_type != MountType.LEAK and self.temperature_settings.is_enabled
+
+    @property
+    def is_humidity_sensor_enabled(self) -> bool:
+        return self.mount_type != MountType.LEAK and self.humidity_settings.is_enabled
+
     def set_tampering_timeout(self) -> None:
         self._tamper_timeout = utc_now() + EVENT_PING_INTERVAL
         self._event_callback_ping()
