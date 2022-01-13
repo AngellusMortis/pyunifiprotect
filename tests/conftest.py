@@ -128,6 +128,10 @@ class SimpleMockWebsocket:
     def __init__(self):
         self.events = []
 
+    @property
+    def closed(self):
+        return self.is_closed
+
     async def close(self):
         self.is_closed = True
 
