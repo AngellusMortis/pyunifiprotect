@@ -323,12 +323,16 @@ class BaseApiClient:
         if self._ws_task is not None:
             try:
                 self._ws_task.cancel()
-                self._ws_connection = None
-                if self._ws_session is not None:
-                    self._ws_session.close()
-                    self._ws_session = None
+                self._ws_task = None
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Could not cancel WS task")
+
+        if self._ws_task is None:
+            self._ws_connection = None
+            if self._ws_session is not None:
+                _LOGGER.debug("Reseting WS session...")
+                self._ws_session.close()
+                self._ws_session = None
 
     async def async_connect_ws(self) -> None:
         """Connect the websocket."""
@@ -348,9 +352,7 @@ class BaseApiClient:
             return
 
         await self._ws_connection.close()
-        if self._ws_session is not None:
-            await self._ws_session.close()
-            self._ws_session = None
+        self.reset_ws()
 
     async def _message_loop(self, msg: aiohttp.WSMessage) -> bool:
         for sub in self._ws_raw_subscriptions:
@@ -386,8 +388,7 @@ class BaseApiClient:
                     break
         finally:
             _LOGGER.debug("websocket disconnected")
-            self._ws_connection = None
-            self._ws_task = None
+            self.reset_ws()
 
     def subscribe_raw_websocket(self, ws_callback: Callable[[aiohttp.WSMessage], None]) -> Callable[[], None]:
         """
