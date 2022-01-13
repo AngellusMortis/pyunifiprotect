@@ -57,6 +57,12 @@ RETRY_TIMEOUT = 10
 _LOGGER = logging.getLogger(__name__)
 
 
+def _reset_connection(connection: Optional[Union[aiohttp.ClientSession, aiohttp.ClientWebSocketResponse]]) -> None:
+    if connection is not None and not connection.closed:
+        loop = asyncio.get_running_loop()
+        loop.create_task(connection.close())
+
+
 class BaseApiClient:
     _host: str
     _port: int
@@ -313,13 +319,6 @@ class BaseApiClient:
 
         return self._is_authenticated
 
-    def _reset_connection(
-        self, connection: Optional[Union[aiohttp.ClientSession, aiohttp.ClientWebSocketResponse]]
-    ) -> None:
-        if connection is not None and not connection.closed:
-            loop = asyncio.get_running_loop()
-            loop.create_task(connection.close())
-
     def reset_ws(self) -> None:
         """Forcibly resets Websocket"""
 
@@ -335,11 +334,11 @@ class BaseApiClient:
                 _LOGGER.exception("Could not cancel WS task")
 
         if self._ws_task is None:
-            self._reset_connection(self._ws_connection)
+            _reset_connection(self._ws_connection)
             self._ws_connection = None
             if self._ws_session is not None:
                 _LOGGER.debug("Reseting WS session...")
-            self._reset_connection(self._ws_session)
+            _reset_connection(self._ws_session)
             self._ws_connection = None
 
     async def async_connect_ws(self) -> None:
