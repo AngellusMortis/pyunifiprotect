@@ -400,9 +400,9 @@ class ProtectApiClient(BaseApiClient):
     _minimum_score: int
     _subscribed_models: Set[ModelType]
     _ignore_stats: bool
+    _ws_subscriptions: List[Callable[[WSSubscriptionMessage], None]]
     _bootstrap: Optional[Bootstrap] = None
     _last_update_dt: Optional[datetime] = None
-    _ws_subscriptions: List[Callable[[WSSubscriptionMessage], None]] = []
     _connection_host: Optional[Union[IPv4Address, str]] = None
 
     ignore_unadopted: bool
@@ -434,6 +434,7 @@ class ProtectApiClient(BaseApiClient):
         self._minimum_score = minimum_score
         self._subscribed_models = subscribed_models or set()
         self._ignore_stats = ignore_stats
+        self._ws_subscriptions = []
         self.ignore_unadopted = ignore_unadopted
 
         if override_connection_host:

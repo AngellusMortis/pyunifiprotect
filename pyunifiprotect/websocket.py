@@ -17,10 +17,10 @@ class Websocket:
     reconnect_wait: int
     _auth: CALLBACK_TYPE
     _timeout: float
+    _ws_subscriptions: List[Callable[[WSMessage], None]]
 
     _headers: Optional[Dict[str, str]] = None
     _timer_task: Optional[asyncio.Task[None]] = None
-    _ws_subscriptions: List[Callable[[WSMessage], None]] = []
     _ws_connection: Optional[ClientWebSocketResponse] = None
 
     def __init__(
@@ -37,6 +37,7 @@ class Websocket:
         self.verify = verify
         self._auth = auth_callback  # type: ignore
         self._timeout = time.monotonic()
+        self._ws_subscriptions = []
 
     @property
     def is_connected(self) -> bool:
