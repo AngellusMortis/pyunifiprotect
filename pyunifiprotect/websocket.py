@@ -52,6 +52,7 @@ class Websocket:
             _LOGGER.exception("Error from Websocket: %s", msg.data)
             return False
 
+        _LOGGER.debug("Recieved WS message. Sending to %s subscribers...", len(self._ws_subscriptions))
         for sub in self._ws_subscriptions:
             try:
                 sub(msg)
