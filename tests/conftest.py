@@ -168,13 +168,14 @@ def ensure_debug():
     set_debug()
 
 
-async def setup_client(client: ProtectApiClient, websocket: SimpleMockWebsocket):
+async def setup_client(client: ProtectApiClient, websocket: SimpleMockWebsocket, timeout: int = 0):
     mock_cs = Mock()
     mock_session = AsyncMock()
     mock_session.ws_connect = AsyncMock(return_value=websocket)
     mock_cs.return_value = mock_session
 
     ws = await client.get_websocket()
+    ws.timeout_interval = timeout
     ws._get_session = mock_cs  # type: ignore
     client.api_request = AsyncMock(side_effect=mock_api_request)  # type: ignore
     client.api_request_raw = AsyncMock(side_effect=mock_api_request_raw)  # type: ignore
@@ -213,7 +214,7 @@ async def protect_client_ws():
     set_no_debug()
 
     client = ProtectApiClient("127.0.0.1", 0, "username", "password")
-    yield await setup_client(client, MockWebsocket())
+    yield await setup_client(client, MockWebsocket(), timeout=30)
     await cleanup_client(client)
 
 
