@@ -115,10 +115,12 @@ class Websocket:
         asyncio.create_task(self._websocket_loop())
         start_time = self._timeout
         connect_timeout = time.monotonic() + self.timeout_interval
+        was_connected = False
         # wait for message to ensure it is connected
         while time.monotonic() < connect_timeout and start_time == self._timeout:
-            if not self.is_connected:
+            if was_connected and not self.is_connected:
                 break
+            was_connected = self.is_connected
             await asyncio.sleep(1)
 
         if self.is_connected and time.monotonic() > connect_timeout:
