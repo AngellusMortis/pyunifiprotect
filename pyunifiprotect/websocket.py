@@ -64,6 +64,7 @@ class Websocket:
     async def _websocket_loop(self) -> None:
         _LOGGER.debug("Connecting WS to %s", self.url)
         self._headers = await self._auth()
+        _LOGGER.debug(self._headers)
 
         session = self._get_session()
         self._ws_connection = await session.ws_connect(self.url, ssl=self.verify, headers=self._headers)
@@ -117,10 +118,14 @@ class Websocket:
         connect_timeout = time.monotonic() + self.timeout_interval
         # wait for message to ensure it is connected
         while time.monotonic() < connect_timeout and start_time == self._timeout:
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(1)
+
+        if self._ws_connection and time.monotonic() > connect_timeout:
+            await self.disconnect()
         if self._ws_connection is None:
             _LOGGER.warning("Failed to connect to Websocket")
             return False
+
         _LOGGER.info("Connected to Websocket successfully")
         return True
 

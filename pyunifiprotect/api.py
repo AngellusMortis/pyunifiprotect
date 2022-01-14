@@ -49,8 +49,6 @@ from pyunifiprotect.websocket import Websocket
 NEVER_RAN = -1000
 # how many seconds before the bootstrap is refreshed from Protect
 DEVICE_UPDATE_INTERVAL = 900
-# how many seconds before before we check for an active WS connection
-WEBSOCKET_CHECK_INTERVAL = 30
 # retry timeout for thumbnails/heatmaps
 RETRY_TIMEOUT = 10
 
