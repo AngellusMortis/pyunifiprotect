@@ -1,6 +1,7 @@
 import asyncio
 from collections.abc import Callable
 import logging
+from socket import timeout
 import time
 from typing import Any, Coroutine, Dict, List, Optional
 
@@ -62,13 +63,15 @@ class Websocket:
 
         return True
 
-    async def _websocket_loop(self) -> None:
+    async def _websocket_loop(self, start_event: asyncio.Event) -> None:
         _LOGGER.debug("Connecting WS to %s", self.url)
+        start_event.set()
         self._headers = await self._auth()
 
         session = self._get_session()
         self._ws_connection = await session.ws_connect(self.url, ssl=self.verify, headers=self._headers)
         try:
+            await self._reset_timeout()
             async for msg in self._ws_connection:
                 if not self._process_message(msg):
                     break
@@ -112,20 +115,15 @@ class Websocket:
     async def connect(self) -> bool:
         """Connect the websocket."""
 
+        start_event = asyncio.Event()
         _LOGGER.debug("Scheduling WS connect...")
-        asyncio.create_task(self._websocket_loop())
-        start_time = self._timeout
-        connect_timeout = time.monotonic() + self.timeout_interval
-        was_connected = False
-        # wait for message to ensure it is connected
-        while time.monotonic() < connect_timeout and start_time == self._timeout:
-            if was_connected and not self.is_connected:
-                break
-            was_connected = self.is_connected
-            await asyncio.sleep(1)
+        asyncio.create_task(self._websocket_loop(start_event))
 
-        if self.is_connected and time.monotonic() > connect_timeout:
+        try:
+            await asyncio.wait_for(start_event.wait(), timeout=self.timeout_interval)
+        except asyncio.TimeoutError:
             await self.disconnect()
+
         if self._ws_connection is None:
             _LOGGER.warning("Failed to connect to Websocket")
             return False
