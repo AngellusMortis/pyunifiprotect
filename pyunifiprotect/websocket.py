@@ -91,9 +91,11 @@ class Websocket:
             if now > self._timeout:
                 _LOGGER.debug("WS timed out")
                 if not await self.reconnect():
-                    _LOGGER.debug("Could not reconnect")
+                    _LOGGER.debug("WS could not reconnect")
                     continue
-            await asyncio.sleep(self._timeout - now)
+            sleep_time = self._timeout - now
+            _LOGGER.debug("WS Timeout loop sleep %s", sleep_time)
+            await asyncio.sleep(sleep_time)
 
     async def _reset_timeout(self) -> None:
         _LOGGER.debug("WS timeout reset")
