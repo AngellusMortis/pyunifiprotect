@@ -7,15 +7,13 @@ import base64
 from copy import deepcopy
 from datetime import datetime, timedelta
 import logging
-import time
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from pytest_benchmark.fixture import BenchmarkFixture
 
 from pyunifiprotect import ProtectApiClient
-from pyunifiprotect.api import NEVER_RAN, WEBSOCKET_CHECK_INTERVAL
 from pyunifiprotect.data import EventType, WSPacket
 from pyunifiprotect.data.base import ProtectModel
 from pyunifiprotect.data.devices import EVENT_PING_INTERVAL, Camera
@@ -85,16 +83,12 @@ async def test_ws_all(
     # bypass pydantic checks
     object.__setattr__(protect_client.bootstrap, "process_ws_packet", benchmark_process_ws_packet)
 
-    # wait for ws connection
-    for _ in range(60):
-        if protect_client.is_ws_connected:
-            break
-        await asyncio.sleep(0.5)
+    websocket = await protect_client.get_websocket()
 
-    ws_connect: Optional[MockWebsocket] = protect_client._ws_connection  # type: ignore
+    ws_connect: Optional[MockWebsocket] = websocket._ws_connection  # type: ignore
     assert ws_connect is not None
 
-    while protect_client.is_ws_connected:
+    while websocket.is_connected:
         await asyncio.sleep(0.1)
 
     assert ws_connect.count == len(ws_messages)
@@ -132,16 +126,12 @@ async def test_ws_filtered(protect_client_ws: ProtectApiClient, benchmark: Bench
     # bypass pydantic checks
     object.__setattr__(protect_client.bootstrap, "process_ws_packet", benchmark_process_ws_packet)
 
-    # wait for ws connection
-    for _ in range(60):
-        if protect_client.is_ws_connected:
-            break
-        await asyncio.sleep(0.5)
+    websocket = await protect_client.get_websocket()
 
-    ws_connect: Optional[MockWebsocket] = protect_client._ws_connection  # type: ignore
+    ws_connect: Optional[MockWebsocket] = websocket._ws_connection  # type: ignore
     assert ws_connect is not None
 
-    while protect_client.is_ws_connected:
+    while websocket.is_connected:
         await asyncio.sleep(0.1)
 
     print_ws_stat_summary(protect_client.bootstrap.ws_stats)
@@ -493,51 +483,44 @@ async def test_ws_emit_alarm_callback(
 
 
 @pytest.mark.asyncio
-async def test_check_ws_initial(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
+async def test_check_ws_connected(protect_client_ws: ProtectApiClient, caplog: pytest.LogCaptureFixture):
     caplog.set_level(logging.DEBUG)
 
-    protect_client._last_websocket_check = NEVER_RAN
-    protect_client.reset_ws()
-
-    active_ws = await protect_client.check_ws()
+    active_ws = protect_client_ws.check_ws()
 
     assert active_ws is True
-    assert ["Checking websocket", "Scheduling WS connect..."] == [rec.message for rec in caplog.records]
+
+    expected_logs: List[str] = []
+    assert expected_logs == [rec.message for rec in caplog.records]
+
+
+@pytest.mark.asyncio
+async def test_check_ws_no_ws_initial(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
+    caplog.set_level(logging.DEBUG)
+
+    await protect_client.disconnect_ws()
+    protect_client._last_ws_status = True
+
+    active_ws = protect_client.check_ws()
+
+    assert active_ws is False
+
+    expected_logs = ["Disconnecting websocket...", "Websocket connection not active, failing back to polling"]
+    assert expected_logs == [rec.message for rec in caplog.records]
+    assert caplog.records[1].levelname == "WARNING"
 
 
 @pytest.mark.asyncio
 async def test_check_ws_no_ws(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
     caplog.set_level(logging.DEBUG)
 
-    protect_client._last_websocket_status = True
-    protect_client._last_websocket_check = time.monotonic()
-    protect_client.reset_ws()
+    await protect_client.disconnect_ws()
+    protect_client._last_ws_status = False
 
-    active_ws = await protect_client.check_ws()
+    active_ws = protect_client.check_ws()
 
     assert active_ws is False
 
-    expected_logs = ["Websocket connection not active, failing back to polling"]
-    assert expected_logs == [rec.message for rec in caplog.records]
-    assert caplog.records[0].levelname == "WARNING"
-
-
-@pytest.mark.asyncio
-async def test_check_ws_reconnect(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
-    caplog.set_level(logging.DEBUG)
-
-    protect_client._last_websocket_status = False
-    protect_client._last_websocket_check = time.monotonic() - WEBSOCKET_CHECK_INTERVAL - 1
-    protect_client.reset_ws()
-
-    active_ws = await protect_client.check_ws()
-
-    assert active_ws is True
-    expected_logs = [
-        "Checking websocket",
-        "Scheduling WS connect...",
-        "Websocket connection not active, failing back to polling",
-        "Websocket connection successfully connected",
-    ]
+    expected_logs = ["Disconnecting websocket...", "Websocket connection not active, failing back to polling"]
     assert expected_logs == [rec.message for rec in caplog.records]
     assert caplog.records[1].levelname == "DEBUG"

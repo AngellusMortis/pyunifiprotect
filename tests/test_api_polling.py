@@ -1,4 +1,5 @@
 """Tests for pyunifiprotect.unifi_protect_server."""
+# pylint: disable=protected-access
 
 from datetime import timedelta
 from unittest.mock import patch
@@ -6,6 +7,7 @@ from unittest.mock import patch
 import pytest
 
 from pyunifiprotect import ProtectApiClient
+from pyunifiprotect.api import NEVER_RAN
 from pyunifiprotect.data import EventType
 from pyunifiprotect.utils import to_js_time
 from tests.conftest import MockDatetime
@@ -63,6 +65,7 @@ async def test_process_events_ring(protect_client: ProtectApiClient, now, camera
 
     setattr(protect_client, "get_events_raw", get_events)
 
+    protect_client._last_update = NEVER_RAN
     await protect_client.update()
 
     bootstrap = protect_client.bootstrap.unifi_dict()
@@ -70,6 +73,8 @@ async def test_process_events_ring(protect_client: ProtectApiClient, now, camera
 
     event = camera.last_ring_event
     camera_before.last_ring_event_id = None
+    camera_before.last_motion_event_id = None
+    camera_before.last_smart_detect_event_id = None
     camera.last_ring_event_id = None
 
     assert bootstrap == bootstrap_before
@@ -113,6 +118,7 @@ async def test_process_events_motion(protect_client: ProtectApiClient, now, came
 
     setattr(protect_client, "get_events_raw", get_events)
 
+    protect_client._last_update = NEVER_RAN
     await protect_client.update()
 
     camera_before.is_motion_detected = False
@@ -122,6 +128,8 @@ async def test_process_events_motion(protect_client: ProtectApiClient, now, came
     event = camera.last_motion_event
     camera.last_motion_event_id = None
     camera_before.last_motion_event_id = None
+    camera_before.last_ring_event_id = None
+    camera_before.last_smart_detect_event_id = None
 
     assert bootstrap == bootstrap_before
     assert camera.dict() == camera_before.dict()
@@ -165,6 +173,7 @@ async def test_process_events_smart(protect_client: ProtectApiClient, now, camer
 
     setattr(protect_client, "get_events_raw", get_events)
 
+    protect_client._last_update = NEVER_RAN
     await protect_client.update()
 
     bootstrap = protect_client.bootstrap.unifi_dict()
@@ -173,6 +182,8 @@ async def test_process_events_smart(protect_client: ProtectApiClient, now, camer
     smart_event = camera.last_smart_detect_event
     camera.last_smart_detect_event_id = None
     camera_before.last_smart_detect_event_id = None
+    camera_before.last_motion_event_id = None
+    camera_before.last_ring_event_id = None
 
     assert bootstrap == bootstrap_before
     assert camera.dict() == camera_before.dict()

@@ -137,13 +137,15 @@ async def check_bootstrap(bootstrap: Bootstrap):
 
 
 def test_base_url(protect_client: ProtectApiClient):
+    arg = f"?lastUpdateId={protect_client.bootstrap.last_update_id}"
+
     assert protect_client.base_url == "https://127.0.0.1:0"
-    assert protect_client.base_ws_url == "wss://127.0.0.1:0"
+    assert protect_client.ws_url == f"wss://127.0.0.1:0{arg}"
 
     protect_client._port = 443
 
     assert protect_client.base_url == "https://127.0.0.1"
-    assert protect_client.base_ws_url == "wss://127.0.0.1"
+    assert protect_client.ws_url == f"wss://127.0.0.1{arg}"
 
 
 def test_api_client_creation():

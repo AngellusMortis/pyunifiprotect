@@ -48,7 +48,6 @@
         "python.testing.pytestArgs": [
             "--cov-report=xml",
             "--color=no",
-            "-n=auto",
         ],
     },
     "postCreateCommand": "cd /workspaces/pyunifiprotect && pip install -e .[dev] && unifi-protect --install-completion bash"

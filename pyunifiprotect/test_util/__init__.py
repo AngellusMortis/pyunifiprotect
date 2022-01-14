@@ -108,7 +108,8 @@ class SampleDataGenerator:
     async def async_generate(self, close_session: bool = True) -> None:
         self.log(f"Output folder: {self.output_folder}")
         self.output_folder.mkdir(parents=True, exist_ok=True)
-        self.client.subscribe_raw_websocket(self._handle_ws_message)
+        websocket = await self.client.get_websocket()
+        websocket.subscribe(self._handle_ws_message)
 
         self.log("Updating devices...")
         await self.client.update(True)
@@ -173,7 +174,7 @@ class SampleDataGenerator:
             await asyncio.sleep(self.wait_time)
 
         self._record_listen_for_events = False
-        await self.client.async_disconnect_ws()
+        await self.client.disconnect_ws()
         await self.write_json_file("sample_ws_messages", self._record_ws_messages, anonymize=False)
 
     @overload
