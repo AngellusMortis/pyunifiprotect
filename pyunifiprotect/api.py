@@ -71,7 +71,7 @@ class BaseApiClient:
     _websocket: Optional[Websocket] = None
 
     api_path: str = "/proxy/protect/api/"
-    ws_path: str = "/proxy/protect/ws/"
+    ws_path: str = "/proxy/protect/ws/updates"
 
     def __init__(
         self,
