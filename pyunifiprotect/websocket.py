@@ -64,7 +64,6 @@ class Websocket:
     async def _websocket_loop(self) -> None:
         _LOGGER.debug("Connecting WS to %s", self.url)
         self._headers = await self._auth()
-        _LOGGER.debug(self._headers)
 
         session = self._get_session()
         self._ws_connection = await session.ws_connect(self.url, ssl=self.verify, headers=self._headers)
@@ -136,6 +135,7 @@ class Websocket:
         if self._ws_connection is None:
             return
         await self._ws_connection.close()
+        self._ws_connection = None
 
     async def reconnect(self) -> bool:
         """Reconnect the websocket."""

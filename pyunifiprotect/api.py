@@ -104,6 +104,7 @@ class BaseApiClient:
         if self._port != 443:
             url += f":{self._port}"
 
+        url += self.ws_path
         last_update_id = self._get_last_update_id()
         if last_update_id is None:
             return url
