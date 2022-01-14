@@ -1,6 +1,7 @@
 import asyncio
 from collections.abc import Callable
 import logging
+import time
 from typing import Any, Coroutine, Dict, List, Optional
 
 from aiohttp import ClientSession, ClientWebSocketResponse, WSMessage, WSMsgType
@@ -12,12 +13,13 @@ CALLBACK_TYPE = Callable[..., Coroutine[Any, Any, Optional[Dict[str, str]]]]
 class Websocket:
     url: str
     verify: bool
-    timeout: int
+    timeout_interval: int
     reconnect_wait: int
     _auth: CALLBACK_TYPE
+    _timeout: float
 
     _headers: Optional[Dict[str, str]] = None
-    _timer_task: Optional[asyncio.TimerHandle] = None
+    _timer_task: Optional[asyncio.Task[None]] = None
     _ws_subscriptions: List[Callable[[WSMessage], None]] = []
     _ws_connection: Optional[ClientWebSocketResponse] = None
 
@@ -30,10 +32,11 @@ class Websocket:
         verify: bool = True,
     ) -> None:
         self.url = url
-        self.timeout = timeout
+        self.timeout_interval = timeout
         self.reconnect_wait = reconnect_wait
         self.verify = verify
         self._auth = auth_callback  # type: ignore
+        self._timeout = time.monotonic()
 
     @property
     def is_connected(self) -> bool:
@@ -44,7 +47,7 @@ class Websocket:
         # for testing, to make easier to mock
         return ClientSession()
 
-    async def _process_message(self, msg: WSMessage) -> bool:
+    def _process_message(self, msg: WSMessage) -> bool:
         if msg.type == WSMsgType.ERROR:
             _LOGGER.exception("Error from Websocket: %s", msg.data)
             return False
@@ -64,9 +67,8 @@ class Websocket:
         session = self._get_session()
         self._ws_connection = await session.ws_connect(self.url, ssl=self.verify, headers=self._headers)
         try:
-            await self._reset_timeout()
             async for msg in self._ws_connection:
-                if not await self._process_message(msg):
+                if not self._process_message(msg):
                     break
                 await self._reset_timeout()
         finally:
@@ -78,27 +80,41 @@ class Websocket:
             if not session.closed:
                 await session.close()
 
-    def _cancel_timeout(self) -> None:
-        if self._timer_task:
-            self._timer_task.cancel()
-
-    async def _timeout(self) -> None:
+    async def _do_timeout(self) -> bool:
         _LOGGER.debug("WS timed out")
-        if not await self.reconnect():
-            await self._timeout()
+        return await self.reconnect()
+
+    async def _timeout_loop(self) -> None:
+        while True:
+            now = time.monotonic()
+            if now > self._timeout:
+                _LOGGER.debug("WS timed out")
+                if not await self.reconnect():
+                    _LOGGER.debug("Could not reconnect")
+                    continue
+            await asyncio.sleep(self._timeout - now)
 
     async def _reset_timeout(self) -> None:
         _LOGGER.debug("WS timeout reset")
-        self._cancel_timeout()
-        loop = asyncio.get_running_loop()
-        self._timer_task = loop.call_later(self.timeout, lambda: asyncio.create_task(self._timeout()))
+        self._timeout = time.monotonic() + self.timeout_interval
+
+        if self._timer_task is None:
+            self._timer_task = asyncio.create_task(self._timeout_loop())
+
+    def _cancel_timeout(self) -> None:
+        if self._timer_task:
+            self._timer_task.cancel()
 
     async def connect(self) -> bool:
         """Connect the websocket."""
 
         _LOGGER.debug("Scheduling WS connect...")
         asyncio.create_task(self._websocket_loop())
-        await asyncio.sleep(1)
+        start_time = self._timeout
+        connect_timeout = time.monotonic() + self.timeout_interval
+        # wait for message to ensure it is connected
+        while time.monotonic() < connect_timeout and start_time == self._timeout:
+            await asyncio.sleep(0.1)
         if self._ws_connection is None:
             _LOGGER.warning("Failed to connect to Websocket")
             return False

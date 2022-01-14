@@ -498,7 +498,7 @@ async def test_check_ws_connected(protect_client_ws: ProtectApiClient, caplog: p
 async def test_check_ws_no_ws_initial(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
     caplog.set_level(logging.DEBUG)
 
-    await protect_client.disconnect_ws()
+    await protect_client.async_disconnect_ws()
     protect_client._last_ws_status = True
 
     active_ws = protect_client.check_ws()
@@ -514,7 +514,7 @@ async def test_check_ws_no_ws_initial(protect_client: ProtectApiClient, caplog: 
 async def test_check_ws_no_ws(protect_client: ProtectApiClient, caplog: pytest.LogCaptureFixture):
     caplog.set_level(logging.DEBUG)
 
-    await protect_client.disconnect_ws()
+    await protect_client.async_disconnect_ws()
     protect_client._last_ws_status = False
 
     active_ws = protect_client.check_ws()

@@ -185,7 +185,7 @@ async def setup_client(client: ProtectApiClient, websocket: SimpleMockWebsocket)
 
 
 async def cleanup_client(client: ProtectApiClient):
-    await client.disconnect_ws()
+    await client.async_disconnect_ws()
     await client.close_session()
 
 

@@ -174,7 +174,7 @@ class SampleDataGenerator:
             await asyncio.sleep(self.wait_time)
 
         self._record_listen_for_events = False
-        await self.client.disconnect_ws()
+        await self.client.async_disconnect_ws()
         await self.write_json_file("sample_ws_messages", self._record_ws_messages, anonymize=False)
 
     @overload

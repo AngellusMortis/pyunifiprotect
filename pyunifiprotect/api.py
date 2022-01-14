@@ -323,7 +323,7 @@ class BaseApiClient:
 
         return self._is_authenticated
 
-    async def connect_ws(self, force: bool) -> None:
+    async def async_connect_ws(self, force: bool) -> None:
         """Connect to Websocket."""
 
         if force and self._websocket is not None:
@@ -338,7 +338,7 @@ class BaseApiClient:
             self._last_ws_status = False
             await websocket.connect()
 
-    async def disconnect_ws(self) -> None:
+    async def async_disconnect_ws(self) -> None:
         """Disconnect from Websocket."""
 
         if self._websocket is None:
@@ -498,7 +498,7 @@ class ProtectApiClient(BaseApiClient):
             self._last_update_dt = now_dt
             self._bootstrap = await self.get_bootstrap()
 
-        await self.connect_ws(force)
+        await self.async_connect_ws(force)
         active_ws = self.check_ws()
         if not bootstrap_updated and active_ws:
             # If the websocket is connected/connecting
@@ -527,6 +527,7 @@ class ProtectApiClient(BaseApiClient):
         return self._bootstrap.last_update_id
 
     def _process_ws_message(self, msg: aiohttp.WSMessage) -> None:
+        _LOGGER.debug("Processing WS message...")
         packet = WSPacket(msg.data)
         processed_message = self.bootstrap.process_ws_packet(
             packet, models=self._subscribed_models, ignore_stats=self._ignore_stats
