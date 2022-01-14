@@ -1,7 +1,6 @@
 import asyncio
 from collections.abc import Callable
 import logging
-from socket import timeout
 import time
 from typing import Any, Coroutine, Dict, List, Optional
 
