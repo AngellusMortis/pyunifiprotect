@@ -77,9 +77,9 @@ class Websocket:
             self._cancel_timeout()
             if not self._ws_connection.closed:
                 await self._ws_connection.close()
-                self._ws_connection = None
             if not session.closed:
                 await session.close()
+            self._ws_connection = None
 
     async def _do_timeout(self) -> bool:
         _LOGGER.debug("WS timed out")
@@ -117,9 +117,11 @@ class Websocket:
         connect_timeout = time.monotonic() + self.timeout_interval
         # wait for message to ensure it is connected
         while time.monotonic() < connect_timeout and start_time == self._timeout:
+            if not self.is_connected:
+                break
             await asyncio.sleep(1)
 
-        if self._ws_connection and time.monotonic() > connect_timeout:
+        if self.is_connected and time.monotonic() > connect_timeout:
             await self.disconnect()
         if self._ws_connection is None:
             _LOGGER.warning("Failed to connect to Websocket")
