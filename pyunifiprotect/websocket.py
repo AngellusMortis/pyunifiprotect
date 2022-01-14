@@ -14,7 +14,7 @@ class Websocket:
     url: str
     verify: bool
     timeout_interval: int
-    reconnect_wait: int
+    backoff: int
     _auth: CALLBACK_TYPE
     _timeout: float
     _ws_subscriptions: List[Callable[[WSMessage], None]]
@@ -28,12 +28,12 @@ class Websocket:
         url: str,
         auth_callback: CALLBACK_TYPE,
         timeout: int = 30,
-        reconnect_wait: int = 10,
+        backoff: int = 10,
         verify: bool = True,
     ) -> None:
         self.url = url
         self.timeout_interval = timeout
-        self.reconnect_wait = reconnect_wait
+        self.backoff = backoff
         self.verify = verify
         self._auth = auth_callback  # type: ignore
         self._timeout = time.monotonic()
@@ -144,7 +144,7 @@ class Websocket:
 
         _LOGGER.debug("Reconnecting websocket...")
         await self.disconnect()
-        await asyncio.sleep(self.reconnect_wait)
+        await asyncio.sleep(self.backoff)
         return await self.connect()
 
     def subscribe(self, ws_callback: Callable[[WSMessage], None]) -> Callable[[], None]:
