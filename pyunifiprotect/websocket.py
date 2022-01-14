@@ -18,7 +18,6 @@ class Websocket:
 
     _headers: Optional[Dict[str, str]] = None
     _timer_task: Optional[asyncio.TimerHandle] = None
-    _ws_task: Optional[asyncio.Task[None]] = None
     _ws_subscriptions: List[Callable[[WSMessage], None]] = []
     _ws_connection: Optional[ClientWebSocketResponse] = None
 
@@ -98,11 +97,10 @@ class Websocket:
         """Connect the websocket."""
 
         _LOGGER.debug("Scheduling WS connect...")
-        self._ws_task = asyncio.create_task(self._websocket_loop())
+        asyncio.create_task(self._websocket_loop())
         await asyncio.sleep(1)
         if self._ws_connection is None:
             _LOGGER.warning("Failed to connect to Websocket")
-            self._ws_task = None
             return False
         _LOGGER.info("Connected to Websocket successfully")
         return True
