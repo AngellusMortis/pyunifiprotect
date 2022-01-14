@@ -58,12 +58,6 @@ RETRY_TIMEOUT = 10
 _LOGGER = logging.getLogger(__name__)
 
 
-def _reset_connection(connection: Optional[Union[aiohttp.ClientSession, aiohttp.ClientWebSocketResponse]]) -> None:
-    if connection is not None and not connection.closed:
-        loop = asyncio.get_running_loop()
-        loop.create_task(connection.close())
-
-
 class BaseApiClient:
     _host: str
     _port: int
