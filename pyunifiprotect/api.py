@@ -916,6 +916,28 @@ class ProtectApiClient(BaseApiClient):
 
         return await self.api_request_raw(f"cameras/{camera_id}/snapshot", params=params, raise_exception=False)
 
+    async def get_package_camera_snapshot(
+        self,
+        camera_id: str,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+    ) -> Optional[bytes]:
+        """Gets a snapshot from a camera"""
+
+        dt = utc_now()  # ts is only used as a cache buster
+        params = {
+            "ts": to_js_time(dt),
+            "force": "true",
+        }
+
+        if width is not None:
+            params.update({"w": width})
+
+        if height is not None:
+            params.update({"h": height})
+
+        return await self.api_request_raw(f"cameras/{camera_id}/package-snapshot", params=params, raise_exception=False)
+
     async def get_camera_video(
         self, camera_id: str, start: datetime, end: datetime, channel_index: int = 0, validate_channel_id: bool = True
     ) -> Optional[bytes]:

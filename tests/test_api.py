@@ -515,12 +515,54 @@ async def test_get_camera_snapshot(protect_client: ProtectApiClient, now):
 @pytest.mark.skipif(not TEST_SNAPSHOT_EXISTS, reason="Missing testdata")
 @patch("pyunifiprotect.utils.datetime", MockDatetime)
 @pytest.mark.asyncio
+async def test_get_pacakge_camera_snapshot(protect_client: ProtectApiClient, now):
+    data = await protect_client.get_package_camera_snapshot("test_id")
+    assert data is not None
+
+    protect_client.api_request_raw.assert_called_with(  # type: ignore
+        "cameras/test_id/package-snapshot",
+        params={
+            "ts": to_js_time(now),
+            "force": "true",
+        },
+        raise_exception=False,
+    )
+
+    img = Image.open(BytesIO(data))
+    assert img.format in ("PNG", "JPEG")
+
+
+@pytest.mark.skipif(not TEST_SNAPSHOT_EXISTS, reason="Missing testdata")
+@patch("pyunifiprotect.utils.datetime", MockDatetime)
+@pytest.mark.asyncio
 async def test_get_camera_snapshot_args(protect_client: ProtectApiClient, now):
     data = await protect_client.get_camera_snapshot("test_id", 1920, 1080)
     assert data is not None
 
     protect_client.api_request_raw.assert_called_with(  # type: ignore
         "cameras/test_id/snapshot",
+        params={
+            "ts": to_js_time(now),
+            "force": "true",
+            "w": 1920,
+            "h": 1080,
+        },
+        raise_exception=False,
+    )
+
+    img = Image.open(BytesIO(data))
+    assert img.format in ("PNG", "JPEG")
+
+
+@pytest.mark.skipif(not TEST_SNAPSHOT_EXISTS, reason="Missing testdata")
+@patch("pyunifiprotect.utils.datetime", MockDatetime)
+@pytest.mark.asyncio
+async def test_get_package_camera_snapshot_args(protect_client: ProtectApiClient, now):
+    data = await protect_client.get_package_camera_snapshot("test_id", 1920, 1080)
+    assert data is not None
+
+    protect_client.api_request_raw.assert_called_with(  # type: ignore
+        "cameras/test_id/package-snapshot",
         params={
             "ts": to_js_time(now),
             "force": "true",

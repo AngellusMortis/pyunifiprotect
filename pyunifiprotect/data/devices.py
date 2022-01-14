@@ -857,6 +857,14 @@ class Camera(ProtectMotionDeviceModel):
 
         return await self.api.get_camera_snapshot(self.id, width, height)
 
+    async def get_package_snapshot(self, width: Optional[int] = None, height: Optional[int] = None) -> Optional[bytes]:
+        """Gets snapshot for package camera"""
+
+        if not self.feature_flags.has_package_camera:
+            raise BadRequest("Device does not have package camera")
+
+        return await self.api.get_package_camera_snapshot(self.id, width, height)
+
     async def get_video(self, start: datetime, end: datetime, channel_index: int = 0) -> Optional[bytes]:
         """Gets video clip for camera at a given time"""
 
