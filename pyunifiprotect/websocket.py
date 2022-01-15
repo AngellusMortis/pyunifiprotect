@@ -8,6 +8,7 @@ from aiohttp import ClientSession, ClientWebSocketResponse, WSMessage, WSMsgType
 
 _LOGGER = logging.getLogger(__name__)
 CALLBACK_TYPE = Callable[..., Coroutine[Any, Any, Optional[Dict[str, str]]]]
+RECENT_FAILURE_CUT_OFF = 30
 
 
 class Websocket:
@@ -18,10 +19,13 @@ class Websocket:
     _auth: CALLBACK_TYPE
     _timeout: float
     _ws_subscriptions: List[Callable[[WSMessage], None]]
+    _connect_lock: asyncio.Lock
 
     _headers: Optional[Dict[str, str]] = None
     _timer_task: Optional[asyncio.Task[None]] = None
     _ws_connection: Optional[ClientWebSocketResponse] = None
+    _last_connect: float = -1000
+    _recent_failures: int = 0
 
     def __init__(
         self,
@@ -38,6 +42,7 @@ class Websocket:
         self._auth = auth_callback  # type: ignore
         self._timeout = time.monotonic()
         self._ws_subscriptions = []
+        self._connect_lock = asyncio.Lock()
 
     @property
     def is_connected(self) -> bool:
@@ -64,25 +69,51 @@ class Websocket:
 
     async def _websocket_loop(self, start_event: asyncio.Event) -> None:
         _LOGGER.debug("Connecting WS to %s", self.url)
-        self._headers = await self._auth()
+        self._headers = await self._auth(self._should_reset_auth)
 
         session = self._get_session()
-        self._ws_connection = await session.ws_connect(self.url, ssl=self.verify, headers=self._headers)
-        start_event.set()
+        # catch any and all errors for Websocket so we can clean up correctly
         try:
+            self._ws_connection = await session.ws_connect(self.url, ssl=self.verify, headers=self._headers)
+            start_event.set()
+
             await self._reset_timeout()
             async for msg in self._ws_connection:
                 if not self._process_message(msg):
                     break
                 await self._reset_timeout()
+        except Exception as e:  # pylint: disable=broad-except
+            _LOGGER.exception("Websocket disconnect error: %s", e)
         finally:
             _LOGGER.debug("Websocket disconnected")
+            self._increase_failure()
             self._cancel_timeout()
-            if not self._ws_connection.closed:
+            if self._ws_connection is not None and not self._ws_connection.closed:
                 await self._ws_connection.close()
             if not session.closed:
                 await session.close()
             self._ws_connection = None
+            # make sure event does not timeout
+            start_event.set()
+
+    @property
+    def has_recent_connect(self) -> bool:
+        return time.monotonic() - RECENT_FAILURE_CUT_OFF <= self._last_connect
+
+    @property
+    def _should_reset_auth(self) -> bool:
+        if self.has_recent_connect:
+            if self._recent_failures > 2:
+                return True
+        else:
+            self._recent_failures = 0
+        return False
+
+    def _increase_failure(self) -> None:
+        if self.has_recent_connect:
+            self._recent_failures += 1
+        else:
+            self._recent_failures = 1
 
     async def _do_timeout(self) -> bool:
         _LOGGER.debug("WS timed out")
@@ -114,6 +145,14 @@ class Websocket:
     async def connect(self) -> bool:
         """Connect the websocket."""
 
+        if self._connect_lock.locked():
+            _LOGGER.debug("Another connect is already happening")
+            return False
+        try:
+            await asyncio.wait_for(self._connect_lock.acquire(), timeout=0.1)
+        except asyncio.TimeoutError:
+            _LOGGER.debug("Failed to get connection lock")
+
         start_event = asyncio.Event()
         _LOGGER.debug("Scheduling WS connect...")
         asyncio.create_task(self._websocket_loop(start_event))
@@ -121,14 +160,15 @@ class Websocket:
         try:
             await asyncio.wait_for(start_event.wait(), timeout=self.timeout_interval)
         except asyncio.TimeoutError:
-            _LOGGER.warning("Timedout while waiting for Websocket to connect")
+            _LOGGER.warning("Timed out while waiting for Websocket to connect")
             await self.disconnect()
 
+        self._connect_lock.release()
         if self._ws_connection is None:
-            _LOGGER.warning("Failed to connect to Websocket")
+            _LOGGER.debug("Failed to connect to Websocket")
             return False
-
-        _LOGGER.info("Connected to Websocket successfully")
+        _LOGGER.debug("Connected to Websocket successfully")
+        self._last_connect = time.monotonic()
         return True
 
     async def disconnect(self) -> None:

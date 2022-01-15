@@ -124,7 +124,12 @@ class BaseApiClient:
     async def get_websocket(self) -> Websocket:
         """Gets or creates current Websocket."""
 
-        async def _auth() -> Optional[Dict[str, str]]:
+        async def _auth(force: bool) -> Optional[Dict[str, str]]:
+            if force:
+                if self._session is not None:
+                    self._session.cookie_jar.clear()
+                self.headers = None
+
             await self.ensure_authenticated()
             return self.headers
 
@@ -355,6 +360,8 @@ class BaseApiClient:
             if self._last_ws_status:
                 log = _LOGGER.warning
             log("Websocket connection not active, failing back to polling")
+        elif not self._last_ws_status:
+            _LOGGER.info("Websocket re-connected successfully")
 
         self._last_ws_status = self._websocket.is_connected
         return self._last_ws_status
