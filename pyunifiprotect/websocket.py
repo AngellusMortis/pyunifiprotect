@@ -4,7 +4,13 @@ import logging
 import time
 from typing import Any, Coroutine, Dict, List, Optional
 
-from aiohttp import ClientSession, ClientWebSocketResponse, WSMessage, WSMsgType
+from aiohttp import (
+    ClientError,
+    ClientSession,
+    ClientWebSocketResponse,
+    WSMessage,
+    WSMsgType,
+)
 
 _LOGGER = logging.getLogger(__name__)
 CALLBACK_TYPE = Callable[..., Coroutine[Any, Any, Optional[Dict[str, str]]]]
@@ -82,7 +88,7 @@ class Websocket:
                 if not self._process_message(msg):
                     break
                 await self._reset_timeout()
-        except Exception as e:  # pylint: disable=broad-except
+        except ClientError as e:
             _LOGGER.exception("Websocket disconnect error: %s", e)
         finally:
             _LOGGER.debug("Websocket disconnected")
