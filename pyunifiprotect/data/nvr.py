@@ -109,6 +109,8 @@ class EventMetadata(ProtectBaseObject):
     sensor_id: Optional[str]
     sensor_name: Optional[str]
     sensor_type: Optional[SensorType]
+    doorlock_id: Optional[str]
+    doorlock_name: Optional[str]
     from_value: Optional[str]
     to_value: Optional[str]
     mount_type: Optional[MountType]
@@ -122,6 +124,8 @@ class EventMetadata(ProtectBaseObject):
         "sensorId",
         "sensorName",
         "sensorType",
+        "doorlockId",
+        "doorlockName",
         "mountType",
         "status",
         "alarmType",

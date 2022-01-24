@@ -1500,3 +1500,34 @@ class Doorlock(ProtectAdoptableDeviceModel):
         else:
             self.camera_id = camera.id
         await self.save_device()
+
+    async def set_status_light(self, enabled: bool) -> None:
+        """Sets the status indicator light for the doorlock"""
+
+        self.led_settings.is_enabled = enabled
+        await self.save_device()
+
+    async def set_auto_close_time(self, duration: timedelta) -> None:
+        """Sets the auto-close time for doorlock. 0 seconds = disabled."""
+
+        if duration > timedelta(hours=1):
+            raise BadRequest("Max duration is 1 hour")
+
+        self.auto_close_time = duration
+        await self.save_device()
+
+    async def close_lock(self) -> None:
+        """Close doorlock (lock)"""
+
+        if self.lock_status != LockStatusType.OPEN:
+            raise BadRequest("Lock is not open")
+
+        await self.api.close_lock(self.id)
+
+    async def open_lock(self) -> None:
+        """Open doorlock (unlock)"""
+
+        if self.lock_status != LockStatusType.CLOSED:
+            raise BadRequest("Lock is not closed")
+
+        await self.api.open_lock(self.id)

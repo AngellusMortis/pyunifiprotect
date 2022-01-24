@@ -1014,3 +1014,13 @@ class ProtectApiClient(BaseApiClient):
         """Reboots an adopted device"""
 
         await self.api_request(f"{model_type.value}s/{device_id}/reboot", method="post")
+
+    async def close_lock(self, device_id: str) -> None:
+        """Close doorlock (lock)"""
+
+        await self.api_request(f"doorlocks/{device_id}/close", method="post")
+
+    async def open_lock(self, device_id: str) -> None:
+        """Open doorlock (unlock)"""
+
+        await self.api_request(f"doorlocks/{device_id}/open", method="post")
