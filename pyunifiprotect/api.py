@@ -21,6 +21,7 @@ from pyunifiprotect.data import (
     Bootstrap,
     Bridge,
     Camera,
+    Doorlock,
     Event,
     EventType,
     Light,
@@ -720,6 +721,14 @@ class ProtectApiClient(BaseApiClient):
         """
         return cast(List[Sensor], await self.get_devices(ModelType.SENSOR, Sensor))
 
+    async def get_doorlocks(self) -> List[Doorlock]:
+        """
+        Gets the list of doorlocks straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.doorlocks`
+        """
+        return cast(List[Doorlock], await self.get_devices(ModelType.DOORLOCK, Doorlock))
+
     async def get_viewers(self) -> List[Viewer]:
         """
         Gets the list of viewers straight from the NVR.
@@ -802,6 +811,14 @@ class ProtectApiClient(BaseApiClient):
         The websocket is connected and running, you likely just want to use `self.bootstrap.sensors[device_id]`
         """
         return cast(Sensor, await self.get_device(ModelType.SENSOR, device_id, Sensor))
+
+    async def get_doorlock(self, device_id: str) -> Doorlock:
+        """
+        Gets a doorlock straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.doorlocks[device_id]`
+        """
+        return cast(Doorlock, await self.get_device(ModelType.DOORLOCK, device_id, Doorlock))
 
     async def get_viewer(self, device_id: str) -> Viewer:
         """

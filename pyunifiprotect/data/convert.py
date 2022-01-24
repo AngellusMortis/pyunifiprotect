@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
-from pyunifiprotect.data.devices import Bridge, Camera, Light, Sensor, Viewer
+from pyunifiprotect.data.devices import Bridge, Camera, Doorlock, Light, Sensor, Viewer
 from pyunifiprotect.data.nvr import (
     NVR,
     CloudAccount,
@@ -34,6 +34,7 @@ MODEL_TO_CLASS: Dict[str, Type[ProtectModel]] = {
     ModelType.VIEWPORT: Viewer,
     ModelType.BRIDGE: Bridge,
     ModelType.SENSOR: Sensor,
+    ModelType.DOORLOCK: Doorlock,
 }
 
 

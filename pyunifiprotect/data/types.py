@@ -76,7 +76,6 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
         # TODO:
         # legacyUFV
         # display
-        # doorlock
 
         return [
             ModelType.CAMERA.value,
@@ -87,6 +86,7 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
             ModelType.LIGHT.value,
             ModelType.BRIDGE.value,
             ModelType.SENSOR.value,
+            ModelType.DOORLOCK.value,
         ]
 
 
@@ -254,6 +254,18 @@ class ChimeType(int, enum.Enum):
     NONE = 0
     MECHANICAL = 300
     DIGITAL = 1000
+
+
+@enum.unique
+class LockStatusType(str, ValuesEnumMixin, enum.Enum):
+    OPENING = "OPENING"
+    CLOSING = "CLOSING"
+    OPEN = "OPEN"
+    CLOSED = "CLOSED"
+    NOT_CALIBRATED = "NOT_CALIBRATED"
+    AUTO_CALIBRATION_IN_PROGRESS = "AUTO_CALIBRATION_IN_PROGRESS"
+    CALIBRATION_WAITING_CLOSE = "CALIBRATION_WAITING_CLOSE"
+    CALIBRATION_WAITING_OPEN = "CALIBRATION_WAITING_OPEN"
 
 
 class DoorbellText(ConstrainedStr):

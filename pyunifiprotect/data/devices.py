@@ -27,6 +27,7 @@ from pyunifiprotect.data.types import (
     LEDLevel,
     LightModeEnableType,
     LightModeType,
+    LockStatusType,
     MountType,
     Percent,
     PercentInt,
@@ -1449,6 +1450,47 @@ class Sensor(ProtectAdoptableDeviceModel):
 
         self.alarm_settings.is_enabled = enabled
         await self.save_device()
+
+    async def set_paired_camera(self, camera: Optional[Camera]) -> None:
+        """Sets the camera paired with the sensor"""
+
+        if camera is None:
+            self.camera_id = None
+        else:
+            self.camera_id = camera.id
+        await self.save_device()
+
+
+class Doorlock(ProtectAdoptableDeviceModel):
+    credentials: str
+    lock_status: LockStatusType
+    enable_homekit: bool
+    auto_close_time: timedelta
+    led_settings: SensorSettingsBase
+    battery_status: SensorBatteryStatus
+    camera_id: Optional[str]
+    has_homekit: bool
+    private_token: str
+
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "camera": "cameraId", "autoCloseTimeMs": "autoCloseTime"}
+
+    @classmethod
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "autoCloseTimeMs" in data and not isinstance(data["autoCloseTimeMs"], timedelta):
+            data["autoCloseTimeMs"] = timedelta(milliseconds=data["autoCloseTimeMs"])
+
+        return super().unifi_dict_to_dict(data)
+
+    @property
+    def camera(self) -> Optional[Camera]:
+        """Paired Camera will always be none if no camera is paired"""
+
+        if self.camera_id is None:
+            return None
+
+        return self.api.bootstrap.cameras[self.camera_id]
 
     async def set_paired_camera(self, camera: Optional[Camera]) -> None:
         """Sets the camera paired with the sensor"""

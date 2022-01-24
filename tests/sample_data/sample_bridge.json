@@ -1,13 +1,13 @@
 {
-    "mac": "B0B2A1612A7F",
-    "host": "192.168.69.79",
-    "connectionHost": "192.168.216.198",
+    "mac": "A28D0DB15AE1",
+    "host": "192.168.231.68",
+    "connectionHost": "192.168.102.63",
     "type": "UFP-UAP-B",
-    "name": "Lim Kgv",
-    "upSince": 1639807964408,
-    "uptime": 1461064,
-    "lastSeen": 1641269028408,
-    "connectedSince": 1641259128101,
+    "name": "Vdr Fzr",
+    "upSince": 1639807977891,
+    "uptime": 3247782,
+    "lastSeen": 1643055759891,
+    "connectedSince": 1642374159304,
     "state": "CONNECTED",
     "hardwareRevision": 19,
     "firmwareVersion": "0.3.1",
@@ -25,7 +25,7 @@
     "wiredConnectionState": {
         "phyRate": null
     },
-    "id": "7d8ace1179cbd7ab8249602d",
+    "id": "1f5a055254fb9169d7536fb9",
     "isConnected": true,
     "platform": "mt7621",
     "modelKey": "bridge"

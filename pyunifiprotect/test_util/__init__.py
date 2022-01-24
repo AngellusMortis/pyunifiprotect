@@ -263,6 +263,7 @@ class SampleDataGenerator:
             self.generate_light_data(),
             self.generate_viewport_data(),
             self.generate_sensor_data(),
+            self.generate_lock_data(),
             self.generate_bridge_data(),
             self.generate_liveview_data(),
         )
@@ -396,6 +397,21 @@ class SampleDataGenerator:
 
         obj = await self.client.api_request_obj(f"sensors/{device_id}")
         await self.write_json_file("sample_sensor", obj)
+
+    async def generate_lock_data(self) -> None:
+        objs = await self.client.api_request_list("doorlocks")
+        device_id: Optional[str] = None
+        for obj_dict in objs:
+            device_id = obj_dict["id"]
+            if is_online(obj_dict):
+                break
+
+        if device_id is None:
+            self.log("No doorlock found. Skipping doorlock endpoints...")
+            return
+
+        obj = await self.client.api_request_obj(f"doorlocks/{device_id}")
+        await self.write_json_file("sample_doorlock", obj)
 
     async def generate_bridge_data(self) -> None:
         objs = await self.client.api_request_list("bridges")

@@ -16,7 +16,7 @@ from pyunifiprotect.data.base import (
     ProtectModelWithId,
 )
 from pyunifiprotect.data.convert import create_from_unifi_dict
-from pyunifiprotect.data.devices import Bridge, Camera, Light, Sensor, Viewer
+from pyunifiprotect.data.devices import Bridge, Camera, Doorlock, Light, Sensor, Viewer
 from pyunifiprotect.data.nvr import NVR, Event, Group, Liveview, User
 from pyunifiprotect.data.types import EventType, FixSizeOrderedDict, ModelType
 from pyunifiprotect.data.websocket import (
@@ -122,12 +122,12 @@ class Bootstrap(ProtectBaseObject):
     lights: Dict[str, Light]
     bridges: Dict[str, Bridge]
     sensors: Dict[str, Sensor]
+    doorlocks: Dict[str, Doorlock]
     last_update_id: UUID
 
     # TODO:
     # legacyUFVs
     # displays
-    # doorlocks
     # chimes
     # schedules
 

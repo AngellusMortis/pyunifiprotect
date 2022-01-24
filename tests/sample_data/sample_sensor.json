@@ -1,12 +1,13 @@
 {
-    "mac": "26DBAFF133A4",
-    "connectionHost": "192.168.216.198",
+    "mac": "4191A8E35F39",
+    "host": null,
+    "connectionHost": "192.168.102.63",
     "type": "UFP-SENSE",
-    "name": "Egdczv Urg",
-    "upSince": 1641256963255,
+    "name": "Vyiu Ccxeqw",
+    "upSince": 1642991171327,
     "uptime": null,
-    "lastSeen": 1641259127934,
-    "connectedSince": 1641259139255,
+    "lastSeen": 1643054753862,
+    "connectedSince": 1643054778327,
     "state": "CONNECTED",
     "hardwareRevision": 6,
     "firmwareVersion": "1.0.2",
@@ -26,32 +27,32 @@
     "leakDetectedAt": null,
     "tamperingDetectedAt": null,
     "isOpened": true,
-    "openStatusChangedAt": 1641269036582,
+    "openStatusChangedAt": 1643055798932,
     "alarmTriggeredAt": null,
-    "motionDetectedAt": 1641269044824,
+    "motionDetectedAt": 1643055801008,
     "wiredConnectionState": {
         "phyRate": null
     },
     "stats": {
         "light": {
-            "value": 0,
+            "value": 20,
             "status": "neutral"
         },
         "humidity": {
-            "value": 35,
+            "value": 29,
             "status": "neutral"
         },
         "temperature": {
-            "value": 17.23,
+            "value": 16.95,
             "status": "neutral"
         }
     },
     "bluetoothConnectionState": {
-        "signalQuality": 15,
-        "signalStrength": -84
+        "signalQuality": 45,
+        "signalStrength": -72
     },
     "batteryStatus": {
-        "percentage": 100,
+        "percentage": 80,
         "isLow": false
     },
     "alarmSettings": {
@@ -82,10 +83,10 @@
     "ledSettings": {
         "isEnabled": true
     },
-    "bridge": "61b3f5c90050a703e700042a",
-    "camera": "2f9beb2e6f79af3c32c22d49",
+    "bridge": "61b3f5c90054a703e700042b",
+    "camera": null,
     "bridgeCandidates": [],
-    "id": "f6ecbe829f81cc79ad6e0c9a",
+    "id": "02ee9b99f17d69346e0c8c00",
     "isConnected": true,
     "marketName": "UP Sense",
     "modelKey": "sensor"

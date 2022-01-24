@@ -62,6 +62,10 @@ def anonymize_value(value: Any, name: Optional[str] = None) -> Any:
     if isinstance(value, str):
         if name == "accessKey":
             value = f"{random_number(13)}:{random_hex(24)}:{random_hex(128)}"
+        elif name == "credentials":
+            value = f"{random_hex(64)}"
+        elif name == "privateToken":
+            value = f"{random_alphanum(192)}"
         elif name in ("host", "connectionHost", "bindAddr"):
             value = anonymize_ip(value)
         elif name in ("anonymousDeviceId", "hardwareId"):

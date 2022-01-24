@@ -31,6 +31,7 @@ from pyunifiprotect.utils import set_debug, set_no_debug
 from tests.conftest import (
     TEST_BRIDGE_EXISTS,
     TEST_CAMERA_EXISTS,
+    TEST_DOORLOCK_EXISTS,
     TEST_LIGHT_EXISTS,
     TEST_SENSOR_EXISTS,
     TEST_VIEWPORT_EXISTS,
@@ -130,6 +131,11 @@ def test_sensor(sensor):
     compare_devices(sensor)
 
 
+@pytest.mark.skipif(not TEST_DOORLOCK_EXISTS, reason="Missing testdata")
+def test_doorlock(doorlock):
+    compare_devices(doorlock)
+
+
 @pytest.mark.skipif(not TEST_BRIDGE_EXISTS, reason="Missing testdata")
 def test_bridge(bridge):
     compare_devices(bridge)
@@ -152,7 +158,6 @@ def test_bootstrap(bootstrap):
     # TODO:
     del bootstrap["legacyUFVs"]
     del bootstrap["displays"]
-    del bootstrap["doorlocks"]
     del bootstrap["chimes"]
     del bootstrap["schedules"]
     del bootstrap["nvr"]["uiVersion"]

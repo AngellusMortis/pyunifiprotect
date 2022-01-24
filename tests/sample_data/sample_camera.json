@@ -1,36 +1,36 @@
 {
     "isDeleting": false,
-    "mac": "377A09FB3B5A",
-    "host": "192.168.52.78",
-    "connectionHost": "192.168.216.198",
-    "type": "UVC G4 Doorbell",
-    "name": "Imnixdo Yylb",
-    "upSince": 1641201254412,
-    "uptime": 67774,
-    "lastSeen": 1641269028412,
-    "connectedSince": 1641201281098,
+    "mac": "331AFA68BE00",
+    "host": "192.168.10.22",
+    "connectionHost": "192.168.102.63",
+    "type": "UVC G4 Doorbell Pro",
+    "name": "Oxnjk Ajfq",
+    "upSince": 1642431757906,
+    "uptime": 624002,
+    "lastSeen": 1643055759906,
+    "connectedSince": 1642431796280,
     "state": "CONNECTED",
-    "hardwareRevision": "22",
-    "firmwareVersion": "4.47.15",
-    "latestFirmwareVersion": "4.47.15",
-    "firmwareBuild": "524d13e.211221.1032",
+    "hardwareRevision": "20",
+    "firmwareVersion": "4.48.16",
+    "latestFirmwareVersion": "4.48.16",
+    "firmwareBuild": "dd71d61.211230.1810",
     "isUpdating": false,
     "isAdopting": false,
     "isAdopted": true,
     "isAdoptedByOther": false,
     "isProvisioned": true,
     "isRebooting": false,
-    "isSshEnabled": false,
+    "isSshEnabled": true,
     "canAdopt": false,
     "isAttemptingToConnect": false,
-    "lastMotion": 1641269061863,
+    "lastMotion": 1643055816121,
     "micVolume": 100,
     "isMicEnabled": true,
     "isRecording": true,
     "isWirelessUplinkEnabled": true,
-    "isMotionDetected": false,
-    "isSmartDetected": false,
-    "phyRate": 6,
+    "isMotionDetected": true,
+    "isSmartDetected": true,
+    "phyRate": 200,
     "hdrMode": true,
     "videoMode": "default",
     "isProbingForWifi": false,
@@ -38,56 +38,57 @@
     "apRssi": null,
     "elementInfo": null,
     "chimeDuration": 300,
-    "isDark": true,
+    "isDark": false,
     "lastPrivacyZonePositionId": null,
-    "lastRing": 1640312430902,
+    "lastRing": 1643055803577,
     "isLiveHeatmapEnabled": false,
-    "anonymousDeviceId": "b81f0879-b2ad-4bc8-aa42-4f9551d0c073",
+    "anonymousDeviceId": "783670a8-fd5d-45f7-9e4a-5af42ba89c25",
     "eventStats": {
         "motion": {
-            "today": 1112,
-            "average": 372,
+            "today": 44,
+            "average": 69,
             "lastDays": [
-                520,
-                402,
-                488,
-                431,
-                247,
-                514,
-                6
+                57,
+                59,
+                126,
+                59,
+                65,
+                64,
+                53
             ],
             "recentHours": [
+                5,
                 2,
-                16,
-                23,
-                27,
-                51,
-                47,
-                59,
-                49,
-                28,
-                44,
-                48,
-                53,
-                59
+                6,
+                5,
+                1,
+                0,
+                6,
+                4,
+                1,
+                5,
+                5,
+                0,
+                3
             ]
         },
         "smart": {
-            "today": 9,
-            "average": 7,
+            "today": 0,
+            "average": 0,
             "lastDays": [
-                14,
-                4,
-                5,
-                13,
-                1,
-                12,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
                 0
             ]
         }
     },
     "videoReconfigurationInProgress": false,
-    "voltage": 27.4,
+    "voltage": 27.3,
+    "isPoorNetwork": false,
     "wiredConnectionState": {
         "phyRate": null
     },
@@ -95,14 +96,14 @@
         {
             "id": 0,
             "videoId": "video1",
-            "name": "Qacmncy Iyype",
+            "name": "Ppkqf Wamffz",
             "enabled": true,
             "isRtspEnabled": true,
-            "rtspAlias": "UJcKvWSmZ8OTOMLA",
+            "rtspAlias": "bVFsZBWTKrCRgZKO",
             "width": 1600,
             "height": 1200,
             "fps": 30,
-            "bitrate": 3000000,
+            "bitrate": 6000000,
             "minBitrate": 32000,
             "maxBitrate": 6000000,
             "minClientAdaptiveBitRate": 0,
@@ -131,7 +132,7 @@
         {
             "id": 1,
             "videoId": "video3",
-            "name": "Emvxp Ijhx",
+            "name": "Woi Uoyb",
             "enabled": true,
             "isRtspEnabled": false,
             "rtspAlias": null,
@@ -167,7 +168,7 @@
         {
             "id": 2,
             "videoId": "video2",
-            "name": "Thrldrk Yxn",
+            "name": "Rtogc Kztj",
             "enabled": true,
             "isRtspEnabled": false,
             "rtspAlias": null,
@@ -203,10 +204,10 @@
         {
             "id": 3,
             "videoId": "video4",
-            "name": "Package Camera",
+            "name": "Ohxs Zvtmc",
             "enabled": true,
             "isRtspEnabled": true,
-            "rtspAlias": "UJcKvWSmZ8OTOMLA",
+            "rtspAlias": "d8KCmJNaI1NTIpGJ",
             "width": 1600,
             "height": 1200,
             "fps": 2,
@@ -219,7 +220,7 @@
                 1,
                 2
             ],
-            "idrInterval": 1
+            "idrInterval": 5
         }
     ],
     "ispSettings": {
@@ -329,18 +330,22 @@
     "smartDetectZones": [
         {
             "id": 1,
-            "name": "Default",
+            "name": "Txeb Hlswjhf",
             "color": "#AB46BC",
             "points": [
                 [
-                    0.575,
-                    0.451
-                ],
-                [
-                    1,
+                    0.569,
                     0
                 ],
                 [
+                    0.604,
+                    0.537
+                ],
+                [
+                    1,
+                    0.565
+                ],
+                [
                     1,
                     1
                 ],
@@ -350,30 +355,64 @@
                 ],
                 [
                     0,
-                    0.53
+                    0
                 ],
                 [
-                    0.487,
-                    0.535
+                    0.276,
+                    0
                 ]
             ],
             "sensitivity": 50,
             "objectTypes": [
-                "person",
+                "person"
+            ]
+        },
+        {
+            "id": 2,
+            "name": "Krc Zhcvlco",
+            "color": "#586CED",
+            "points": [
+                [
+                    0,
+                    0
+                ],
+                [
+                    0.369,
+                    0
+                ],
+                [
+                    0.358,
+                    0.543
+                ],
+                [
+                    1,
+                    0.531
+                ],
+                [
+                    1,
+                    1
+                ],
+                [
+                    0,
+                    0.978
+                ]
+            ],
+            "sensitivity": 50,
+            "objectTypes": [
                 "vehicle"
             ]
         }
     ],
     "smartDetectLines": [],
     "stats": {
-        "rxBytes": 528477392,
-        "txBytes": 17489019406,
+        "rxBytes": 7917059346,
+        "txBytes": 270432644401,
         "wifi": {
-            "channel": 6,
-            "frequency": 2437,
+            "channel": 153,
+            "frequency": 5765,
             "linkSpeedMbps": null,
             "signalQuality": 100,
-            "signalStrength": -59
+            "signalStrength": -52
         },
         "battery": {
             "percentage": null,
@@ -381,21 +420,21 @@
             "sleepState": "disconnected"
         },
         "video": {
-            "recordingStart": 1640308840567,
-            "recordingEnd": 1641269054013,
-            "recordingStartLQ": 1640308840563,
-            "recordingEndLQ": 1641269054012,
-            "timelapseStart": 1640308840533,
-            "timelapseEnd": 1641268734011,
-            "timelapseStartLQ": 1640308840533,
-            "timelapseEndLQ": 1641268958994
+            "recordingStart": 1641921049599,
+            "recordingEnd": 1643055815739,
+            "recordingStartLQ": 1641921049574,
+            "recordingEndLQ": 1643055815722,
+            "timelapseStart": 1641921049594,
+            "timelapseEnd": 1643055730717,
+            "timelapseStartLQ": 1641921049594,
+            "timelapseEndLQ": 1643055520725
         },
         "storage": {
-            "used": 321048805376,
-            "rate": 405.05042143782
+            "used": 427349245952,
+            "rate": 642.30288184191
         },
         "wifiQuality": 100,
-        "wifiStrength": -59
+        "wifiStrength": -52
     },
     "featureFlags": {
         "canAdjustIrLedLevel": false,
@@ -422,13 +461,9 @@
         "hasHdr": true,
         "hasAutoICROnly": true,
         "videoModes": [
-            "default",
-            "highFps"
+            "default"
         ],
-        "videoModeMaxFps": [
-            24,
-            45
-        ],
+        "videoModeMaxFps": [],
         "hasMotionZones": true,
         "hasLcdScreen": true,
         "mountPositions": [],
@@ -503,33 +538,33 @@
     },
     "lcdMessage": {
         "type": "CUSTOM_MESSAGE",
-        "text": "Use Other Door | 23\u00b0F",
+        "text": "Welcome | 03:23 PM | 25\u00b0F",
         "resetAt": null
     },
     "wifiConnectionState": {
-        "channel": 6,
-        "frequency": 2437,
-        "phyRate": 6,
+        "channel": 153,
+        "frequency": 5765,
+        "phyRate": 200,
         "signalQuality": 100,
-        "signalStrength": -59,
+        "signalStrength": -52,
         "ssid": "Mortis Camera"
     },
     "lenses": [
         {
             "id": 2,
             "video": {
-                "recordingStart": 1641836571312,
-                "recordingEnd": 1641839060505,
+                "recordingStart": 1642357077629,
+                "recordingEnd": 1643055806877,
                 "recordingStartLQ": null,
                 "recordingEndLQ": null,
-                "timelapseStart": 1641836571312,
-                "timelapseEnd": 1641838896182,
+                "timelapseStart": 1641921049317,
+                "timelapseEnd": 1643055667971,
                 "timelapseStartLQ": null,
                 "timelapseEndLQ": null
             }
         }
     ],
-    "id": "46ba311ab6a61ddae765d652",
+    "id": "1c9a2db4df6efda47a3509be",
     "isConnected": true,
     "platform": "s5l",
     "hasSpeaker": true,
@@ -537,6 +572,6 @@
     "audioBitrate": 64000,
     "canManage": false,
     "isManaged": true,
-    "marketName": "G4 Doorbell",
+    "marketName": "G4 Doorbell Pro",
     "modelKey": "camera"
 }

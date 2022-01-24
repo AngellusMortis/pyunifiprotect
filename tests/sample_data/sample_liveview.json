@@ -1,81 +1,23 @@
 {
-    "name": "Default",
-    "isDefault": true,
+    "name": "Txvocs Vwn",
+    "isDefault": false,
     "isGlobal": true,
-    "layout": 10,
+    "layout": 1,
     "slots": [
         {
             "cameras": [
-                "f48cbb6f7883b7c0252474e9"
+                "1c9a2db4df6efda47a3509be",
+                "e2ff0ade6be0f2a2beb61869",
+                "c462c07dbd63ad805a7318c7",
+                "4a333d993fe8e2e8472bc901",
+                "ab3e27f2d55fad817dac7bb9",
+                "f0cd15b8bed9e38899286a8c"
             ],
-            "cycleMode": "time",
-            "cycleInterval": 10
-        },
-        {
-            "cameras": [
-                "2f9beb2e6f79af3c32c22d49"
-            ],
-            "cycleMode": "time",
-            "cycleInterval": 10
-        },
-        {
-            "cameras": [
-                "8ef0d27bf2f7a1ff5029305f"
-            ],
-            "cycleMode": "time",
-            "cycleInterval": 10
-        },
-        {
-            "cameras": [
-                "1795447fe166e61b7f541a30"
-            ],
-            "cycleMode": "time",
-            "cycleInterval": 10
-        },
-        {
-            "cameras": [
-                "1eb278500d44bb314e8749fd"
-            ],
-            "cycleMode": "time",
-            "cycleInterval": 10
-        },
-        {
-            "cameras": [
-                "6cabf1de98c2158498d43158"
-            ],
-            "cycleMode": "time",
-            "cycleInterval": 10
-        },
-        {
-            "cameras": [
-                "46ba311ab6a61ddae765d652"
-            ],
-            "cycleMode": "time",
-            "cycleInterval": 10
-        },
-        {
-            "cameras": [
-                "80e09568841a6c739305e88a"
-            ],
-            "cycleMode": "time",
-            "cycleInterval": 10
-        },
-        {
-            "cameras": [
-                "73543d2f9620342bd06e5c5b"
-            ],
-            "cycleMode": "time",
-            "cycleInterval": 10
-        },
-        {
-            "cameras": [
-                "a6669fb8e95d6140816f505c"
-            ],
-            "cycleMode": "time",
+            "cycleMode": "motion",
             "cycleInterval": 10
         }
     ],
-    "owner": "ff8bc58cd0089fc622e5da65",
-    "id": "ca46bf227581333f86f9372a",
+    "owner": "4c5f03a8c8bd48ad8e066285",
+    "id": "d65bb41c14d6aa92bfa4a6d1",
     "modelKey": "liveview"
 }

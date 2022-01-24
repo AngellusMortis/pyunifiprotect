@@ -44,6 +44,7 @@ TEST_SENSOR_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_sensor.json").exists()
 TEST_VIEWPORT_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_viewport.json").exists()
 TEST_BRIDGE_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_bridge.json").exists()
 TEST_LIVEVIEW_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_liveview.json").exists()
+TEST_DOORLOCK_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_doorlock.json").exists()
 
 
 def read_binary_file(name: str, ext: str = "png"):
@@ -275,6 +276,15 @@ async def sensor_obj(protect_client: ProtectApiClient):  # pylint: disable=redef
     return list(protect_client.bootstrap.sensors.values())[0]
 
 
+@pytest.fixture(name="doorlock_obj")
+@pytest.mark.asyncio
+async def doorlock_obj_fixture(protect_client: ProtectApiClient):
+    if not TEST_DOORLOCK_EXISTS:
+        return None
+
+    return list(protect_client.bootstrap.doorlocks.values())[0]
+
+
 @pytest.fixture
 @pytest.mark.asyncio
 async def liveview_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
@@ -325,6 +335,14 @@ def sensor():
 
 
 @pytest.fixture
+def doorlock():
+    if not TEST_DOORLOCK_EXISTS:
+        return None
+
+    return read_json_file("sample_doorlock")
+
+
+@pytest.fixture
 def bridge():
     if not TEST_BRIDGE_EXISTS:
         return None
@@ -370,6 +388,14 @@ def sensors():
         return []
 
     return [read_json_file("sample_sensor")]
+
+
+@pytest.fixture
+def doorlocks():
+    if not TEST_DOORLOCK_EXISTS:
+        return []
+
+    return [read_json_file("sample_doorlock")]
 
 
 @pytest.fixture
@@ -478,7 +504,7 @@ def compare_objs(obj_type, expected, actual):
         # delete all extra metadata keys, many of which are not modeled
         for key in set(expected_keys).difference(actual_keys):
             del expected["metadata"][key]
-    elif obj_type == ModelType.SENSOR.value:
+    elif obj_type in (ModelType.SENSOR.value, ModelType.DOORLOCK.value):
         del expected["bridgeCandidates"]
         actual.pop("host", None)
         expected.pop("host", None)

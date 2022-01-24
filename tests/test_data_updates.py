@@ -19,7 +19,7 @@ from pyunifiprotect.data import (
     VideoMode,
     Viewer,
 )
-from pyunifiprotect.data.devices import CameraZone, Sensor
+from pyunifiprotect.data.devices import CameraZone, Doorlock, Sensor
 from pyunifiprotect.data.nvr import NVR, DoorbellMessage
 from pyunifiprotect.data.types import (
     DEFAULT,
@@ -33,6 +33,7 @@ from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import to_js_time, to_ms
 from tests.conftest import (
     TEST_CAMERA_EXISTS,
+    TEST_DOORLOCK_EXISTS,
     TEST_LIGHT_EXISTS,
     TEST_SENSOR_EXISTS,
     TEST_VIEWPORT_EXISTS,
@@ -1638,6 +1639,40 @@ async def test_sensor_set_paired_camera(sensor_obj: Light, camera_obj: Camera):
 
     sensor_obj.api.api_request.assert_called_with(
         f"sensors/{sensor_obj.id}",
+        method="patch",
+        json={"camera": camera_obj.id},
+    )
+
+
+@pytest.mark.skipif(not TEST_DOORLOCK_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
+async def test_doorlock_set_paired_camera_none(doorlock_obj: Doorlock):
+    doorlock_obj.api.api_request.reset_mock()
+
+    doorlock_obj.camera_id = "bad_id"
+    doorlock_obj._initial_data = doorlock_obj.dict()
+
+    await doorlock_obj.set_paired_camera(None)
+
+    doorlock_obj.api.api_request.assert_called_with(
+        f"doorlocks/{doorlock_obj.id}",
+        method="patch",
+        json={"camera": None},
+    )
+
+
+@pytest.mark.skipif(not TEST_DOORLOCK_EXISTS or not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
+async def test_doorlock_set_paired_camera(doorlock_obj: Light, camera_obj: Camera):
+    doorlock_obj.api.api_request.reset_mock()
+
+    doorlock_obj.camera_id = None
+    doorlock_obj._initial_data = doorlock_obj.dict()
+
+    await doorlock_obj.set_paired_camera(camera_obj)
+
+    doorlock_obj.api.api_request.assert_called_with(
+        f"doorlocks/{doorlock_obj.id}",
         method="patch",
         json={"camera": camera_obj.id},
     )

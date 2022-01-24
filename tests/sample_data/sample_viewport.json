@@ -1,13 +1,13 @@
 {
-    "mac": "6DDDBC76387F",
-    "host": "192.168.233.218",
-    "connectionHost": "192.168.216.198",
+    "mac": "85EEA7DF1601",
+    "host": "192.168.27.69",
+    "connectionHost": "192.168.102.63",
     "type": "UP Viewport",
-    "name": "Pejwpc Djtejoq",
-    "upSince": 1640445931850,
-    "uptime": 823097,
-    "lastSeen": 1641269028850,
-    "connectedSince": 1641257248734,
+    "name": "Uknkgc Jpyuso",
+    "upSince": 1642661973905,
+    "uptime": 393786,
+    "lastSeen": 1643055759905,
+    "connectedSince": 1642672730441,
     "state": "CONNECTED",
     "hardwareRevision": null,
     "firmwareVersion": "1.2.54",
@@ -27,8 +27,8 @@
     "wiredConnectionState": {
         "phyRate": 1000
     },
-    "liveview": "ca46bf227581333f86f9372a",
-    "id": "54efc43360a97140319f565a",
+    "liveview": "bf41f6b5ba0ddd046eeb1c98",
+    "id": "081c58d13ad7e198d3dddffa",
     "isConnected": true,
     "marketName": "UP ViewPort",
     "modelKey": "viewer"
