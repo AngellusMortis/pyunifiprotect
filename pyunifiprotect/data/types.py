@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Literal, Optional, TypeVar, Union
 from packaging.version import Version as BaseVersion
 from pydantic import ConstrainedDecimal, ConstrainedInt
 from pydantic.color import Color as BaseColor
-from pydantic.types import ConstrainedStr
+from pydantic.types import ConstrainedStr, ConstrainedFloat
 
 KT = TypeVar("KT")
 VT = TypeVar("VT")
@@ -164,8 +164,10 @@ class SmartDetectObjectType(str, ValuesEnumMixin, enum.Enum):
     PERSON = "person"
     ANIMAL = "animal"
     VEHICLE = "vehicle"
-    # old?
     FACE = "face"
+    PET = "pet"
+    LICENSE_PLATE = "licenseplate"
+    # old?
     CAR = "car"
 
 
@@ -284,6 +286,11 @@ class LEDLevel(ConstrainedInt):
 
 
 class PercentInt(ConstrainedInt):
+    ge = 0
+    le = 100
+
+
+class PercentFloat(ConstrainedFloat):
     ge = 0
     le = 100
 

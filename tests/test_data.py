@@ -160,6 +160,7 @@ def test_bootstrap(bootstrap):
     del bootstrap["displays"]
     del bootstrap["chimes"]
     del bootstrap["schedules"]
+    del bootstrap["deviceGroups"]
     del bootstrap["nvr"]["uiVersion"]
     del bootstrap["nvr"]["errorCode"]
     del bootstrap["nvr"]["wifiSettings"]

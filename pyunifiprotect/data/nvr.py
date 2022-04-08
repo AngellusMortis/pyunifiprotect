@@ -363,6 +363,7 @@ class User(ProtectModelWithId):
     enable_notifications: bool
     has_accepted_invite: bool
     all_permissions: List[str]
+    scopes: List[str]
     location: Optional[UserLocation]
     name: str
     first_name: str
@@ -427,6 +428,7 @@ class PortConfig(ProtectBaseObject):
     tcp_bridge: int
     ucore: int
     discovery_client: int
+    piongw: Optional[int] = None
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
@@ -643,6 +645,11 @@ class NVR(ProtectDeviceModel):
     is_recording_motion_only: bool
     max_camera_capacity: Dict[Literal["4K", "2K", "HD"], int]
     is_wireless_uplink_enabled: Optional[bool]
+    market_name: Optional[str] = None
+    stream_sharing_available: Optional[bool] = None
+    is_db_available: Optional[bool] = None
+    is_recording_disabled: Optional[bool] = None
+    is_recording_motion_only: Optional[bool] = None
 
     # TODO:
     # uiVersion

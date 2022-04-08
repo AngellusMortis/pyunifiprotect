@@ -482,6 +482,8 @@ def compare_objs(obj_type, expected, actual):
         del expected["lastPrivacyZonePositionId"]
         del expected["recordingSchedules"]
         del expected["smartDetectLines"]
+        if "streamSharing" in expected:
+            del expected["streamSharing"]
         del expected["featureFlags"]["mountPositions"]
         del expected["featureFlags"]["focus"]
         del expected["featureFlags"]["pan"]

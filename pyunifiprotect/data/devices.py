@@ -319,6 +319,7 @@ class RecordingSettings(ProtectBaseObject):
     mode: RecordingMode
     geofencing: str
     motion_algorithm: str
+    enable_motion_detection: bool | None = None
     enable_pir_timelapse: bool
     use_new_motion_algorithm: bool
 
@@ -591,6 +592,8 @@ class FeatureFlags(ProtectBaseObject):
     has_package_camera: bool
     privacy_mask_capability: PrivacyMaskCapability
     has_smart_detect: bool
+    audio: List[str] = []
+    audio_codecs: List[str] = []
 
     # TODO:
     # mountPositions
@@ -670,6 +673,7 @@ class Camera(ProtectMotionDeviceModel):
     # lastPrivacyZonePositionId
     # recordingSchedule
     # smartDetectLines
+    # streamSharing
 
     # not directly from Unifi
     last_ring_event_id: Optional[str] = None
@@ -775,12 +779,28 @@ class Camera(ProtectMotionDeviceModel):
         return index is not None
 
     @property
+    def can_detect_person(self) -> bool:
+        return SmartDetectObjectType.PERSON in self.feature_flags.smart_detect_types
+
+    @property
     def is_person_detection_on(self) -> bool:
         return SmartDetectObjectType.PERSON in self.smart_detect_settings.object_types
 
     @property
+    def can_detect_vehicle(self) -> bool:
+        return SmartDetectObjectType.VEHICLE in self.feature_flags.smart_detect_types
+
+    @property
     def is_vehicle_detection_on(self) -> bool:
         return SmartDetectObjectType.VEHICLE in self.smart_detect_settings.object_types
+
+    @property
+    def can_detect_face(self) -> bool:
+        return SmartDetectObjectType.FACE in self.feature_flags.smart_detect_types
+
+    @property
+    def is_face_detection_on(self) -> bool:
+        return SmartDetectObjectType.FACE in self.smart_detect_settings.object_types
 
     @property
     def is_ringing(self) -> bool:

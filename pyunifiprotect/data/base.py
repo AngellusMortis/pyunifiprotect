@@ -21,7 +21,12 @@ from typing import (
 from pydantic import BaseModel
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, PrivateAttr
 
-from pyunifiprotect.data.types import ModelType, ProtectWSPayloadFormat, StateType
+from pyunifiprotect.data.types import (
+    ModelType,
+    PercentFloat,
+    ProtectWSPayloadFormat,
+    StateType,
+)
 from pyunifiprotect.data.websocket import (
     WSJSONPacketFrame,
     WSPacket,
@@ -626,6 +631,10 @@ class WirelessConnectionState(ProtectBaseObject):
     signal_strength: Optional[int]
 
 
+class BluetoothConnectionState(WirelessConnectionState):
+    experience_score: Optional[PercentFloat] = None
+
+
 class WifiConnectionState(WirelessConnectionState):
     phy_rate: Optional[int]
     channel: Optional[int]
@@ -652,7 +661,7 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
 
     wired_connection_state: Optional[WiredConnectionState] = None
     wifi_connection_state: Optional[WifiConnectionState] = None
-    bluetooth_connection_state: Optional[WirelessConnectionState] = None
+    bluetooth_connection_state: Optional[BluetoothConnectionState] = None
     bridge_id: Optional[str]
 
     # TODO:
