@@ -363,7 +363,7 @@ class User(ProtectModelWithId):
     enable_notifications: bool
     has_accepted_invite: bool
     all_permissions: List[str]
-    scopes: List[str]
+    scopes: Optional[List[str]] = None
     location: Optional[UserLocation]
     name: str
     first_name: str
