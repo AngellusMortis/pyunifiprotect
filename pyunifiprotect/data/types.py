@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Literal, Optional, TypeVar, Union
 from packaging.version import Version as BaseVersion
 from pydantic import ConstrainedDecimal, ConstrainedInt
 from pydantic.color import Color as BaseColor
-from pydantic.types import ConstrainedStr, ConstrainedFloat
+from pydantic.types import ConstrainedFloat, ConstrainedStr
 
 KT = TypeVar("KT")
 VT = TypeVar("VT")
