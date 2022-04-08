@@ -319,7 +319,7 @@ class RecordingSettings(ProtectBaseObject):
     mode: RecordingMode
     geofencing: str
     motion_algorithm: str
-    enable_motion_detection: bool | None = None
+    enable_motion_detection: Optional[bool] = None
     enable_pir_timelapse: bool
     use_new_motion_algorithm: bool
 
