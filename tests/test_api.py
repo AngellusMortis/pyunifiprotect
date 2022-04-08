@@ -237,7 +237,11 @@ async def test_get_nvr(protect_client: ProtectApiClient, nvr):
     del nvr["wifiSettings"]
     del nvr["smartDetectAgreement"]
     del nvr["ssoChannel"]
+    nvr["isDbAvailable"] = nvr.get("isDbAvailable")
+    nvr["marketName"] = nvr.get("marketName")
+    nvr["streamSharingAvailable"] = nvr.get("streamSharingAvailable")
     nvr["systemInfo"].pop("ustorage", None)
+    nvr["ports"]["piongw"] = nvr["ports"].get("piongw")
 
     nvr_obj = await protect_client.get_nvr()
     assert nvr_obj.unifi_dict() == nvr
