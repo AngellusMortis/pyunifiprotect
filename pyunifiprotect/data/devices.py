@@ -803,6 +803,22 @@ class Camera(ProtectMotionDeviceModel):
         return SmartDetectObjectType.FACE in self.smart_detect_settings.object_types
 
     @property
+    def can_detect_pet(self) -> bool:
+        return SmartDetectObjectType.PET in self.feature_flags.smart_detect_types
+
+    @property
+    def is_pet_detection_on(self) -> bool:
+        return SmartDetectObjectType.PET in self.smart_detect_settings.object_types
+
+    @property
+    def can_detect_license_plate(self) -> bool:
+        return SmartDetectObjectType.LICENSE_PLATE in self.feature_flags.smart_detect_types
+
+    @property
+    def is_license_plate_detection_on(self) -> bool:
+        return SmartDetectObjectType.LICENSE_PLATE in self.smart_detect_settings.object_types
+
+    @property
     def is_ringing(self) -> bool:
         if self._last_ring_timeout is None:
             return False
@@ -1027,6 +1043,9 @@ class Camera(ProtectMotionDeviceModel):
 
     async def _set_object_detect(self, obj_to_mod: SmartDetectObjectType, enabled: bool) -> None:
 
+        if obj_to_mod not in self.feature_flags.smart_detect_types:
+            raise BadRequest(f"Camera does not support the {obj_to_mod} detection type")
+
         current_objects = self.smart_detect_settings.object_types
         if enabled:
             if obj_to_mod not in current_objects:
@@ -1045,6 +1064,21 @@ class Camera(ProtectMotionDeviceModel):
         """Toggles vehicle smart detection. Requires camera to have smart detection"""
 
         return await self._set_object_detect(SmartDetectObjectType.VEHICLE, enabled)
+
+    async def set_face_detection(self, enabled: bool) -> None:
+        """Toggles face smart detection. Requires camera to have smart detection"""
+
+        return await self._set_object_detect(SmartDetectObjectType.FACE, enabled)
+
+    async def set_pet_detection(self, enabled: bool) -> None:
+        """Toggles pet smart detection. Requires camera to have smart detection"""
+
+        return await self._set_object_detect(SmartDetectObjectType.PET, enabled)
+
+    async def set_license_plate_detection(self, enabled: bool) -> None:
+        """Toggles license plate smart detection. Requires camera to have smart detection"""
+
+        return await self._set_object_detect(SmartDetectObjectType.LICENSE_PLATE, enabled)
 
     async def set_lcd_text(
         self,
