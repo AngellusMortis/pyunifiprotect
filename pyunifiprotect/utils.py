@@ -11,6 +11,7 @@ from inspect import isclass
 from ipaddress import AddressValueError, IPv4Address
 import json
 import logging
+import math
 import os
 from pathlib import Path
 import re
@@ -46,7 +47,6 @@ if TYPE_CHECKING:
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 DEBUG_ENV = "UFP_DEBUG"
 PROGRESS_CALLABLE = Callable[[int, str], Coroutine[Any, Any, None]]
-DECIMAL_EVEN = (Decimal(1), Decimal(0))
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -220,12 +220,12 @@ def serialize_coord(coord: CoordType) -> Union[int, float]:
     """Serializes UFP zone coordinate"""
     from pyunifiprotect.data import Percent  # pylint: disable=import-outside-toplevel
 
-    if not isinstance(coord, (Percent, Decimal)):
+    if not isinstance(coord, Percent):
         return coord
 
-    if coord in (Decimal(1), Decimal(0)):
+    if math.isclose(coord, 0) or math.isclose(coord, 1):
         return int(coord)
-    return float(coord)
+    return coord
 
 
 def serialize_point(point: Tuple[CoordType, CoordType]) -> List[Union[int, float]]:
@@ -243,18 +243,6 @@ def serialize_list(items: Iterable[Any]) -> List[Any]:
         new_items.append(serialize_unifi_obj(item))
 
     return new_items
-
-
-def round_decimal(num: Union[Decimal, int, float], digits: int) -> Decimal:
-    """Rounds a decimal to a set precision"""
-
-    if isinstance(num, Decimal):
-        return num
-
-    unrounded = Decimal(num)
-    if unrounded in DECIMAL_EVEN:
-        return unrounded
-    return Decimal(str(round(num, digits)))
 
 
 def ip_from_host(host: str) -> IPv4Address:

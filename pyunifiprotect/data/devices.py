@@ -43,7 +43,6 @@ from pyunifiprotect.stream import TalkbackStream
 from pyunifiprotect.utils import (
     from_js_time,
     process_datetime,
-    round_decimal,
     serialize_point,
     to_js_time,
     utc_now,
@@ -526,7 +525,7 @@ class CameraZone(ProtectBaseObject):
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         data = super().unifi_dict_to_dict(data)
         if "points" in data and isinstance(data["points"], Iterable):
-            data["points"] = [(round_decimal(p[0], 4), round_decimal(p[1], 4)) for p in data["points"]]
+            data["points"] = [(p[0], p[1]) for p in data["points"]]
 
         return data
 

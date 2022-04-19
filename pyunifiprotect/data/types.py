@@ -4,7 +4,7 @@ import enum
 from typing import Any, Dict, List, Literal, Optional, TypeVar, Union
 
 from packaging.version import Version as BaseVersion
-from pydantic import ConstrainedDecimal, ConstrainedInt
+from pydantic import ConstrainedInt
 from pydantic.color import Color as BaseColor
 from pydantic.types import ConstrainedFloat, ConstrainedStr
 
@@ -305,11 +305,9 @@ class WDRLevel(ConstrainedInt):
     le = 3
 
 
-class Percent(ConstrainedDecimal):
+class Percent(ConstrainedFloat):
     ge = 0
     le = 1
-    max_digits = 4
-    decimal_places = 3
 
 
 CoordType = Union[Percent, int, float]
