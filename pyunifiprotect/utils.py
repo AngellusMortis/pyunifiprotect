@@ -39,7 +39,7 @@ from pydantic.utils import to_camel
 from pyunifiprotect.data.types import Version
 from pyunifiprotect.exceptions import NvrError
 
-# typer<0.4.1 is imcompatible with click>=8.1.0
+# typer<0.4.1 is incompatible with click>=8.1.0
 # allows only the CLI interface to break if both are installed
 try:
     import typer
