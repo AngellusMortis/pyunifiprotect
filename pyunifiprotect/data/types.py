@@ -70,6 +70,7 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
     DOORLOCK = "doorlock"
     SCHEDULE = "schedule"
     CHIME = "chime"
+    DEVICE_GROUP = "deviceGroup"
 
     @staticmethod
     def bootstrap_models() -> List[str]:
@@ -87,6 +88,7 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
             ModelType.BRIDGE.value,
             ModelType.SENSOR.value,
             ModelType.DOORLOCK.value,
+            ModelType.CHIME.value,
         ]
 
 
@@ -167,6 +169,7 @@ class SmartDetectObjectType(str, ValuesEnumMixin, enum.Enum):
     FACE = "face"
     PET = "pet"
     LICENSE_PLATE = "licenseplate"
+    PACKAGE = "package"
     # old?
     CAR = "car"
 

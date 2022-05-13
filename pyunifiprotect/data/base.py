@@ -589,7 +589,7 @@ class ProtectModelWithId(ProtectModel):
 
 
 class ProtectDeviceModel(ProtectModelWithId):
-    name: str
+    name: Optional[str]
     type: str
     mac: str
     host: Optional[Union[IPv4Address, str]]

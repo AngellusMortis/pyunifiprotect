@@ -110,6 +110,28 @@ def shell(
 
 
 @app.command()
+def test(
+    username: str = OPTION_USERNAME,
+    password: str = OPTION_PASSWORD,
+    address: str = OPTION_ADDRESS,
+    port: int = OPTION_PORT,
+    verify: bool = OPTION_VERIFY,
+) -> None:
+    protect = ProtectApiClient(address, port, username, password, verify_ssl=verify, debug=True)
+
+    async def callback() -> None:
+        await protect.update()
+        c = list(protect.bootstrap.chimes.values())[0]
+        c.is_ssh_enabled = True
+        await c.save_device()
+
+    _setup_logger()
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(callback())
+
+
+@app.command()
 def generate_sample_data(
     username: str = OPTION_USERNAME,
     password: str = OPTION_PASSWORD,

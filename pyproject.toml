@@ -151,6 +151,7 @@ overgeneral-exceptions = [
 ]
 
 [tool.pytest.ini_options]
+ayncio_mode='strict'
 testpaths = [
     "tests",
 ]

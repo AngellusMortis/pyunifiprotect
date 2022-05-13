@@ -36,6 +36,7 @@ from pyunifiprotect.data import (
     WSSubscriptionMessage,
     create_from_unifi_dict,
 )
+from pyunifiprotect.data.devices import Chime
 from pyunifiprotect.data.types import RecordingMode
 from pyunifiprotect.exceptions import BadRequest, NotAuthorized, NvrError
 from pyunifiprotect.utils import (
@@ -729,6 +730,14 @@ class ProtectApiClient(BaseApiClient):
         """
         return cast(List[Doorlock], await self.get_devices(ModelType.DOORLOCK, Doorlock))
 
+    async def get_chimes(self) -> List[Chime]:
+        """
+        Gets the list of chimes straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.chimes`
+        """
+        return cast(List[Chime], await self.get_devices(ModelType.CHIME, Chime))
+
     async def get_viewers(self) -> List[Viewer]:
         """
         Gets the list of viewers straight from the NVR.
@@ -819,6 +828,14 @@ class ProtectApiClient(BaseApiClient):
         The websocket is connected and running, you likely just want to use `self.bootstrap.doorlocks[device_id]`
         """
         return cast(Doorlock, await self.get_device(ModelType.DOORLOCK, device_id, Doorlock))
+
+    async def get_chime(self, device_id: str) -> Chime:
+        """
+        Gets a chime straight from the NVR.
+
+        The websocket is connected and running, you likely just want to use `self.bootstrap.chimes[device_id]`
+        """
+        return cast(Chime, await self.get_device(ModelType.CHIME, device_id, Chime))
 
     async def get_viewer(self, device_id: str) -> Viewer:
         """
@@ -1024,3 +1041,8 @@ class ProtectApiClient(BaseApiClient):
         """Open doorlock (unlock)"""
 
         await self.api_request(f"doorlocks/{device_id}/open", method="post")
+
+    async def play_speaker(self, device_id: str) -> None:
+        """Plays chime tones on a chime"""
+
+        await self.api_request(f"chimes/{device_id}/play-speaker", method="post")

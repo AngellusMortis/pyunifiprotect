@@ -15,6 +15,7 @@ from unittest.mock import AsyncMock, Mock
 
 import aiohttp
 import pytest
+import pytest_asyncio
 
 from pyunifiprotect import ProtectApiClient
 from pyunifiprotect.data import Camera, ModelType
@@ -46,6 +47,7 @@ TEST_VIEWPORT_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_viewport.json").exists()
 TEST_BRIDGE_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_bridge.json").exists()
 TEST_LIVEVIEW_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_liveview.json").exists()
 TEST_DOORLOCK_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_doorlock.json").exists()
+TEST_CHIME_EXISTS = (SAMPLE_DATA_DIRECTORY / "sample_chime.json").exists()
 
 
 def read_binary_file(name: str, ext: str = "png"):
@@ -102,6 +104,10 @@ async def mock_api_request(url: str, *args, **kwargs):
         return [read_json_file("sample_bridge")]
     elif url == "liveviews":
         return [read_json_file("sample_liveview")]
+    elif url == "doorlocks":
+        return [read_json_file("sample_doorlock")]
+    elif url == "chimes":
+        return [read_json_file("sample_chime")]
     elif url.startswith("cameras/"):
         return read_json_file("sample_camera")
     elif url.startswith("lights/"):
@@ -114,6 +120,10 @@ async def mock_api_request(url: str, *args, **kwargs):
         return read_json_file("sample_bridge")
     elif url.startswith("liveviews/"):
         return read_json_file("sample_liveview")
+    elif url.startswith("doorlocks"):
+        return read_json_file("sample_doorlock")
+    elif url.startswith("chimes"):
+        return read_json_file("sample_chime")
     elif "smartDetectTrack" in url:
         return read_json_file("sample_event_smart_track")
 
@@ -192,16 +202,14 @@ async def cleanup_client(client: ProtectApiClient):
     await client.close_session()
 
 
-@pytest.fixture
-@pytest.mark.asyncio
-async def protect_client():
+@pytest_asyncio.fixture(name="protect_client")
+async def protect_client_fixture():
     client = ProtectApiClient("127.0.0.1", 0, "username", "password")
     yield await setup_client(client, SimpleMockWebsocket())
     await cleanup_client(client)
 
 
-@pytest.fixture
-@pytest.mark.asyncio
+@pytest_asyncio.fixture
 async def protect_client_no_debug():
     set_no_debug()
 
@@ -210,8 +218,7 @@ async def protect_client_no_debug():
     await cleanup_client(client)
 
 
-@pytest.fixture
-@pytest.mark.asyncio
+@pytest_asyncio.fixture
 async def protect_client_ws():
     set_no_debug()
 
@@ -220,9 +227,8 @@ async def protect_client_ws():
     await cleanup_client(client)
 
 
-@pytest.fixture
-@pytest.mark.asyncio
-async def smart_dectect_obj(protect_client: ProtectApiClient, raw_events):  # pylint: disable=redefined-outer-name
+@pytest_asyncio.fixture
+async def smart_dectect_obj(protect_client: ProtectApiClient, raw_events):
     event_dict = None
     for event in raw_events:
         if event["type"] == EventType.SMART_DETECT.value:
@@ -235,50 +241,44 @@ async def smart_dectect_obj(protect_client: ProtectApiClient, raw_events):  # py
         yield Event.from_unifi_dict(api=protect_client, **event_dict)
 
 
-@pytest.fixture
-@pytest.mark.asyncio
-async def nvr_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+@pytest_asyncio.fixture
+async def nvr_obj(protect_client: ProtectApiClient):
     yield protect_client.bootstrap.nvr
 
 
-@pytest.fixture
-@pytest.mark.asyncio
-async def camera_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+@pytest_asyncio.fixture
+async def camera_obj(protect_client: ProtectApiClient):
     if not TEST_CAMERA_EXISTS:
         return None
 
     return list(protect_client.bootstrap.cameras.values())[0]
 
 
-@pytest.fixture
-@pytest.mark.asyncio
-async def light_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+@pytest_asyncio.fixture
+async def light_obj(protect_client: ProtectApiClient):
     if not TEST_LIGHT_EXISTS:
         return None
 
     return list(protect_client.bootstrap.lights.values())[0]
 
 
-@pytest.fixture
-@pytest.mark.asyncio
-async def viewer_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+@pytest_asyncio.fixture
+async def viewer_obj(protect_client: ProtectApiClient):
     if not TEST_VIEWPORT_EXISTS:
         return None
 
     return list(protect_client.bootstrap.viewers.values())[0]
 
 
-@pytest.fixture
-@pytest.mark.asyncio
-async def sensor_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+@pytest_asyncio.fixture
+async def sensor_obj(protect_client: ProtectApiClient):
     if not TEST_SENSOR_EXISTS:
         return None
 
     return list(protect_client.bootstrap.sensors.values())[0]
 
 
-@pytest.fixture(name="doorlock_obj")
-@pytest.mark.asyncio
+@pytest_asyncio.fixture(name="doorlock_obj")
 async def doorlock_obj_fixture(protect_client: ProtectApiClient):
     if not TEST_DOORLOCK_EXISTS:
         return None
@@ -286,9 +286,16 @@ async def doorlock_obj_fixture(protect_client: ProtectApiClient):
     return list(protect_client.bootstrap.doorlocks.values())[0]
 
 
-@pytest.fixture
-@pytest.mark.asyncio
-async def liveview_obj(protect_client: ProtectApiClient):  # pylint: disable=redefined-outer-name
+@pytest_asyncio.fixture(name="chime_obj")
+async def chime_obj_fixture(protect_client: ProtectApiClient):
+    if not TEST_CHIME_EXISTS:
+        return None
+
+    return list(protect_client.bootstrap.chimes.values())[0]
+
+
+@pytest_asyncio.fixture
+async def liveview_obj(protect_client: ProtectApiClient):
     if not TEST_LIVEVIEW_EXISTS:
         return None
 
@@ -341,6 +348,14 @@ def doorlock():
         return None
 
     return read_json_file("sample_doorlock")
+
+
+@pytest.fixture
+def chime():
+    if not TEST_CHIME_EXISTS:
+        return None
+
+    return read_json_file("sample_chime")
 
 
 @pytest.fixture
@@ -400,6 +415,14 @@ def doorlocks():
 
 
 @pytest.fixture
+def chimes():
+    if not TEST_CHIME_EXISTS:
+        return []
+
+    return [read_json_file("sample_chime")]
+
+
+@pytest.fixture
 def bridges():
     if not TEST_BRIDGE_EXISTS:
         return []
@@ -412,8 +435,8 @@ def ws_messages():
     return read_json_file("sample_ws_messages")
 
 
-@pytest.fixture
-def raw_events():
+@pytest.fixture(name="raw_events")
+def raw_events_fixture():
     return read_json_file("sample_raw_events")
 
 
@@ -534,6 +557,10 @@ def compare_objs(obj_type, expected, actual):
         del expected["bridgeCandidates"]
         actual.pop("host", None)
         expected.pop("host", None)
+    elif obj_type == ModelType.CHIME.value:
+        del expected["apMac"]
+        del expected["apRssi"]
+        del expected["elementInfo"]
 
     if "bluetoothConnectionState" in expected:
         expected["bluetoothConnectionState"]["experienceScore"] = expected["bluetoothConnectionState"].get(

@@ -1582,3 +1582,61 @@ class Doorlock(ProtectAdoptableDeviceModel):
             raise BadRequest("Lock is not closed")
 
         await self.api.open_lock(self.id)
+
+
+class Chime(ProtectAdoptableDeviceModel):
+    volume: PercentInt
+    is_probing_for_wifi: bool
+    last_ring: Optional[datetime]
+    is_wireless_uplink_enabled: bool
+    camera_ids: List[str]
+
+    # TODO:
+    # apMac
+    # apRssi
+    # elementInfo
+
+    @property
+    def cameras(self) -> List[Camera]:
+        """Paired Cameras for chime"""
+
+        if len(self.camera_ids) == 0:
+            return []
+
+        cameras = []
+        for camera_id in self.camera_ids:
+            cameras.append(self.api.bootstrap.cameras[camera_id])
+
+        return cameras
+
+    async def set_volume(self, level: int) -> None:
+        """Sets the volume on chime"""
+
+        self.volume = PercentInt(level)
+        await self.save_device()
+
+    async def add_camera(self, camera: Camera) -> None:
+        """Adds new paired camera to chime"""
+
+        if not camera.feature_flags.has_chime:
+            raise BadRequest("Camera does not have a chime")
+
+        if camera.id in self.camera_ids:
+            raise BadRequest("Camera is already paired")
+
+        self.camera_ids.append(camera.id)
+        await self.save_device()
+
+    async def remove_camera(self, camera: Camera) -> None:
+        """Removes paired camera from chime"""
+
+        if camera.id not in self.camera_ids:
+            raise BadRequest("Camera is not paired")
+
+        self.camera_ids.remove(camera.id)
+        await self.save_device()
+
+    async def play(self) -> None:
+        """Plays chime tone"""
+
+        await self.api.play_speaker(self.id)
