@@ -1602,12 +1602,7 @@ class Chime(ProtectAdoptableDeviceModel):
 
         if len(self.camera_ids) == 0:
             return []
-
-        cameras = []
-        for camera_id in self.camera_ids:
-            cameras.append(self.api.bootstrap.cameras[camera_id])
-
-        return cameras
+        return [self.api.bootstrap.cameras[c] for c in self.camera_ids]
 
     async def set_volume(self, level: int) -> None:
         """Sets the volume on chime"""
