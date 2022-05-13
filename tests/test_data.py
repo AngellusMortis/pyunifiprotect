@@ -157,7 +157,8 @@ def test_bootstrap(bootstrap):
     obj_dict = obj.unifi_dict()
 
     # TODO:
-    del bootstrap["deviceGroups"]
+    if "deviceGroups" in bootstrap:  # added in 2.0-beta
+        del bootstrap["deviceGroups"]
     del bootstrap["legacyUFVs"]
     del bootstrap["displays"]
     del bootstrap["schedules"]
