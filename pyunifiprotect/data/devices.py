@@ -1648,3 +1648,8 @@ class Chime(ProtectAdoptableDeviceModel):
         """Plays chime tone"""
 
         await self.api.play_speaker(self.id)
+
+    async def play_buzzer(self) -> None:
+        """Plays chime buzzer"""
+
+        await self.api.play_buzzer(self.id)

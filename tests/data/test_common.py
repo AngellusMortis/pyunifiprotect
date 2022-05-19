@@ -468,3 +468,26 @@ def test_bootstrap_dns_host(bootstrap):
 
     bootstrap_obj = Bootstrap.from_unifi_dict(**bootstrap)
     assert bootstrap_obj.nvr.hosts == ["se-gw.local"]
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
+async def test_save_device_no_changes(camera_obj: Camera):
+    camera_obj.api.api_request.reset_mock()  # type: ignore
+
+    await camera_obj.save_device()
+
+    assert not camera_obj.api.api_request.called  # type: ignore
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
+async def test_device_reboot(camera_obj: Camera):
+    camera_obj.api.api_request.reset_mock()  # type: ignore
+
+    await camera_obj.reboot()
+
+    camera_obj.api.api_request.assert_called_with(  # type: ignore
+        f"cameras/{camera_obj.id}/reboot",
+        method="post",
+    )

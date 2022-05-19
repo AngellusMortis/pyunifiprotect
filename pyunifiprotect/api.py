@@ -1046,3 +1046,8 @@ class ProtectApiClient(BaseApiClient):
         """Plays chime tones on a chime"""
 
         await self.api_request(f"chimes/{device_id}/play-speaker", method="post")
+
+    async def play_buzzer(self, device_id: str) -> None:
+        """Plays chime tones on a chime"""
+
+        await self.api_request(f"chimes/{device_id}/play-buzzer", method="post")
