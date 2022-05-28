@@ -18,7 +18,7 @@
         {
             "label": "Update requirements",
             "type": "shell",
-            "command": "${workspaceFolder}/.bin/update-requirements",
+            "command": "${workspaceFolder}/.bin/update-requirements && ${workspaceFolder}/.bin/install-requirements",
             "problemMatcher": []
         }
     ]

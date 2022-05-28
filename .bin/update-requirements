@@ -16,7 +16,4 @@ pip-compile --upgrade --extra=shell --extra=dev --output-file=requirements.txt -
 # pytest-sugar has unreleased fix for disutils deprecation
 sed -i -e 's|pytest-sugar==0.9.4|git+https://github.com/Teemu/pytest-sugar@ee02ada2#egg=pytest-sugar|' requirements.txt
 
-echo "Installing new requirements..."
-.bin/install-requirements
-
 popd 2>&1 >/dev/null
