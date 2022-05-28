@@ -36,7 +36,8 @@ jobs:
         pip install -e ".[dev]"
 
     - name: Lint Code
-      run: .bin/line-code
+      if: ${{ matrix.python-version == env.DEFAULT_PYTHON }}
+      run: .bin/lint-code
 
     - name: Test Code
       run: .bin/test-code
