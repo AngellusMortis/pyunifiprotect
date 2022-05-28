@@ -29,24 +29,14 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install tox tox-gh-actions
         sudo apt update
         sudo apt install -y ffmpeg
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -e ".[dev]"
 
-    - name: Check black with tox
-      if: ${{ matrix.python-version == env.DEFAULT_PYTHON }}
-      run: tox -e black
+    - name: Lint Code
+      run: .bin/line-code
 
-    - name: Check isort tox
-      if: ${{ matrix.python-version == env.DEFAULT_PYTHON }}
-      run: tox -e isort
-
-    - name: Lint with tox
-      if: ${{ matrix.python-version == env.DEFAULT_PYTHON }}
-      run: tox -e lint
-
-    - name: Run Tests
-      run: |
-        PY_VERSION=${{ matrix.python-version }}
-        tox -e py${PY_VERSION/./}
+    - name: Test Code
+      run: .bin/test-code

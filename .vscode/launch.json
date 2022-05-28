@@ -14,57 +14,15 @@
             ]
         },
         {
-            "name": "Run Subcommand: sensor",
+            "name": "Python: Debug Tests",
             "type": "python",
             "request": "launch",
-            "module": "pyunifiprotect",
-            "args": [
-                "sensor",
-            ]
-        },
-        {
-            "name": "Run Subcommand: raw-data",
-            "type": "python",
-            "request": "launch",
-            "module": "pyunifiprotect",
-            "args": [
-                "raw-data",
-            ]
-        },
-        {
-            "name": "Run Subcommand: event-data",
-            "type": "python",
-            "request": "launch",
-            "module": "pyunifiprotect",
-            "args": [
-                "event-data",
-            ]
-        },
-        {
-            "name": "Run Subcommand: generate-sample-data",
-            "type": "python",
-            "request": "launch",
-            "module": "pyunifiprotect",
-            "args": [
-                "generate-sample-data",
-            ]
-        },
-        {
-            "name": "Run Subcommand: generate-sample-data (No Wait)",
-            "type": "python",
-            "request": "launch",
-            "module": "pyunifiprotect",
-            "args": [
-                "generate-sample-data",
-                "-w",
-                "0"
-            ]
-        },
-        {
-            "name": "Debug Tests",
-            "type": "python",
-            "request": "test",
+            "program": "${file}",
+            "purpose": [
+                "debug-test"
+            ],
             "console": "integratedTerminal",
+            "justMyCode": false,
             "env": {
                 "PYTEST_ADDOPTS": "-n=0 --no-cov -vv"
             }

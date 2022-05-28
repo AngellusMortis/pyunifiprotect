@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+BASE_DIR=$( realpath $( dirname "${BASH_SOURCE[0]}" )/../ )
+source "$BASE_DIR/.bin/lib/common.sh"
+setRoot
+
+pushd "$ROOT_PATH" 2>&1 >/dev/null
+
+echo "Updating requirements.txt..."
+pip-compile --upgrade --extra=shell --extra=dev --output-file=requirements.txt --pip-args='--root-user-action=ignore' setup.cfg
+# TODO: replace pytest-sugar with pytest-rich once it supports xdist
+# pytest-sugar has unreleased fix for disutils deprecation
+sed -i -e 's|pytest-sugar==0.9.4|git+https://github.com/Teemu/pytest-sugar@ee02ada2#egg=pytest-sugar|' requirements.txt
+
+echo "Installing new requirements..."
+.bin/install-requirements
+
+popd 2>&1 >/dev/null

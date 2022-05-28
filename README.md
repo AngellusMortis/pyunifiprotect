@@ -93,26 +93,17 @@ This will gather test data for 30 seconds and write it all into the `tests/sampl
 
 ### Linting and Testing
 
-To lint code your code to verify all of the linters pass:
+The following scripts exist to easily format, lint and test code in the same fashion as CI:
 
 ```
-tox -e lint
-```
-
-To test your code to verify all the tests pass:
-
-```
-pytest
+.bin/format-code
+.bin/lint-code
+.bin/test-code
 ```
 
 ### Updating Requirements
 
-To generate an updated pinned requirements file to be used for testing and CI:
-
-```
-pip-compile --upgrade --extra=shell --output-file=requirements_all.txt setup.cfg
-pip-compile --upgrade --extra=dev --output-file=requirements_test.txt --pip-args='-c requirements_all.txt' setup.cfg
-```
+To generate an updated pinned requirements file to be used for testing and CI using the `.bin/update-requirements` script.
 
 There is also a [VS Code task](https://code.visualstudio.com/Docs/editor/tasks) to run this as well.
 

@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.black]
 line-length = 120
-target-version = ["py38", "py39"]
+target-version = ["py39", "py310"]
 exclude = '''
 (
   /(
@@ -151,7 +151,7 @@ overgeneral-exceptions = [
 ]
 
 [tool.pytest.ini_options]
-ayncio_mode='strict'
+asyncio_mode = "strict"
 testpaths = [
     "tests",
 ]
@@ -160,7 +160,7 @@ norecursedirs = [
     "testing_config",
     ".tox",
 ]
-addopts = "--cov=pyunifiprotect --cov-append -rP -n=auto"
+addopts = "--cov=pyunifiprotect --cov-append -n=auto -Wd"
 
 [tool.flake8]
 exclude = ".eggs, .git, .tox, dist"

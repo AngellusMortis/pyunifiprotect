@@ -39,9 +39,11 @@ jobs:
 
     - name: Install requirements
       run: |
-        pip install -e ".[dev]"
         sudo apt update
         sudo apt install -y ffmpeg
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -e ".[dev]"
 
     - name: Remove Previous Test Data
       run: rm -rf "${UFP_SAMPLE_DIR}/*"
@@ -56,4 +58,6 @@ jobs:
       run: unifi-protect generate-sample-data -w 300 --actual
 
     - name: Run Tests
-      run: pytest -n=0 --timeout=330 --cov-report term --ignore=tests/test_unifi_data.py --ignore=tests/test_unifi_protect_server.py
+      env:
+        WS_TIMEOUT: 330
+      run: .bin/test-code

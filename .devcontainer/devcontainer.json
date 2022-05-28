@@ -10,38 +10,57 @@
         "ryanluker.vscode-coverage-gutters",
         "bungcip.better-toml",
         "mikestead.dotenv",
+        "ms-python.pylint",
+        // "ms-python.black-formatter", // still pre-release
+        "ms-python.isort",
     ],
     "settings": {
+        // common
         "editor.formatOnSave": true,
         "editor.formatOnSaveTimeout": 3000,
         "editor.insertSpaces": true,
         "files.insertFinalNewline": true,
         "files.trimTrailingWhitespace": true,
+        // python common
+        "[python]": {
+            "editor.defaultFormatter": "ms-python.python",
+            // "editor.defaultFormatter": "ms-python.black-formatter",
+            "editor.codeActionsOnSave": {
+                "source.organizeImports": true
+            },
+        },
         "python.envFile": "${workspaceFolder}/.env",
         "python.defaultInterpreterPath": "/usr/local/bin/python",
         "python.pythonPath": "/usr/local/bin/python",
-        "python.formatting.blackArgs": [
-            "--line-length",
-            "120"
-        ],
-        "python.formatting.provider": "black",
+        // python linting
         "python.linting.banditEnabled": false,
         "python.linting.enabled": true,
         "python.linting.flake8Enabled": true,
         "python.linting.flake8Path": "/usr/local/bin/pflake8",
         "python.linting.mypyEnabled": true,
-        "python.linting.pylintEnabled": true,
-        "python.linting.pylintArgs": [
-            "--rcfile=${workspaceFolder}/pyproject.toml"
-        ],
+        "python.linting.pylintEnabled": false,
         "python.linting.pylamaEnabled": false,
-        "python.sortImports.args": [
+        // TODO: replace with black extension once stable
+        "python.formatting.provider": "black",
+        "python.formatting.blackArgs": [
+            "--config=${workspaceFolder}/pyproject.toml",
+            "--line-length=120" // VS Code use to override to 88, this ensure correct default
+        ],
+        // "black-formatter.args": [
+        //     "--config=${workspaceFolder}/pyproject.toml",
+        //     "--line-length=120" // VS Code use to override to 88, this ensure correct default
+        // ],
+        "isort.args": [
             "--settings-path=${workspaceFolder}/pyproject.toml"
         ],
-        "python.testing.promptToConfigure": false,
+        "pylint.args": [
+            "--rcfile=${workspaceFolder}/pyproject.toml"
+        ],
+        // python tests
         "coverage-gutters.xmlname": "coverage.xml",
         "coverage-gutters.customizable.status-bar-toggler-watchCoverageAndVisibleEditors-enabled": true,
         "coverage-gutters.showLineCoverage": true,
+        "python.testing.promptToConfigure": false,
         "python.testing.pytestEnabled": true,
         "python.testing.unittestEnabled": false,
         "python.testing.nosetestsEnabled": false,
@@ -50,5 +69,7 @@
             "--color=no",
         ],
     },
-    "postCreateCommand": "cd /workspaces/pyunifiprotect && pip install -e .[dev] && unifi-protect --install-completion bash"
+    "updateRemoteUserUID": true,
+    "containerUser": "python",
+    "postCreateCommand": "/workspaces/pyunifiprotect/.bin/install-requirements && source ~/.bashrc"
 }

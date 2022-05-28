@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+BASE_DIR=$( realpath $( dirname "${BASH_SOURCE[0]}" )/../ )
+source "$BASE_DIR/.bin/lib/common.sh"
+setRoot
+
+pushd "$ROOT_PATH" 2>&1 >/dev/null
+
+sudo pip install --root-user-action=ignore -r requirements.txt
+sudo pip install --root-user-action=ignore -e .[dev]
+unifi-protect --install-completion bash
+
+popd 2>&1 >/dev/null
