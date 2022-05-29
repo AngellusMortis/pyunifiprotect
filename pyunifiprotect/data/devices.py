@@ -393,7 +393,12 @@ class LCDMessage(ProtectBaseObject):
         data = super().unifi_dict(data=data, exclude=exclude)
 
         if "text" in data:
-            data["text"] = self._fix_text(data["text"], data.get("type", self.type.value))
+            try:
+                msg_type = self.type.value
+            except AttributeError:
+                msg_type = None
+
+            data["text"] = self._fix_text(data["text"], data.get("type", msg_type))
         if "resetAt" in data:
             data["resetAt"] = to_js_time(data["resetAt"])
 

@@ -22,7 +22,7 @@ async def test_nvr_set_default_reset_timeout(nvr_obj: NVR):
     nvr_obj.api.api_request.assert_called_with(
         "nvr",
         method="patch",
-        json={"doorbellSettings": {"defaultMessageResetTimeout": to_ms(duration)}},
+        json={"doorbellSettings": {"defaultMessageResetTimeoutMs": to_ms(duration)}},
     )
 
 

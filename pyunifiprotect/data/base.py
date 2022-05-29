@@ -344,13 +344,17 @@ class ProtectBaseObject(BaseModel):
 
         return data
 
-    def _unifi_dict_protect_obj(self, data: Dict[str, Any], key: str, use_obj: bool) -> Any:
+    def _unifi_dict_protect_obj(
+        self, data: Dict[str, Any], key: str, use_obj: bool, klass: Type[ProtectBaseObject]
+    ) -> Any:
         value: Optional[Any] = data.get(key)
         if use_obj:
             value = getattr(self, key)
 
         if isinstance(value, ProtectBaseObject):
             value = value.unifi_dict()
+        elif isinstance(value, dict):
+            value = klass.construct({}).unifi_dict(data=value)  # type: ignore
 
         return value
 
@@ -410,9 +414,9 @@ class ProtectBaseObject(BaseModel):
             data = self.dict(exclude=excluded_fields)
             use_obj = True
 
-        for key in self._get_protect_objs().keys():
+        for key, klass in self._get_protect_objs().items():
             if use_obj or key in data:
-                data[key] = self._unifi_dict_protect_obj(data, key, use_obj)
+                data[key] = self._unifi_dict_protect_obj(data, key, use_obj, klass)
 
         for key in self._get_protect_lists().keys():
             if use_obj or key in data:

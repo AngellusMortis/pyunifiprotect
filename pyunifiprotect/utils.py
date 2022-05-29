@@ -78,11 +78,14 @@ async def get_response_reason(response: ClientResponse) -> str:
     return reason
 
 
-def to_js_time(dt: Optional[datetime]) -> Optional[int]:
+def to_js_time(dt: datetime | int | None) -> Optional[int]:
     """Converts Python datetime to Javascript timestamp"""
 
     if dt is None:
         return None
+
+    if isinstance(dt, int):
+        return dt
 
     if dt.tzinfo is None:
         return int(time.mktime(dt.timetuple()) * 1000)

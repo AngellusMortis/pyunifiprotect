@@ -4,11 +4,13 @@ import json
 import logging
 from pathlib import Path
 import sys
-from typing import Optional
+from typing import Optional, cast
 
 import typer
 
 from pyunifiprotect.api import ProtectApiClient
+from pyunifiprotect.cli.base import CliContext
+from pyunifiprotect.cli.nvr import app as nvr_app
 from pyunifiprotect.data import WSPacket
 from pyunifiprotect.test_util import SampleDataGenerator
 from pyunifiprotect.utils import profile_ws as profile_ws_job
@@ -67,6 +69,29 @@ SLEEP_INTERVAL = 2
 
 
 app = typer.Typer()
+app.add_typer(nvr_app, name="nvr")
+
+
+@app.callback()
+def main(
+    ctx: typer.Context,
+    username: str = OPTION_USERNAME,
+    password: str = OPTION_PASSWORD,
+    address: str = OPTION_ADDRESS,
+    port: int = OPTION_PORT,
+    verify: bool = OPTION_VERIFY,
+) -> None:
+    """UniFi Protect CLI"""
+
+    protect = ProtectApiClient(address, port, username, password, verify_ssl=verify)
+
+    async def update() -> None:
+        protect._bootstrap = await protect.get_bootstrap()  # pylint: disable=protected-access
+        await protect.close_session()
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(update())
+    ctx.obj = CliContext(protect=protect)
 
 
 def _setup_logger(level: int = logging.DEBUG, show_level: bool = False) -> None:
@@ -87,21 +112,18 @@ async def _progress_bar(wait_time: int, label: str) -> None:
 
 
 @app.command()
-def shell(
-    username: str = OPTION_USERNAME,
-    password: str = OPTION_PASSWORD,
-    address: str = OPTION_ADDRESS,
-    port: int = OPTION_PORT,
-    verify: bool = OPTION_VERIFY,
-) -> None:
+def shell(ctx: typer.Context) -> None:
+    """
+    Opens ipython shell with Protect client initialized.
+
+    Requires the `shell` extra to also be installed.
+    """
+
     if embed is None or colored is None:
         typer.echo("ipython and termcolor required for shell subcommand")
         sys.exit(1)
 
-    protect = ProtectApiClient(address, port, username, password, verify_ssl=verify)
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(protect.update(True))
-
+    protect = cast(ProtectApiClient, ctx.obj.protect)  # pylint: disable=unused-variable # noqa
     _setup_logger(show_level=True)
 
     c = get_config()  # type: ignore
@@ -111,16 +133,16 @@ def shell(
 
 @app.command()
 def generate_sample_data(
-    username: str = OPTION_USERNAME,
-    password: str = OPTION_PASSWORD,
-    address: str = OPTION_ADDRESS,
-    port: int = OPTION_PORT,
-    verify: bool = OPTION_VERIFY,
+    ctx: typer.Context,
     anonymize: bool = OPTION_ANON,
     wait_time: int = OPTION_WAIT,
     output_folder: Optional[Path] = OPTION_OUTPUT,
     do_zip: bool = OPTION_ZIP,
 ) -> None:
+    """Generates sample data for UniFi Protect instance."""
+
+    protect = cast(ProtectApiClient, ctx.obj.protect)
+
     if output_folder is None:
         tests_folder = Path(__file__).parent.parent / "tests"
 
@@ -128,8 +150,6 @@ def generate_sample_data(
             typer.secho("Output folder required when not in dev-mode", fg="red")
             sys.exit(1)
         output_folder = (tests_folder / "sample_data").absolute()
-
-    protect = ProtectApiClient(address, port, username, password, verify_ssl=verify, debug=True)
 
     def log(msg: str) -> None:
         typer.echo(msg)
@@ -151,15 +171,13 @@ def generate_sample_data(
 
 @app.command()
 def profile_ws(
-    username: str = OPTION_USERNAME,
-    password: str = OPTION_PASSWORD,
-    address: str = OPTION_ADDRESS,
-    port: int = OPTION_PORT,
-    verify: bool = OPTION_VERIFY,
+    ctx: typer.Context,
     wait_time: int = OPTION_WAIT,
     output_path: Optional[Path] = OPTION_OUTPUT,
 ) -> None:
-    protect = ProtectApiClient(address, port, username, password, verify_ssl=verify, debug=True)
+    """Profiles Websocket messages for UniFi Protect instance."""
+
+    protect = cast(ProtectApiClient, ctx.obj.protect)
 
     async def callback() -> None:
         await protect.update()
@@ -173,6 +191,8 @@ def profile_ws(
 
 @app.command()
 def decode_ws_msg(ws_file: typer.FileBinaryRead = OPTION_WS_FILE, ws_data: Optional[str] = ARG_WS_DATA) -> None:
+    """Decodes a base64 encoded UniFi Protect Websocket binary message."""
+
     if ws_file is None and ws_data is None:
         typer.secho("Websocket data required", fg="red")
         sys.exit(1)
