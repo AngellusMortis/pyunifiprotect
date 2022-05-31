@@ -503,10 +503,6 @@ class DoorbellSettings(ProtectBaseObject):
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "defaultMessageResetTimeoutMs": "defaultMessageResetTimeout"}
 
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
-        data = super().unifi_dict(data, exclude)
-        return data
-
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "defaultMessageResetTimeoutMs" in data:
