@@ -61,7 +61,7 @@ The command line has a fully featured help, so the best way to discovery and lea
 
 #### Examples
 
-#### List all adopted cameras
+#### List All Cameras
 
 ```bash
 $ unifi-protect cameras list-ids
@@ -71,7 +71,14 @@ $ unifi-protect cameras list-ids
 61be1d2f004bda03e700ab12: G4 Dome
 ```
 
-#### Enable SSH on camera
+#### Check if a Camera is Online
+
+```bash
+$ unifi-protect cameras 61ddb66b018e2703e7008c19 | jq .isConnected
+true
+```
+
+#### Enable SSH on Camera
 
 ```bash
 $ unifi-protect cameras 61ddb66b018e2703e7008c19 set-ssh true
