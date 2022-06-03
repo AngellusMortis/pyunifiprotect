@@ -9,8 +9,14 @@ from typing import Optional, cast
 import typer
 
 from pyunifiprotect.api import ProtectApiClient
-from pyunifiprotect.cli.base import CliContext
+from pyunifiprotect.cli.base import CliContext, OutputFormatEnum
+from pyunifiprotect.cli.cameras import app as camera_app
+from pyunifiprotect.cli.chimes import app as chime_app
+from pyunifiprotect.cli.doorlocks import app as doorlock_app
+from pyunifiprotect.cli.light import app as light_app
 from pyunifiprotect.cli.nvr import app as nvr_app
+from pyunifiprotect.cli.sensors import app as sensor_app
+from pyunifiprotect.cli.viewers import app as viewer_app
 from pyunifiprotect.data import WSPacket
 from pyunifiprotect.test_util import SampleDataGenerator
 from pyunifiprotect.utils import profile_ws as profile_ws_job
@@ -51,7 +57,7 @@ OPTION_ADDRESS = typer.Option(
 )
 OPTION_PORT = typer.Option(443, "--port", "-p", help="Unifi Protect Port", envvar="UFP_PORT")
 OPTION_SECONDS = typer.Option(15, "--seconds", "-s", help="Seconds to pull events")
-OPTION_VERIFY = typer.Option(True, "--verify", "-v", help="Verify SSL", envvar="UFP_SSL_VERIFY")
+OPTION_VERIFY = typer.Option(True, "--no-verify", help="Verify SSL", envvar="UFP_SSL_VERIFY")
 OPTION_ANON = typer.Option(True, "--actual", help="Do not anonymize test data")
 OPTION_ZIP = typer.Option(False, "--zip", help="Zip up data after generate")
 OPTION_WAIT = typer.Option(30, "--wait", "-w", help="Time to wait for Websocket messages")
@@ -62,6 +68,11 @@ OPTION_OUTPUT = typer.Option(
     help="Output folder, defaults to `tests` folder one level above this file",
     envvar="UFP_SAMPLE_DIR",
 )
+OPTION_OUT_FORMAT = typer.Option(
+    OutputFormatEnum.PLAIN,
+    "--output-format",
+    help="Output format for commands. Not all commands support plain and will still output in JSON.",
+)
 OPTION_WS_FILE = typer.Option(None, "--file", "-f", help="Path or raw binary Websocket message")
 ARG_WS_DATA = typer.Argument(None, help="base64 encoded Websocket message")
 
@@ -70,6 +81,12 @@ SLEEP_INTERVAL = 2
 
 app = typer.Typer()
 app.add_typer(nvr_app, name="nvr")
+app.add_typer(camera_app, name="cameras")
+app.add_typer(chime_app, name="chimes")
+app.add_typer(doorlock_app, name="doorlocks")
+app.add_typer(light_app, name="lights")
+app.add_typer(sensor_app, name="sensors")
+app.add_typer(viewer_app, name="viewers")
 
 
 @app.callback()
@@ -80,6 +97,7 @@ def main(
     address: str = OPTION_ADDRESS,
     port: int = OPTION_PORT,
     verify: bool = OPTION_VERIFY,
+    output_format: OutputFormatEnum = OPTION_OUT_FORMAT,
 ) -> None:
     """UniFi Protect CLI"""
 
@@ -91,7 +109,7 @@ def main(
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(update())
-    ctx.obj = CliContext(protect=protect)
+    ctx.obj = CliContext(protect=protect, output_format=output_format)
 
 
 def _setup_logger(level: int = logging.DEBUG, show_level: bool = False) -> None:

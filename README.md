@@ -19,7 +19,76 @@ Requires Unifi Protect version 1.20 or higher and Python 3.9+.
 pip install pyunifiprotect
 ```
 
-## Usage
+## CLI Usage
+
+The `unifi-protect` command is provided to give a CLI interface to interact with your UniFi Protect instance as well. All
+commands support JSON output so it works great with `jq` for complex scripting.
+
+### Authentication
+
+Following traditional [twelve factor app design](https://12factor.net/), the perfered way to provided authentication
+credentials to provided environment variables, but CLI args are also supported.
+
+#### Environment Variables
+
+```bash
+export UFP_USERNAME=YOUR_USERNAME_HERE
+export UFP_PASSWORD=YOUR_PASSWORD_HERE
+export UFP_ADDRESS=YOUR_IP_ADDRESS
+export UFP_PORT=443
+# change to false if you do not have a valid HTTPS Certificate for your instance
+export UFP_SSL_VERIFY=True
+
+unifi-protect nvr
+```
+
+#### CLI Args
+
+```bash
+unifi-protect -U YOUR_USERNAME_HERE -P YOUR_PASSWORD_HERE -a YOUR_IP_ADDRESS -p 443 --no-verify nvr
+```
+
+### Subcommands
+
+The command line has a fully featured help, so the best way to discovery and learn all of the possible commands is to use `unifi-protect --help`
+
+* `nvr` - Interact with your NVR console
+* `camera`, `chimes`, `doorlocks`, `lights`, `sensors`, `viewers` - Interact with specific devices on adopted by your UniFi protect instance
+* `shell` - Interactive IPyton shell (requires `pyunifiprotect[shell]` extra to be installed) with `ProtectApiClient already initalized
+* `decode-ws-msg` - Mostly for debug purposes to debug a base64 binary Websocket message from UniFi Protect
+* `generate-sample-data` - Mostly for debug purposes to generate fake data for CI / testing. Can also be used to share the current state of your UniFi Protect instance.
+* `profile-ws` - Mostly for debug purposes to profile the number of ignored/processed Websocket messages
+
+#### Examples
+
+#### List all adopted cameras
+
+```bash
+$ unifi-protect cameras list-ids
+
+61b3f5c7033ea703e7000424: G4 Bullet
+61f9824e004adc03e700132c: G4 PTZ
+61be1d2f004bda03e700ab12: G4 Dome
+```
+
+#### Enable SSH on camera
+
+```bash
+$ unifi-protect cameras 61ddb66b018e2703e7008c19 set-ssh true
+
+# get current value to verify
+$ unifi-protect cameras 61ddb66b018e2703e7008c19 | jq .isSshEnabled
+true
+```
+
+#### Reboot Flood Light
+
+```bash
+$ unifi-protect lights 61b3f5c801f8a703e7000428 reboot
+```
+
+
+## Library Usage
 
 Unifi Protect itself is 100% async, so as such this library is primarily designed to be used in an async context.
 
