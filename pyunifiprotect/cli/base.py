@@ -64,7 +64,7 @@ def list_ids(ctx: typer.Context) -> None:
         json_output(to_print)
     else:
         for item in to_print:
-            typer.echo(f"{item[0]}: {item[1]}")
+            typer.echo(f"{item[0]}\t{item[1]}")
 
 
 def protect_url(ctx: typer.Context) -> None:

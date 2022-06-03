@@ -87,6 +87,13 @@ true
 $ unifi-protect lights 61b3f5c801f8a703e7000428 reboot
 ```
 
+#### Reboot All Cameras
+
+```bash
+for id in $(unifi-protect cameras list-ids | awk '{ print $1 }'); do
+    unifi-protect cameras $id reboot
+done
+```
 
 ## Library Usage
 
