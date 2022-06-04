@@ -182,6 +182,38 @@ async def test_bootstrap_fix_record_mode(bootstrap):
     assert client.update_device.call_count == expected_updates
 
 
+@pytest.mark.asyncio
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+async def test_bootstrap_get_device_from_mac(bootstrap):
+    orig_bootstrap = deepcopy(bootstrap)
+    mac = bootstrap["cameras"][0]["mac"]
+
+    client = ProtectApiClient("127.0.0.1", 0, "username", "password", debug=True)
+    client.api_request_obj = AsyncMock(side_effect=[bootstrap, orig_bootstrap])
+    client.update_device = AsyncMock()
+
+    bootstrap_obj = await client.get_bootstrap()
+    camera = bootstrap_obj.get_device_from_mac(mac)
+
+    assert camera is not None
+    assert camera.mac == mac
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+async def test_bootstrap_get_device_from_mac_bad_mac(bootstrap):
+    orig_bootstrap = deepcopy(bootstrap)
+
+    client = ProtectApiClient("127.0.0.1", 0, "username", "password", debug=True)
+    client.api_request_obj = AsyncMock(side_effect=[bootstrap, orig_bootstrap])
+    client.update_device = AsyncMock()
+
+    bootstrap_obj = await client.get_bootstrap()
+    camera = bootstrap_obj.get_device_from_mac("not_a_mac")
+
+    assert camera is None
+
+
 def test_connection_host(protect_client: ProtectApiClient):
     protect_client.bootstrap.nvr.hosts = [
         IPv4Address("192.168.1.1"),

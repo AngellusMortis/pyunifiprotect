@@ -4,7 +4,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
 import logging
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, cast
 from uuid import UUID
 
 from pydantic.fields import PrivateAttr
@@ -22,6 +22,7 @@ from pyunifiprotect.data.devices import (
     Chime,
     Doorlock,
     Light,
+    ProtectAdoptableDeviceModel,
     Sensor,
     Viewer,
 )
@@ -118,6 +119,11 @@ class WSStat:
     filtered: bool
 
 
+class ProtectDeviceRef(ProtectBaseObject):
+    model: ModelType
+    id: str
+
+
 class Bootstrap(ProtectBaseObject):
     auth_user_id: str
     access_key: str
@@ -142,11 +148,13 @@ class Bootstrap(ProtectBaseObject):
     # not directly from Unifi
     events: Dict[str, Event] = FixSizeOrderedDict()
     capture_ws_stats: bool = False
+    mac_lookup: dict[str, ProtectDeviceRef] = {}
     _ws_stats: List[WSStat] = PrivateAttr([])
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         api = cls._get_api(data.get("api"))
+        data["macLookup"] = {}
         for model_type in ModelType.bootstrap_models():
             key = model_type + "s"
             items: Dict[str, ProtectModel] = {}
@@ -155,6 +163,9 @@ class Bootstrap(ProtectBaseObject):
                     continue
 
                 items[item["id"]] = item
+                if "mac" in item:
+                    cleaned_mac = item["mac"].lower().replace(":", "")
+                    data["macLookup"][cleaned_mac] = {"model": model_type, "id": item["id"]}
             data[key] = items
 
         return super().unifi_dict_to_dict(data)
@@ -166,6 +177,8 @@ class Bootstrap(ProtectBaseObject):
             del data["events"]
         if "captureWsStats" in data:
             del data["captureWsStats"]
+        if "macLookup" in data:
+            del data["macLookup"]
 
         for model_type in ModelType.bootstrap_models():
             attr = model_type + "s"
@@ -185,6 +198,17 @@ class Bootstrap(ProtectBaseObject):
     def auth_user(self) -> User:
         user: User = self.api.bootstrap.users[self.auth_user_id]
         return user
+
+    def get_device_from_mac(self, mac: str) -> ProtectAdoptableDeviceModel | None:
+        """Retrieve a device from MAC address"""
+
+        mac = mac.lower().replace(":", "").replace("-", "").replace("_", "")
+        ref = self.mac_lookup.get(mac)
+        if ref is None:
+            return None
+
+        devices = getattr(self, f"{ref.model}s")
+        return cast(ProtectAdoptableDeviceModel, devices.get(ref.id))
 
     def process_event(self, event: Event) -> None:
         if event.type in CAMERA_EVENT_ATTR_MAP and event.camera is not None:
