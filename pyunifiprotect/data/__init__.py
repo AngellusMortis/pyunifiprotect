@@ -21,6 +21,7 @@ from pyunifiprotect.data.devices import (
 from pyunifiprotect.data.nvr import (
     NVR,
     CloudAccount,
+    DoorbellMessage,
     Event,
     Group,
     Liveview,
@@ -33,6 +34,7 @@ from pyunifiprotect.data.nvr import (
 from pyunifiprotect.data.types import (
     DEFAULT,
     DEFAULT_TYPE,
+    AnalyticsOption,
     ChimeDuration,
     ChimeType,
     Color,
@@ -69,6 +71,7 @@ from pyunifiprotect.data.websocket import (
 )
 
 __all__ = [
+    "AnalyticsOption",
     "Bootstrap",
     "Bridge",
     "Camera",
@@ -82,6 +85,7 @@ __all__ = [
     "create_from_unifi_dict",
     "DEFAULT_TYPE",
     "DEFAULT",
+    "DoorbellMessage",
     "DoorbellMessageType",
     "DoorbellText",
     "Doorlock",

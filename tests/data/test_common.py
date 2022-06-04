@@ -164,12 +164,9 @@ def test_bootstrap(bootstrap):
     del bootstrap["schedules"]
     if "deviceGroups" in bootstrap:
         del bootstrap["deviceGroups"]
-    del bootstrap["nvr"]["uiVersion"]
     del bootstrap["nvr"]["errorCode"]
     del bootstrap["nvr"]["wifiSettings"]
-    del bootstrap["nvr"]["ssoChannel"]
     del bootstrap["nvr"]["smartDetectAgreement"]
-    bootstrap["nvr"]["systemInfo"].pop("ustorage", None)
 
     for model_type in ModelType.bootstrap_models():
         key = model_type + "s"

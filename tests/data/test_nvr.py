@@ -6,10 +6,30 @@ from datetime import timedelta
 from pydantic.error_wrappers import ValidationError
 import pytest
 
-from pyunifiprotect.data import DoorbellMessageType
-from pyunifiprotect.data.nvr import NVR, DoorbellMessage
+from pyunifiprotect.data import (
+    NVR,
+    AnalyticsOption,
+    DoorbellMessage,
+    DoorbellMessageType,
+)
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import to_ms
+
+
+@pytest.mark.asyncio
+async def test_nvr_set_anonymous_analytics(nvr_obj: NVR):
+    nvr_obj.api.api_request.reset_mock()
+
+    nvr_obj.analytics_data = AnalyticsOption.ANONYMOUS
+    nvr_obj._initial_data = nvr_obj.dict()
+
+    await nvr_obj.set_anonymous_analytics(False)
+
+    nvr_obj.api.api_request.assert_called_with(
+        "nvr",
+        method="patch",
+        json={"analyticsData": "none"},
+    )
 
 
 @pytest.mark.asyncio

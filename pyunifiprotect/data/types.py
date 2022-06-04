@@ -185,6 +185,7 @@ class DoorbellMessageType(str, ValuesEnumMixin, enum.Enum):
 class LightModeEnableType(str, ValuesEnumMixin, enum.Enum):
     DARK = "dark"
     ALWAYS = "fulltime"
+    NIGHT = "night"
 
 
 @enum.unique
@@ -192,6 +193,7 @@ class LightModeType(str, ValuesEnumMixin, enum.Enum):
     MOTION = "motion"
     WHEN_DARK = "always"
     MANUAL = "off"
+    SCHEDULE = "schedule"
 
 
 @enum.unique
@@ -207,6 +209,13 @@ class RecordingMode(str, ValuesEnumMixin, enum.Enum):
     ALWAYS = "always"
     NEVER = "never"
     DETECTIONS = "detections"
+
+
+@enum.unique
+class AnalyticsOption(str, ValuesEnumMixin, enum.Enum):
+    NONE = "none"
+    ANONYMOUS = "anonymous"
+    FULL = "full"
 
 
 @enum.unique
@@ -229,6 +238,7 @@ class IRLEDMode(str, ValuesEnumMixin, enum.Enum):
     ON = "on"
     AUTO_NO_LED = "autoFilterOnly"
     OFF = "off"
+    MANUAL = "manual"
 
 
 @enum.unique
@@ -254,6 +264,135 @@ class SensorStatusType(str, ValuesEnumMixin, enum.Enum):
     NEUTRAL = "neutral"
     LOW = "low"
     HIGH = "high"
+
+
+@enum.unique
+class SleepStateType(str, ValuesEnumMixin, enum.Enum):
+    DISCONNECTED = "disconnected"
+    AWAKE = "awake"
+    START_SLEEP = "goingToSleep"
+    ASLEEP = "asleep"
+    WAKING = "waking"
+
+
+@enum.unique
+class AutoExposureMode(str, ValuesEnumMixin, enum.Enum):
+    MANUAL = "manual"
+    AUTO = "auto"
+    SHUTTER = "shutter"
+    FLICK50 = "flick50"
+    FLICK60 = "flick60"
+
+
+@enum.unique
+class FocusMode(str, ValuesEnumMixin, enum.Enum):
+    MANUAL = "manual"
+    AUTO = "auto"
+    ZTRIG = "ztrig"
+    TOUCH = "touch"
+
+
+@enum.unique
+class MountPosition(str, ValuesEnumMixin, enum.Enum):
+    CEILING = "ceiling"
+    WALL = "wall"
+    DESK = "desk"
+
+
+@enum.unique
+class GeofencingSetting(str, ValuesEnumMixin, enum.Enum):
+    OFF = "off"
+    ALL_AWAY = "allAway"
+
+
+@enum.unique
+class MotionAlgorithm(str, ValuesEnumMixin, enum.Enum):
+    STABLE = "stable"
+    ENHANCED = "enhanced"
+
+
+@enum.unique
+class AudioCodecs(str, ValuesEnumMixin, enum.Enum):
+    AAC = "aac"
+    VORBIS = "vorbis"
+    OPUS = "opus"
+
+
+@enum.unique
+class LowMedHigh(str, ValuesEnumMixin, enum.Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+@enum.unique
+class StorageType(str, ValuesEnumMixin, enum.Enum):
+    DISK = "hdd"
+    RAID = "raid"
+    SD_CARD = "sdcard"
+
+
+@enum.unique
+class FirmwareReleaseChannel(str, ValuesEnumMixin, enum.Enum):
+    INTERNAL = "internal"
+    ALPHA = "alpha"
+    BETA = "beta"
+    RELEASE_CANDIDATE = "release-candidate"
+    RELEASE = "release"
+
+
+@enum.unique
+class DiskHealth(str, ValuesEnumMixin, enum.Enum):
+    GOOD = "good"
+    BAD = "risk"
+
+
+@enum.unique
+class DiskAction(str, ValuesEnumMixin, enum.Enum):
+    NONE = "none"
+    FAULTY = "faulty"
+    SPARE = "spare"
+    REPAIRING = "repairing"
+    INTIALIZING = "initializing"
+    EXPANDING = "expanding"
+
+
+@enum.unique
+class DiskState(str, ValuesEnumMixin, enum.Enum):
+    NO_DISK = "nodisk"
+    BROKEN = "broken"
+    BAD = "risk"
+    FAULTY = "faulty"
+    REPAIRING = "repairing"
+    INTIALIZING = "initializing"
+    EXPLANDING = "expanding"
+    FOREIGN = "foreign"
+    SPARE = "spare"
+    NOT_SUPPORTED = "not_support"
+    NORMAL = "normal"
+
+
+@enum.unique
+class DiskUnsupportedReason(str, ValuesEnumMixin, enum.Enum):
+    TYPE = "type"
+    LIMIT = "limit"
+
+
+@enum.unique
+class MountHealth(str, ValuesEnumMixin, enum.Enum):
+    HEALTHY = "health"
+    AT_RISK = "atrisk"
+    FAILED = "failed"
+
+
+@enum.unique
+class MountAction(str, ValuesEnumMixin, enum.Enum):
+    NONE = "none"
+    SYNCING = "syncing"
+    REPAIRING = "repairing"
+    EXPANDING = "expanding"
+    FORMATTING = "formatting"
+    ERASING = "erasing"
 
 
 @enum.unique
@@ -293,6 +432,11 @@ class PercentInt(ConstrainedInt):
     le = 100
 
 
+class TwoByteInt(ConstrainedInt):
+    ge = 1
+    le = 255
+
+
 class PercentFloat(ConstrainedFloat):
     ge = 0
     le = 100
@@ -304,6 +448,11 @@ class ChimeDuration(ConstrainedInt):
 
 
 class WDRLevel(ConstrainedInt):
+    ge = 0
+    le = 3
+
+
+class ICRSensitivity(ConstrainedInt):
     ge = 0
     le = 3
 

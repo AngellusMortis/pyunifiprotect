@@ -513,12 +513,10 @@ def compare_objs(obj_type, expected, actual):
         del expected["smartDetectLines"]
         if "streamSharing" in expected:
             del expected["streamSharing"]
-        del expected["featureFlags"]["mountPositions"]
         del expected["featureFlags"]["focus"]
         del expected["featureFlags"]["pan"]
         del expected["featureFlags"]["tilt"]
         del expected["featureFlags"]["zoom"]
-        del expected["ispSettings"]["mountPosition"]
 
         # do not compare detect zones because float math sucks
         assert len(expected["motionZones"]) == len(actual["motionZones"])

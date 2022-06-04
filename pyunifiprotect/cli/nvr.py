@@ -4,7 +4,7 @@ from datetime import timedelta
 import typer
 
 from pyunifiprotect.cli.base import CliContext, print_unifi_obj, protect_url, run
-from pyunifiprotect.data import NVR
+from pyunifiprotect.data import NVR, AnalyticsOption
 
 app = typer.Typer()
 
@@ -35,6 +35,14 @@ def main(ctx: typer.Context) -> None:
 
 
 app.command()(protect_url)
+
+
+@app.command()
+def set_analytics(ctx: typer.Context, value: AnalyticsOption) -> None:
+    """Sets analytics collection for NVR."""
+
+    nvr: NVR = ctx.obj.device
+    run(ctx, nvr.set_analytics(value))
 
 
 @app.command()

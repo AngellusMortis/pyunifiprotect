@@ -20,21 +20,31 @@ from pyunifiprotect.data.base import (
 from pyunifiprotect.data.types import (
     DEFAULT,
     DEFAULT_TYPE,
+    AudioCodecs,
+    AutoExposureMode,
     ChimeDuration,
     ChimeType,
     Color,
     DoorbellMessageType,
+    FocusMode,
+    GeofencingSetting,
+    ICRSensitivity,
     IRLEDMode,
     LEDLevel,
     LightModeEnableType,
     LightModeType,
     LockStatusType,
+    LowMedHigh,
+    MotionAlgorithm,
+    MountPosition,
     MountType,
     Percent,
     PercentInt,
     RecordingMode,
     SensorStatusType,
+    SleepStateType,
     SmartDetectObjectType,
+    TwoByteInt,
     VideoMode,
     WDRLevel,
 )
@@ -61,8 +71,7 @@ class LightDeviceSettings(ProtectBaseObject):
     is_indicator_enabled: bool
     # Brightness
     led_level: LEDLevel
-    # unknown
-    lux_sensitivity: str
+    lux_sensitivity: LowMedHigh
     pir_duration: timedelta
     pir_sensitivity: PercentInt
 
@@ -251,11 +260,11 @@ class CameraChannel(ProtectBaseObject):
 
 
 class ISPSettings(ProtectBaseObject):
-    ae_mode: str
+    ae_mode: AutoExposureMode
     ir_led_mode: IRLEDMode
-    ir_led_level: int
+    ir_led_level: TwoByteInt
     wdr: WDRLevel
-    icr_sensitivity: int
+    icr_sensitivity: ICRSensitivity
     brightness: int
     contrast: int
     hue: int
@@ -274,14 +283,12 @@ class ISPSettings(ProtectBaseObject):
     d_zoom_center_y: int
     d_zoom_scale: int
     d_zoom_stream_id: int
-    focus_mode: str
+    focus_mode: FocusMode
     focus_position: int
     touch_focus_x: int
     touch_focus_y: int
     zoom_position: PercentInt
-
-    # TODO:
-    # mountPosition
+    mount_position: MountPosition | None = None
 
 
 class OSDSettings(ProtectBaseObject):
@@ -295,7 +302,7 @@ class OSDSettings(ProtectBaseObject):
 class LEDSettings(ProtectBaseObject):
     # Status Light
     is_enabled: bool
-    blink_rate: int
+    blink_rate: int  # in milliseconds betweeen blinks, 0 = solid
 
 
 class SpeakerSettings(ProtectBaseObject):
@@ -316,8 +323,8 @@ class RecordingSettings(ProtectBaseObject):
     suppress_illumination_surge: bool
     # High Frame Rate Mode
     mode: RecordingMode
-    geofencing: str
-    motion_algorithm: str
+    geofencing: GeofencingSetting
+    motion_algorithm: MotionAlgorithm
     enable_motion_detection: Optional[bool] = None
     enable_pir_timelapse: bool
     use_new_motion_algorithm: bool
@@ -406,16 +413,16 @@ class LCDMessage(ProtectBaseObject):
 
 
 class TalkbackSettings(ProtectBaseObject):
-    type_fmt: str
+    type_fmt: AudioCodecs
     type_in: str
     bind_addr: IPv4Address
     bind_port: int
-    filter_addr: Optional[str]
-    filter_port: Optional[int]
-    channels: int
-    sampling_rate: int
+    filter_addr: Optional[str]  # can be used to restrict sender address
+    filter_port: Optional[int]  # can be used to restrict sender port
+    channels: int  # 1 or 2
+    sampling_rate: int  # 8000, 11025, 22050, 44100, 48000
     bits_per_sample: int
-    quality: int
+    quality: PercentInt  # only for vorbis
 
 
 class WifiStats(ProtectBaseObject):
@@ -429,7 +436,7 @@ class WifiStats(ProtectBaseObject):
 class BatteryStats(ProtectBaseObject):
     percentage: Optional[PercentInt]
     is_charging: bool
-    sleep_state: str
+    sleep_state: SleepStateType
 
 
 class VideoStats(ProtectBaseObject):
@@ -475,8 +482,15 @@ class VideoStats(ProtectBaseObject):
 
 
 class StorageStats(ProtectBaseObject):
-    used: Optional[int]
-    rate: Optional[float]
+    used: Optional[int]  # bytes
+    rate: Optional[float]  # bytes / millisecond
+
+    @property
+    def rate_per_second(self) -> Optional[float]:
+        if self.rate is None:
+            return None
+
+        return self.rate * 1000
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -591,16 +605,16 @@ class FeatureFlags(ProtectBaseObject):
     has_motion_zones: bool
     has_lcd_screen: bool
     smart_detect_types: List[SmartDetectObjectType]
-    motion_algorithms: List[str]
+    motion_algorithms: List[MotionAlgorithm]
     has_square_event_thumbnail: bool
     has_package_camera: bool
     privacy_mask_capability: PrivacyMaskCapability
     has_smart_detect: bool
     audio: List[str] = []
-    audio_codecs: List[str] = []
+    audio_codecs: List[AudioCodecs] = []
+    mount_positions: List[MountPosition] = []
 
     # TODO:
-    # mountPositions
     # focus
     # pan
     # tilt
@@ -670,10 +684,12 @@ class Camera(ProtectMotionDeviceModel):
     is_poor_network: Optional[bool]
     is_wireless_uplink_enabled: Optional[bool]
 
-    # TODO:
+    # TODO: used for adopting
     # apMac
     # apRssi
     # elementInfo
+
+    # TODO:
     # lastPrivacyZonePositionId
     # recordingSchedule
     # smartDetectLines
@@ -1609,7 +1625,7 @@ class Chime(ProtectAdoptableDeviceModel):
     is_wireless_uplink_enabled: bool
     camera_ids: List[str]
 
-    # TODO:
+    # TODO: used for adoption
     # apMac
     # apRssi
     # elementInfo

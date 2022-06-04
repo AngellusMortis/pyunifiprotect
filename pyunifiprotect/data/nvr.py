@@ -29,17 +29,25 @@ from pyunifiprotect.data.base import (
 )
 from pyunifiprotect.data.devices import Camera, CameraZone, Light, Sensor
 from pyunifiprotect.data.types import (
+    AnalyticsOption,
+    DiskAction,
+    DiskHealth,
+    DiskState,
+    DiskUnsupportedReason,
     DoorbellMessageType,
     DoorbellText,
     EventType,
+    FirmwareReleaseChannel,
     ModelType,
     MountType,
+    PercentFloat,
     PercentInt,
     RecordingType,
     ResolutionStorageType,
     SensorStatusType,
     SensorType,
     SmartDetectObjectType,
+    StorageType,
     Version,
 )
 from pyunifiprotect.exceptions import BadRequest
@@ -327,9 +335,7 @@ class CloudAccount(ProtectModelWithId):
     user_id: str
     name: str
     location: Optional[UserLocation]
-
-    # TODO:
-    # profileImg
+    profile_img: str | None = None
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
@@ -343,6 +349,8 @@ class CloudAccount(ProtectModelWithId):
             data["cloudId"] = data["id"]
         if "location" in data and data["location"] is None:
             del data["location"]
+        if "profileImg" in data and data["profileImg"] is None:
+            del data["profileImg"]
 
         return data
 
@@ -460,7 +468,7 @@ class StorageInfo(ProtectBaseObject):
     available: int
     is_recycling: bool
     size: int
-    type: str
+    type: StorageType
     used: int
     devices: List[StorageDevice]
 
@@ -478,14 +486,107 @@ class TMPFSInfo(ProtectBaseObject):
     path: Path
 
 
+class UOSDisk(ProtectBaseObject):
+    slot: int
+    state: DiskState
+
+    type: Literal["SSD", "HDD"] | None = None
+    model: str | None = None
+    serial: str | None = None
+    firmware: str | None = None
+    rpm: int | None = None
+    ata: str | None = None
+    sata: str | None = None
+    action: DiskAction | None = None
+    healthy: DiskHealth | None = None
+    reason: DiskUnsupportedReason | None = None
+    temperature: int | None = None
+    power_on_hours: int | None = None
+    life_span: PercentFloat | None = None
+    bad_sector: int | None = None
+    threshold: int | None = None
+    progress: PercentFloat | None = None
+    estimate: timedelta | None = None
+
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {
+            **super()._get_unifi_remaps(),
+            "poweronhrs": "powerOnHours",
+            "life_span": "lifeSpan",
+            "bad_sector": "badSector",
+        }
+
+    @classmethod
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "estimate" in data and data["estimate"] is not None:
+            data["estimate"] = timedelta(seconds=data.pop("estimate"))
+
+        return super().unifi_dict_to_dict(data)
+
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data, exclude=exclude)
+
+        if "state" in data and data["state"] == "nodisk":
+            delete_keys = [
+                "type",
+                "model",
+                "serial",
+                "firmware",
+                "rpm",
+                "ata",
+                "sata",
+                "action",
+                "healthy",
+                "reason",
+                "tempature",
+                "poweronhrs",
+                "life_span",
+                "bad_sector",
+            ]
+            for key in delete_keys:
+                if key in data:
+                    del data[key]
+
+        return data
+
+
+class UOSSpace(ProtectBaseObject):
+    device: str
+    total_bytes: int
+    used_bytes: int
+    action: DiskAction
+    progress: PercentFloat | None = None
+    estimate: timedelta | None = None
+    healthy: DiskHealth | None = None
+
+    @classmethod
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "estimate" in data and data["estimate"] is not None:
+            data["estimate"] = timedelta(seconds=data.pop("estimate"))
+
+        return super().unifi_dict_to_dict(data)
+
+
+class UOSStorage(ProtectBaseObject):
+    disks: list[UOSDisk]
+    space: list[UOSSpace]
+
+
 class SystemInfo(ProtectBaseObject):
     cpu: CPUInfo
     memory: MemoryInfo
     storage: StorageInfo
     tmpfs: TMPFSInfo
+    ustorage: UOSStorage | None = None
 
-    # TODO:
-    # ustorage
+    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
+        data = super().unifi_dict(data=data, exclude=exclude)
+
+        if data is not None and "ustorage" in data and data["ustorage"] is None:
+            del data["ustorage"]
+
+        return data
 
 
 class DoorbellMessage(ProtectBaseObject):
@@ -613,7 +714,7 @@ class NVR(ProtectDeviceModel):
     is_station: bool
     enable_automatic_backups: bool
     enable_stats_reporting: bool
-    release_channel: str
+    release_channel: FirmwareReleaseChannel
     hosts: List[Union[IPv4Address, str]]
     enable_bridge_auto_adoption: bool
     hardware_id: UUID
@@ -626,7 +727,7 @@ class NVR(ProtectDeviceModel):
     recording_retention_duration: Optional[timedelta]
     enable_crash_reporting: bool
     disable_audio: bool
-    analytics_data: str
+    analytics_data: AnalyticsOption
     anonymous_device_id: UUID
     camera_utilization: int
     is_recycling: bool
@@ -650,13 +751,13 @@ class NVR(ProtectDeviceModel):
     is_db_available: Optional[bool] = None
     is_recording_disabled: Optional[bool] = None
     is_recording_motion_only: Optional[bool] = None
+    ui_version: str | None = None
+    sso_channel: FirmwareReleaseChannel | None = None
 
     # TODO:
-    # uiVersion
     # errorCode
     # wifiSettings
     # smartDetectAgreement
-    # ssoChannel
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
@@ -675,6 +776,10 @@ class NVR(ProtectDeviceModel):
 
     async def _api_update(self, data: Dict[str, Any]) -> None:
         return await self.api.update_nvr(data)
+
+    @property
+    def is_analytics_enabled(self) -> bool:
+        return self.analytics_data != AnalyticsOption.NONE
 
     @property
     def protect_url(self) -> str:
@@ -702,6 +807,20 @@ class NVR(ProtectDeviceModel):
             ),
         ]
         self._initial_data = self.dict()
+
+    async def set_analytics(self, value: AnalyticsOption) -> None:
+        """Sets analytics collection for NVR"""
+
+        self.analytics_data = value
+        await self.save_device()
+
+    async def set_anonymous_analytics(self, enabled: bool) -> None:
+        """Enables or disables anonymous analystics for NVR"""
+
+        if enabled:
+            await self.set_analytics(AnalyticsOption.ANONYMOUS)
+        else:
+            await self.set_analytics(AnalyticsOption.NONE)
 
     async def set_default_reset_timeout(self, timeout: timedelta) -> None:
         """Sets the default message reset timeout"""
