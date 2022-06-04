@@ -335,7 +335,7 @@ class CloudAccount(ProtectModelWithId):
     user_id: str
     name: str
     location: Optional[UserLocation]
-    profile_img: str | None = None
+    profile_img: Optional[str] = None
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
@@ -490,23 +490,23 @@ class UOSDisk(ProtectBaseObject):
     slot: int
     state: DiskState
 
-    type: Literal["SSD", "HDD"] | None = None
-    model: str | None = None
-    serial: str | None = None
-    firmware: str | None = None
-    rpm: int | None = None
-    ata: str | None = None
-    sata: str | None = None
-    action: DiskAction | None = None
-    healthy: DiskHealth | None = None
-    reason: DiskUnsupportedReason | None = None
-    temperature: int | None = None
-    power_on_hours: int | None = None
-    life_span: PercentFloat | None = None
-    bad_sector: int | None = None
-    threshold: int | None = None
-    progress: PercentFloat | None = None
-    estimate: timedelta | None = None
+    type: Optional[Literal["SSD", "HDD"]] = None
+    model: Optional[str] = None
+    serial: Optional[str] = None
+    firmware: Optional[str] = None
+    rpm: Optional[int] = None
+    ata: Optional[str] = None
+    sata: Optional[str] = None
+    action: Optional[DiskAction] = None
+    healthy: Optional[DiskHealth] = None
+    reason: Optional[DiskUnsupportedReason] = None
+    temperature: Optional[int] = None
+    power_on_hours: Optional[int] = None
+    life_span: Optional[PercentFloat] = None
+    bad_sector: Optional[int] = None
+    threshold: Optional[int] = None
+    progress: Optional[PercentFloat] = None
+    estimate: Optional[timedelta] = None
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
@@ -556,9 +556,9 @@ class UOSSpace(ProtectBaseObject):
     total_bytes: int
     used_bytes: int
     action: DiskAction
-    progress: PercentFloat | None = None
-    estimate: timedelta | None = None
-    healthy: DiskHealth | None = None
+    progress: Optional[PercentFloat] = None
+    estimate: Optional[timedelta] = None
+    healthy: Optional[DiskHealth] = None
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -578,7 +578,7 @@ class SystemInfo(ProtectBaseObject):
     memory: MemoryInfo
     storage: StorageInfo
     tmpfs: TMPFSInfo
-    ustorage: UOSStorage | None = None
+    ustorage: Optional[UOSStorage] = None
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
@@ -751,8 +751,8 @@ class NVR(ProtectDeviceModel):
     is_db_available: Optional[bool] = None
     is_recording_disabled: Optional[bool] = None
     is_recording_motion_only: Optional[bool] = None
-    ui_version: str | None = None
-    sso_channel: FirmwareReleaseChannel | None = None
+    ui_version: Optional[str] = None
+    sso_channel: Optional[FirmwareReleaseChannel] = None
 
     # TODO:
     # errorCode

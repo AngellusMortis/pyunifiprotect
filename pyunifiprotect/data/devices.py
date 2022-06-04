@@ -288,7 +288,7 @@ class ISPSettings(ProtectBaseObject):
     touch_focus_x: int
     touch_focus_y: int
     zoom_position: PercentInt
-    mount_position: MountPosition | None = None
+    mount_position: Optional[MountPosition] = None
 
 
 class OSDSettings(ProtectBaseObject):
