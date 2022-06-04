@@ -48,20 +48,14 @@ def print_unifi_obj(obj: ProtectBaseObject | None, output_format: OutputFormatEn
 def print_unifi_list(objs: Sequence[ProtectBaseObject]) -> None:
     """Helper method to print a list of protect objects"""
 
-    data = []
-    for obj in objs:
-        data.append(obj.unifi_dict())
-
+    data = [o.unifi_dict() for o in objs]
     json_output(data)
 
 
 def print_unifi_dict(objs: Mapping[str, ProtectBaseObject]) -> None:
     """Helper method to print a dictionary of protect objects"""
 
-    data = {}
-    for key, obj in objs.items():
-        data[key] = obj.unifi_dict()
-
+    data = {k: v.unifi_dict() for k, v in objs.items()}
     json_output(data)
 
 
