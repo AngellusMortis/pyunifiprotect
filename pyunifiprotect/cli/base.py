@@ -4,10 +4,12 @@ from enum import Enum
 import json
 from typing import Any, Callable, Coroutine, Mapping, Sequence
 
+from pydantic import ValidationError
 import typer
 
 from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.data import NVR, ProtectAdoptableDeviceModel, ProtectBaseObject
+from pyunifiprotect.exceptions import BadRequest
 
 
 class OutputFormatEnum(str, Enum):
@@ -29,7 +31,11 @@ def run(ctx: typer.Context, func: Coroutine[Any, Any, None]) -> None:
         await ctx.obj.protect.close_session()
 
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(callback())
+    try:
+        loop.run_until_complete(callback())
+    except (BadRequest, ValidationError) as err:
+        typer.secho(str(err), fg="red")
+        raise typer.Exit(1)
 
 
 def json_output(obj: Any) -> None:
@@ -152,6 +158,7 @@ def reboot(ctx: typer.Context) -> None:
 
     require_device_id(ctx)
     obj: ProtectAdoptableDeviceModel = ctx.obj.device
+
     run(ctx, obj.reboot())
 
 
