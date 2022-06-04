@@ -369,8 +369,7 @@ async def test_get_device_not_adopted_enabled(protect_client: ProtectApiClient, 
     protect_client.api_request_obj = AsyncMock(return_value=camera)  # type: ignore
 
     obj = create_from_unifi_dict(camera)
-    new_obj = await protect_client.get_camera("test_id")
-    assert obj == new_obj
+    assert obj == await protect_client.get_camera("test_id")
 
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
