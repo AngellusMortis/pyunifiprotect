@@ -2,7 +2,7 @@ import asyncio
 from dataclasses import dataclass
 from enum import Enum
 import json
-from typing import Any, Callable, Coroutine, Mapping
+from typing import Any, Callable, Coroutine, Mapping, Sequence
 
 import typer
 
@@ -36,10 +36,23 @@ def json_output(obj: Any) -> None:
     typer.echo(json.dumps(obj, indent=2))
 
 
-def print_unifi_obj(obj: ProtectBaseObject) -> None:
+def print_unifi_obj(obj: ProtectBaseObject | None, output_format: OutputFormatEnum) -> None:
     """Helper method to print a single protect object"""
 
-    json_output(obj.unifi_dict())
+    if obj is not None:
+        json_output(obj.unifi_dict())
+    elif output_format == OutputFormatEnum.JSON:
+        json_output(None)
+
+
+def print_unifi_list(objs: Sequence[ProtectBaseObject]) -> None:
+    """Helper method to print a list of protect objects"""
+
+    data = []
+    for obj in objs:
+        data.append(obj.unifi_dict())
+
+    json_output(data)
 
 
 def print_unifi_dict(objs: Mapping[str, ProtectBaseObject]) -> None:
@@ -52,9 +65,26 @@ def print_unifi_dict(objs: Mapping[str, ProtectBaseObject]) -> None:
     json_output(data)
 
 
+def require_device_id(ctx: typer.Context) -> None:
+    """Requires device ID in context"""
+
+    if ctx.obj.device is None:
+        typer.secho("Requires a valid device ID to be selected")
+        raise typer.Exit(1)
+
+
+def require_no_device_id(ctx: typer.Context) -> None:
+    """Requires no device ID in context"""
+
+    if ctx.obj.device is not None:
+        typer.secho("Requires no device ID to be selected")
+        raise typer.Exit(1)
+
+
 def list_ids(ctx: typer.Context) -> None:
     """Prints list of id: name for each device."""
 
+    require_no_device_id(ctx)
     objs: dict[str, ProtectAdoptableDeviceModel] = ctx.obj.devices
     to_print: list[tuple[str, str | None]] = []
     for obj in objs.values():
@@ -70,6 +100,7 @@ def list_ids(ctx: typer.Context) -> None:
 def protect_url(ctx: typer.Context) -> None:
     """Gets UniFi Protect management URL."""
 
+    require_device_id(ctx)
     obj: NVR | ProtectAdoptableDeviceModel = ctx.obj.device
     if ctx.obj.output_format == OutputFormatEnum.JSON:
         json_output(obj.protect_url)
@@ -80,6 +111,7 @@ def protect_url(ctx: typer.Context) -> None:
 def is_wired(ctx: typer.Context) -> None:
     """Returns if the device is wired or not."""
 
+    require_device_id(ctx)
     obj: ProtectAdoptableDeviceModel = ctx.obj.device
     json_output(obj.is_wired)
 
@@ -87,6 +119,7 @@ def is_wired(ctx: typer.Context) -> None:
 def is_wifi(ctx: typer.Context) -> None:
     """Returns if the device has WiFi or not."""
 
+    require_device_id(ctx)
     obj: ProtectAdoptableDeviceModel = ctx.obj.device
     json_output(obj.is_wifi)
 
@@ -94,6 +127,7 @@ def is_wifi(ctx: typer.Context) -> None:
 def is_bluetooth(ctx: typer.Context) -> None:
     """Returns if the device has Bluetooth or not."""
 
+    require_device_id(ctx)
     obj: ProtectAdoptableDeviceModel = ctx.obj.device
     json_output(obj.is_bluetooth)
 
@@ -101,8 +135,9 @@ def is_bluetooth(ctx: typer.Context) -> None:
 def bridge(ctx: typer.Context) -> None:
     """Returns bridge device if connected via Bluetooth."""
 
+    require_device_id(ctx)
     obj: ProtectAdoptableDeviceModel = ctx.obj.device
-    json_output(obj.bridge)
+    print_unifi_obj(obj.bridge, ctx.obj.output_format)
 
 
 def set_ssh(ctx: typer.Context, enabled: bool) -> None:
@@ -113,6 +148,7 @@ def set_ssh(ctx: typer.Context, enabled: bool) -> None:
     Linux and BusyBox based devices (camera, light and viewport).
     """
 
+    require_device_id(ctx)
     obj: ProtectAdoptableDeviceModel = ctx.obj.device
     run(ctx, obj.set_ssh(enabled))
 
@@ -120,6 +156,7 @@ def set_ssh(ctx: typer.Context, enabled: bool) -> None:
 def reboot(ctx: typer.Context) -> None:
     """Reboots the device."""
 
+    require_device_id(ctx)
     obj: ProtectAdoptableDeviceModel = ctx.obj.device
     run(ctx, obj.reboot())
 

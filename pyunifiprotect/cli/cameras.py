@@ -47,7 +47,7 @@ def main(ctx: typer.Context, device_id: Optional[str] = ARG_DEVICE_ID) -> None:
             return
 
         if ctx.obj.device is not None:
-            base.print_unifi_obj(ctx.obj.device)
+            base.print_unifi_obj(ctx.obj.device, ctx.obj.output_format)
             return
 
         base.print_unifi_dict(ctx.obj.devices)

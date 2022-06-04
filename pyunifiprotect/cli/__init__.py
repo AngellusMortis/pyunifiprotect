@@ -14,6 +14,7 @@ from pyunifiprotect.cli.cameras import app as camera_app
 from pyunifiprotect.cli.chimes import app as chime_app
 from pyunifiprotect.cli.doorlocks import app as doorlock_app
 from pyunifiprotect.cli.light import app as light_app
+from pyunifiprotect.cli.liveviews import app as liveview_app
 from pyunifiprotect.cli.nvr import app as nvr_app
 from pyunifiprotect.cli.sensors import app as sensor_app
 from pyunifiprotect.cli.viewers import app as viewer_app
@@ -81,6 +82,7 @@ SLEEP_INTERVAL = 2
 
 app = typer.Typer()
 app.add_typer(nvr_app, name="nvr")
+app.add_typer(liveview_app, name="liveviews")
 app.add_typer(camera_app, name="cameras")
 app.add_typer(chime_app, name="chimes")
 app.add_typer(doorlock_app, name="doorlocks")

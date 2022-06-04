@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Optional
 
 import typer
@@ -47,7 +48,62 @@ def main(ctx: typer.Context, device_id: Optional[str] = ARG_DEVICE_ID) -> None:
             return
 
         if ctx.obj.device is not None:
-            base.print_unifi_obj(ctx.obj.device)
+            base.print_unifi_obj(ctx.obj.device, ctx.obj.output_format)
             return
 
         base.print_unifi_dict(ctx.obj.devices)
+
+
+@app.command()
+def camera(ctx: typer.Context, camera_id: Optional[str] = typer.Argument(None)) -> None:
+    """Returns or sets tha paired camera for a doorlock."""
+
+    base.require_device_id(ctx)
+    obj: Doorlock = ctx.obj.device
+
+    if camera_id is None:
+        base.print_unifi_obj(obj.camera, ctx.obj.output_format)
+    else:
+        protect: ProtectApiClient = ctx.obj.protect
+        if (camera_obj := protect.bootstrap.cameras.get(camera_id)) is None:
+            typer.secho("Invalid camera ID")
+            raise typer.Exit(1)
+        base.run(ctx, obj.set_paired_camera(camera_obj))
+
+
+@app.command()
+def set_status_light(ctx: typer.Context, enabled: bool) -> None:
+    """Sets status light for the lock."""
+
+    base.require_device_id(ctx)
+    obj: Doorlock = ctx.obj.device
+
+    base.run(ctx, obj.set_status_light(enabled))
+
+
+@app.command()
+def set_auto_close_time(ctx: typer.Context, duration: int = typer.Argument(..., min=0, max=3600)) -> None:
+    """Sets auto-close time for the lock (in seconds). 0 = disabled."""
+
+    base.require_device_id(ctx)
+    obj: Doorlock = ctx.obj.device
+
+    base.run(ctx, obj.set_auto_close_time(timedelta(seconds=duration)))
+
+
+@app.command()
+def unlock(ctx: typer.Context) -> None:
+    """Unlocks the lock."""
+
+    base.require_device_id(ctx)
+    obj: Doorlock = ctx.obj.device
+    base.run(ctx, obj.open_lock())
+
+
+@app.command()
+def lock(ctx: typer.Context) -> None:
+    """Locks the lock."""
+
+    base.require_device_id(ctx)
+    obj: Doorlock = ctx.obj.device
+    base.run(ctx, obj.close_lock())

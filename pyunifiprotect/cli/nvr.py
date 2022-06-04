@@ -31,7 +31,7 @@ def main(ctx: typer.Context) -> None:
     ctx.obj = context
 
     if not ctx.invoked_subcommand:
-        print_unifi_obj(context.device)
+        print_unifi_obj(context.device, ctx.obj.output_format)
 
 
 app.command()(protect_url)
@@ -48,7 +48,7 @@ def set_default_reset_timeout(ctx: typer.Context, timeout: int = ARG_TIMEOUT) ->
 
     nvr: NVR = ctx.obj.device
     run(ctx, nvr.set_default_reset_timeout(timedelta(seconds=timeout)))
-    print_unifi_obj(nvr.doorbell_settings)
+    print_unifi_obj(nvr.doorbell_settings, ctx.obj.output_format)
 
 
 @app.command()
@@ -62,7 +62,7 @@ def set_default_doorbell_message(ctx: typer.Context, msg: str = ARG_DOORBELL_MES
 
     nvr: NVR = ctx.obj.device
     run(ctx, nvr.set_default_doorbell_message(msg))
-    print_unifi_obj(nvr.doorbell_settings)
+    print_unifi_obj(nvr.doorbell_settings, ctx.obj.output_format)
 
 
 @app.command()
@@ -71,7 +71,7 @@ def add_custom_doorbell_message(ctx: typer.Context, msg: str = ARG_DOORBELL_MESS
 
     nvr: NVR = ctx.obj.device
     run(ctx, nvr.add_custom_doorbell_message(msg))
-    print_unifi_obj(nvr.doorbell_settings)
+    print_unifi_obj(nvr.doorbell_settings, ctx.obj.output_format)
 
 
 @app.command()
@@ -80,4 +80,4 @@ def remove_custom_doorbell_message(ctx: typer.Context, msg: str = ARG_DOORBELL_M
 
     nvr: NVR = ctx.obj.device
     run(ctx, nvr.remove_custom_doorbell_message(msg))
-    print_unifi_obj(nvr.doorbell_settings)
+    print_unifi_obj(nvr.doorbell_settings, ctx.obj.output_format)

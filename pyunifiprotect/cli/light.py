@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Optional
 
 import typer
@@ -47,7 +48,64 @@ def main(ctx: typer.Context, device_id: Optional[str] = ARG_DEVICE_ID) -> None:
             return
 
         if ctx.obj.device is not None:
-            base.print_unifi_obj(ctx.obj.device)
+            base.print_unifi_obj(ctx.obj.device, ctx.obj.output_format)
             return
 
         base.print_unifi_dict(ctx.obj.devices)
+
+
+@app.command()
+def camera(ctx: typer.Context, camera_id: Optional[str] = typer.Argument(None)) -> None:
+    """Returns or sets tha paired camera for a light."""
+
+    base.require_device_id(ctx)
+    obj: Light = ctx.obj.device
+
+    if camera_id is None:
+        base.print_unifi_obj(obj.camera, ctx.obj.output_format)
+    else:
+        protect: ProtectApiClient = ctx.obj.protect
+        if (camera_obj := protect.bootstrap.cameras.get(camera_id)) is None:
+            typer.secho("Invalid camera ID")
+            raise typer.Exit(1)
+        base.run(ctx, obj.set_paired_camera(camera_obj))
+
+
+@app.command()
+def set_status_light(ctx: typer.Context, enabled: bool) -> None:
+    """Sets status light for light device."""
+
+    base.require_device_id(ctx)
+    obj: Light = ctx.obj.device
+
+    base.run(ctx, obj.set_status_light(enabled))
+
+
+@app.command()
+def set_led_level(ctx: typer.Context, led_level: int = typer.Argument(..., min=1, max=6)) -> None:
+    """Sets brightness of LED on light."""
+
+    base.require_device_id(ctx)
+    obj: Light = ctx.obj.device
+
+    base.run(ctx, obj.set_led_level(led_level))
+
+
+@app.command()
+def set_sensitivity(ctx: typer.Context, sensitivity: int = typer.Argument(..., min=0, max=100)) -> None:
+    """Sets motion sensitivity for the light."""
+
+    base.require_device_id(ctx)
+    obj: Light = ctx.obj.device
+
+    base.run(ctx, obj.set_sensitivity(sensitivity))
+
+
+@app.command()
+def set_duration(ctx: typer.Context, duration: int = typer.Argument(..., min=15, max=900)) -> None:
+    """Sets timeout duration (in seconds) for light."""
+
+    base.require_device_id(ctx)
+    obj: Light = ctx.obj.device
+
+    base.run(ctx, obj.set_duration(timedelta(seconds=duration)))
