@@ -409,44 +409,6 @@ async def test_ws_emit_ring_callback(
 @pytest.mark.skipif(not TEST_SENSOR_EXISTS, reason="Missing testdata")
 @patch("pyunifiprotect.data.devices.utc_now")
 @pytest.mark.asyncio
-async def test_ws_emit_tamper_callback(
-    mock_now, protect_client_no_debug: ProtectApiClient, now: datetime, sensor, packet: WSPacket
-):
-    mock_now.return_value = now
-    protect_client = protect_client_no_debug
-    protect_client.emit_message = Mock()  # type: ignore
-
-    obj = protect_client.bootstrap.sensors[sensor["id"]]
-
-    expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"
-
-    action_frame: WSJSONPacketFrame = packet.action_frame  # type: ignore
-    action_frame.data = {
-        "action": "update",
-        "newUpdateId": expected_updated_id,
-        "modelKey": "sensor",
-        "id": sensor["id"],
-    }
-
-    data_frame: WSJSONPacketFrame = packet.data_frame  # type: ignore
-    data_frame.data = {"tamperingDetectedAt": to_js_time(now)}
-
-    msg = MagicMock()
-    msg.data = packet.pack_frames()
-
-    assert not obj.is_tampering_detected
-    with patch("pyunifiprotect.data.bootstrap.utc_now", mock_now):
-        protect_client._process_ws_message(msg)
-    assert obj.is_tampering_detected
-    mock_now.return_value = utc_now() + EVENT_PING_INTERVAL
-    assert not obj.is_tampering_detected
-
-    protect_client.emit_message.assert_called_once()
-
-
-@pytest.mark.skipif(not TEST_SENSOR_EXISTS, reason="Missing testdata")
-@patch("pyunifiprotect.data.devices.utc_now")
-@pytest.mark.asyncio
 async def test_ws_emit_alarm_callback(
     mock_now, protect_client_no_debug: ProtectApiClient, now: datetime, sensor, packet: WSPacket
 ):

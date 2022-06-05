@@ -652,10 +652,10 @@ class ProtectApiClient(BaseApiClient):
             params["end"] = to_js_time(end)
 
         if types is not None:
-            params["types"] = [str(e) for e in types]
+            params["types"] = [e.value for e in types]
 
         if smart_detect_types is not None:
-            params["smartDetectTypes"] = [str(e) for e in smart_detect_types]
+            params["smartDetectTypes"] = [e.value for e in smart_detect_types]
 
         return await self.api_request_list("events", params=params)
 
