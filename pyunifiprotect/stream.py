@@ -117,8 +117,7 @@ class TalkbackStream(FfmpegCommand):
         if len(input_args) > 0:
             input_args += " "
 
-        # from Android app
-        bitrate = 48000
+        bitrate = camera.talkback_settings.bits_per_sample * 1000
         # 8000 seems to result in best quality without overloading the camera
         udp_bitrate = bitrate + 8000
 
@@ -129,7 +128,7 @@ class TalkbackStream(FfmpegCommand):
         # b:a = set bit rate of output audio
         cmd = (
             "-loglevel info -hide_banner "
-            f"{input_args}-i {content_url} -vn "
+            f'{input_args}-i "{content_url}" -vn '
             f"-acodec {camera.talkback_settings.type_fmt} -ac {camera.talkback_settings.channels} "
             f"-ar {camera.talkback_settings.sampling_rate} -b:a {bitrate} -map 0:a "
             f'-f adts "udp://{camera.host}:{camera.talkback_settings.bind_port}?bitrate={udp_bitrate}"'
