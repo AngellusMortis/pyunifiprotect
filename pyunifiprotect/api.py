@@ -937,14 +937,13 @@ class ProtectApiClient(BaseApiClient):
         dt: Optional[datetime] = None,
     ) -> Optional[bytes]:
         """
-        Gets snapshot for camera.
+        Gets snapshot for a camera.
 
         Datetime of screenshot is approximate. It may be +/- a few seconds.
         """
 
-        dt = dt or utc_now()
         params = {
-            "ts": to_js_time(dt),
+            "ts": to_js_time(dt or utc_now()),
             "force": "true",
         }
 
@@ -966,12 +965,16 @@ class ProtectApiClient(BaseApiClient):
         camera_id: str,
         width: Optional[int] = None,
         height: Optional[int] = None,
+        dt: Optional[datetime] = None,
     ) -> Optional[bytes]:
-        """Gets a snapshot from a camera"""
+        """
+        Gets snapshot from the package camera.
 
-        dt = utc_now()  # ts is only used as a cache buster
+        Datetime of screenshot is approximate. It may be +/- a few seconds.
+        """
+
         params = {
-            "ts": to_js_time(dt),
+            "ts": to_js_time(dt or utc_now()),
             "force": "true",
         }
 
@@ -981,7 +984,13 @@ class ProtectApiClient(BaseApiClient):
         if height is not None:
             params.update({"h": height})
 
-        return await self.api_request_raw(f"cameras/{camera_id}/package-snapshot", params=params, raise_exception=False)
+        path = "package-snapshot"
+        if dt is not None:
+            path = "recording-snapshot"
+            del params["force"]
+            params.update({"lens": 2})
+
+        return await self.api_request_raw(f"cameras/{camera_id}/{path}", params=params, raise_exception=False)
 
     async def get_camera_video(
         self, camera_id: str, start: datetime, end: datetime, channel_index: int = 0, validate_channel_id: bool = True

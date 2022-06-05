@@ -132,9 +132,19 @@ def save_snapshot(
     output_path: Path = typer.Argument(..., help="JPEG format"),
     width: Optional[int] = typer.Option(None, "-w", "--width"),
     height: Optional[int] = typer.Option(None, "-h", "--height"),
+    dt: Optional[datetime] = typer.Option(None, "-t", "--timestamp"),
     package: bool = typer.Option(False, "-p", "--package", help="Get package camera"),
 ) -> None:
-    """Takes snapshot of camera."""
+    """
+    Takes snapshot of camera.
+
+    If you specify a timestamp, they are approximate. It will not export with down to the second
+    accuracy so it may be +/- a few seconds.
+
+    Timestamps use your locale timezone. If it is not configured correctly,
+    it will default to UTC. You can override your timezone with the
+    TZ environment variable.
+    """
 
     base.require_device_id(ctx)
     obj: d.Camera = ctx.obj.device
@@ -143,10 +153,9 @@ def save_snapshot(
         if not obj.feature_flags.has_package_camera:
             typer.secho("Camera does not have package camera", fg="red")
             raise typer.Exit(1)
-
-        snapshot = base.run(ctx, obj.get_package_snapshot(width, height))
+        snapshot = base.run(ctx, obj.get_package_snapshot(width, height, dt=dt))
     else:
-        snapshot = base.run(ctx, obj.get_snapshot(width, height))
+        snapshot = base.run(ctx, obj.get_snapshot(width, height, dt=dt))
 
     if snapshot is None:
         typer.secho("Could not get snapshot", fg="red")
