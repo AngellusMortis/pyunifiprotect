@@ -40,6 +40,7 @@ from pyunifiprotect.data.types import (
     MountType,
     Percent,
     PercentInt,
+    ProgressCallback,
     RecordingMode,
     SensorStatusType,
     SleepStateType,
@@ -943,10 +944,26 @@ class Camera(ProtectMotionDeviceModel):
 
         return await self.api.get_package_camera_snapshot(self.id, width, height, dt=dt)
 
-    async def get_video(self, start: datetime, end: datetime, channel_index: int = 0) -> Optional[bytes]:
+    async def get_video(
+        self,
+        start: datetime,
+        end: datetime,
+        channel_index: int = 0,
+        output_file: Optional[Path] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+        chunk_size: int = 65536,
+    ) -> Optional[bytes]:
         """Gets video clip for camera at a given time"""
 
-        return await self.api.get_camera_video(self.id, start, end, channel_index)
+        return await self.api.get_camera_video(
+            self.id,
+            start,
+            end,
+            channel_index,
+            output_file=output_file,
+            progress_callback=progress_callback,
+            chunk_size=chunk_size,
+        )
 
     async def set_motion_detection(self, enabled: bool) -> None:
         """Sets motion detection on camera"""

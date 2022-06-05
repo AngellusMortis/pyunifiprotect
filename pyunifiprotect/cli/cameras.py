@@ -194,14 +194,17 @@ def save_video(
         typer.secho("Camera does not have package camera", fg="red")
         raise typer.Exit(1)
 
-    video = base.run(ctx, obj.get_video(start, end, channel))
+    with typer.progressbar(length=0, label="(1/2) Exporting") as pbar:
 
-    if video is None:
-        typer.secho("Could not get snapshot", fg="red")
-        raise typer.Exit(1)
+        async def callback(step: int, current: int, total: int) -> None:
+            pbar.label = "(2/2) Downloading"
+            pbar.length = total
+            pbar.update(step)
 
-    with open(output_path, "wb") as f:
-        f.write(video)
+        base.run(
+            ctx,
+            obj.get_video(start, end, channel, output_file=output_path, progress_callback=callback),
+        )
 
 
 @app.command()

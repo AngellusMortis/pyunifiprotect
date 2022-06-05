@@ -6,11 +6,13 @@ from datetime import datetime, timedelta
 from ipaddress import IPv4Address
 import json as pjson
 import logging
+from pathlib import Path
 import time
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union, cast
 from urllib.parse import urljoin
 from uuid import UUID
 
+import aiofiles
 import aiohttp
 from aiohttp import CookieJar, client_exceptions
 import jwt
@@ -38,7 +40,7 @@ from pyunifiprotect.data import (
     create_from_unifi_dict,
 )
 from pyunifiprotect.data.devices import Chime
-from pyunifiprotect.data.types import RecordingMode
+from pyunifiprotect.data.types import ProgressCallback, RecordingMode
 from pyunifiprotect.exceptions import BadRequest, NotAuthorized, NvrError
 from pyunifiprotect.utils import (
     get_response_reason,
@@ -993,9 +995,24 @@ class ProtectApiClient(BaseApiClient):
         return await self.api_request_raw(f"cameras/{camera_id}/{path}", params=params, raise_exception=False)
 
     async def get_camera_video(
-        self, camera_id: str, start: datetime, end: datetime, channel_index: int = 0, validate_channel_id: bool = True
+        self,
+        camera_id: str,
+        start: datetime,
+        end: datetime,
+        channel_index: int = 0,
+        validate_channel_id: bool = True,
+        output_file: Optional[Path] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+        chunk_size: int = 65536,
     ) -> Optional[bytes]:
-        """Exports MP4 video from a given camera at a specific time"""
+        """
+        Exports MP4 video from a given camera at a specific time.
+
+        Start/End of video export are approximate. It may be +/- a few seconds.
+
+        It is recommended to provide a output file for larger video clips, otherwise the
+        full video must be downloaded to memory before being written.
+        """
 
         if validate_channel_id and self._bootstrap is not None:
             camera = self._bootstrap.cameras[camera_id]
@@ -1006,12 +1023,31 @@ class ProtectApiClient(BaseApiClient):
 
         params = {
             "camera": camera_id,
-            "channel": channel_index,
             "start": to_js_time(start),
             "end": to_js_time(end),
         }
 
-        return await self.api_request_raw("video/export", params=params, raise_exception=False)
+        if channel_index == 3:
+            params.update({"lens": 2})
+        else:
+            params.update({"channel": channel_index})
+
+        path = "video/export"
+        if output_file is None:
+            return await self.api_request_raw(path, params=params, raise_exception=False)
+
+        r = await self.request("get", urljoin(self.api_path, path), auto_close=False, params=params)
+        async with aiofiles.open(output_file, "wb") as output:
+            total = r.content_length or 0
+            current = 0
+            async for chunk in r.content.iter_chunked(chunk_size):
+                step = len(chunk)
+                current += step
+                await output.write(chunk)
+                if progress_callback is not None:
+                    await progress_callback(step, current, total)
+        r.close()
+        return None
 
     async def _get_image_with_retry(
         self, path: str, retry_timeout: int = RETRY_TIMEOUT, **kwargs: Any

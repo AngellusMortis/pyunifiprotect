@@ -38,6 +38,7 @@ from pyunifiprotect.data.types import (
     MountType,
     PercentFloat,
     PercentInt,
+    ProgressCallback,
     RecordingType,
     ResolutionStorageType,
     SensorStatusType,
@@ -255,7 +256,13 @@ class Event(ProtectModelWithId):
             return None
         return await self.api.get_event_heatmap(self.heatmap_id)
 
-    async def get_video(self, channel_index: int = 0) -> Optional[bytes]:
+    async def get_video(
+        self,
+        channel_index: int = 0,
+        output_file: Optional[Path] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+        chunk_size: int = 65536,
+    ) -> Optional[bytes]:
         """Get the MP4 video clip for this given event
 
         Args:
@@ -270,7 +277,15 @@ class Event(ProtectModelWithId):
         if self.end is None:
             raise BadRequest("Event is ongoing")
 
-        return await self.api.get_camera_video(self.camera.id, self.start, self.end, channel_index)
+        return await self.api.get_camera_video(
+            self.camera.id,
+            self.start,
+            self.end,
+            channel_index,
+            output_file=output_file,
+            progress_callback=progress_callback,
+            chunk_size=chunk_size,
+        )
 
     async def get_smart_detect_track(self) -> SmartDetectTrack:
         """

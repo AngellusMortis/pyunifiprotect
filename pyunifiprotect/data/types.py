@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 import enum
-from typing import Any, Dict, List, Literal, Optional, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+)
 
 from packaging.version import Version as BaseVersion
 from pydantic import ConstrainedInt
@@ -14,6 +24,8 @@ VT = TypeVar("VT")
 
 DEFAULT = "DEFAULT_VALUE"
 DEFAULT_TYPE = Literal["DEFAULT_VALUE"]
+
+ProgressCallback = Callable[[int, int, int], Coroutine[Any, Any, None]]
 
 
 class FixSizeOrderedDict(dict[KT, VT]):
