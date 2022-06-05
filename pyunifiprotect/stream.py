@@ -7,6 +7,7 @@ import logging
 from pathlib import Path
 from shlex import split
 from typing import TYPE_CHECKING, List, Optional
+from urllib.parse import urlparse
 
 from aioshutil import which
 
@@ -111,6 +112,7 @@ class TalkbackStream(FfmpegCommand):
         if not camera.feature_flags.has_speaker:
             raise BadRequest("Camera does not have a speaker for talkback")
 
+        content_url = self.clean_url(content_url)
         input_args = self.get_args_from_url(content_url)
         if len(input_args) > 0:
             input_args += " "
@@ -134,6 +136,17 @@ class TalkbackStream(FfmpegCommand):
         )
 
         super().__init__(cmd, ffmpeg_path)
+
+    @classmethod
+    def clean_url(cls, content_url: str) -> str:
+        parsed = urlparse(content_url)
+        if parsed.scheme in ["file", ""]:
+            path = Path(parsed.netloc + parsed.path)
+            if not path.exists():
+                raise BadRequest(f"File {path} does not exist")
+            content_url = str(path.absolute())
+
+        return content_url
 
     @classmethod
     def get_args_from_url(cls, content_url: str) -> str:

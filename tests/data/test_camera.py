@@ -25,6 +25,27 @@ from tests.conftest import TEST_CAMERA_EXISTS
 
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.parametrize("status", [True, False])
+@pytest.mark.asyncio
+async def test_camera_set_motion_detection(camera_obj: Optional[Camera], status: bool):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    camera_obj.api.api_request.reset_mock()
+
+    camera_obj.recording_settings.enable_motion_detection = not status
+    camera_obj._initial_data = camera_obj.dict()
+
+    await camera_obj.set_motion_detection(status)
+
+    camera_obj.api.api_request.assert_called_with(
+        f"cameras/{camera_obj.id}",
+        method="patch",
+        json={"recordingSettings": {"enableMotionDetection": status}},
+    )
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize("mode", [RecordingMode.ALWAYS, RecordingMode.DETECTIONS])
 @pytest.mark.asyncio
 async def test_camera_set_recording_mode(camera_obj: Optional[Camera], mode: RecordingMode):

@@ -933,6 +933,12 @@ class Camera(ProtectMotionDeviceModel):
 
         return await self.api.get_camera_video(self.id, start, end, channel_index)
 
+    async def set_motion_detection(self, enabled: bool) -> None:
+        """Sets motion detection on camera"""
+
+        self.recording_settings.enable_motion_detection = enabled
+        await self.save_device()
+
     async def set_recording_mode(self, mode: RecordingMode) -> None:
         """Sets recording mode on camera"""
 

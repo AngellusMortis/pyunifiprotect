@@ -11,7 +11,7 @@ import typer
 
 from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.data import NVR, ProtectAdoptableDeviceModel, ProtectBaseObject
-from pyunifiprotect.exceptions import BadRequest
+from pyunifiprotect.exceptions import BadRequest, StreamError
 
 T = TypeVar("T")
 
@@ -38,7 +38,7 @@ def run(ctx: typer.Context, func: Coroutine[Any, Any, T]) -> T:
     loop = asyncio.get_event_loop()
     try:
         return loop.run_until_complete(callback())
-    except (BadRequest, ValidationError) as err:
+    except (BadRequest, ValidationError, StreamError) as err:
         typer.secho(str(err), fg="red")
         raise typer.Exit(1)
 
