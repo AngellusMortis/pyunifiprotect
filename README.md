@@ -78,6 +78,33 @@ $ unifi-protect cameras 61ddb66b018e2703e7008c19 | jq .isConnected
 true
 ```
 
+#### Take Snapshot of Camera
+
+```bash
+$ unifi-protect cameras 61ddb66b018e2703e7008c19 save-snapshot output.jpg
+```
+
+#### Export Video From Camera
+
+```bash
+$ unifi-protect cameras 61ddb66b018e2703e7008c19 save-video 2022-6-1T00:00:00 2022-6-1T00:00:30
+```
+
+Any field that takes a datetime field uses the timezone from your system locale by default. If this is not configured
+correctly, it will automatically default to UTC. If you would like to override the timezone, you can use the `TZ`.
+
+For example, use `America/New_York` or US East timezone:
+
+```bash
+$ TZ="America/New_York" unifi-protect cameras 61ddb66b018e2703e7008c19 save-video 2022-6-1T00:00:00 2022-6-1T00:00:30
+```
+
+#### Play Audio File to Cameras Speaker
+
+```bash
+$ TZ="America/New_York" unifi-protect cameras 61ddb66b018e2703e7008c19 play-audio test.mp3
+```
+
 #### Enable SSH on Camera
 
 ```bash
