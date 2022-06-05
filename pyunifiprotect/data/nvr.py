@@ -875,6 +875,11 @@ class NVR(ProtectDeviceModel):
         await self.save_device()
         self.update_all_messages()
 
+    async def reboot(self) -> None:
+        """Reboots the NVR"""
+
+        await self.api.reboot_nvr()
+
 
 class LiveviewSlot(ProtectBaseObject):
     camera_ids: List[str]

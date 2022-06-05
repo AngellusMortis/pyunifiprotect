@@ -5,7 +5,7 @@ from datetime import timedelta
 
 import typer
 
-from pyunifiprotect.cli.base import CliContext, print_unifi_obj, protect_url, run
+from pyunifiprotect.cli import base
 from pyunifiprotect.data import NVR, AnalyticsOption
 
 app = typer.Typer()
@@ -15,7 +15,7 @@ ARG_DOORBELL_MESSAGE = typer.Argument(..., help="ASCII only. Max length 30")
 
 
 @dataclass
-class NVRContext(CliContext):
+class NVRContext(base.CliContext):
     device: NVR
 
 
@@ -33,10 +33,11 @@ def main(ctx: typer.Context) -> None:
     ctx.obj = context
 
     if not ctx.invoked_subcommand:
-        print_unifi_obj(context.device, ctx.obj.output_format)
+        base.print_unifi_obj(context.device, ctx.obj.output_format)
 
 
-app.command()(protect_url)
+app.command(name="protect-url")(base.protect_url)
+app.command(name="reboot")(base.reboot)
 
 
 @app.command()
@@ -44,7 +45,7 @@ def set_analytics(ctx: typer.Context, value: AnalyticsOption) -> None:
     """Sets analytics collection for NVR."""
 
     nvr: NVR = ctx.obj.device
-    run(ctx, nvr.set_analytics(value))
+    base.run(ctx, nvr.set_analytics(value))
 
 
 @app.command()
@@ -57,8 +58,8 @@ def set_default_reset_timeout(ctx: typer.Context, timeout: int = ARG_TIMEOUT) ->
     """
 
     nvr: NVR = ctx.obj.device
-    run(ctx, nvr.set_default_reset_timeout(timedelta(seconds=timeout)))
-    print_unifi_obj(nvr.doorbell_settings, ctx.obj.output_format)
+    base.run(ctx, nvr.set_default_reset_timeout(timedelta(seconds=timeout)))
+    base.print_unifi_obj(nvr.doorbell_settings, ctx.obj.output_format)
 
 
 @app.command()
@@ -71,8 +72,8 @@ def set_default_doorbell_message(ctx: typer.Context, msg: str = ARG_DOORBELL_MES
     """
 
     nvr: NVR = ctx.obj.device
-    run(ctx, nvr.set_default_doorbell_message(msg))
-    print_unifi_obj(nvr.doorbell_settings, ctx.obj.output_format)
+    base.run(ctx, nvr.set_default_doorbell_message(msg))
+    base.print_unifi_obj(nvr.doorbell_settings, ctx.obj.output_format)
 
 
 @app.command()
@@ -80,8 +81,8 @@ def add_custom_doorbell_message(ctx: typer.Context, msg: str = ARG_DOORBELL_MESS
     """Adds a custom doorbell message."""
 
     nvr: NVR = ctx.obj.device
-    run(ctx, nvr.add_custom_doorbell_message(msg))
-    print_unifi_obj(nvr.doorbell_settings, ctx.obj.output_format)
+    base.run(ctx, nvr.add_custom_doorbell_message(msg))
+    base.print_unifi_obj(nvr.doorbell_settings, ctx.obj.output_format)
 
 
 @app.command()
@@ -89,5 +90,5 @@ def remove_custom_doorbell_message(ctx: typer.Context, msg: str = ARG_DOORBELL_M
     """Removes a custom doorbell message."""
 
     nvr: NVR = ctx.obj.device
-    run(ctx, nvr.remove_custom_doorbell_message(msg))
-    print_unifi_obj(nvr.doorbell_settings, ctx.obj.output_format)
+    base.run(ctx, nvr.remove_custom_doorbell_message(msg))
+    base.print_unifi_obj(nvr.doorbell_settings, ctx.obj.output_format)
