@@ -30,6 +30,7 @@ from pyunifiprotect.data import (
     ProtectAdoptableDeviceModel,
     ProtectModel,
     Sensor,
+    SmartDetectObjectType,
     SmartDetectTrack,
     Viewer,
     WSPacket,
@@ -56,6 +57,65 @@ RETRY_TIMEOUT = 10
 
 
 _LOGGER = logging.getLogger(__name__)
+
+# TODO:
+# Backups
+# * GET /backups - list backends
+# * POST /backups/import - import backup
+# * POST /backups - create backup
+# * GET /backups/{id} - download backup
+# * POST /backups/{id}/restore - restore backup
+# * DELETE /backups/{id} - delete backup
+#
+# Cameras
+# * DELETE /cameras/{id} - delete camera
+# * POST /cameras/{id}/unadopt - unadopt camera
+# * POST /cameras/{id}/reset - factory reset camera
+# * POST /cameras/{id}/reset-isp - reset ISP settings
+# * POST /cameras/{id}/reset-isp - reset ISP settings
+# * POST /cameras/{id}/wake - battery powered cameras
+# * POST /cameras/{id}/sleep
+# * GET /cameras/{id}/live-heatmap - add live heatmap to WebRTC stream
+# * GET /cameras/{id}/enable-control - PTZ controls
+# * GET /cameras/{id}/disable-control
+# * POST /cameras/{id}/move
+# * POST /cameras/{id}/ptz/position
+# * GET|POST /cameras/{id}/ptz/preset
+# * GET /cameras/{id}/ptz/snapshot
+# * POST /cameras/{id}/ptz/goto
+# * GET /cameras/{id}/analytics-heatmap - analytics
+# * GET /cameras/{id}/analytics-detections
+# * GET /cameras/{id}/wifi-list - WiFi scan
+# * POST /cameras/{id}/wifi-setup - Change WiFi settings
+# * GET /cameras/{id}/playback-history
+# * GET|POST|DELETE /cameras/{id}/sharedStream - stream sharing, unfinished?
+#
+# Device Groups
+# * GET|POST|PUT|DELETE /device-groups
+# * GET|PATCH|DELETE /device-groups/{id}
+# * PATCH /device-groups/{id}/items
+#
+# Doorlocks
+# POST /doorlocks/{id}/calibrate
+#
+# Events
+# POST /events/{id}/animated-thumbnail
+#
+# Lights
+# POST /lights/{id}/locate
+#
+# NVR
+# GET|PATCH /nvr/device-password
+#
+# Schedules
+# GET|POST /recordingSchedules
+# PATCH|DELETE /recordingSchedules/{id}
+#
+# Sensors
+# POST /sensors/{id}/locate
+#
+# Timeline
+# GET /timeline
 
 
 class BaseApiClient:
@@ -556,6 +616,7 @@ class ProtectApiClient(BaseApiClient):
         end: Optional[datetime] = None,
         limit: Optional[int] = None,
         types: Optional[List[EventType]] = None,
+        smart_detect_types: Optional[List[SmartDetectObjectType]] = None,
     ) -> List[Dict[str, Any]]:
         """
         Get list of events from Protect
@@ -589,7 +650,10 @@ class ProtectApiClient(BaseApiClient):
             params["end"] = to_js_time(end)
 
         if types is not None:
-            params["types"] = [e.value for e in types]
+            params["types"] = [str(e) for e in types]
+
+        if smart_detect_types is not None:
+            params["smartDetectTypes"] = [str(e) for e in smart_detect_types]
 
         return await self.api_request_list("events", params=params)
 
@@ -599,6 +663,7 @@ class ProtectApiClient(BaseApiClient):
         end: Optional[datetime] = None,
         limit: Optional[int] = None,
         types: Optional[List[EventType]] = None,
+        smart_detect_types: Optional[List[SmartDetectObjectType]] = None,
     ) -> List[Event]:
         """
         Same as `get_events_raw`, except
@@ -613,6 +678,7 @@ class ProtectApiClient(BaseApiClient):
         * `end`: end time for events
         * `limit`: max number of events to return
         * `types`: list of EventTypes to get events for
+        * `smart_detect_types`: Filters the Smart detection types for the events
 
         If `limit`, `start` and `end` are not provided, it will default to all events in the last 24 hours.
 
@@ -620,7 +686,9 @@ class ProtectApiClient(BaseApiClient):
         `limit` must be provided. Otherwise, you will get a 400 error from UniFi Protect
         """
 
-        response = await self.get_events_raw(start=start, end=end, limit=limit, types=types)
+        response = await self.get_events_raw(
+            start=start, end=end, limit=limit, types=types, smart_detect_types=smart_detect_types
+        )
         events = []
 
         for event_dict in response:
@@ -866,10 +934,15 @@ class ProtectApiClient(BaseApiClient):
         camera_id: str,
         width: Optional[int] = None,
         height: Optional[int] = None,
+        dt: Optional[datetime] = None,
     ) -> Optional[bytes]:
-        """Gets a snapshot from a camera"""
+        """
+        Gets snapshot for camera.
 
-        dt = utc_now()  # ts is only used as a cache buster
+        Datetime of screenshot is approximate. It may be +/- a few seconds.
+        """
+
+        dt = dt or utc_now()
         params = {
             "ts": to_js_time(dt),
             "force": "true",
@@ -881,7 +954,12 @@ class ProtectApiClient(BaseApiClient):
         if height is not None:
             params.update({"h": height})
 
-        return await self.api_request_raw(f"cameras/{camera_id}/snapshot", params=params, raise_exception=False)
+        path = "snapshot"
+        if dt is not None:
+            path = "recording-snapshot"
+            del params["force"]
+
+        return await self.api_request_raw(f"cameras/{camera_id}/{path}", params=params, raise_exception=False)
 
     async def get_package_camera_snapshot(
         self,
@@ -1027,6 +1105,11 @@ class ProtectApiClient(BaseApiClient):
 
         await self.api_request("nvr", method="patch", json=data)
 
+    async def reboot_nvr(self) -> None:
+        """Reboots NVR"""
+
+        await self.api_request("nvr/reboot", method="post")
+
     async def reboot_device(self, model_type: ModelType, device_id: str) -> None:
         """Reboots an adopted device"""
 
@@ -1051,3 +1134,8 @@ class ProtectApiClient(BaseApiClient):
         """Plays chime tones on a chime"""
 
         await self.api_request(f"chimes/{device_id}/play-buzzer", method="post")
+
+    async def clear_tamper_sensor(self, device_id: str) -> None:
+        """Clears tamper status for sensor"""
+
+        await self.api_request(f"sensors/{device_id}/clear-tamper-flag", method="post")

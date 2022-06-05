@@ -318,11 +318,6 @@ class Bootstrap(ProtectBaseObject):
                     _LOGGER.debug("alarm_triggered_at for %s (%s)", obj.id, is_recent)
                     if is_recent:
                         obj.set_alarm_timeout()
-                elif "tampering_detected_at" in data and obj.tampering_detected_at:
-                    is_recent = obj.tampering_detected_at + RECENT_EVENT_MAX >= now
-                    _LOGGER.debug("tampering_detected_at for %s (%s)", obj.id, is_recent)
-                    if is_recent:
-                        obj.set_tampering_timeout()
 
             devices[action["id"]] = obj
 

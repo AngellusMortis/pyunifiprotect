@@ -915,10 +915,16 @@ class Camera(ProtectMotionDeviceModel):
         if index is not None:
             self.privacy_zones.pop(index)
 
-    async def get_snapshot(self, width: Optional[int] = None, height: Optional[int] = None) -> Optional[bytes]:
-        """Gets snapshot for camera"""
+    async def get_snapshot(
+        self, width: Optional[int] = None, height: Optional[int] = None, dt: Optional[datetime] = None
+    ) -> Optional[bytes]:
+        """
+        Gets snapshot for camera.
 
-        return await self.api.get_camera_snapshot(self.id, width, height)
+        Datetime of screenshot is approximate. It may be +/- a few seconds.
+        """
+
+        return await self.api.get_camera_snapshot(self.id, width, height, dt=dt)
 
     async def get_package_snapshot(self, width: Optional[int] = None, height: Optional[int] = None) -> Optional[bytes]:
         """Gets snapshot for package camera"""
@@ -1361,9 +1367,7 @@ class Sensor(ProtectAdoptableDeviceModel):
 
     @property
     def is_tampering_detected(self) -> bool:
-        if self._tamper_timeout is None:
-            return False
-        return utc_now() < self._tamper_timeout
+        return self.tampering_detected_at is not None
 
     @property
     def is_alarm_detected(self) -> bool:
@@ -1394,10 +1398,6 @@ class Sensor(ProtectAdoptableDeviceModel):
     @property
     def is_humidity_sensor_enabled(self) -> bool:
         return self.mount_type != MountType.LEAK and self.humidity_settings.is_enabled
-
-    def set_tampering_timeout(self) -> None:
-        self._tamper_timeout = utc_now() + EVENT_PING_INTERVAL
-        self._event_callback_ping()
 
     def set_alarm_timeout(self) -> None:
         self._alarm_timeout = utc_now() + EVENT_PING_INTERVAL
@@ -1550,6 +1550,11 @@ class Sensor(ProtectAdoptableDeviceModel):
         else:
             self.camera_id = camera.id
         await self.save_device()
+
+    async def clear_tamper(self) -> None:
+        """Clears tamper status for sensor"""
+
+        await self.api.clear_tamper_sensor(self.id)
 
 
 class Doorlock(ProtectAdoptableDeviceModel):
