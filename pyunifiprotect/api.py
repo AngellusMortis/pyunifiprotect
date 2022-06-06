@@ -95,9 +95,6 @@ _LOGGER = logging.getLogger(__name__)
 # * GET|PATCH|DELETE /device-groups/{id}
 # * PATCH /device-groups/{id}/items
 #
-# Doorlocks
-# POST /doorlocks/{id}/calibrate
-#
 # Events
 # POST /events/{id}/animated-thumbnail
 #
