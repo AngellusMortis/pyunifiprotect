@@ -162,7 +162,6 @@ unsub()
 
 The following the noticble features are that still missing from pyunifiprotect. All of them are planned for "some day" / "nice to have" except where noted.
 
-* Enforcing Read Only fields in pydantic
 * Animated thumbnails for events
 * Timelapse video exporting
 * Liveview creating/updating/deleting

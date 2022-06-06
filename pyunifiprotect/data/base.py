@@ -531,6 +531,10 @@ class ProtectModel(ProtectBaseObject):
 class ProtectModelWithId(ProtectModel):
     id: str
 
+    @classmethod
+    def _get_read_only_fields(cls) -> Set[str]:
+        return set()
+
     async def _api_update(self, data: Dict[str, Any]) -> None:
         raise NotImplementedError()
 
@@ -557,6 +561,10 @@ class ProtectModelWithId(ProtectModel):
         # do not patch when there are no updates
         if updated == {}:
             return
+
+        read_only_keys = self._get_read_only_fields().intersection(updated.keys())
+        if len(read_only_keys) > 0:
+            raise BadRequest(f"The following key(s) are read only: {read_only_keys}")
 
         await self._api_update(updated)
         self._initial_data = new_data
@@ -604,6 +612,19 @@ class ProtectDeviceModel(ProtectModelWithId):
     firmware_version: str
     is_updating: bool
     is_ssh_enabled: bool
+
+    @classmethod
+    def _get_read_only_fields(cls) -> Set[str]:
+        return super()._get_read_only_fields() | {
+            "mac",
+            "host",
+            "type",
+            "upSince",
+            "uptime",
+            "lastSeen",
+            "hardwareRevision",
+            "isUpdating",
+        }
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -676,6 +697,22 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
 
     # TODO:
     # bridgeCandidates
+
+    @classmethod
+    def _get_read_only_fields(cls) -> Set[str]:
+        return super()._get_read_only_fields() | {
+            "connectionHost",
+            "connectedSince",
+            "state",
+            "latestFirmwareVersion",
+            "firmwareBuild",
+            "isAdopting",
+            "isProvisioned",
+            "isRebooting",
+            "canAdopt",
+            "isAttemptingToConnect",
+            "bluetoothConnectionState",
+        }
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
@@ -751,6 +788,10 @@ class ProtectMotionDeviceModel(ProtectAdoptableDeviceModel):
 
     # not directly from UniFi
     last_motion_event_id: Optional[str] = None
+
+    @classmethod
+    def _get_read_only_fields(cls) -> Set[str]:
+        return super()._get_read_only_fields() | {"lastMotion", "isDark"}
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)

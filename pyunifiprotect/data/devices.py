@@ -109,6 +109,10 @@ class Light(ProtectMotionDeviceModel):
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "camera": "cameraId"}
 
+    @classmethod
+    def _get_read_only_fields(cls) -> Set[str]:
+        return super()._get_read_only_fields() | {"isPirMotionDetected", "isLightOn", "isLocating"}
+
     @property
     def camera(self) -> Optional[Camera]:
         """Paired Camera will always be none if no camera is paired"""
@@ -224,21 +228,21 @@ class CameraEventStats(ProtectBaseObject):
 
 
 class CameraChannel(ProtectBaseObject):
-    id: int
-    video_id: str
-    name: str
-    enabled: bool
+    id: int  # read only
+    video_id: str  # read only
+    name: str  # read only
+    enabled: bool  # read only
     is_rtsp_enabled: bool
-    rtsp_alias: Optional[str]
+    rtsp_alias: Optional[str]  # read only
     width: int
     height: int
     fps: int
     bitrate: int
-    min_bitrate: int
-    max_bitrate: int
-    min_client_adaptive_bit_rate: Optional[int]
-    min_motion_adaptive_bit_rate: Optional[int]
-    fps_values: List[int]
+    min_bitrate: int  # read only
+    max_bitrate: int  # read only
+    min_client_adaptive_bit_rate: Optional[int]  # read only
+    min_motion_adaptive_bit_rate: Optional[int]  # read only
+    fps_values: List[int]  # read only
     idr_interval: int
 
     @property
@@ -686,15 +690,15 @@ class Camera(ProtectMotionDeviceModel):
     is_wireless_uplink_enabled: Optional[bool]
 
     # TODO: used for adopting
-    # apMac
-    # apRssi
-    # elementInfo
+    # apMac read only
+    # apRssi read only
+    # elementInfo read only
 
     # TODO:
     # lastPrivacyZonePositionId
     # recordingSchedule
     # smartDetectLines
-    # streamSharing
+    # streamSharing read only
 
     # not directly from UniFi
     last_ring_event_id: Optional[str] = None
@@ -710,6 +714,26 @@ class Camera(ProtectMotionDeviceModel):
             "last_smart_detect",
             "last_smart_detect_event_id",
             "talkback_stream",
+        }
+
+    @classmethod
+    def _get_read_only_fields(cls) -> Set[str]:
+        return super()._get_read_only_fields() | {
+            "stats",
+            "isDeleting",
+            "isRecording",
+            "isMotionDetected",
+            "isSmartDetected",
+            "phyRate",
+            "isProbingForWifi",
+            "lastRing",
+            "isLiveHeatmapEnabled",
+            "anonymousDeviceId",
+            "eventStats",
+            "videoReconfigurationInProgress",
+            "lenses",
+            "isPoorNetwork",
+            "featureFlags",
         }
 
     @classmethod
@@ -1275,6 +1299,10 @@ class Viewer(ProtectAdoptableDeviceModel):
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "liveview": "liveviewId"}
 
+    @classmethod
+    def _get_read_only_fields(cls) -> Set[str]:
+        return super()._get_read_only_fields() | {"softwareVersion"}
+
     @property
     def liveview(self) -> Optional[Liveview]:
         # user may not have permission to see the liveview
@@ -1307,7 +1335,7 @@ class SensorSettingsBase(ProtectBaseObject):
 
 
 class SensorThresholdSettings(SensorSettingsBase):
-    margin: float
+    margin: float  # read only
     # "safe" thresholds for alerting
     # anything below/above will trigger alert
     low_threshold: Optional[float]
@@ -1365,6 +1393,20 @@ class Sensor(ProtectAdoptableDeviceModel):
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "camera": "cameraId"}
+
+    @classmethod
+    def _get_read_only_fields(cls) -> Set[str]:
+        return super()._get_read_only_fields() | {
+            "batteryStatus",
+            "isMotionDetected",
+            "leakDetectedAt",
+            "tamperingDetectedAt",
+            "isOpened",
+            "openStatusChangedAt",
+            "alarmTriggeredAt",
+            "motionDetectedAt",
+            "stats",
+        }
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
@@ -1599,6 +1641,10 @@ class Doorlock(ProtectAdoptableDeviceModel):
         return {**super()._get_unifi_remaps(), "camera": "cameraId", "autoCloseTimeMs": "autoCloseTime"}
 
     @classmethod
+    def _get_read_only_fields(cls) -> Set[str]:
+        return super()._get_read_only_fields() | {"credentials", "lockStatus", "batteryStatus"}
+
+    @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "autoCloseTimeMs" in data and not isinstance(data["autoCloseTimeMs"], timedelta):
             data["autoCloseTimeMs"] = timedelta(milliseconds=data["autoCloseTimeMs"])
@@ -1663,9 +1709,13 @@ class Chime(ProtectAdoptableDeviceModel):
     camera_ids: List[str]
 
     # TODO: used for adoption
-    # apMac
-    # apRssi
-    # elementInfo
+    # apMac  read only
+    # apRssi  read only
+    # elementInfo  read only
+
+    @classmethod
+    def _get_read_only_fields(cls) -> Set[str]:
+        return super()._get_read_only_fields() | {"isProbingForWifi", "lastRing"}
 
     @property
     def cameras(self) -> List[Camera]:

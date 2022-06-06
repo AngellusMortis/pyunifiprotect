@@ -775,8 +775,6 @@ class NVR(ProtectDeviceModel):
     is_away: bool
     is_setup: bool
     network: str
-    is_recording_disabled: bool
-    is_recording_motion_only: bool
     max_camera_capacity: Dict[Literal["4K", "2K", "HD"], int]
     is_wireless_uplink_enabled: Optional[bool]
     market_name: Optional[str] = None
@@ -788,13 +786,34 @@ class NVR(ProtectDeviceModel):
     sso_channel: Optional[FirmwareReleaseChannel] = None
 
     # TODO:
-    # errorCode
+    # errorCode   read only
     # wifiSettings
     # smartDetectAgreement
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "recordingRetentionDurationMs": "recordingRetentionDuration"}
+
+    @classmethod
+    def _get_read_only_fields(cls) -> Set[str]:
+        return super()._get_read_only_fields() | {
+            "version",
+            "uiVersion",
+            "hardwarePlatform",
+            "ports",
+            "lastUpdateAt",
+            "isStation",
+            "hosts",
+            "hostShortname",
+            "isDbAvailable",
+            "isRecordingDisabled",
+            "isRecordingMotionOnly",
+            "cameraUtilization",
+            "storageStats",
+            "isRecycling",
+            "avgMotions",
+            "streamSharingAvailable",
+        }
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -928,6 +947,10 @@ class Liveview(ProtectModelWithId):
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "owner": "ownerId"}
+
+    @classmethod
+    def _get_read_only_fields(cls) -> Set[str]:
+        return super()._get_read_only_fields() | {"isDefault", "owner"}
 
     @property
     def owner(self) -> Optional[User]:
