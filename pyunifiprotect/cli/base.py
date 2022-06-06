@@ -4,7 +4,7 @@ import asyncio
 from dataclasses import dataclass
 from enum import Enum
 import json
-from typing import Any, Callable, Coroutine, Mapping, Sequence, TypeVar
+from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, TypeVar
 
 from pydantic import ValidationError
 import typer
@@ -158,6 +158,24 @@ def set_ssh(ctx: typer.Context, enabled: bool) -> None:
     run(ctx, obj.set_ssh(enabled))
 
 
+def set_name(ctx: typer.Context, name: Optional[str] = typer.Argument(None)) -> None:
+    """Sets name for the device"""
+
+    require_device_id(ctx)
+    obj: NVR | ProtectAdoptableDeviceModel = ctx.obj.device
+    run(ctx, obj.set_name(name))
+
+
+def update(ctx: typer.Context, data: str) -> None:
+    """Updates the device."""
+
+    require_device_id(ctx)
+    obj: ProtectAdoptableDeviceModel = ctx.obj.device
+
+    if obj.model is not None:
+        run(ctx, obj.api.update_device(obj.model, obj.id, json.loads(data)))
+
+
 def reboot(ctx: typer.Context) -> None:
     """Reboots the device."""
 
@@ -178,6 +196,8 @@ def init_common_commands(app: typer.Typer) -> tuple[dict[str, Callable[..., Any]
     device_commands["is-bluetooth"] = app.command()(is_bluetooth)
     device_commands["bridge"] = app.command()(bridge)
     device_commands["set-ssh"] = app.command()(set_ssh)
+    device_commands["set-name"] = app.command()(set_name)
+    device_commands["update"] = app.command()(update)
     device_commands["reboot"] = app.command()(reboot)
 
     return deviceless_commands, device_commands

@@ -2,10 +2,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
+import json
 
 import typer
 
-from pyunifiprotect.cli.base import CliContext, print_unifi_obj, protect_url, run
+from pyunifiprotect.cli.base import (
+    CliContext,
+    print_unifi_obj,
+    protect_url,
+    run,
+    set_name,
+)
 from pyunifiprotect.data import NVR, AnalyticsOption
 
 app = typer.Typer()
@@ -37,6 +44,7 @@ def main(ctx: typer.Context) -> None:
 
 
 app.command()(protect_url)
+app.command()(set_name)
 
 
 @app.command()
@@ -91,3 +99,11 @@ def remove_custom_doorbell_message(ctx: typer.Context, msg: str = ARG_DOORBELL_M
     nvr: NVR = ctx.obj.device
     run(ctx, nvr.remove_custom_doorbell_message(msg))
     print_unifi_obj(nvr.doorbell_settings, ctx.obj.output_format)
+
+
+@app.command()
+def update(ctx: typer.Context, data: str) -> None:
+    """Updates the NVR."""
+
+    nvr: NVR = ctx.obj.device
+    run(ctx, nvr.api.update_nvr(json.loads(data)))
