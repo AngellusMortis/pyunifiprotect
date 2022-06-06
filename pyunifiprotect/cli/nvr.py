@@ -39,7 +39,7 @@ def main(ctx: typer.Context) -> None:
 
 app.command(name="protect-url")(base.protect_url)
 app.command(name="reboot")(base.reboot)
-app.command(name="set-name")(set_name)
+app.command(name="set-name")(base.set_name)
 
 
 @app.command()
@@ -101,4 +101,4 @@ def update(ctx: typer.Context, data: str) -> None:
     """Updates the NVR."""
 
     nvr: NVR = ctx.obj.device
-    run(ctx, nvr.api.update_nvr(json.loads(data)))
+    base.run(ctx, nvr.api.update_nvr(json.loads(data)))
