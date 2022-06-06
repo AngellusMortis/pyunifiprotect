@@ -56,9 +56,9 @@ def main(
     if event_id is not None and event_id not in ALL_COMMANDS:
         try:
             ctx.obj.event = base.run(ctx, protect.get_event(event_id))
-        except NvrError:
+        except NvrError as err:
             typer.secho("Invalid event ID", fg="red")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from err
 
     if not ctx.invoked_subcommand:
         if ctx.obj.event is not None:
