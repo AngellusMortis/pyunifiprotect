@@ -149,6 +149,10 @@ def save_snapshot(
     base.require_device_id(ctx)
     obj: d.Camera = ctx.obj.device
 
+    if dt is not None:
+        local_tz = datetime.now(timezone.utc).astimezone().tzinfo
+        dt = dt.replace(tzinfo=local_tz)
+
     if package:
         if not obj.feature_flags.has_package_camera:
             typer.secho("Camera does not have package camera", fg="red")
@@ -432,6 +436,10 @@ def set_lcd_text(
     it will default to UTC. You can override your timezone with the
     TZ environment variable.
     """
+
+    if reset_at is not None:
+        local_tz = datetime.now(timezone.utc).astimezone().tzinfo
+        reset_at = reset_at.replace(tzinfo=local_tz)
 
     base.require_device_id(ctx)
     obj: d.Camera = ctx.obj.device

@@ -11,7 +11,7 @@ import typer
 
 from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.data import NVR, ProtectAdoptableDeviceModel, ProtectBaseObject
-from pyunifiprotect.exceptions import BadRequest, StreamError
+from pyunifiprotect.exceptions import BadRequest, NvrError, StreamError
 
 T = TypeVar("T")
 
@@ -38,7 +38,7 @@ def run(ctx: typer.Context, func: Coroutine[Any, Any, T]) -> T:
     loop = asyncio.get_event_loop()
     try:
         return loop.run_until_complete(callback())
-    except (BadRequest, ValidationError, StreamError) as err:
+    except (BadRequest, ValidationError, StreamError, NvrError) as err:
         typer.secho(str(err), fg="red")
         raise typer.Exit(1)
 
@@ -87,7 +87,7 @@ def require_no_device_id(ctx: typer.Context) -> None:
 
 
 def list_ids(ctx: typer.Context) -> None:
-    """Prints list of id: name for each device."""
+    """Prints list of "id name" for each device."""
 
     require_no_device_id(ctx)
     objs: dict[str, ProtectAdoptableDeviceModel] = ctx.obj.devices
