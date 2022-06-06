@@ -70,8 +70,6 @@ _LOGGER = logging.getLogger(__name__)
 # * DELETE /backups/{id} - delete backup
 #
 # Cameras
-# * DELETE /cameras/{id} - delete camera
-# * POST /cameras/{id}/unadopt - unadopt camera
 # * POST /cameras/{id}/reset - factory reset camera
 # * POST /cameras/{id}/reset-isp - reset ISP settings
 # * POST /cameras/{id}/reset-isp - reset ISP settings
@@ -1160,6 +1158,20 @@ class ProtectApiClient(BaseApiClient):
 
         await self.api_request(f"{model_type.value}s/{device_id}/reboot", method="post")
 
+    async def unadopt_device(self, model_type: ModelType, device_id: str) -> None:
+        """Unadopt/Unmanage adopted device"""
+
+        await self.api_request(f"{model_type.value}s/{device_id}", method="delete")
+
+    async def adopt_device(self, model_type: ModelType, device_id: str) -> None:
+        """Adopts a device"""
+
+        key = f"{model_type.value}s"
+        data = await self.api_request_obj("devices/adopt", method="post", json={key: {device_id: {}}})
+
+        if not data.get(key, {}).get(device_id, {}).get("adopted", False):
+            raise BadRequest("Could not adopt device")
+
     async def close_lock(self, device_id: str) -> None:
         """Close doorlock (lock)"""
 
@@ -1169,6 +1181,15 @@ class ProtectApiClient(BaseApiClient):
         """Open doorlock (unlock)"""
 
         await self.api_request(f"doorlocks/{device_id}/open", method="post")
+
+    async def calibrate_lock(self, device_id: str) -> None:
+        """
+        Calibrate the doorlock.
+
+        Door must be open and lock unlocked.
+        """
+
+        await self.api_request(f"doorlocks/{device_id}/calibrate", method="post", json={"auto": True})
 
     async def play_speaker(self, device_id: str) -> None:
         """Plays chime tones on a chime"""

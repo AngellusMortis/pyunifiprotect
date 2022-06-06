@@ -744,6 +744,26 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
         if self.model is not None:
             await self.api.reboot_device(self.model, self.id)
 
+    async def unadopt(self) -> None:
+        """Unadopt/Unmanage adopted device"""
+
+        if not self.is_adopted:
+            raise BadRequest("Device is not adopted")
+
+        if self.model is not None:
+            await self.api.unadopt_device(self.model, self.id)
+
+    async def adopt(self, name: Optional[str]) -> None:
+        """Adopts a device"""
+
+        if not self.can_adopt:
+            raise BadRequest("Device cannot be adopted")
+
+        if self.model is not None:
+            await self.api.adopt_device(self.model, self.id)
+            if name is not None:
+                await self.set_name(name)
+
 
 class ProtectMotionDeviceModel(ProtectAdoptableDeviceModel):
     last_motion: Optional[datetime]

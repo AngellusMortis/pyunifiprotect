@@ -109,3 +109,18 @@ def lock(ctx: typer.Context) -> None:
     base.require_device_id(ctx)
     obj: Doorlock = ctx.obj.device
     base.run(ctx, obj.close_lock())
+
+
+@app.command()
+def calibrate(ctx: typer.Context, force: bool = base.OPTION_FORCE) -> None:
+    """
+    Calibrate the doorlock.
+
+    Door must be open and lock unlocked.
+    """
+
+    base.require_device_id(ctx)
+    obj: Doorlock = ctx.obj.device
+
+    if force or typer.confirm("Is the door open and unlocked?"):
+        base.run(ctx, obj.calibrate())

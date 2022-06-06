@@ -15,6 +15,8 @@ from pyunifiprotect.exceptions import BadRequest, StreamError
 
 T = TypeVar("T")
 
+OPTION_FORCE = typer.Option(False, "-f", "--force", help="Skip confirmation prompt")
+
 
 class OutputFormatEnum(str, Enum):
     JSON = "json"
@@ -93,7 +95,21 @@ def list_ids(ctx: typer.Context) -> None:
     objs: dict[str, ProtectAdoptableDeviceModel] = ctx.obj.devices
     to_print: list[tuple[str, str | None]] = []
     for obj in objs.values():
-        to_print.append((obj.id, obj.name))
+        name = obj.name
+        if obj.is_adopted_by_other:
+            name = f"{name} [Managed by Another Console]"
+        elif obj.is_adopting:
+            name = f"{name} [Adopting]"
+        elif obj.can_adopt:
+            name = f"{name} [Unadopted]"
+        elif obj.is_rebooting:
+            name = f"{name} [Restarting]"
+        elif obj.is_updating:
+            name = f"{name} [Updating]"
+        elif not obj.is_connected:
+            name = f"{name} [Disconnected]"
+
+        to_print.append((obj.id, name))
 
     if ctx.obj.output_format == OutputFormatEnum.JSON:
         json_output(to_print)
@@ -176,13 +192,33 @@ def update(ctx: typer.Context, data: str) -> None:
         run(ctx, obj.api.update_device(obj.model, obj.id, json.loads(data)))
 
 
-def reboot(ctx: typer.Context) -> None:
+def reboot(ctx: typer.Context, force: bool = OPTION_FORCE) -> None:
     """Reboots the device."""
 
     require_device_id(ctx)
     obj: NVR | ProtectAdoptableDeviceModel = ctx.obj.device
 
-    run(ctx, obj.reboot())
+    if force or typer.confirm(f'Confirm reboot of "{obj.name}"" (id: {obj.id})'):
+        run(ctx, obj.reboot())
+
+
+def unadopt(ctx: typer.Context, force: bool = OPTION_FORCE) -> None:
+    """Unadopt/Unmanage adopted device"""
+
+    require_device_id(ctx)
+    obj: ProtectAdoptableDeviceModel = ctx.obj.device
+
+    if force or typer.confirm(f'Confirm undopt of "{obj.name}"" (id: {obj.id})'):
+        run(ctx, obj.unadopt())
+
+
+def adopt(ctx: typer.Context, name: Optional[str] = typer.Argument(None)) -> None:
+    """Adopts a device"""
+
+    require_device_id(ctx)
+    obj: ProtectAdoptableDeviceModel = ctx.obj.device
+
+    run(ctx, obj.adopt(name))
 
 
 def init_common_commands(app: typer.Typer) -> tuple[dict[str, Callable[..., Any]], dict[str, Callable[..., Any]]]:
@@ -199,5 +235,7 @@ def init_common_commands(app: typer.Typer) -> tuple[dict[str, Callable[..., Any]
     device_commands["set-name"] = app.command()(set_name)
     device_commands["update"] = app.command()(update)
     device_commands["reboot"] = app.command()(reboot)
+    device_commands["unadopt"] = app.command()(unadopt)
+    device_commands["adopt"] = app.command()(adopt)
 
     return deviceless_commands, device_commands

@@ -77,6 +77,7 @@ OPTION_OUT_FORMAT = typer.Option(
     help="Output format for commands. Not all commands support plain and will still output in JSON.",
 )
 OPTION_WS_FILE = typer.Option(None, "--file", "-f", help="Path or raw binary Websocket message")
+OPTION_UNADOPTED = typer.Option(False, "-u", "--include-unadopted", help="Include devices not adopted by this NVR")
 ARG_WS_DATA = typer.Argument(None, help="base64 encoded Websocket message")
 
 SLEEP_INTERVAL = 2
@@ -102,10 +103,13 @@ def main(
     port: int = OPTION_PORT,
     verify: bool = OPTION_VERIFY,
     output_format: OutputFormatEnum = OPTION_OUT_FORMAT,
+    include_unadopted: bool = OPTION_UNADOPTED,
 ) -> None:
     """UniFi Protect CLI"""
 
-    protect = ProtectApiClient(address, port, username, password, verify_ssl=verify)
+    protect = ProtectApiClient(
+        address, port, username, password, verify_ssl=verify, ignore_unadopted=not include_unadopted
+    )
 
     async def update() -> None:
         protect._bootstrap = await protect.get_bootstrap()  # pylint: disable=protected-access

@@ -1654,6 +1654,15 @@ class Doorlock(ProtectAdoptableDeviceModel):
 
         await self.api.open_lock(self.id)
 
+    async def calibrate(self) -> None:
+        """
+        Calibrate the doorlock.
+
+        Door must be open and lock unlocked.
+        """
+
+        await self.api.calibrate_lock(self.id)
+
 
 class Chime(ProtectAdoptableDeviceModel):
     volume: PercentInt
