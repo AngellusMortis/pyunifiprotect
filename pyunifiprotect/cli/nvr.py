@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
+import json
 
 import typer
 
@@ -38,6 +39,7 @@ def main(ctx: typer.Context) -> None:
 
 app.command(name="protect-url")(base.protect_url)
 app.command(name="reboot")(base.reboot)
+app.command(name="set-name")(set_name)
 
 
 @app.command()
@@ -92,3 +94,11 @@ def remove_custom_doorbell_message(ctx: typer.Context, msg: str = ARG_DOORBELL_M
     nvr: NVR = ctx.obj.device
     base.run(ctx, nvr.remove_custom_doorbell_message(msg))
     base.print_unifi_obj(nvr.doorbell_settings, ctx.obj.output_format)
+
+
+@app.command()
+def update(ctx: typer.Context, data: str) -> None:
+    """Updates the NVR."""
+
+    nvr: NVR = ctx.obj.device
+    run(ctx, nvr.api.update_nvr(json.loads(data)))

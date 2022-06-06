@@ -575,7 +575,7 @@ def compare_objs(obj_type, expected, actual):
                 estimate = disk.get("estimate")
                 actual_estimate = actual_disk.get("estimate")
                 if estimate is not None and actual_estimate is not None:
-                    if math.isclose(estimate, actual_estimate):
+                    if math.isclose(estimate, actual_estimate, rel_tol=0.01):
                         actual["systemInfo"]["ustorage"]["disks"][index]["estimate"] = estimate
 
             for index, device in enumerate(expected["systemInfo"]["ustorage"]["space"]):
@@ -583,7 +583,7 @@ def compare_objs(obj_type, expected, actual):
                 estimate = device.get("estimate")
                 actual_estimate = actual_device.get("estimate")
                 if estimate is not None and actual_estimate is not None:
-                    if math.isclose(estimate, actual_estimate):
+                    if math.isclose(estimate, actual_estimate, rel_tol=0.01):
                         actual["systemInfo"]["ustorage"]["space"][index]["estimate"] = estimate
 
     if "bluetoothConnectionState" in expected:

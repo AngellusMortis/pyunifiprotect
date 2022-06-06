@@ -625,6 +625,12 @@ class ProtectDeviceModel(ProtectModelWithId):
         loop = asyncio.get_event_loop()
         loop.call_later(EVENT_PING_INTERVAL.total_seconds(), asyncio.create_task, self.emit_message({}))
 
+    async def set_name(self, name: str | None) -> None:
+        """Sets name for the device"""
+
+        self.name = name
+        await self.save_device()
+
 
 class WiredConnectionState(ProtectBaseObject):
     phy_rate: Optional[int]
