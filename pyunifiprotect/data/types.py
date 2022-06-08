@@ -26,7 +26,7 @@ DEFAULT = "DEFAULT_VALUE"
 DEFAULT_TYPE = Literal["DEFAULT_VALUE"]
 
 ProgressCallback = Callable[[int, int, int], Coroutine[Any, Any, None]]
-IteratorCallback = Callable[[int, bytes | None], Coroutine[Any, Any, None]]
+IteratorCallback = Callable[[int, Optional[bytes]], Coroutine[Any, Any, None]]
 
 
 class FixSizeOrderedDict(dict[KT, VT]):
