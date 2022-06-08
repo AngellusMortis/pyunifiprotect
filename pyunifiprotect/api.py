@@ -1048,6 +1048,9 @@ class ProtectApiClient(BaseApiClient):
             params.update({"channel": channel_index})
 
         path = "video/export"
+        if iterator_callback is None and progress_callback is None:
+            return await self.api_request_raw(path, params=params, raise_exception=False)
+
         r = await self.request("get", urljoin(self.api_path, path), auto_close=False, params=params)
         if output_file is not None:
             async with aiofiles.open(output_file, "wb") as output:
