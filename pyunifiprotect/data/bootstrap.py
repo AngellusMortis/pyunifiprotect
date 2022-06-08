@@ -151,9 +151,9 @@ class Bootstrap(ProtectBaseObject):
     capture_ws_stats: bool = False
     mac_lookup: dict[str, ProtectDeviceRef] = {}
     _ws_stats: List[WSStat] = PrivateAttr([])
-    _has_doorbell: bool | None = PrivateAttr(None)
-    _has_smart: bool | None = PrivateAttr(None)
-    _recording_start: datetime | None = PrivateAttr(None)
+    _has_doorbell: Optional[bool] = PrivateAttr(None)
+    _has_smart: Optional[bool] = PrivateAttr(None)
+    _recording_start: Optional[datetime] = PrivateAttr(None)
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
