@@ -34,6 +34,7 @@ from pyunifiprotect.data.types import (
     DoorbellText,
     EventType,
     FirmwareReleaseChannel,
+    IteratorCallback,
     ModelType,
     MountType,
     PercentFloat,
@@ -260,6 +261,7 @@ class Event(ProtectModelWithId):
         self,
         channel_index: int = 0,
         output_file: Optional[Path] = None,
+        iterator_callback: Optional[IteratorCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         chunk_size: int = 65536,
     ) -> Optional[bytes]:
@@ -283,6 +285,7 @@ class Event(ProtectModelWithId):
             self.end,
             channel_index,
             output_file=output_file,
+            iterator_callback=iterator_callback,
             progress_callback=progress_callback,
             chunk_size=chunk_size,
         )
@@ -566,6 +569,19 @@ class UOSDisk(ProtectBaseObject):
                     del data[key]
 
         return data
+
+    @property
+    def has_disk(self) -> bool:
+        return self.state != "nodisk"
+
+    @property
+    def is_healthy(self) -> bool:
+        return self.state in [
+            "initializing",
+            "expanding",
+            "spare",
+            "normal",
+        ]
 
 
 class UOSSpace(ProtectBaseObject):

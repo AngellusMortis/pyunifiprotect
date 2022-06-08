@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import datetime
 import logging
 from typing import Any, Dict, List, Optional, Set, Tuple, cast
 from uuid import UUID
@@ -150,6 +151,9 @@ class Bootstrap(ProtectBaseObject):
     capture_ws_stats: bool = False
     mac_lookup: dict[str, ProtectDeviceRef] = {}
     _ws_stats: List[WSStat] = PrivateAttr([])
+    _has_doorbell: bool | None = PrivateAttr(None)
+    _has_smart: bool | None = PrivateAttr(None)
+    _recording_start: datetime | None = PrivateAttr(None)
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -198,6 +202,29 @@ class Bootstrap(ProtectBaseObject):
     def auth_user(self) -> User:
         user: User = self.api.bootstrap.users[self.auth_user_id]
         return user
+
+    @property
+    def has_doorbell(self) -> bool:
+        if self._has_doorbell is None:
+            self._has_doorbell = any(c.feature_flags.has_chime for c in self.cameras.values())
+
+        return self._has_doorbell
+
+    @property
+    def recording_start(self) -> datetime:
+        if self._recording_start is None:
+            self._recording_start = min(
+                c.stats.video.recording_start
+                for c in self.cameras.values()
+                if c.stats.video.recording_start is not None
+            )
+        return self._recording_start
+
+    @property
+    def has_smart_detections(self) -> bool:
+        if self._has_smart is None:
+            self._has_smart = any(c.feature_flags.has_smart_detect for c in self.cameras.values())
+        return self._has_smart
 
     def get_device_from_mac(self, mac: str) -> ProtectAdoptableDeviceModel | None:
         """Retrieve a device from MAC address"""

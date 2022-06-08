@@ -40,7 +40,7 @@ from pyunifiprotect.data import (
     create_from_unifi_dict,
 )
 from pyunifiprotect.data.devices import Chime
-from pyunifiprotect.data.types import ProgressCallback, RecordingMode
+from pyunifiprotect.data.types import IteratorCallback, ProgressCallback, RecordingMode
 from pyunifiprotect.exceptions import BadRequest, NotAuthorized, NvrError
 from pyunifiprotect.utils import (
     get_response_reason,
@@ -989,6 +989,25 @@ class ProtectApiClient(BaseApiClient):
 
         return await self.api_request_raw(f"cameras/{camera_id}/{path}", params=params, raise_exception=False)
 
+    async def _stream_response(
+        self,
+        response: aiohttp.ClientResponse,
+        chunk_size: int,
+        iterator_callback: Optional[IteratorCallback] = None,
+        progress_callback: Optional[ProgressCallback] = None,
+    ) -> None:
+        total = response.content_length or 0
+        current = 0
+        if iterator_callback is not None:
+            await iterator_callback(total, None)
+        async for chunk in response.content.iter_chunked(chunk_size):
+            step = len(chunk)
+            current += step
+            if iterator_callback is not None:
+                await iterator_callback(total, chunk)
+            if progress_callback is not None:
+                await progress_callback(step, current, total)
+
     async def get_camera_video(
         self,
         camera_id: str,
@@ -997,6 +1016,7 @@ class ProtectApiClient(BaseApiClient):
         channel_index: int = 0,
         validate_channel_id: bool = True,
         output_file: Optional[Path] = None,
+        iterator_callback: Optional[IteratorCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         chunk_size: int = 65536,
     ) -> Optional[bytes]:
@@ -1028,19 +1048,19 @@ class ProtectApiClient(BaseApiClient):
             params.update({"channel": channel_index})
 
         path = "video/export"
-        if output_file is None:
-            return await self.api_request_raw(path, params=params, raise_exception=False)
-
         r = await self.request("get", urljoin(self.api_path, path), auto_close=False, params=params)
-        async with aiofiles.open(output_file, "wb") as output:
-            total = r.content_length or 0
-            current = 0
-            async for chunk in r.content.iter_chunked(chunk_size):
-                step = len(chunk)
-                current += step
-                await output.write(chunk)
-                if progress_callback is not None:
-                    await progress_callback(step, current, total)
+        if output_file is not None:
+            async with aiofiles.open(output_file, "wb") as output:
+
+                async def callback(total: int, chunk: bytes | None) -> None:
+                    if iterator_callback is not None:
+                        await iterator_callback(total, chunk)
+                    if chunk is not None:
+                        await output.write(chunk)
+
+                await self._stream_response(r, chunk_size, callback, progress_callback)
+        else:
+            await self._stream_response(r, chunk_size, iterator_callback, progress_callback)
         r.close()
         return None
 
