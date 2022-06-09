@@ -223,6 +223,7 @@ class LightModeType(str, ValuesEnumMixin, enum.Enum):
 class VideoMode(str, ValuesEnumMixin, enum.Enum):
     DEFAULT = "default"
     HIGH_FPS = "highFps"
+    HOMEKIT = "homekit"
     # should only be for unadopted devices
     UNKNOWN = "unknown"
 

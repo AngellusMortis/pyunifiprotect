@@ -449,6 +449,8 @@ class PortConfig(ProtectBaseObject):
     ucore: int
     discovery_client: int
     piongw: Optional[int] = None
+    ems_json_cli: Optional[int] = None
+    stacking: Optional[int] = None
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
@@ -456,6 +458,7 @@ class PortConfig(ProtectBaseObject):
             **super()._get_unifi_remaps(),
             "emsCLI": "emsCli",
             "emsLiveFLV": "emsLiveFlv",
+            "emsJsonCLI": "emsJsonCli",
         }
 
 
@@ -800,6 +803,9 @@ class NVR(ProtectDeviceModel):
     is_recording_motion_only: Optional[bool] = None
     ui_version: Optional[str] = None
     sso_channel: Optional[FirmwareReleaseChannel] = None
+    is_stacked: Optional[bool] = None
+    is_primary: Optional[bool] = None
+    last_drive_slow_event: Optional[datetime] = None
 
     # TODO:
     # errorCode   read only

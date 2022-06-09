@@ -494,6 +494,11 @@ NEW_FIELDS = {
     "isDbAvailable",
     "isRecordingDisabled",
     "isRecordingMotionOnly",
+    # 2.1.1-beta3
+    "anonymousDeviceId",  # added to viewport
+    "isStacked",
+    "isPrimary",
+    "lastDriveSlowEvent",
 }
 
 
@@ -514,6 +519,10 @@ def compare_objs(obj_type, expected, actual):
         del expected["smartDetectLines"]
         if "streamSharing" in expected:
             del expected["streamSharing"]
+        if "hotplug" in expected["featureFlags"]:
+            del expected["featureFlags"]["hotplug"]
+        if "lensType" in expected["featureFlags"]:
+            del expected["featureFlags"]["lensType"]
         del expected["featureFlags"]["focus"]
         del expected["featureFlags"]["pan"]
         del expected["featureFlags"]["tilt"]
@@ -532,6 +541,7 @@ def compare_objs(obj_type, expected, actual):
         )
         expected["featureFlags"]["audio"] = expected["featureFlags"].get("audio", [])
         expected["featureFlags"]["audioCodecs"] = expected["featureFlags"].get("audioCodecs", [])
+        expected["featureFlags"]["hasInfrared"] = expected["featureFlags"].get("hasInfrared")
     elif obj_type == ModelType.USER.value:
         if "settings" in expected:
             expected.pop("settings", None)
@@ -567,6 +577,8 @@ def compare_objs(obj_type, expected, actual):
         expected["marketName"] = expected.get("marketName")
         expected["streamSharingAvailable"] = expected.get("streamSharingAvailable")
         expected["ports"]["piongw"] = expected["ports"].get("piongw")
+        expected["ports"]["stacking"] = expected["ports"].get("stacking")
+        expected["ports"]["emsJsonCLI"] = expected["ports"].get("emsJsonCLI")
 
         # float math...
         if expected["systemInfo"].get("ustorage") is not None:

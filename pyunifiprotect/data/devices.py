@@ -619,12 +619,15 @@ class FeatureFlags(ProtectBaseObject):
     audio: List[str] = []
     audio_codecs: List[AudioCodecs] = []
     mount_positions: List[MountPosition] = []
+    has_infrared: Optional[bool] = None
 
     # TODO:
     # focus
     # pan
     # tilt
     # zoom
+    # lensType
+    # hotplug
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
@@ -1297,6 +1300,7 @@ class Viewer(ProtectAdoptableDeviceModel):
     stream_limit: int
     software_version: str
     liveview_id: str
+    anonymous_device_id: Optional[UUID] = None
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
