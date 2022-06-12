@@ -84,6 +84,7 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
     SCHEDULE = "schedule"
     CHIME = "chime"
     DEVICE_GROUP = "deviceGroup"
+    LEGACY_UFV = "legacyUFV"
 
     @staticmethod
     def bootstrap_models() -> List[str]:
@@ -386,6 +387,16 @@ class LockStatusType(str, ValuesEnumMixin, enum.Enum):
     AUTO_CALIBRATION_IN_PROGRESS = "AUTO_CALIBRATION_IN_PROGRESS"
     CALIBRATION_WAITING_OPEN = "CALIBRATION_WAITING_OPEN"
     CALIBRATION_WAITING_CLOSE = "CALIBRATION_WAITING_CLOSE"
+
+
+@enum.unique
+class PermissionNode(str, enum.Enum):
+    CREATE = "create"
+    READ = "read"
+    WRITE = "write"
+    DELETE = "delete"
+    READ_MEDIA = "readmedia"
+    DELETE_MEDIA = "deletemedia"
 
 
 class DoorbellText(ConstrainedStr):

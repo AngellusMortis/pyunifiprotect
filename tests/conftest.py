@@ -303,6 +303,11 @@ async def liveview_obj(protect_client: ProtectApiClient):
     return list(protect_client.bootstrap.liveviews.values())[0]
 
 
+@pytest_asyncio.fixture
+async def user_obj(protect_client: ProtectApiClient):
+    return protect_client.bootstrap.auth_user
+
+
 @pytest.fixture
 def liveview():
     if not TEST_LIVEVIEW_EXISTS:

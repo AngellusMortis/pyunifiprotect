@@ -32,7 +32,7 @@ from typing import (
 from uuid import UUID
 
 from aiohttp import ClientResponse
-from pydantic.fields import SHAPE_DICT, SHAPE_LIST, ModelField
+from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_SET, ModelField
 from pydantic.utils import to_camel
 
 from pyunifiprotect.data.types import Version
@@ -167,6 +167,8 @@ def convert_unifi_data(value: Any, field: ModelField) -> Any:
 
     if field.shape == SHAPE_LIST and isinstance(value, list):
         value = [convert_unifi_data(v, field) for v in value]
+    elif field.shape == SHAPE_SET and isinstance(value, list):
+        value = {convert_unifi_data(v, field) for v in value}
     elif field.shape == SHAPE_DICT and isinstance(value, dict):
         value = {k: convert_unifi_data(v, field) for k, v in value.items()}
     elif field.type_ in (Union[IPv4Address, str, None], Union[IPv4Address, str]) and value is not None:

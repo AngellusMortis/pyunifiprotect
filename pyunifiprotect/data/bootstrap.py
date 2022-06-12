@@ -27,8 +27,9 @@ from pyunifiprotect.data.devices import (
     Sensor,
     Viewer,
 )
-from pyunifiprotect.data.nvr import NVR, Event, Group, Liveview, User
+from pyunifiprotect.data.nvr import NVR, Event, Liveview
 from pyunifiprotect.data.types import EventType, FixSizeOrderedDict, ModelType
+from pyunifiprotect.data.user import Group, User
 from pyunifiprotect.data.websocket import (
     WSAction,
     WSJSONPacketFrame,

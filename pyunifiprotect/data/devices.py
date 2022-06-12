@@ -41,6 +41,7 @@ from pyunifiprotect.data.types import (
     MountType,
     Percent,
     PercentInt,
+    PermissionNode,
     ProgressCallback,
     RecordingMode,
     SensorStatusType,
@@ -50,6 +51,7 @@ from pyunifiprotect.data.types import (
     VideoMode,
     WDRLevel,
 )
+from pyunifiprotect.data.user import User
 from pyunifiprotect.exceptions import BadRequest, StreamError
 from pyunifiprotect.stream import TalkbackStream
 from pyunifiprotect.utils import (
@@ -1294,6 +1296,18 @@ class Camera(ProtectMotionDeviceModel):
             raise StreamError("No audio playing to stop")
 
         await stream.stop()
+
+    def can_read_media(self, user: User) -> bool:
+        if self.model is None:
+            return True
+
+        return user.can(self.model, PermissionNode.READ_MEDIA, self)
+
+    def can_delete_media(self, user: User) -> bool:
+        if self.model is None:
+            return True
+
+        return user.can(self.model, PermissionNode.DELETE_MEDIA, self)
 
 
 class Viewer(ProtectAdoptableDeviceModel):

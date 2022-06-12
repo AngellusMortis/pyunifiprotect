@@ -4,16 +4,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
 from pyunifiprotect.data.devices import Bridge, Camera, Doorlock, Light, Sensor, Viewer
-from pyunifiprotect.data.nvr import (
-    NVR,
-    CloudAccount,
-    Event,
-    Group,
-    Liveview,
-    User,
-    UserLocation,
-)
+from pyunifiprotect.data.nvr import NVR, Event, Liveview
 from pyunifiprotect.data.types import ModelType
+from pyunifiprotect.data.user import CloudAccount, Group, User, UserLocation
 from pyunifiprotect.exceptions import DataDecodeError
 
 if TYPE_CHECKING:

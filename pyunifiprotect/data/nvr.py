@@ -24,7 +24,6 @@ import pytz
 from pyunifiprotect.data.base import (
     ProtectBaseObject,
     ProtectDeviceModel,
-    ProtectModel,
     ProtectModelWithId,
 )
 from pyunifiprotect.data.devices import Camera, CameraZone, Light, Sensor
@@ -48,6 +47,7 @@ from pyunifiprotect.data.types import (
     StorageType,
     Version,
 )
+from pyunifiprotect.data.user import User, UserLocation
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import process_datetime
 
@@ -56,6 +56,12 @@ if TYPE_CHECKING:
 
 MAX_SUPPORTED_CAMERAS = 256
 MAX_EVENT_HISTORY_IN_STATE_MACHINE = MAX_SUPPORTED_CAMERAS * 2
+
+
+class NVRLocation(UserLocation):
+    is_geofencing_enabled: bool
+    radius: int
+    model: Optional[ModelType] = None
 
 
 class SmartDetectItem(ProtectBaseObject):
@@ -321,111 +327,6 @@ class Event(ProtectModelWithId):
             self._smart_detect_zones = {z.id: z for z in self.camera.smart_detect_zones if z.id in ids}
 
         return self._smart_detect_zones
-
-
-class Group(ProtectModelWithId):
-    name: str
-    permissions: List[str]
-    type: str
-    is_default: bool
-
-
-class UserLocation(ProtectModel):
-    is_away: bool
-    latitude: Optional[float]
-    longitude: Optional[float]
-
-
-class NVRLocation(UserLocation):
-    is_geofencing_enabled: bool
-    radius: int
-    model: Optional[ModelType] = None
-
-
-class CloudAccount(ProtectModelWithId):
-    first_name: str
-    last_name: str
-    email: str
-    user_id: str
-    name: str
-    location: Optional[UserLocation]
-    profile_img: Optional[str] = None
-
-    @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
-        return {**super()._get_unifi_remaps(), "user": "userId"}
-
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
-        data = super().unifi_dict(data=data, exclude=exclude)
-
-        # id and cloud ID are always the same
-        if "id" in data:
-            data["cloudId"] = data["id"]
-        if "location" in data and data["location"] is None:
-            del data["location"]
-
-        return data
-
-    @property
-    def user(self) -> User:
-        return self.api.bootstrap.users[self.user_id]
-
-
-class UserFeatureFlags(ProtectBaseObject):
-    notifications_v2: bool
-
-
-class User(ProtectModelWithId):
-    permissions: List[str]
-    last_login_ip: Optional[str]
-    last_login_time: Optional[datetime]
-    is_owner: bool
-    enable_notifications: bool
-    has_accepted_invite: bool
-    all_permissions: List[str]
-    scopes: Optional[List[str]] = None
-    location: Optional[UserLocation]
-    name: str
-    first_name: str
-    last_name: str
-    email: str
-    local_username: str
-    group_ids: List[str]
-    cloud_account: Optional[CloudAccount]
-    feature_flags: UserFeatureFlags
-
-    # TODO:
-    # settings
-    # alertRules
-    # notificationsV2
-
-    _groups: Optional[List[Group]] = PrivateAttr(None)
-
-    @classmethod
-    def _get_unifi_remaps(cls) -> Dict[str, str]:
-        return {**super()._get_unifi_remaps(), "groups": "groupIds"}
-
-    def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
-        data = super().unifi_dict(data=data, exclude=exclude)
-
-        if "location" in data and data["location"] is None:
-            del data["location"]
-
-        return data
-
-    @property
-    def groups(self) -> List[Group]:
-        """
-        Groups the user is in
-
-        Will always be empty if the user only has read only access.
-        """
-
-        if self._groups is not None:
-            return self._groups
-
-        self._groups = [self.api.bootstrap.groups[g] for g in self.group_ids if g in self.api.bootstrap.groups]
-        return self._groups
 
 
 class PortConfig(ProtectBaseObject):

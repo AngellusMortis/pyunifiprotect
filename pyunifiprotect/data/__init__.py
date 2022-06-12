@@ -20,16 +20,12 @@ from pyunifiprotect.data.devices import (
 )
 from pyunifiprotect.data.nvr import (
     NVR,
-    CloudAccount,
     DoorbellMessage,
     Event,
-    Group,
     Liveview,
     NVRLocation,
     SmartDetectItem,
     SmartDetectTrack,
-    User,
-    UserLocation,
 )
 from pyunifiprotect.data.types import (
     DEFAULT,
@@ -50,6 +46,7 @@ from pyunifiprotect.data.types import (
     ModelType,
     MountType,
     Percent,
+    PermissionNode,
     ProtectWSPayloadFormat,
     RecordingMode,
     SensorStatusType,
@@ -60,6 +57,7 @@ from pyunifiprotect.data.types import (
     VideoMode,
     WDRLevel,
 )
+from pyunifiprotect.data.user import CloudAccount, Group, Permission, User, UserLocation
 from pyunifiprotect.data.websocket import (
     WS_HEADER_SIZE,
     WSAction,
@@ -105,6 +103,8 @@ __all__ = [
     "NVR",
     "NVRLocation",
     "Percent",
+    "Permission",
+    "PermissionNode",
     "ProtectAdoptableDeviceModel",
     "ProtectBaseObject",
     "ProtectDeviceModel",

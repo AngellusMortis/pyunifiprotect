@@ -24,6 +24,7 @@ from pydantic.fields import SHAPE_DICT, SHAPE_LIST, PrivateAttr
 from pyunifiprotect.data.types import (
     ModelType,
     PercentFloat,
+    PermissionNode,
     ProtectWSPayloadFormat,
     StateType,
 )
@@ -48,6 +49,7 @@ if TYPE_CHECKING:
     from pyunifiprotect.api import ProtectApiClient
     from pyunifiprotect.data.devices import Bridge
     from pyunifiprotect.data.nvr import Event
+    from pyunifiprotect.data.user import User
 
 
 ProtectObject = TypeVar("ProtectObject", bound="ProtectBaseObject")
@@ -526,6 +528,30 @@ class ProtectModel(ProtectBaseObject):
             del data["modelKey"]
 
         return data
+
+    def can_create(self, user: User) -> bool:
+        if self.model is None:
+            return True
+
+        return user.can(self.model, PermissionNode.CREATE, self)
+
+    def can_read(self, user: User) -> bool:
+        if self.model is None:
+            return True
+
+        return user.can(self.model, PermissionNode.READ, self)
+
+    def can_write(self, user: User) -> bool:
+        if self.model is None:
+            return True
+
+        return user.can(self.model, PermissionNode.WRITE, self)
+
+    def can_delete(self, user: User) -> bool:
+        if self.model is None:
+            return True
+
+        return user.can(self.model, PermissionNode.DELETE, self)
 
 
 class ProtectModelWithId(ProtectModel):

@@ -19,7 +19,9 @@ from pyunifiprotect.data import (
     EventType,
     FixSizeOrderedDict,
     ModelType,
+    Permission,
     RecordingMode,
+    User,
     VideoMode,
     WSPacket,
     create_from_unifi_dict,
@@ -481,3 +483,43 @@ async def test_device_reboot(camera_obj: Camera):
         f"cameras/{camera_obj.id}/reboot",
         method="post",
     )
+
+
+PermTestType = tuple[list[str], tuple[bool, bool, bool, bool, bool, bool]]
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.parametrize(
+    "test",
+    [
+        (["camera:*:*"], (True, True, True, True, True, True)),
+        (["camera:create,read,write,delete,readmedia,deletemedia:*"], (True, True, True, True, True, True)),
+        (["camera:create,read,write,readmedia:*"], (True, True, True, False, True, False)),
+        (["camera:read,readmedia:*"], (False, True, False, False, True, False)),
+        (["camera:delete:test_id_1", "camera:read,readmedia:*"], (False, True, False, True, True, False)),
+        (["camera:delete:test_id_2", "camera:read,readmedia:*"], (False, True, False, False, True, False)),
+        (["camera:read,readmedia:*", "camera:delete:test_id_1"], (False, True, False, True, True, False)),
+        (["camera:read,readmedia:*", "camera:delete:test_id_2"], (False, True, False, False, True, False)),
+    ],
+)
+@pytest.mark.asyncio
+async def test_permissions(user_obj: User, camera_obj: Camera, test: PermTestType):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    permissions, values = test
+    can_create, can_read, can_write, can_delete, can_read_media, can_delete_media = values
+
+    api = user_obj.api
+    user_obj.all_permissions = [Permission.from_unifi_dict(rawPermission=p, api=api) for p in permissions]
+    user_obj._initial_data = user_obj.dict()
+    camera_obj.id = "test_id_1"
+    camera_obj._initial_data = camera_obj.dict()
+    api.bootstrap.cameras[camera_obj.id] = camera_obj
+
+    assert camera_obj.can_create(user_obj) is can_create
+    assert camera_obj.can_read(user_obj) is can_read
+    assert camera_obj.can_write(user_obj) is can_write
+    assert camera_obj.can_delete(user_obj) is can_delete
+    assert camera_obj.can_read_media(user_obj) is can_read_media
+    assert camera_obj.can_delete_media(user_obj) is can_delete_media
