@@ -184,12 +184,13 @@ class User(ProtectModelWithId):
             return self._perm_cache[perm_str]
 
         for perm in self.all_permissions:
-            if model == perm.model and node in perm.nodes:
-                if perm.obj_id is None:
-                    self._perm_cache[perm_str] = True
-                    return True
-                if perm.obj_id is not None and perm.obj == obj:
-                    self._perm_cache[perm_str] = True
-                    return True
+            if model != perm.model or node not in perm.nodes:
+                continue
+            if perm.obj_id is None:
+                self._perm_cache[perm_str] = True
+                return True
+            if perm.obj_id is not None and perm.obj == obj:
+                self._perm_cache[perm_str] = True
+                return True
         self._perm_cache[perm_str] = False
         return False
