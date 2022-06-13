@@ -36,6 +36,7 @@ from pyunifiprotect.data.types import (
     LightModeType,
     LockStatusType,
     LowMedHigh,
+    ModelType,
     MotionAlgorithm,
     MountPosition,
     MountType,
@@ -52,7 +53,7 @@ from pyunifiprotect.data.types import (
     WDRLevel,
 )
 from pyunifiprotect.data.user import User
-from pyunifiprotect.exceptions import BadRequest, StreamError
+from pyunifiprotect.exceptions import BadRequest, NotAuthorized, StreamError
 from pyunifiprotect.stream import TalkbackStream
 from pyunifiprotect.utils import (
     from_js_time,
@@ -955,6 +956,9 @@ class Camera(ProtectMotionDeviceModel):
         Datetime of screenshot is approximate. It may be +/- a few seconds.
         """
 
+        if not self.api.bootstrap.auth_user.can(ModelType.CAMERA, PermissionNode.READ_MEDIA, self):
+            raise NotAuthorized(f"Do not have permission to read media for camera: {self.id}")
+
         return await self.api.get_camera_snapshot(self.id, width, height, dt=dt)
 
     async def get_package_snapshot(
@@ -972,6 +976,9 @@ class Camera(ProtectMotionDeviceModel):
         if not self.feature_flags.has_package_camera:
             raise BadRequest("Device does not have package camera")
 
+        if not self.api.bootstrap.auth_user.can(ModelType.CAMERA, PermissionNode.READ_MEDIA, self):
+            raise NotAuthorized(f"Do not have permission to read media for camera: {self.id}")
+
         return await self.api.get_package_camera_snapshot(self.id, width, height, dt=dt)
 
     async def get_video(
@@ -985,6 +992,9 @@ class Camera(ProtectMotionDeviceModel):
         chunk_size: int = 65536,
     ) -> Optional[bytes]:
         """Gets video clip for camera at a given time"""
+
+        if not self.api.bootstrap.auth_user.can(ModelType.CAMERA, PermissionNode.READ_MEDIA, self):
+            raise NotAuthorized(f"Do not have permission to read media for camera: {self.id}")
 
         return await self.api.get_camera_video(
             self.id,
@@ -1643,6 +1653,8 @@ class Sensor(ProtectAdoptableDeviceModel):
     async def clear_tamper(self) -> None:
         """Clears tamper status for sensor"""
 
+        if not self.api.bootstrap.auth_user.can(ModelType.SENSOR, PermissionNode.WRITE, self):
+            raise NotAuthorized(f"Do not have permission to clear tamper for sensor: {self.id}")
         await self.api.clear_tamper_sensor(self.id)
 
 

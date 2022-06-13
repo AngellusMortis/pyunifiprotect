@@ -28,7 +28,7 @@ from pyunifiprotect.data import (
 )
 from pyunifiprotect.data.devices import LCDMessage
 from pyunifiprotect.data.types import RecordingType, ResolutionStorageType
-from pyunifiprotect.exceptions import BadRequest, StreamError
+from pyunifiprotect.exceptions import BadRequest, NotAuthorized, StreamError
 from pyunifiprotect.utils import set_debug, set_no_debug
 from tests.conftest import (
     TEST_BRIDGE_EXISTS,
@@ -523,3 +523,29 @@ async def test_permissions(user_obj: User, camera_obj: Camera, test: PermTestTyp
     assert camera_obj.can_delete(user_obj) is can_delete
     assert camera_obj.can_read_media(user_obj) is can_read_media
     assert camera_obj.can_delete_media(user_obj) is can_delete_media
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
+async def test_revert(user_obj: User, camera_obj: Camera):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    api = user_obj.api
+    camera_obj.id = "test_id_1"
+    camera_obj.add_privacy_zone()
+    camera_obj.recording_settings.mode = RecordingMode.NEVER
+    camera_obj._initial_data = camera_obj.dict()
+    api.bootstrap.cameras[camera_obj.id] = camera_obj
+
+    user_obj.all_permissions = [Permission.from_unifi_dict(rawPermission="camera:read:*", api=api)]
+    user_obj._initial_data = user_obj.dict()
+
+    camera_before = camera_obj.dict()
+
+    camera_obj.remove_privacy_zone()
+    camera_obj.recording_settings.mode = RecordingMode.ALWAYS
+    with pytest.raises(NotAuthorized):
+        await camera_obj.save_device()
+
+    assert camera_before == camera_obj.dict()

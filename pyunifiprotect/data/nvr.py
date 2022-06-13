@@ -38,6 +38,7 @@ from pyunifiprotect.data.types import (
     MountType,
     PercentFloat,
     PercentInt,
+    PermissionNode,
     ProgressCallback,
     RecordingType,
     ResolutionStorageType,
@@ -48,7 +49,7 @@ from pyunifiprotect.data.types import (
     Version,
 )
 from pyunifiprotect.data.user import User, UserLocation
-from pyunifiprotect.exceptions import BadRequest
+from pyunifiprotect.exceptions import BadRequest, NotAuthorized
 from pyunifiprotect.utils import process_datetime
 
 if TYPE_CHECKING:
@@ -254,6 +255,8 @@ class Event(ProtectModelWithId):
 
         if self.thumbnail_id is None:
             return None
+        if not self.api.bootstrap.auth_user.can(ModelType.CAMERA, PermissionNode.READ_MEDIA, self.camera):
+            raise NotAuthorized(f"Do not have permission to read media for camera: {self.id}")
         return await self.api.get_event_thumbnail(self.thumbnail_id, width, height)
 
     async def get_heatmap(self) -> Optional[bytes]:
@@ -261,6 +264,8 @@ class Event(ProtectModelWithId):
 
         if self.heatmap_id is None:
             return None
+        if not self.api.bootstrap.auth_user.can(ModelType.CAMERA, PermissionNode.READ_MEDIA, self.camera):
+            raise NotAuthorized(f"Do not have permission to read media for camera: {self.id}")
         return await self.api.get_event_heatmap(self.heatmap_id)
 
     async def get_video(
@@ -285,6 +290,8 @@ class Event(ProtectModelWithId):
         if self.end is None:
             raise BadRequest("Event is ongoing")
 
+        if not self.api.bootstrap.auth_user.can(ModelType.CAMERA, PermissionNode.READ_MEDIA, self.camera):
+            raise NotAuthorized(f"Do not have permission to read media for camera: {self.id}")
         return await self.api.get_camera_video(
             self.camera.id,
             self.start,

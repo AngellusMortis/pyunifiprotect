@@ -33,7 +33,7 @@ from pyunifiprotect.data.websocket import (
     WSPacket,
     WSPacketFrameHeader,
 )
-from pyunifiprotect.exceptions import BadRequest
+from pyunifiprotect.exceptions import BadRequest, ClientError, NotAuthorized
 from pyunifiprotect.utils import (
     convert_unifi_data,
     dict_diff,
@@ -564,7 +564,14 @@ class ProtectModelWithId(ProtectModel):
     async def _api_update(self, data: Dict[str, Any]) -> None:
         raise NotImplementedError()
 
-    async def save_device(self, force_emit: bool = False) -> None:
+    def revert_changes(self) -> None:
+        """Reverts current changes to device and resets it back to initial state"""
+
+        changed = self.get_changed()
+        for key in changed.keys():
+            setattr(self, key, self._initial_data[key])
+
+    async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True) -> None:
         """
         Generates a diff for unsaved changed on the device and sends them back to UFP
 
@@ -581,6 +588,11 @@ class ProtectModelWithId(ProtectModel):
         if self.model is None:
             raise BadRequest("Unknown model type")
 
+        if not self.api.bootstrap.auth_user.can(self.model, PermissionNode.WRITE, self):
+            if revert_on_fail:
+                self.revert_changes()
+            raise NotAuthorized(f"Do not have write permission for obj: {self.id}")
+
         new_data = self.dict(exclude=self._get_excluded_changed_fields())
         updated = self.unifi_dict(data=self.get_changed())
 
@@ -592,7 +604,12 @@ class ProtectModelWithId(ProtectModel):
         if len(read_only_keys) > 0:
             raise BadRequest(f"The following key(s) are read only: {read_only_keys}")
 
-        await self._api_update(updated)
+        try:
+            await self._api_update(updated)
+        except ClientError:
+            if revert_on_fail:
+                self.revert_changes()
+            raise
         self._initial_data = new_data
 
         if not force_emit:
@@ -805,6 +822,8 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
         """Reboots an adopted device"""
 
         if self.model is not None:
+            if not self.api.bootstrap.auth_user.can(self.model, PermissionNode.WRITE, self):
+                raise NotAuthorized("Do not have permission to reboot device")
             await self.api.reboot_device(self.model, self.id)
 
     async def unadopt(self) -> None:
@@ -814,6 +833,8 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
             raise BadRequest("Device is not adopted")
 
         if self.model is not None:
+            if not self.api.bootstrap.auth_user.can(self.model, PermissionNode.DELETE, self):
+                raise NotAuthorized("Do not have permission to unadopt devices")
             await self.api.unadopt_device(self.model, self.id)
 
     async def adopt(self, name: Optional[str]) -> None:
@@ -823,6 +844,9 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
             raise BadRequest("Device cannot be adopted")
 
         if self.model is not None:
+            if not self.api.bootstrap.auth_user.can(self.model, PermissionNode.CREATE):
+                raise NotAuthorized("Do not have permission to adopt devices")
+
             await self.api.adopt_device(self.model, self.id)
             if name is not None:
                 await self.set_name(name)

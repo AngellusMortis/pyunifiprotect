@@ -264,6 +264,8 @@ class BaseApiClient:
                 if raise_exception:
                     if response.status in (401, 403):
                         raise NotAuthorized(msg % (url, response.status, reason))
+                    if response.status >= 400 and response.status < 500:
+                        raise BadRequest(msg % (url, response.status, reason))
                     raise NvrError(msg % (url, response.status, reason))
                 _LOGGER.debug(msg, url, response.status, reason)
                 return None

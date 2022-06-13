@@ -30,8 +30,8 @@ class Invalid(ClientError):
     """Invalid return from Authorization Request."""
 
 
-class NotAuthorized(ClientError):
-    """Wrong username and/or Password."""
+class NotAuthorized(PermissionError, BadRequest):
+    """Wrong username, password or permission error."""
 
 
 class NvrError(ClientError):
