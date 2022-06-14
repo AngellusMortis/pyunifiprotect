@@ -32,6 +32,7 @@ class WSPacketFrameHeader:
 class WSAction(str, enum.Enum):
     ADD = "add"
     UPDATE = "update"
+    REMOVE = "remove"
 
 
 @dataclass
@@ -39,7 +40,7 @@ class WSSubscriptionMessage:
     action: WSAction
     new_update_id: UUID
     changed_data: Dict[str, Any]
-    new_obj: ProtectModelWithId
+    new_obj: Optional[ProtectModelWithId] = None
     old_obj: Optional[ProtectModelWithId] = None
 
 

@@ -214,6 +214,10 @@ class EventStats(ProtectBaseObject):
 
         if "recent_hours" not in data:
             data["recent_hours"] = []
+        else:
+            recent = data["recent_hours"]
+            if len(recent) == 1 and recent[0] is None:
+                data["recent_hours"] = []
 
         return data
 
@@ -294,8 +298,8 @@ class ISPSettings(ProtectBaseObject):
     d_zoom_stream_id: int
     focus_mode: FocusMode
     focus_position: int
-    touch_focus_x: int
-    touch_focus_y: int
+    touch_focus_x: Optional[int]
+    touch_focus_y: Optional[int]
     zoom_position: PercentInt
     mount_position: Optional[MountPosition] = None
 
@@ -581,7 +585,7 @@ class SmartMotionZone(MotionZone):
 
 
 class PrivacyMaskCapability(ProtectBaseObject):
-    max_masks: int
+    max_masks: Optional[int]
     rectangle_only: bool
 
 

@@ -129,6 +129,8 @@ class EventMetadata(ProtectBaseObject):
     mount_type: Optional[MountType]
     status: Optional[SensorStatusType]
     alarm_type: Optional[str]
+    device_id: Optional[str]
+    mac: Optional[str]
 
     _collapse_keys: ClassVar[SetStr] = {
         "lightId",
@@ -142,6 +144,8 @@ class EventMetadata(ProtectBaseObject):
         "mountType",
         "status",
         "alarmType",
+        "deviceId",
+        "mac",
     }
 
     @classmethod

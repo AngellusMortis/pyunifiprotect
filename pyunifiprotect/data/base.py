@@ -718,7 +718,7 @@ class WifiConnectionState(WirelessConnectionState):
 
 class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     state: StateType
-    connection_host: Union[IPv4Address, str]
+    connection_host: Union[IPv4Address, str, None]
     connected_since: Optional[datetime]
     latest_firmware_version: Optional[str]
     firmware_build: Optional[str]

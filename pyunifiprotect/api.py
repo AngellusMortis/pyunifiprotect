@@ -595,7 +595,6 @@ class ProtectApiClient(BaseApiClient):
         return self._bootstrap.last_update_id
 
     def _process_ws_message(self, msg: aiohttp.WSMessage) -> None:
-        _LOGGER.debug("Processing WS message...")
         packet = WSPacket(msg.data)
         processed_message = self.bootstrap.process_ws_packet(
             packet, models=self._subscribed_models, ignore_stats=self._ignore_stats

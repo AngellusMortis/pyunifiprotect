@@ -290,6 +290,24 @@ class Bootstrap(ProtectBaseObject):
             action=WSAction.ADD, new_update_id=self.last_update_id, changed_data=updated, new_obj=obj
         )
 
+    def _process_remove_packet(self, packet: WSPacket, data: Dict[str, Any]) -> Optional[WSSubscriptionMessage]:
+
+        model = packet.action_frame.data.get("modelKey")
+        device_id = packet.action_frame.data.get("id")
+        devices = getattr(self, f"{model}s", None)
+
+        if devices is None:
+            return None
+
+        device = devices.pop(device_id, None)
+        if device is None:
+            return None
+
+        self._create_stat(packet, [], False)
+        return WSSubscriptionMessage(
+            action=WSAction.REMOVE, new_update_id=self.last_update_id, changed_data={}, old_obj=device
+        )
+
     def _process_nvr_update(
         self, packet: WSPacket, data: Dict[str, Any], ignore_stats: bool
     ) -> Optional[WSSubscriptionMessage]:
@@ -384,7 +402,14 @@ class Bootstrap(ProtectBaseObject):
             self._create_stat(packet, [], True)
             return None
 
-        if len(models) > 0 and ModelType(action["modelKey"]) not in models or len(data) == 0:
+        if len(models) > 0 and ModelType(action["modelKey"]) not in models:
+            self._create_stat(packet, [], True)
+            return None
+
+        if action["action"] == "remove":
+            return self._process_remove_packet(packet, data)
+
+        if len(data) == 0:
             self._create_stat(packet, [], True)
             return None
 
