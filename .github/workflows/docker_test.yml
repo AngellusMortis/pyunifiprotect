@@ -1,0 +1,26 @@
+name: Manual Docker Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check repo
+        uses: actions/checkout@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          target: prod
+          push: true
+          tags: ghcr.io/briis/pyunifiprotect:latest,ghcr.io/briis/pyunifiprotect:${{ github.ref_name }}

@@ -3,6 +3,8 @@
 test-data
 ufp-data
 *.mp3
+*.mp4
+*.js
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

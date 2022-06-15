@@ -1,7 +1,8 @@
 {
     "build": {
-        "dockerfile": "Dockerfile",
-        "context": ".."
+        "dockerfile": "../Dockerfile",
+        "context": "..",
+        "target": "dev"
     },
     "extensions": [
         "ms-python.python",
@@ -66,10 +67,10 @@
         "python.testing.nosetestsEnabled": false,
         "python.testing.pytestArgs": [
             "--cov-report=xml",
-            "--color=no",
-        ],
+            "--color=no"
+        ]
     },
     "updateRemoteUserUID": true,
     "containerUser": "python",
-    "postCreateCommand": "/workspaces/pyunifiprotect/.bin/install-requirements && source ~/.bashrc"
+    "postCreateCommand": "/workspaces/pyunifiprotect/.bin/install-requirements && source /home/python/.bashrc"
 }

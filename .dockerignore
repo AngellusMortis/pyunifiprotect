@@ -1,0 +1,13 @@
+.vscode
+test-data
+ufp-data
+*.mp3
+*.mp4
+.*
+*.xml
+Dockerfile
+LICENSE
+*.md
+tests/**
+*.egg-info
+*.js
