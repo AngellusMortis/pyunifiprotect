@@ -29,9 +29,12 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 COPY --from=builder /usr/local/lib/python3.10/ /usr/local/lib/python3.10/
 COPY . /tmp/pyunifiprotect
 RUN pip install /tmp/pyunifiprotect \
+    && mv /tmp/pyunifiprotect/.docker/entrypoint.sh /usr/local/bin/entrypoint \
+    && chmod +x /usr/local/bin/entrypoint \
     && rm /tmp/pyunifiprotect -rf
 
 USER python
+ENTRYPOINT ["/usr/local/bin/entrypoint"]
 
 
 FROM builder as builder-dev

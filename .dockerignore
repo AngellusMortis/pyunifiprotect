@@ -11,3 +11,4 @@ LICENSE
 tests/**
 *.egg-info
 *.js
+!.docker
