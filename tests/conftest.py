@@ -504,6 +504,7 @@ NEW_FIELDS = {
     "isStacked",
     "isPrimary",
     "lastDriveSlowEvent",
+    "isUCoreSetup",
 }
 
 

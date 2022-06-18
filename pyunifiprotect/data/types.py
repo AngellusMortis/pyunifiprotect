@@ -113,6 +113,7 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     UPDATE = "update"
     CAMERA_POWER_CYCLE = "cameraPowerCycling"
     RING = "ring"
+    RESOLUTION_LOWERED = "resolutionLowered"
     MOTION = "motion"
     RECORDING_DELETED = "recordingDeleted"
     SMART_DETECT = "smartDetectZone"

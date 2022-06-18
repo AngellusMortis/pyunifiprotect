@@ -718,6 +718,7 @@ class NVR(ProtectDeviceModel):
     is_stacked: Optional[bool] = None
     is_primary: Optional[bool] = None
     last_drive_slow_event: Optional[datetime] = None
+    is_u_core_setup: Optional[bool] = None
 
     # TODO:
     # errorCode   read only
