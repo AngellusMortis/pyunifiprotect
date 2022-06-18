@@ -129,38 +129,43 @@ class Light(ProtectMotionDeviceModel):
     async def set_paired_camera(self, camera: Optional[Camera]) -> None:
         """Sets the camera paired with the light"""
 
-        if camera is None:
-            self.camera_id = None
-        else:
-            self.camera_id = camera.id
-        await self.save_device(force_emit=True)
+        async with self._update_lock:
+            if camera is None:
+                self.camera_id = None
+            else:
+                self.camera_id = camera.id
+            await self.save_device(force_emit=True)
 
     async def set_status_light(self, enabled: bool) -> None:
         """Sets the status indicator light for the light"""
 
-        self.light_device_settings.is_indicator_enabled = enabled
-        await self.save_device()
+        async with self._update_lock:
+            self.light_device_settings.is_indicator_enabled = enabled
+            await self.save_device()
 
     async def set_led_level(self, led_level: int) -> None:
         """Sets the LED level for the light"""
 
-        self.light_device_settings.led_level = LEDLevel(led_level)
-        await self.save_device()
+        async with self._update_lock:
+            self.light_device_settings.led_level = LEDLevel(led_level)
+            await self.save_device()
 
     async def set_light(self, enabled: bool, led_level: Optional[int] = None) -> None:
         """Force turns on/off the light"""
 
-        self.light_on_settings.is_led_force_on = enabled
-        if led_level is not None:
-            self.light_device_settings.led_level = LEDLevel(led_level)
+        async with self._update_lock:
+            self.light_on_settings.is_led_force_on = enabled
+            if led_level is not None:
+                self.light_device_settings.led_level = LEDLevel(led_level)
 
-        await self.save_device()
+            await self.save_device()
 
     async def set_sensitivity(self, sensitivity: int) -> None:
         """Sets motion sensitivity"""
 
-        self.light_device_settings.pir_sensitivity = PercentInt(sensitivity)
-        await self.save_device()
+        async with self._update_lock:
+            self.light_device_settings.pir_sensitivity = PercentInt(sensitivity)
+            await self.save_device()
 
     async def set_duration(self, duration: timedelta) -> None:
         """Sets motion sensitivity"""
@@ -168,8 +173,9 @@ class Light(ProtectMotionDeviceModel):
         if duration.total_seconds() < 15 or duration.total_seconds() > 900:
             raise BadRequest("Duration outside of 15s to 900s range")
 
-        self.light_device_settings.pir_duration = duration
-        await self.save_device()
+        async with self._update_lock:
+            self.light_device_settings.pir_duration = duration
+            await self.save_device()
 
     async def set_light_settings(
         self,
@@ -188,18 +194,19 @@ class Light(ProtectMotionDeviceModel):
         * `sensitivity`: PIR Motion sensitivity
         """
 
-        self.light_mode_settings.mode = mode
-        if enable_at is not None:
-            self.light_mode_settings.enable_at = enable_at
-        if duration is not None:
-            if duration.total_seconds() < 15 or duration.total_seconds() > 900:
-                raise BadRequest("Duration outside of 15s to 900s range")
+        if duration is not None and (duration.total_seconds() < 15 or duration.total_seconds() > 900):
+            raise BadRequest("Duration outside of 15s to 900s range")
 
-            self.light_device_settings.pir_duration = duration
-        if sensitivity is not None:
-            self.light_device_settings.pir_sensitivity = PercentInt(sensitivity)
+        async with self._update_lock:
+            self.light_mode_settings.mode = mode
+            if enable_at is not None:
+                self.light_mode_settings.enable_at = enable_at
+            if duration is not None:
+                self.light_device_settings.pir_duration = duration
+            if sensitivity is not None:
+                self.light_device_settings.pir_sensitivity = PercentInt(sensitivity)
 
-        await self.save_device()
+            await self.save_device()
 
 
 class EventStats(ProtectBaseObject):
@@ -1022,14 +1029,16 @@ class Camera(ProtectMotionDeviceModel):
     async def set_motion_detection(self, enabled: bool) -> None:
         """Sets motion detection on camera"""
 
-        self.recording_settings.enable_motion_detection = enabled
-        await self.save_device()
+        async with self._update_lock:
+            self.recording_settings.enable_motion_detection = enabled
+            await self.save_device()
 
     async def set_recording_mode(self, mode: RecordingMode) -> None:
         """Sets recording mode on camera"""
 
-        self.recording_settings.mode = mode
-        await self.save_device()
+        async with self._update_lock:
+            self.recording_settings.mode = mode
+            await self.save_device()
 
     async def set_ir_led_model(self, mode: IRLEDMode) -> None:
         """Sets IR LED mode on camera"""
@@ -1037,8 +1046,9 @@ class Camera(ProtectMotionDeviceModel):
         if not self.feature_flags.has_led_ir:
             raise BadRequest("Camera does not have an LED IR")
 
-        self.isp_settings.ir_led_mode = mode
-        await self.save_device()
+        async with self._update_lock:
+            self.isp_settings.ir_led_mode = mode
+            await self.save_device()
 
     async def set_status_light(self, enabled: bool) -> None:
         """Sets status indicicator light on camera"""
@@ -1046,9 +1056,10 @@ class Camera(ProtectMotionDeviceModel):
         if not self.feature_flags.has_led_status:
             raise BadRequest("Camera does not have status light")
 
-        self.led_settings.is_enabled = enabled
-        self.led_settings.blink_rate = 0
-        await self.save_device()
+        async with self._update_lock:
+            self.led_settings.is_enabled = enabled
+            self.led_settings.blink_rate = 0
+            await self.save_device()
 
     async def set_hdr(self, enabled: bool) -> None:
         """Sets HDR (High Dynamic Range) on camera"""
@@ -1056,8 +1067,9 @@ class Camera(ProtectMotionDeviceModel):
         if not self.feature_flags.has_hdr:
             raise BadRequest("Camera does not have HDR")
 
-        self.hdr_mode = enabled
-        await self.save_device()
+        async with self._update_lock:
+            self.hdr_mode = enabled
+            await self.save_device()
 
     async def set_video_mode(self, mode: VideoMode) -> None:
         """Sets video mode on camera"""
@@ -1065,8 +1077,9 @@ class Camera(ProtectMotionDeviceModel):
         if mode not in self.feature_flags.video_modes:
             raise BadRequest(f"Camera does not have {mode}")
 
-        self.video_mode = mode
-        await self.save_device()
+        async with self._update_lock:
+            self.video_mode = mode
+            await self.save_device()
 
     async def set_camera_zoom(self, level: int) -> None:
         """Sets zoom level for camera"""
@@ -1074,8 +1087,9 @@ class Camera(ProtectMotionDeviceModel):
         if not self.feature_flags.can_optical_zoom:
             raise BadRequest("Camera cannot optical zoom")
 
-        self.isp_settings.zoom_position = PercentInt(level)
-        await self.save_device()
+        async with self._update_lock:
+            self.isp_settings.zoom_position = PercentInt(level)
+            await self.save_device()
 
     async def set_wdr_level(self, level: int) -> None:
         """Sets WDR (Wide Dynamic Range) on camera"""
@@ -1083,8 +1097,9 @@ class Camera(ProtectMotionDeviceModel):
         if self.feature_flags.has_hdr:
             raise BadRequest("Cannot set WDR on cameras with HDR")
 
-        self.isp_settings.wdr = WDRLevel(level)
-        await self.save_device()
+        async with self._update_lock:
+            self.isp_settings.wdr = WDRLevel(level)
+            await self.save_device()
 
     async def set_mic_volume(self, level: int) -> None:
         """Sets the mic sensitivity level on camera"""
@@ -1092,8 +1107,9 @@ class Camera(ProtectMotionDeviceModel):
         if not self.feature_flags.has_mic:
             raise BadRequest("Camera does not have mic")
 
-        self.mic_volume = PercentInt(level)
-        await self.save_device()
+        async with self._update_lock:
+            self.mic_volume = PercentInt(level)
+            await self.save_device()
 
     async def set_speaker_volume(self, level: int) -> None:
         """Sets the speaker sensitivity level on camera. Requires camera to have speakers"""
@@ -1101,8 +1117,9 @@ class Camera(ProtectMotionDeviceModel):
         if not self.feature_flags.has_speaker:
             raise BadRequest("Camera does not have speaker")
 
-        self.speaker_settings.volume = PercentInt(level)
-        await self.save_device()
+        async with self._update_lock:
+            self.speaker_settings.volume = PercentInt(level)
+            await self.save_device()
 
     async def set_chime_type(self, chime_type: ChimeType) -> None:
         """Sets chime type for doorbell. Requires camera to be a doorbell"""
@@ -1115,8 +1132,9 @@ class Camera(ProtectMotionDeviceModel):
         if not self.feature_flags.has_chime:
             raise BadRequest("Camera does not have a chime")
 
-        self.chime_duration = ChimeDuration(duration)
-        await self.save_device()
+        async with self._update_lock:
+            self.chime_duration = ChimeDuration(duration)
+            await self.save_device()
 
     async def set_system_sounds(self, enabled: bool) -> None:
         """Sets system sound playback through speakers. Requires camera to have speakers"""
@@ -1124,33 +1142,38 @@ class Camera(ProtectMotionDeviceModel):
         if not self.feature_flags.has_speaker:
             raise BadRequest("Camera does not have speaker")
 
-        self.speaker_settings.are_system_sounds_enabled = enabled
-        await self.save_device()
+        async with self._update_lock:
+            self.speaker_settings.are_system_sounds_enabled = enabled
+            await self.save_device()
 
     async def set_osd_name(self, enabled: bool) -> None:
         """Sets whether camera name is in the On Screen Display"""
 
-        self.osd_settings.is_name_enabled = enabled
-        await self.save_device()
+        async with self._update_lock:
+            self.osd_settings.is_name_enabled = enabled
+            await self.save_device()
 
     async def set_osd_date(self, enabled: bool) -> None:
         """Sets whether current date is in the On Screen Display"""
 
-        self.osd_settings.is_date_enabled = enabled
-        await self.save_device()
+        async with self._update_lock:
+            self.osd_settings.is_date_enabled = enabled
+            await self.save_device()
 
     async def set_osd_logo(self, enabled: bool) -> None:
         """Sets whether the UniFi logo is in the On Screen Display"""
 
-        self.osd_settings.is_logo_enabled = enabled
-        await self.save_device()
+        async with self._update_lock:
+            self.osd_settings.is_logo_enabled = enabled
+            await self.save_device()
 
     async def set_osd_bitrate(self, enabled: bool) -> None:
         """Sets whether camera bitrate is in the On Screen Display"""
 
-        # mismatch between UI internal data structure debug = bitrate data
-        self.osd_settings.is_debug_enabled = enabled
-        await self.save_device()
+        async with self._update_lock:
+            # mismatch between UI internal data structure debug = bitrate data
+            self.osd_settings.is_debug_enabled = enabled
+            await self.save_device()
 
     async def set_smart_detect_types(self, types: List[SmartDetectObjectType]) -> None:
         """Sets current enabled smart detection types. Requires camera to have smart detection"""
@@ -1158,8 +1181,9 @@ class Camera(ProtectMotionDeviceModel):
         if not self.feature_flags.has_smart_detect:
             raise BadRequest("Camera does not have a smart detections")
 
-        self.smart_detect_settings.object_types = types
-        await self.save_device()
+        async with self._update_lock:
+            self.smart_detect_settings.object_types = types
+            await self.save_device()
 
     async def _set_object_detect(self, obj_to_mod: SmartDetectObjectType, enabled: bool) -> None:
 
@@ -1217,10 +1241,11 @@ class Camera(ProtectMotionDeviceModel):
             raise BadRequest("Camera does not have an LCD screen")
 
         if text_type is None:
-            self.lcd_message = None
-            # UniFi Protect bug: clearing LCD text message does _not_ emit a WS message
-            await self.save_device(force_emit=True)
-            return
+            async with self._update_lock:
+                self.lcd_message = None
+                # UniFi Protect bug: clearing LCD text message does _not_ emit a WS message
+                await self.save_device(force_emit=True)
+                return
 
         if text_type != DoorbellMessageType.CUSTOM_MESSAGE:
             if text is not None:
@@ -1230,8 +1255,9 @@ class Camera(ProtectMotionDeviceModel):
         if reset_at == DEFAULT:
             reset_at = utc_now() + self.api.bootstrap.nvr.doorbell_settings.default_message_reset_timeout
 
-        self.lcd_message = LCDMessage(api=self._api, type=text_type, text=text, reset_at=reset_at)
-        await self.save_device()
+        async with self._update_lock:
+            self.lcd_message = LCDMessage(api=self._api, type=text_type, text=text, reset_at=reset_at)
+            await self.save_device()
 
     async def set_privacy(
         self, enabled: bool, mic_level: Optional[int] = None, recording_mode: Optional[RecordingMode] = None
@@ -1241,18 +1267,19 @@ class Camera(ProtectMotionDeviceModel):
         if not self.feature_flags.has_privacy_mask:
             raise BadRequest("Camera does not allow privacy zones")
 
-        if enabled:
-            self.add_privacy_zone()
-        else:
-            self.remove_privacy_zone()
+        async with self._update_lock:
+            if enabled:
+                self.add_privacy_zone()
+            else:
+                self.remove_privacy_zone()
 
-        if mic_level is not None:
-            self.mic_volume = PercentInt(mic_level)
+            if mic_level is not None:
+                self.mic_volume = PercentInt(mic_level)
 
-        if recording_mode is not None:
-            self.recording_settings.mode = recording_mode
+            if recording_mode is not None:
+                self.recording_settings.mode = recording_mode
 
-        await self.save_device()
+            await self.save_device()
 
     def create_talkback_stream(self, content_url: str, ffmpeg_path: Optional[Path] = None) -> TalkbackStream:
         """
@@ -1364,9 +1391,10 @@ class Viewer(ProtectAdoptableDeviceModel):
             if liveview.id not in self._api.bootstrap.liveviews:
                 raise BadRequest("Unknown liveview")
 
-        self.liveview_id = liveview.id
-        # UniFi Protect bug: changing the liveview does _not_ emit a WS message
-        await self.save_device(force_emit=True)
+        async with self._update_lock:
+            self.liveview_id = liveview.id
+            # UniFi Protect bug: changing the liveview does _not_ emit a WS message
+            await self.save_device(force_emit=True)
 
 
 class Bridge(ProtectAdoptableDeviceModel):
@@ -1545,32 +1573,37 @@ class Sensor(ProtectAdoptableDeviceModel):
     async def set_status_light(self, enabled: bool) -> None:
         """Sets the status indicator light for the sensor"""
 
-        self.led_settings.is_enabled = enabled
-        await self.save_device()
+        async with self._update_lock:
+            self.led_settings.is_enabled = enabled
+            await self.save_device()
 
     async def set_mount_type(self, mount_type: MountType) -> None:
         """Sets current mount type for sensor"""
 
-        self.mount_type = mount_type
-        await self.save_device()
+        async with self._update_lock:
+            self.mount_type = mount_type
+            await self.save_device()
 
     async def set_motion_status(self, enabled: bool) -> None:
         """Sets the motion detection type for the sensor"""
 
-        self.motion_settings.is_enabled = enabled
-        await self.save_device()
+        async with self._update_lock:
+            self.motion_settings.is_enabled = enabled
+            await self.save_device()
 
     async def set_motion_sensitivity(self, sensitivity: int) -> None:
         """Sets the motion sensitivity for the sensor"""
 
-        self.motion_settings.sensitivity = PercentInt(sensitivity)
-        await self.save_device()
+        async with self._update_lock:
+            self.motion_settings.sensitivity = PercentInt(sensitivity)
+            await self.save_device()
 
     async def set_temperature_status(self, enabled: bool) -> None:
         """Sets the temperature detection type for the sensor"""
 
-        self.temperature_settings.is_enabled = enabled
-        await self.save_device()
+        async with self._update_lock:
+            self.temperature_settings.is_enabled = enabled
+            await self.save_device()
 
     async def set_temperature_safe_range(self, low: float, high: float) -> None:
         """Sets the temperature safe range for the sensor"""
@@ -1582,22 +1615,25 @@ class Sensor(ProtectAdoptableDeviceModel):
         if high <= low:
             raise BadRequest("High value must be above low value")
 
-        self.temperature_settings.low_threshold = low
-        self.temperature_settings.high_threshold = high
-        await self.save_device()
+        async with self._update_lock:
+            self.temperature_settings.low_threshold = low
+            self.temperature_settings.high_threshold = high
+            await self.save_device()
 
     async def remove_temperature_safe_range(self) -> None:
         """Removes the temperature safe range for the sensor"""
 
-        self.temperature_settings.low_threshold = None
-        self.temperature_settings.high_threshold = None
-        await self.save_device()
+        async with self._update_lock:
+            self.temperature_settings.low_threshold = None
+            self.temperature_settings.high_threshold = None
+            await self.save_device()
 
     async def set_humidity_status(self, enabled: bool) -> None:
         """Sets the humidity detection type for the sensor"""
 
-        self.humidity_settings.is_enabled = enabled
-        await self.save_device()
+        async with self._update_lock:
+            self.humidity_settings.is_enabled = enabled
+            await self.save_device()
 
     async def set_humidity_safe_range(self, low: float, high: float) -> None:
         """Sets the humidity safe range for the sensor"""
@@ -1609,22 +1645,25 @@ class Sensor(ProtectAdoptableDeviceModel):
         if high <= low:
             raise BadRequest("High value must be above low value")
 
-        self.humidity_settings.low_threshold = low
-        self.humidity_settings.high_threshold = high
-        await self.save_device()
+        async with self._update_lock:
+            self.humidity_settings.low_threshold = low
+            self.humidity_settings.high_threshold = high
+            await self.save_device()
 
     async def remove_humidity_safe_range(self) -> None:
         """Removes the humidity safe range for the sensor"""
 
-        self.humidity_settings.low_threshold = None
-        self.humidity_settings.high_threshold = None
-        await self.save_device()
+        async with self._update_lock:
+            self.humidity_settings.low_threshold = None
+            self.humidity_settings.high_threshold = None
+            await self.save_device()
 
     async def set_light_status(self, enabled: bool) -> None:
         """Sets the light detection type for the sensor"""
 
-        self.light_settings.is_enabled = enabled
-        await self.save_device()
+        async with self._update_lock:
+            self.light_settings.is_enabled = enabled
+            await self.save_device()
 
     async def set_light_safe_range(self, low: float, high: float) -> None:
         """Sets the light safe range for the sensor"""
@@ -1636,31 +1675,35 @@ class Sensor(ProtectAdoptableDeviceModel):
         if high <= low:
             raise BadRequest("High value must be above low value")
 
-        self.light_settings.low_threshold = low
-        self.light_settings.high_threshold = high
-        await self.save_device()
+        async with self._update_lock:
+            self.light_settings.low_threshold = low
+            self.light_settings.high_threshold = high
+            await self.save_device()
 
     async def remove_light_safe_range(self) -> None:
         """Removes the light safe range for the sensor"""
 
-        self.light_settings.low_threshold = None
-        self.light_settings.high_threshold = None
-        await self.save_device()
+        async with self._update_lock:
+            self.light_settings.low_threshold = None
+            self.light_settings.high_threshold = None
+            await self.save_device()
 
     async def set_alarm_status(self, enabled: bool) -> None:
         """Sets the alarm detection type for the sensor"""
 
-        self.alarm_settings.is_enabled = enabled
-        await self.save_device()
+        async with self._update_lock:
+            self.alarm_settings.is_enabled = enabled
+            await self.save_device()
 
     async def set_paired_camera(self, camera: Optional[Camera]) -> None:
         """Sets the camera paired with the sensor"""
 
-        if camera is None:
-            self.camera_id = None
-        else:
-            self.camera_id = camera.id
-        await self.save_device()
+        async with self._update_lock:
+            if camera is None:
+                self.camera_id = None
+            else:
+                self.camera_id = camera.id
+            await self.save_device()
 
     async def clear_tamper(self) -> None:
         """Clears tamper status for sensor"""
@@ -1708,17 +1751,19 @@ class Doorlock(ProtectAdoptableDeviceModel):
     async def set_paired_camera(self, camera: Optional[Camera]) -> None:
         """Sets the camera paired with the sensor"""
 
-        if camera is None:
-            self.camera_id = None
-        else:
-            self.camera_id = camera.id
-        await self.save_device()
+        async with self._update_lock:
+            if camera is None:
+                self.camera_id = None
+            else:
+                self.camera_id = camera.id
+            await self.save_device()
 
     async def set_status_light(self, enabled: bool) -> None:
         """Sets the status indicator light for the doorlock"""
 
-        self.led_settings.is_enabled = enabled
-        await self.save_device()
+        async with self._update_lock:
+            self.led_settings.is_enabled = enabled
+            await self.save_device()
 
     async def set_auto_close_time(self, duration: timedelta) -> None:
         """Sets the auto-close time for doorlock. 0 seconds = disabled."""
@@ -1726,8 +1771,9 @@ class Doorlock(ProtectAdoptableDeviceModel):
         if duration > timedelta(hours=1):
             raise BadRequest("Max duration is 1 hour")
 
-        self.auto_close_time = duration
-        await self.save_device()
+        async with self._update_lock:
+            self.auto_close_time = duration
+            await self.save_device()
 
     async def close_lock(self) -> None:
         """Close doorlock (lock)"""
@@ -1782,8 +1828,9 @@ class Chime(ProtectAdoptableDeviceModel):
     async def set_volume(self, level: int) -> None:
         """Sets the volume on chime"""
 
-        self.volume = PercentInt(level)
-        await self.save_device()
+        async with self._update_lock:
+            self.volume = PercentInt(level)
+            await self.save_device()
 
     async def add_camera(self, camera: Camera) -> None:
         """Adds new paired camera to chime"""
@@ -1794,8 +1841,9 @@ class Chime(ProtectAdoptableDeviceModel):
         if camera.id in self.camera_ids:
             raise BadRequest("Camera is already paired")
 
-        self.camera_ids.append(camera.id)
-        await self.save_device()
+        async with self._update_lock:
+            self.camera_ids.append(camera.id)
+            await self.save_device()
 
     async def remove_camera(self, camera: Camera) -> None:
         """Removes paired camera from chime"""
@@ -1803,8 +1851,9 @@ class Chime(ProtectAdoptableDeviceModel):
         if camera.id not in self.camera_ids:
             raise BadRequest("Camera is not paired")
 
-        self.camera_ids.remove(camera.id)
-        await self.save_device()
+        async with self._update_lock:
+            self.camera_ids.remove(camera.id)
+            await self.save_device()
 
     async def play(self) -> None:
         """Plays chime tone"""

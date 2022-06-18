@@ -1,8 +1,9 @@
 import asyncio
 from collections.abc import Callable
+from dataclasses import dataclass
 import logging
 import time
-from typing import Any, Coroutine, Dict, List, Optional
+from typing import Any, Coroutine, Dict, List, Optional, Union
 
 from aiohttp import (
     ClientError,
@@ -17,6 +18,13 @@ CALLBACK_TYPE = Callable[..., Coroutine[Any, Any, Optional[Dict[str, str]]]]
 RECENT_FAILURE_CUT_OFF = 30
 
 
+@dataclass
+class WSSubscription:
+    callback: Callable[[WSMessage], None]
+    lock: Optional[Union[asyncio.Lock, asyncio.Condition]]
+    wait_callable: Optional[Callable[..., Coroutine[Any, Any, None]]]
+
+
 class Websocket:
     url: str
     verify: bool
@@ -24,7 +32,7 @@ class Websocket:
     backoff: int
     _auth: CALLBACK_TYPE
     _timeout: float
-    _ws_subscriptions: List[Callable[[WSMessage], None]]
+    _ws_subscriptions: List[WSSubscription]
     _connect_lock: asyncio.Lock
 
     _headers: Optional[Dict[str, str]] = None
@@ -59,16 +67,25 @@ class Websocket:
         # for testing, to make easier to mock
         return ClientSession()
 
-    def _process_message(self, msg: WSMessage) -> bool:
+    async def _process_message(self, msg: WSMessage) -> bool:
         if msg.type == WSMsgType.ERROR:
             _LOGGER.exception("Error from Websocket: %s", msg.data)
             return False
 
         for sub in self._ws_subscriptions:
+            if sub.lock is not None:
+                await sub.lock.acquire()
+
             try:
-                sub(msg)
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Error processing websocket message")
+                if isinstance(sub.lock, asyncio.Condition) and sub.wait_callable is not None:
+                    await sub.wait_callable()
+                try:
+                    sub.callback(msg)
+                except Exception:  # pylint: disable=broad-except
+                    _LOGGER.exception("Error processing websocket message")
+            finally:
+                if sub.lock is not None and sub.lock.locked():
+                    sub.lock.release()
 
         return True
 
@@ -84,7 +101,7 @@ class Websocket:
 
             await self._reset_timeout()
             async for msg in self._ws_connection:
-                if not self._process_message(msg):
+                if not await self._process_message(msg):
                     break
                 await self._reset_timeout()
         except ClientError as e:
@@ -192,16 +209,23 @@ class Websocket:
         await asyncio.sleep(self.backoff)
         return await self.connect()
 
-    def subscribe(self, ws_callback: Callable[[WSMessage], None]) -> Callable[[], None]:
+    def subscribe(
+        self,
+        ws_callback: Callable[[WSMessage], None],
+        lock: Optional[Union[asyncio.Lock, asyncio.Condition]] = None,
+        wait_callable: Optional[Callable[..., Coroutine[Any, Any, None]]] = None,
+    ) -> Callable[[], None]:
         """
         Subscribe to raw websocket messages.
 
         Returns a callback that will unsubscribe.
         """
 
-        def _unsub_ws_callback() -> None:
-            self._ws_subscriptions.remove(ws_callback)
+        sub = WSSubscription(callback=ws_callback, lock=lock, wait_callable=wait_callable)
 
-        _LOGGER.debug("Adding subscription: %s", ws_callback)
-        self._ws_subscriptions.append(ws_callback)
+        def _unsub_ws_callback() -> None:
+            self._ws_subscriptions.remove(sub)
+
+        _LOGGER.debug("Adding subscription: %s", sub)
+        self._ws_subscriptions.append(sub)
         return _unsub_ws_callback

@@ -291,6 +291,9 @@ def dict_diff(orig: Optional[Dict[str, Any]], new: Dict[str, Any]) -> Dict[str, 
 
 
 def ws_stat_summmary(stats: List[WSStat]) -> Tuple[List[WSStat], float, Counter[str], Counter[str], Counter[str]]:
+    if len(stats) == 0:
+        raise ValueError("No stats to summarize")
+
     unfiltered = [s for s in stats if not s.filtered]
     percent = (1 - len(unfiltered) / len(stats)) * 100
     keys = Counter(k for s in unfiltered for k in s.keys_set)

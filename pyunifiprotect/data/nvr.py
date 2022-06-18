@@ -798,8 +798,9 @@ class NVR(ProtectDeviceModel):
     async def set_analytics(self, value: AnalyticsOption) -> None:
         """Sets analytics collection for NVR"""
 
-        self.analytics_data = value
-        await self.save_device()
+        async with self._update_lock:
+            self.analytics_data = value
+            await self.save_device()
 
     async def set_anonymous_analytics(self, enabled: bool) -> None:
         """Enables or disables anonymous analystics for NVR"""
@@ -812,14 +813,16 @@ class NVR(ProtectDeviceModel):
     async def set_default_reset_timeout(self, timeout: timedelta) -> None:
         """Sets the default message reset timeout"""
 
-        self.doorbell_settings.default_message_reset_timeout = timeout
-        await self.save_device()
+        async with self._update_lock:
+            self.doorbell_settings.default_message_reset_timeout = timeout
+            await self.save_device()
 
     async def set_default_doorbell_message(self, message: str) -> None:
         """Sets default doorbell message"""
 
-        self.doorbell_settings.default_message_text = DoorbellText(message)
-        await self.save_device()
+        async with self._update_lock:
+            self.doorbell_settings.default_message_text = DoorbellText(message)
+            await self.save_device()
 
     async def add_custom_doorbell_message(self, message: str) -> None:
         """Adds custom doorbell message"""
@@ -830,9 +833,10 @@ class NVR(ProtectDeviceModel):
         if message in self.doorbell_settings.custom_messages:
             raise BadRequest("Custom doorbell message already exists")
 
-        self.doorbell_settings.custom_messages.append(DoorbellText(message))
-        await self.save_device()
-        self.update_all_messages()
+        async with self._update_lock:
+            self.doorbell_settings.custom_messages.append(DoorbellText(message))
+            await self.save_device()
+            self.update_all_messages()
 
     async def remove_custom_doorbell_message(self, message: str) -> None:
         """Removes custom doorbell message"""
@@ -840,9 +844,10 @@ class NVR(ProtectDeviceModel):
         if message not in self.doorbell_settings.custom_messages:
             raise BadRequest("Custom doorbell message does not exists")
 
-        self.doorbell_settings.custom_messages.remove(DoorbellText(message))
-        await self.save_device()
-        self.update_all_messages()
+        async with self._update_lock:
+            self.doorbell_settings.custom_messages.remove(DoorbellText(message))
+            await self.save_device()
+            self.update_all_messages()
 
     async def reboot(self) -> None:
         """Reboots the NVR"""

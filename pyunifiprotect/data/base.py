@@ -557,6 +557,8 @@ class ProtectModel(ProtectBaseObject):
 class ProtectModelWithId(ProtectModel):
     id: str
 
+    _update_lock: asyncio.Lock = PrivateAttr(asyncio.Lock())
+
     @classmethod
     def _get_read_only_fields(cls) -> Set[str]:
         return set()
@@ -585,37 +587,48 @@ class ProtectModelWithId(ProtectModel):
         * `force_emit`: Emit a fake UFP WS message. Should only be use for when UFP does not properly emit a WS message
         """
 
-        if self.model is None:
-            raise BadRequest("Unknown model type")
-
-        if not self.api.bootstrap.auth_user.can(self.model, PermissionNode.WRITE, self):
-            if revert_on_fail:
-                self.revert_changes()
-            raise NotAuthorized(f"Do not have write permission for obj: {self.id}")
-
-        new_data = self.dict(exclude=self._get_excluded_changed_fields())
-        updated = self.unifi_dict(data=self.get_changed())
-
-        # do not patch when there are no updates
-        if updated == {}:
-            return
-
-        read_only_keys = self._get_read_only_fields().intersection(updated.keys())
-        if len(read_only_keys) > 0:
-            raise BadRequest(f"The following key(s) are read only: {read_only_keys}")
+        # do not allow multiple save_device calls at once
+        release_lock = False
+        if not self._update_lock.locked():
+            await self._update_lock.acquire()
 
         try:
-            await self._api_update(updated)
-        except ClientError:
-            if revert_on_fail:
-                self.revert_changes()
-            raise
-        self._initial_data = new_data
+            if self.model is None:
+                raise BadRequest("Unknown model type")
 
-        if not force_emit:
-            return
+            if not self.api.bootstrap.auth_user.can(self.model, PermissionNode.WRITE, self):
+                if revert_on_fail:
+                    self.revert_changes()
+                raise NotAuthorized(f"Do not have write permission for obj: {self.id}")
 
-        await self.emit_message(updated)
+            new_data = self.dict(exclude=self._get_excluded_changed_fields())
+            updated = self.unifi_dict(data=self.get_changed())
+
+            # do not patch when there are no updates
+            if updated == {}:
+                return
+
+            read_only_keys = self._get_read_only_fields().intersection(updated.keys())
+            if len(read_only_keys) > 0:
+                raise BadRequest(f"The following key(s) are read only: {read_only_keys}")
+
+            self.api.incr_updates()
+
+            try:
+                await self._api_update(updated)
+            except ClientError:
+                if revert_on_fail:
+                    self.revert_changes()
+                raise
+            self._initial_data = new_data
+
+            self.api.decr_updates()
+
+            if force_emit:
+                await self.emit_message(updated)
+        finally:
+            if release_lock:
+                self._update_lock.release()
 
     async def emit_message(self, updated: Dict[str, Any]) -> None:
         """Emites fake WS message for ProtectApiClient to process."""
@@ -692,8 +705,9 @@ class ProtectDeviceModel(ProtectModelWithId):
     async def set_name(self, name: str | None) -> None:
         """Sets name for the device"""
 
-        self.name = name
-        await self.save_device()
+        async with self._update_lock:
+            self.name = name
+            await self.save_device()
 
 
 class WiredConnectionState(ProtectBaseObject):
@@ -815,8 +829,9 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     async def set_ssh(self, enabled: bool) -> None:
         """Sets ssh status for protect device"""
 
-        self.is_ssh_enabled = enabled
-        await self.save_device()
+        async with self._update_lock:
+            self.is_ssh_enabled = enabled
+            await self.save_device()
 
     async def reboot(self) -> None:
         """Reboots an adopted device"""
