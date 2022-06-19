@@ -591,6 +591,7 @@ class ProtectModelWithId(ProtectModel):
         release_lock = False
         if not self._update_lock.locked():
             await self._update_lock.acquire()
+            release_lock = True
 
         try:
             if self.model is None:
