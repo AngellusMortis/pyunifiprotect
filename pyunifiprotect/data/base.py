@@ -559,9 +559,9 @@ class ProtectModelWithId(ProtectModel):
 
     _update_lock: asyncio.Lock = PrivateAttr(...)
 
-    def __init__(self, api: Optional[ProtectApiClient] = None, **data: Any) -> None:
+    def __init__(self, **data: Any) -> None:
         update_lock = data.pop("update_lock", None)
-        super().__init__(api, **data)
+        super().__init__(**data)
         self._update_lock = update_lock or asyncio.Lock()
 
     @classmethod
