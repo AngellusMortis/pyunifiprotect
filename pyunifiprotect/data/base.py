@@ -626,8 +626,6 @@ class ProtectModelWithId(ProtectModel):
             if len(read_only_keys) > 0:
                 raise BadRequest(f"The following key(s) are read only: {read_only_keys}")
 
-            self.api.incr_updates()
-
             try:
                 await self._api_update(updated)
             except ClientError:
@@ -635,8 +633,6 @@ class ProtectModelWithId(ProtectModel):
                     self.revert_changes()
                 raise
             self._initial_data = new_data
-
-            self.api.decr_updates()
 
             if force_emit:
                 await self.emit_message(updated)

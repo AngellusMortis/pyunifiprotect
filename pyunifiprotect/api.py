@@ -121,8 +121,6 @@ class BaseApiClient:
     _username: str
     _password: str
     _verify_ssl: bool
-    _update_cond: asyncio.Condition
-    _in_progress_updates: int
     _is_authenticated: bool = False
     _last_update: float = NEVER_RAN
     _last_ws_status: bool = False
@@ -149,8 +147,6 @@ class BaseApiClient:
         self._username = username
         self._password = password
         self._verify_ssl = verify_ssl
-        self._update_cond = asyncio.Condition()
-        self._in_progress_updates = 0
 
         if session is not None:
             self._session = session
@@ -198,9 +194,7 @@ class BaseApiClient:
 
         if self._websocket is None:
             self._websocket = Websocket(self.ws_url, _auth, verify=self._verify_ssl)
-            self._websocket.subscribe(
-                self._process_ws_message, lock=self._update_cond, wait_callable=self.wait_for_updates
-            )
+            self._websocket.subscribe(self._process_ws_message)
 
         return self._websocket
 
@@ -439,33 +433,6 @@ class BaseApiClient:
     def _get_last_update_id(self) -> Optional[UUID]:
         raise NotImplementedError()
 
-    async def wait_for_updates(self) -> None:
-        """
-        Waits for all existing updates to complete before continuing.
-
-        wait_for_updates, incr_updates and decr_updates are designed to work together to
-        ensure there are no active HTTP requests when updating the bootstrap to prevent
-        potiental race conditions from happening after the HTTP requests resolve.
-        """
-
-        def cond() -> bool:
-            return self._in_progress_updates == 0
-
-        await self._update_cond.wait_for(cond)
-
-    def incr_updates(self) -> None:
-        """Increments update counter for in progress updates"""
-
-        self._in_progress_updates += 1
-
-    def decr_updates(self) -> None:
-        """Decrements update counter for in progress updates"""
-
-        self._in_progress_updates = max(0, self._in_progress_updates - 1)
-
-        if self._in_progress_updates == 0 and self._update_cond.locked():
-            self._update_cond.notify()
-
 
 class ProtectApiClient(BaseApiClient):
     """
@@ -585,38 +552,35 @@ class ProtectApiClient(BaseApiClient):
         You can use the various other `get_` methods if you need one off data from UFP
         """
 
-        async with self._update_cond:
-            await self.wait_for_updates()
+        now = time.monotonic()
+        now_dt = utc_now()
+        max_event_dt = now_dt - timedelta(hours=24)
+        if force:
+            self._last_update = NEVER_RAN
+            self._last_update_dt = max_event_dt
 
-            now = time.monotonic()
-            now_dt = utc_now()
-            max_event_dt = now_dt - timedelta(hours=24)
-            if force:
-                self._last_update = NEVER_RAN
-                self._last_update_dt = max_event_dt
-
-            bootstrap_updated = False
-            if self._bootstrap is None or now - self._last_update > DEVICE_UPDATE_INTERVAL:
-                bootstrap_updated = True
-                self._last_update = now
-                self._last_update_dt = now_dt
-                self._bootstrap = await self.get_bootstrap()
-
-            await self.async_connect_ws(force)
-            active_ws = self.check_ws()
-            if not bootstrap_updated and active_ws:
-                # If the websocket is connected/connecting
-                # we do not need to get events
-                _LOGGER.debug("Skipping update since websocket is active")
-                return None
-
-            events = await self.get_events(start=self._last_update_dt or max_event_dt, end=now_dt)
-            for event in events:
-                self.bootstrap.process_event(event)
-
+        bootstrap_updated = False
+        if self._bootstrap is None or now - self._last_update > DEVICE_UPDATE_INTERVAL:
+            bootstrap_updated = True
             self._last_update = now
             self._last_update_dt = now_dt
-            return self._bootstrap
+            self._bootstrap = await self.get_bootstrap()
+
+        await self.async_connect_ws(force)
+        active_ws = self.check_ws()
+        if not bootstrap_updated and active_ws:
+            # If the websocket is connected/connecting
+            # we do not need to get events
+            _LOGGER.debug("Skipping update since websocket is active")
+            return None
+
+        events = await self.get_events(start=self._last_update_dt or max_event_dt, end=now_dt)
+        for event in events:
+            self.bootstrap.process_event(event)
+
+        self._last_update = now
+        self._last_update_dt = now_dt
+        return self._bootstrap
 
     def emit_message(self, msg: WSSubscriptionMessage) -> None:
         for sub in self._ws_subscriptions:
