@@ -568,7 +568,7 @@ class ProtectModelWithId(ProtectModel):
     def construct(cls, _fields_set: Optional[Set[str]] = None, **values: Any) -> ProtectModelWithId:
         update_lock = values.pop("update_lock", None)
         obj = super().construct(_fields_set=_fields_set, **values)
-        obj._update_lock = update_lock or asyncio.Lock()
+        obj._update_lock = update_lock or asyncio.Lock()  # pylint: disable=protected-access
 
         return obj
 
