@@ -624,6 +624,7 @@ class ProtectModelWithId(ProtectModel):
 
             read_only_keys = self._get_read_only_fields().intersection(updated.keys())
             if len(read_only_keys) > 0:
+                self.revert_changes()
                 raise BadRequest(f"The following key(s) are read only: {read_only_keys}")
 
             try:
