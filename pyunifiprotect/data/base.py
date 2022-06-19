@@ -557,7 +557,20 @@ class ProtectModel(ProtectBaseObject):
 class ProtectModelWithId(ProtectModel):
     id: str
 
-    _update_lock: asyncio.Lock = PrivateAttr(asyncio.Lock())
+    _update_lock: asyncio.Lock = PrivateAttr(...)
+
+    def __init__(self, api: Optional[ProtectApiClient] = None, **data: Any) -> None:
+        update_lock = data.pop("update_lock", None)
+        super().__init__(**data)
+        self._update_lock = update_lock or asyncio.Lock()
+
+    @classmethod
+    def construct(cls, _fields_set: Optional[Set[str]] = None, **values: Any) -> ProtectModelWithId:
+        update_lock = values.pop("update_lock", None)
+        obj = super().construct(_fields_set=_fields_set, **values)
+        obj._update_lock = update_lock or asyncio.Lock()
+
+        return obj
 
     @classmethod
     def _get_read_only_fields(cls) -> Set[str]:
