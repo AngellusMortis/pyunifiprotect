@@ -82,6 +82,7 @@ class ProtectBaseObject(BaseModel):
     class Config:
         arbitrary_types_allowed = True
         validate_assignment = True
+        copy_on_model_validation = False
 
     def __init__(self, api: Optional[ProtectApiClient] = None, **data: Any) -> None:
         """
@@ -147,27 +148,6 @@ class ProtectBaseObject(BaseModel):
         obj._api = api  # pylint: disable=protected-access
 
         return obj  # type: ignore
-
-    def copy(
-        self: ProtectObject,
-        *,
-        include: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
-        exclude: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
-        update: DictStrAny = None,  # type: ignore
-        deep: bool = False,
-    ) -> ProtectObject:
-        exclude = exclude or set()
-        if isinstance(exclude, Mapping):
-            exclude = dict(exclude)
-            exclude["_api"] = True
-        else:
-            exclude = set(exclude)
-            exclude.add("_api")
-
-        new_obj = super().copy(include=include, exclude=exclude, update=update, deep=deep)
-        new_obj._api = self._api  # pylint: disable=protected-access
-
-        return new_obj
 
     @classmethod
     def _get_excluded_changed_fields(cls) -> Set[str]:
@@ -593,27 +573,6 @@ class ProtectModelWithId(ProtectModel):
         obj._update_lock = update_lock or asyncio.Lock()  # pylint: disable=protected-access
 
         return obj
-
-    def copy(
-        self: ProtectObject,
-        *,
-        include: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
-        exclude: Union[AbstractSetIntStr, MappingIntStrAny] = None,  # type: ignore
-        update: DictStrAny = None,  # type: ignore
-        deep: bool = False,
-    ) -> ProtectObject:
-        exclude = exclude or set()
-        if isinstance(exclude, Mapping):
-            exclude = dict(exclude)
-            exclude["_update_lock"] = True
-        else:
-            exclude = set(exclude)
-            exclude.add("_update_lock")
-
-        new_obj: ProtectModelWithId = super().copy(include=include, exclude=exclude, update=update, deep=deep)  # type: ignore
-        new_obj._update_lock = self._update_lock  # type: ignore  # pylint: disable=protected-access
-
-        return new_obj  # type: ignore
 
     @classmethod
     def _get_read_only_fields(cls) -> Set[str]:
