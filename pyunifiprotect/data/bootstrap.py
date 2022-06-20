@@ -154,6 +154,7 @@ class Bootstrap(ProtectBaseObject):
     _ws_stats: List[WSStat] = PrivateAttr([])
     _has_doorbell: Optional[bool] = PrivateAttr(None)
     _has_smart: Optional[bool] = PrivateAttr(None)
+    _has_media: Optional[bool] = PrivateAttr(None)
     _recording_start: Optional[datetime] = PrivateAttr(None)
 
     @classmethod
@@ -212,20 +213,37 @@ class Bootstrap(ProtectBaseObject):
         return self._has_doorbell
 
     @property
-    def recording_start(self) -> datetime:
+    def recording_start(self) -> datetime | None:
+        """Get earilest recording date."""
+
         if self._recording_start is None:
-            self._recording_start = min(
-                c.stats.video.recording_start
-                for c in self.cameras.values()
-                if c.stats.video.recording_start is not None
-            )
+            try:
+                self._recording_start = min(
+                    c.stats.video.recording_start
+                    for c in self.cameras.values()
+                    if c.stats.video.recording_start is not None
+                )
+            except ValueError:
+                return None
         return self._recording_start
 
     @property
     def has_smart_detections(self) -> bool:
+        """Check if any camera has smart detections."""
+
         if self._has_smart is None:
             self._has_smart = any(c.feature_flags.has_smart_detect for c in self.cameras.values())
         return self._has_smart
+
+    @property
+    def has_media(self) -> bool:
+        """Checks if user can read media for any camera."""
+
+        if self._has_media is None:
+            if self.recording_start is None:
+                return False
+            self._has_media = any(c.can_read_media(self.auth_user) for c in self.cameras.values())
+        return self._has_media
 
     def get_device_from_mac(self, mac: str) -> ProtectAdoptableDeviceModel | None:
         """Retrieve a device from MAC address"""
