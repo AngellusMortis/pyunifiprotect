@@ -52,9 +52,8 @@ if TYPE_CHECKING:
     from pyunifiprotect.data.nvr import Event
     from pyunifiprotect.data.user import User
 
+
 ProtectObject = TypeVar("ProtectObject", bound="ProtectBaseObject")
-
-
 RECENT_EVENT_MAX = timedelta(seconds=30)
 EVENT_PING_INTERVAL = timedelta(seconds=3)
 _LOGGER = logging.getLogger(__name__)
