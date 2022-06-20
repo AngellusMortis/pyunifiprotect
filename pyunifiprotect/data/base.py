@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Mapping
 from datetime import datetime, timedelta
 from ipaddress import IPv4Address
 import logging
@@ -45,7 +44,7 @@ from pyunifiprotect.utils import (
 )
 
 if TYPE_CHECKING:
-    from pydantic.typing import AbstractSetIntStr, DictStrAny, MappingIntStrAny, SetStr
+    from pydantic.typing import DictStrAny, SetStr
 
     from pyunifiprotect.api import ProtectApiClient
     from pyunifiprotect.data.devices import Bridge
