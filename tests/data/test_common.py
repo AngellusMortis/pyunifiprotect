@@ -559,7 +559,7 @@ async def test_permissions_user(
     user1 = user_obj.copy()
     user1.id = "test_id_1"
     user1.all_permissions = [Permission.from_unifi_dict(rawPermission=p, api=api) for p in permissions]
-    user_obj._initial_data = user_obj.dict()
+    user1._initial_data = user1.dict()
 
     api.bootstrap.auth_user_id = user1.id
     api.bootstrap.users = {user1.id: user1}
@@ -568,6 +568,48 @@ async def test_permissions_user(
     assert user1.can_read(user1) is can_read
     assert user1.can_write(user1) is can_write
     assert user1.can_delete(user1) is can_delete
+
+
+@pytest.mark.parametrize(
+    "permissions,can_create,can_read,can_write,can_delete",
+    [
+        (["user:*:*"], True, True, True, True),
+        (["user:create,read,write,delete:*"], True, True, True, True),
+        (["user:create,read,write,delete:$"], False, False, False, False),
+        (["user:read,write:$", "user:create,read,write,delete:*"], True, True, True, True),
+        (["user:read,write:*"], False, True, True, False),
+        (["user:read,write:$"], False, False, False, False),
+        (["user:read,write:$", "user:create,read,write,delete:test_id_2"], True, True, True, True),
+        (["user:create,delete:$", "user:read,write:*"], False, True, True, False),
+    ],
+)
+@pytest.mark.asyncio
+async def test_permissions_self_with_other(
+    user_obj: User,
+    permissions: list[str],
+    can_create: bool,
+    can_read: bool,
+    can_write: bool,
+    can_delete: bool,
+):
+    api = user_obj.api
+
+    user1 = user_obj.copy()
+    user1.id = "test_id_1"
+    user1.all_permissions = [Permission.from_unifi_dict(rawPermission=p, api=api) for p in permissions]
+    user1._initial_data = user1.dict()
+
+    user2 = user_obj.copy()
+    user2.id = "test_id_2"
+    user2._initial_data = user2.dict()
+
+    api.bootstrap.auth_user_id = user1.id
+    api.bootstrap.users = {user1.id: user1, user2.id: user2}
+
+    assert user2.can_create(user1) is can_create
+    assert user2.can_read(user1) is can_read
+    assert user2.can_write(user1) is can_write
+    assert user2.can_delete(user1) is can_delete
 
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
