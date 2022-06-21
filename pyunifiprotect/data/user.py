@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set, cast
+from typing import Any, Dict, List, Optional, Set
 
 from pydantic.fields import PrivateAttr
 
@@ -14,7 +14,7 @@ class Permission(ProtectBaseObject):
     raw_permission: str
     model: ModelType
     nodes: Set[PermissionNode]
-    obj_id: Optional[str]
+    obj_ids: Optional[Set[str]]
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -29,8 +29,11 @@ class Permission(ProtectBaseObject):
         else:
             data["nodes"] = [PermissionNode(n) for n in parts[1].split(",")]
 
-        if len(parts) == 3 and parts[2] != "*" and parts[2] != "$":
-            data["obj_id"] = parts[2]
+        if len(parts) == 3 and parts[2] != "*":
+            if parts[2] == "$":
+                data["obj_ids"] = ["self"]
+            else:
+                data["obj_ids"] = parts[2].split(",")
 
         return super().unifi_dict_to_dict(data)
 
@@ -40,12 +43,12 @@ class Permission(ProtectBaseObject):
         return self.raw_permission
 
     @property
-    def obj(self) -> Optional[ProtectModel]:
-        if self.obj_id is None:
+    def objs(self) -> Optional[List[ProtectModelWithId]]:
+        if self.obj_ids == {"self"} or self.obj_ids is None:
             return None
 
         devices = getattr(self.api.bootstrap, f"{self.model.value}s")
-        return cast(Optional[ProtectModel], devices.get(self.obj_id))
+        return [devices[oid] for oid in self.obj_ids]
 
 
 class Group(ProtectModelWithId):
@@ -176,20 +179,28 @@ class User(ProtectModelWithId):
         self._groups = [self.api.bootstrap.groups[g] for g in self.group_ids if g in self.api.bootstrap.groups]
         return self._groups
 
-    def can(self, model: ModelType, node: PermissionNode, obj: Optional[ProtectModel] = None) -> bool:
+    def can(self, model: ModelType, node: PermissionNode, obj: Optional[ProtectModelWithId] = None) -> bool:
         """Checks if a user can do a specific action"""
 
-        perm_str = f"{model.value}:{node.value}:{obj if obj is not None else '*'}"
+        check_self = False
+        if model == self.model and obj is not None and obj.id == self.id:
+            perm_str = f"{model.value}:{node.value}:$"
+            check_self = True
+        else:
+            perm_str = f"{model.value}:{node.value}:{obj if obj is not None else '*'}"
         if perm_str in self._perm_cache:
             return self._perm_cache[perm_str]
 
         for perm in self.all_permissions:
             if model != perm.model or node not in perm.nodes:
                 continue
-            if perm.obj_id is None:
+            if perm.obj_ids is None:
                 self._perm_cache[perm_str] = True
                 return True
-            if perm.obj_id is not None and perm.obj == obj:
+            if check_self and perm.obj_ids == {"self"}:
+                self._perm_cache[perm_str] = True
+                return True
+            if perm.obj_ids is not None and obj is not None and obj.id in perm.obj_ids:
                 self._perm_cache[perm_str] = True
                 return True
         self._perm_cache[perm_str] = False

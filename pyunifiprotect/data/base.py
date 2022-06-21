@@ -530,30 +530,6 @@ class ProtectModel(ProtectBaseObject):
 
         return data
 
-    def can_create(self, user: User) -> bool:
-        if self.model is None:
-            return True
-
-        return user.can(self.model, PermissionNode.CREATE, self)
-
-    def can_read(self, user: User) -> bool:
-        if self.model is None:
-            return True
-
-        return user.can(self.model, PermissionNode.READ, self)
-
-    def can_write(self, user: User) -> bool:
-        if self.model is None:
-            return True
-
-        return user.can(self.model, PermissionNode.WRITE, self)
-
-    def can_delete(self, user: User) -> bool:
-        if self.model is None:
-            return True
-
-        return user.can(self.model, PermissionNode.DELETE, self)
-
 
 class ProtectModelWithId(ProtectModel):
     id: str
@@ -586,6 +562,30 @@ class ProtectModelWithId(ProtectModel):
         changed = self.get_changed()
         for key in changed.keys():
             setattr(self, key, self._initial_data[key])
+
+    def can_create(self, user: User) -> bool:
+        if self.model is None:
+            return True
+
+        return user.can(self.model, PermissionNode.CREATE, self)
+
+    def can_read(self, user: User) -> bool:
+        if self.model is None:
+            return True
+
+        return user.can(self.model, PermissionNode.READ, self)
+
+    def can_write(self, user: User) -> bool:
+        if self.model is None:
+            return True
+
+        return user.can(self.model, PermissionNode.WRITE, self)
+
+    def can_delete(self, user: User) -> bool:
+        if self.model is None:
+            return True
+
+        return user.can(self.model, PermissionNode.DELETE, self)
 
     async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True) -> None:
         """

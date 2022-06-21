@@ -486,30 +486,36 @@ async def test_device_reboot(camera_obj: Camera):
     )
 
 
-PermTestType = tuple[list[str], tuple[bool, bool, bool, bool, bool, bool]]
-
-
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.parametrize(
-    "test",
+    "permissions,can_create,can_read,can_write,can_delete,can_read_media,can_delete_media",
     [
-        (["camera:*:*"], (True, True, True, True, True, True)),
-        (["camera:create,read,write,delete,readmedia,deletemedia:*"], (True, True, True, True, True, True)),
-        (["camera:create,read,write,readmedia:*"], (True, True, True, False, True, False)),
-        (["camera:read,readmedia:*"], (False, True, False, False, True, False)),
-        (["camera:delete:test_id_1", "camera:read,readmedia:*"], (False, True, False, True, True, False)),
-        (["camera:delete:test_id_2", "camera:read,readmedia:*"], (False, True, False, False, True, False)),
-        (["camera:read,readmedia:*", "camera:delete:test_id_1"], (False, True, False, True, True, False)),
-        (["camera:read,readmedia:*", "camera:delete:test_id_2"], (False, True, False, False, True, False)),
+        (["camera:*:*"], True, True, True, True, True, True),
+        (["camera:create,read,write,delete,readmedia,deletemedia:*"], True, True, True, True, True, True),
+        (["camera:create,read,write,readmedia:*"], True, True, True, False, True, False),
+        (["camera:read,readmedia:*"], False, True, False, False, True, False),
+        (["camera:read,readmedia:test_id_1,test_id_2"], False, True, False, False, True, False),
+        (["camera:read,readmedia:test_id_2,test_id_1"], False, True, False, False, True, False),
+        (["camera:delete:test_id_1", "camera:read,readmedia:*"], False, True, False, True, True, False),
+        (["camera:delete:test_id_2", "camera:read,readmedia:*"], False, True, False, False, True, False),
+        (["camera:read,readmedia:*", "camera:delete:test_id_1"], False, True, False, True, True, False),
+        (["camera:read,readmedia:*", "camera:delete:test_id_2"], False, True, False, False, True, False),
     ],
 )
 @pytest.mark.asyncio
-async def test_permissions(user_obj: User, camera_obj: Camera, test: PermTestType):
+async def test_permissions(
+    user_obj: User,
+    camera_obj: Camera,
+    permissions: list[str],
+    can_create: bool,
+    can_read: bool,
+    can_write: bool,
+    can_delete: bool,
+    can_read_media: bool,
+    can_delete_media: bool,
+):
     if camera_obj is None:
         pytest.skip("No camera_obj obj found")
-
-    permissions, values = test
-    can_create, can_read, can_write, can_delete, can_read_media, can_delete_media = values
 
     api = user_obj.api
     user_obj.all_permissions = [Permission.from_unifi_dict(rawPermission=p, api=api) for p in permissions]
@@ -524,6 +530,44 @@ async def test_permissions(user_obj: User, camera_obj: Camera, test: PermTestTyp
     assert camera_obj.can_delete(user_obj) is can_delete
     assert camera_obj.can_read_media(user_obj) is can_read_media
     assert camera_obj.can_delete_media(user_obj) is can_delete_media
+
+
+@pytest.mark.parametrize(
+    "permissions,can_create,can_read,can_write,can_delete",
+    [
+        (["user:*:*"], True, True, True, True),
+        (["user:create,read,write,delete:*"], True, True, True, True),
+        (["user:create,read,write,delete:$"], True, True, True, True),
+        (["user:read,write:$", "user:create,read,write,delete:*"], True, True, True, True),
+        (["user:read,write:*"], False, True, True, False),
+        (["user:read,write:$"], False, True, True, False),
+        (["user:read,write:$", "user:create,read,write,delete:test_id_2"], False, True, True, False),
+        (["user:create,delete:$", "user:read,write:*"], True, True, True, True),
+    ],
+)
+@pytest.mark.asyncio
+async def test_permissions_user(
+    user_obj: User,
+    permissions: list[str],
+    can_create: bool,
+    can_read: bool,
+    can_write: bool,
+    can_delete: bool,
+):
+    api = user_obj.api
+
+    user1 = user_obj.copy()
+    user1.id = "test_id_1"
+    user1.all_permissions = [Permission.from_unifi_dict(rawPermission=p, api=api) for p in permissions]
+    user_obj._initial_data = user_obj.dict()
+
+    api.bootstrap.auth_user_id = user1.id
+    api.bootstrap.users = {user1.id: user1}
+
+    assert user1.can_create(user1) is can_create
+    assert user1.can_read(user1) is can_read
+    assert user1.can_write(user1) is can_write
+    assert user1.can_delete(user1) is can_delete
 
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
