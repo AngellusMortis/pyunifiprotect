@@ -189,6 +189,8 @@ class Bootstrap(ProtectBaseObject):
             del data["captureWsStats"]
         if "macLookup" in data:
             del data["macLookup"]
+        if "idLookup" in data:
+            del data["idLookup"]
 
         for model_type in ModelType.bootstrap_models():
             attr = model_type + "s"
@@ -263,7 +265,7 @@ class Bootstrap(ProtectBaseObject):
     def get_device_from_id(self, device_id: str) -> ProtectAdoptableDeviceModel | None:
         """Retrieve a device from device ID (without knowing model type)."""
 
-        ref = self.mac_lookup.get(device_id)
+        ref = self.id_lookup.get(device_id)
         if ref is None:
             return None
         devices = getattr(self, f"{ref.model}s")
@@ -312,6 +314,9 @@ class Bootstrap(ProtectBaseObject):
             key = obj.model.value + "s"
             if not self.api.ignore_unadopted or (obj.is_adopted and not obj.is_adopted_by_other):
                 getattr(self, key)[obj.id] = obj
+                ref = ProtectDeviceRef(model=obj.model, id=obj.id)
+                self.id_lookup[obj.id] = ref
+                self.mac_lookup[obj.mac.lower().replace(":", "")] = ref
         else:
             _LOGGER.debug("Unexpected bootstrap model type for add: %s", obj.model)
             return None
@@ -331,9 +336,11 @@ class Bootstrap(ProtectBaseObject):
         if devices is None:
             return None
 
+        self.id_lookup.pop(device_id, None)
         device = devices.pop(device_id, None)
         if device is None:
             return None
+        self.mac_lookup.pop(device.mac.lower().replace(":", ""), None)
 
         self._create_stat(packet, [], False)
         return WSSubscriptionMessage(
