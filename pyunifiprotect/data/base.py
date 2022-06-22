@@ -806,6 +806,10 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
         return data
 
     @property
+    def display_name(self) -> str:
+        return self.name or self.market_name or self.type
+
+    @property
     def is_wired(self) -> bool:
         return self.wired_connection_state is not None
 

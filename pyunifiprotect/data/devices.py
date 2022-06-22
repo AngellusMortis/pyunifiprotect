@@ -941,6 +941,10 @@ class Camera(ProtectMotionDeviceModel):
             return self.channels[3]
         return None
 
+    @property
+    def is_high_fps_enabled(self) -> bool:
+        return self.video_mode == VideoMode.HIGH_FPS
+
     def set_ring_timeout(self) -> None:
         self._last_ring_timeout = utc_now() + EVENT_PING_INTERVAL
         self._event_callback_ping()
