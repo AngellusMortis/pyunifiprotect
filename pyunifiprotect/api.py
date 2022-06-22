@@ -371,21 +371,19 @@ class BaseApiClient:
 
     def is_authenticated(self) -> bool:
         """Check to see if we are already authenticated."""
-
         if self._session is None:
             return False
 
-        if self._is_authenticated is True:
-            # If the one we got last time is still valid, we're good to go
-            if not token_cookie_is_valid(self._last_token_cookie):
-                return True
+        if self._is_authenticated is False:
+            return False
 
-            # If the one we got last time is expired, we need to check again.
-            self._update_last_token_cookie()
-            if not token_cookie_is_valid(self._last_token_cookie):
-                return True
+        # If the one we got last time is still valid, we're good to go
+        if token_cookie_is_valid(self._last_token_cookie):
+            return True
 
-        return self._is_authenticated
+        # If the one we got last time is expired, we need to check again.
+        self._update_last_token_cookie()
+        return token_cookie_is_valid(self._last_token_cookie)
 
     async def async_connect_ws(self, force: bool) -> None:
         """Connect to Websocket."""
