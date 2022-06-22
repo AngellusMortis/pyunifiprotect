@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
-import orjson
 
+import orjson
 import typer
 
 from pyunifiprotect.cli import base

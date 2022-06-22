@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import orjson
 import logging
 from pathlib import Path
 import sys
 from typing import Optional, cast
 
+import orjson
 import typer
 
 from pyunifiprotect.api import ProtectApiClient

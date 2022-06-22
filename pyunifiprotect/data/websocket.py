@@ -4,11 +4,12 @@ from __future__ import annotations
 import base64
 from dataclasses import dataclass
 import enum
-import orjson
 import struct
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 from uuid import UUID
 import zlib
+
+import orjson
 
 from pyunifiprotect.data.types import ProtectWSPayloadFormat
 from pyunifiprotect.exceptions import WSDecodeError, WSEncodeError

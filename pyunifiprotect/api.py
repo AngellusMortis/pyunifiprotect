@@ -4,7 +4,6 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timedelta
 from ipaddress import IPv4Address
-import orjson
 import logging
 from pathlib import Path
 import time
@@ -16,6 +15,7 @@ import aiofiles
 import aiohttp
 from aiohttp import CookieJar, client_exceptions
 import jwt
+import orjson
 from yarl import URL
 
 from pyunifiprotect.data import (
