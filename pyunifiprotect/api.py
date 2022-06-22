@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timedelta
+from http.cookies import Morsel
 from ipaddress import IPv4Address
 import logging
 from pathlib import Path
@@ -14,9 +15,7 @@ from uuid import UUID
 import aiofiles
 import aiohttp
 from aiohttp import CookieJar, client_exceptions
-import jwt
 import orjson
-from yarl import URL
 
 from pyunifiprotect.data import (
     NVR,
@@ -47,6 +46,7 @@ from pyunifiprotect.utils import (
     ip_from_host,
     set_debug,
     to_js_time,
+    token_cookie_is_valid,
     utc_now,
 )
 from pyunifiprotect.websocket import Websocket
@@ -124,6 +124,7 @@ class BaseApiClient:
     _is_authenticated: bool = False
     _last_update: float = NEVER_RAN
     _last_ws_status: bool = False
+    _last_token_cookie: Morsel[str] | None = None
     _session: Optional[aiohttp.ClientSession] = None
 
     headers: Optional[Dict[str, str]] = None
@@ -224,6 +225,8 @@ class BaseApiClient:
                 kwargs["ssl"] = False
             req_context = session.request(method, url, headers=headers, **kwargs)
             response = await req_context.__aenter__()  # pylint: disable=unnecessary-dunder-call
+            if token_cookie := response.cookies.get("TOKEN"):
+                self._last_token_cookie = token_cookie
 
             try:
                 _LOGGER.debug("%s %s %s", response.status, response.content_type, response)
@@ -360,33 +363,18 @@ class BaseApiClient:
             self.headers["x-csrf-token"] = csrf_token
 
         self._is_authenticated = True
+        self._last_token_cookie = response.cookies.get("TOKEN")
         _LOGGER.debug("Authenticated successfully!")
 
     def is_authenticated(self) -> bool:
         """Check to see if we are already authenticated."""
-
         if self._session is None:
             return False
 
-        if self._is_authenticated is True:
-            # Check if token is expired.
-            cookies = self._session.cookie_jar.filter_cookies(URL(self.base_url))
-            token_cookie = cookies.get("TOKEN")
-            if token_cookie is None:
-                return False
-            try:
-                jwt.decode(
-                    token_cookie.value,
-                    options={"verify_signature": False, "verify_exp": True},
-                )
-            except jwt.ExpiredSignatureError:
-                _LOGGER.debug("Authentication token has expired.")
-                return False
-            except Exception as broad_ex:  # pylint: disable=broad-except
-                _LOGGER.debug("Authentication token decode error: %s", broad_ex)
-                return False
+        if self._is_authenticated is False:
+            return False
 
-        return self._is_authenticated
+        return token_cookie_is_valid(self._last_token_cookie)
 
     async def async_connect_ws(self, force: bool) -> None:
         """Connect to Websocket."""

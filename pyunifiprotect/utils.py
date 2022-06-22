@@ -7,6 +7,7 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone, tzinfo
 from decimal import Decimal
 from enum import Enum
+from http.cookies import Morsel
 from inspect import isclass
 from ipaddress import AddressValueError, IPv4Address
 import json
@@ -32,6 +33,7 @@ from typing import (
 from uuid import UUID
 
 from aiohttp import ClientResponse
+import jwt
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_SET, ModelField
 from pydantic.utils import to_camel
 
@@ -381,3 +383,21 @@ async def profile_ws(
 
     if do_print:
         print_ws_stat_summary(protect.bootstrap.ws_stats, output=print_output)
+
+
+def token_cookie_is_valid(token_cookie: Morsel[str] | None) -> bool:
+    """Check if a token cookie is still valid."""
+    if token_cookie is None:
+        return False
+    try:
+        jwt.decode(
+            token_cookie.value,
+            options={"verify_signature": False, "verify_exp": True},
+        )
+    except jwt.ExpiredSignatureError:
+        _LOGGER.debug("Authentication token has expired.")
+        return False
+    except Exception as broad_ex:  # pylint: disable=broad-except
+        _LOGGER.debug("Authentication token decode error: %s", broad_ex)
+        return False
+    return True
