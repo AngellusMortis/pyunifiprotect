@@ -1422,7 +1422,7 @@ class SensorSensitivitySettings(SensorSettingsBase):
 
 
 class SensorBatteryStatus(ProtectBaseObject):
-    percentage: PercentInt
+    percentage: Optional[PercentInt]
     is_low: bool
 
 
