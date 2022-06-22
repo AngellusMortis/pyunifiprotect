@@ -187,7 +187,7 @@ class User(ProtectModelWithId):
             perm_str = f"{model.value}:{node.value}:$"
             check_self = True
         else:
-            perm_str = f"{model.value}:{node.value}:{obj if obj is not None else '*'}"
+            perm_str = f"{model.value}:{node.value}:{obj.id if obj is not None else '*'}"
         if perm_str in self._perm_cache:
             return self._perm_cache[perm_str]
 
