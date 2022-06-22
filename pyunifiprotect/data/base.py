@@ -677,7 +677,7 @@ class ProtectDeviceModel(ProtectModelWithId):
     uptime: Optional[timedelta]
     last_seen: Optional[datetime]
     hardware_revision: Optional[str]
-    firmware_version: str
+    firmware_version: Optional[str]
     is_updating: bool
     is_ssh_enabled: bool
 
