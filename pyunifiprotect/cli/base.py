@@ -95,7 +95,7 @@ def list_ids(ctx: typer.Context) -> None:
     objs: dict[str, ProtectAdoptableDeviceModel] = ctx.obj.devices
     to_print: list[tuple[str, str | None]] = []
     for obj in objs.values():
-        name = obj.name or obj.market_name or obj.type
+        name = obj.display_name
         if obj.is_adopted_by_other:
             name = f"{name} [Managed by Another Console]"
         elif obj.is_adopting:
