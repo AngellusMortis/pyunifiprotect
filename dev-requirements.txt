@@ -88,6 +88,8 @@ mypy-extensions==0.4.3
     # via
     #   black
     #   mypy
+orjson==3.7.2
+    # via pyunifiprotect (setup.cfg)
 packaging==21.3
     # via
     #   build
@@ -212,7 +214,7 @@ types-aiofiles==0.8.8
     # via pyunifiprotect (setup.cfg)
 types-pillow==9.0.20
     # via pyunifiprotect (setup.cfg)
-types-pytz==2021.3.8
+types-pytz==2022.1.0
     # via pyunifiprotect (setup.cfg)
 types-termcolor==1.1.4
     # via pyunifiprotect (setup.cfg)
