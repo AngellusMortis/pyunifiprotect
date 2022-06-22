@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timedelta
+from http.cookies import Morsel
 from ipaddress import IPv4Address
 import json as pjson
 import logging
@@ -15,7 +16,6 @@ from uuid import UUID
 import aiofiles
 import aiohttp
 from aiohttp import CookieJar, client_exceptions
-import jwt
 from yarl import URL
 
 from pyunifiprotect.data import (
@@ -47,6 +47,7 @@ from pyunifiprotect.utils import (
     ip_from_host,
     set_debug,
     to_js_time,
+    token_cookie_is_valid,
     utc_now,
 )
 from pyunifiprotect.websocket import Websocket
@@ -124,6 +125,7 @@ class BaseApiClient:
     _is_authenticated: bool = False
     _last_update: float = NEVER_RAN
     _last_ws_status: bool = False
+    _last_token_cookie: Morsel[str] | None = None
     _session: Optional[aiohttp.ClientSession] = None
 
     headers: Optional[Dict[str, str]] = None
@@ -360,7 +362,12 @@ class BaseApiClient:
             self.headers["x-csrf-token"] = csrf_token
 
         self._is_authenticated = True
+        self._update_last_token_cookie()
         _LOGGER.debug("Authenticated successfully!")
+
+    def _update_last_token_cookie(self) -> None:
+        """Update the last token cookie from the cookie jar."""
+        self._last_token_cookie = self._session.cookie_jar.filter_cookies(URL(self.base_url)).get("TOKEN")
 
     def is_authenticated(self) -> bool:
         """Check to see if we are already authenticated."""
@@ -369,22 +376,14 @@ class BaseApiClient:
             return False
 
         if self._is_authenticated is True:
-            # Check if token is expired.
-            cookies = self._session.cookie_jar.filter_cookies(URL(self.base_url))
-            token_cookie = cookies.get("TOKEN")
-            if token_cookie is None:
-                return False
-            try:
-                jwt.decode(
-                    token_cookie.value,
-                    options={"verify_signature": False, "verify_exp": True},
-                )
-            except jwt.ExpiredSignatureError:
-                _LOGGER.debug("Authentication token has expired.")
-                return False
-            except Exception as broad_ex:  # pylint: disable=broad-except
-                _LOGGER.debug("Authentication token decode error: %s", broad_ex)
-                return False
+            # If the one we got last time is still valid, we're good to go
+            if not token_cookie_is_valid(self._last_token_cookie):
+                return True
+
+            # If the one we got last time is expired, we need to check again.
+            self._update_last_token_cookie()
+            if not token_cookie_is_valid(self._last_token_cookie):
+                return True
 
         return self._is_authenticated
 
