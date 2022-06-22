@@ -1718,7 +1718,7 @@ class Sensor(ProtectAdoptableDeviceModel):
 
 
 class Doorlock(ProtectAdoptableDeviceModel):
-    credentials: str
+    credentials: Optional[str]
     lock_status: LockStatusType
     enable_homekit: bool
     auto_close_time: timedelta
