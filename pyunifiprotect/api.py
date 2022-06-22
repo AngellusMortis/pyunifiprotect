@@ -16,7 +16,6 @@ from uuid import UUID
 import aiofiles
 import aiohttp
 from aiohttp import CookieJar, client_exceptions
-from yarl import URL
 
 from pyunifiprotect.data import (
     NVR,
