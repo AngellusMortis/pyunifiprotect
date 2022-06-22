@@ -226,6 +226,8 @@ class BaseApiClient:
                 kwargs["ssl"] = False
             req_context = session.request(method, url, headers=headers, **kwargs)
             response = await req_context.__aenter__()  # pylint: disable=unnecessary-dunder-call
+            if token_cookie := response.cookies.get("TOKEN"):
+                self._last_token_cookie = token_cookie
 
             try:
                 _LOGGER.debug("%s %s %s", response.status, response.content_type, response)
@@ -362,12 +364,8 @@ class BaseApiClient:
             self.headers["x-csrf-token"] = csrf_token
 
         self._is_authenticated = True
-        self._update_last_token_cookie()
+        self._last_token_cookie = response.cookies.get("TOKEN")
         _LOGGER.debug("Authenticated successfully!")
-
-    def _update_last_token_cookie(self) -> None:
-        """Update the last token cookie from the cookie jar."""
-        self._last_token_cookie = self._session.cookie_jar.filter_cookies(URL(self.base_url)).get("TOKEN")
 
     def is_authenticated(self) -> bool:
         """Check to see if we are already authenticated."""
@@ -377,12 +375,6 @@ class BaseApiClient:
         if self._is_authenticated is False:
             return False
 
-        # If the one we got last time is still valid, we're good to go
-        if token_cookie_is_valid(self._last_token_cookie):
-            return True
-
-        # If the one we got last time is expired, we need to check again.
-        self._update_last_token_cookie()
         return token_cookie_is_valid(self._last_token_cookie)
 
     async def async_connect_ws(self, force: bool) -> None:
