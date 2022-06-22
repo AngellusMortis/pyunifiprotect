@@ -4,7 +4,7 @@ from __future__ import annotations
 import base64
 from dataclasses import dataclass
 import enum
-import json
+import orjson
 import struct
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 from uuid import UUID
@@ -147,18 +147,18 @@ class WSJSONPacketFrame(BaseWSPacketFrame):
         if self.header is not None and self.header.deflated:
             data = zlib.decompress(data)
 
-        self.data = json.loads(data)
+        self.data = orjson.loads(data)
 
     def get_binary_from_data(self) -> bytes:
-        data = self.json.encode("utf-8")
+        data = self.json
         if self.is_deflated:
             data = zlib.compress(data)
 
         return data
 
     @property
-    def json(self) -> str:
-        return json.dumps(self.data)
+    def json(self) -> bytes:
+        return orjson.dumps(self.data)
 
 
 class WSPacket:

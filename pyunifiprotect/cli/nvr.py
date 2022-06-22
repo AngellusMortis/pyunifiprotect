@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
-import json
+import orjson
 
 import typer
 
@@ -101,4 +101,4 @@ def update(ctx: typer.Context, data: str) -> None:
     """Updates the NVR."""
 
     nvr: NVR = ctx.obj.device
-    base.run(ctx, nvr.api.update_nvr(json.loads(data)))
+    base.run(ctx, nvr.api.update_nvr(orjson.loads(data)))

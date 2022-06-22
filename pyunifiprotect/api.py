@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timedelta
 from ipaddress import IPv4Address
-import json as pjson
+import orjson
 import logging
 from pathlib import Path
 import time
@@ -293,7 +293,7 @@ class BaseApiClient:
         )
 
         if data is not None:
-            json_data: Union[List[Any], Dict[str, Any]] = pjson.loads(data)
+            json_data: Union[List[Any], Dict[str, Any]] = orjson.loads(data)
             return json_data
         return None
 

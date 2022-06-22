@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import json
+import orjson
 import logging
 from pathlib import Path
 import sys
@@ -234,4 +234,4 @@ def decode_ws_msg(ws_file: typer.FileBinaryRead = OPTION_WS_FILE, ws_data: Optio
     packet = WSPacket(ws_data_raw)
     response = {"action": packet.action_frame.data, "data": packet.data_frame.data}
 
-    typer.echo(json.dumps(response))
+    typer.echo(orjson.dumps(response).decode('utf-8'))

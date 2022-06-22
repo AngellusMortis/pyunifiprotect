@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from enum import Enum
-import json
+import orjson
 from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, TypeVar
 
 from pydantic import ValidationError
@@ -46,7 +46,7 @@ def run(ctx: typer.Context, func: Coroutine[Any, Any, T]) -> T:
 
 
 def json_output(obj: Any) -> None:
-    typer.echo(json.dumps(obj, indent=2))
+    typer.echo(orjson.dumps(obj, option=orjson.OPT_INDENT_2).decode("utf-8"))
 
 
 def print_unifi_obj(obj: ProtectBaseObject | None, output_format: OutputFormatEnum) -> None:
@@ -189,7 +189,7 @@ def update(ctx: typer.Context, data: str) -> None:
     obj: ProtectAdoptableDeviceModel = ctx.obj.device
 
     if obj.model is not None:
-        run(ctx, obj.api.update_device(obj.model, obj.id, json.loads(data)))
+        run(ctx, obj.api.update_device(obj.model, obj.id, orjson.loads(data)))
 
 
 def reboot(ctx: typer.Context, force: bool = OPTION_FORCE) -> None:
