@@ -234,4 +234,4 @@ def decode_ws_msg(ws_file: typer.FileBinaryRead = OPTION_WS_FILE, ws_data: Optio
     packet = WSPacket(ws_data_raw)
     response = {"action": packet.action_frame.data, "data": packet.data_frame.data}
 
-    typer.echo(orjson.dumps(response).decode('utf-8'))
+    typer.echo(orjson.dumps(response).decode("utf-8"))
