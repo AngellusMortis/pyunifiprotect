@@ -493,11 +493,17 @@ class Bootstrap(ProtectBaseObject):
         """Refresh a device in the bootstrap."""
 
         try:
-            device = await self.api.get_device(model_type, device_id)
+            if model_type == ModelType.NVR:
+                device = await self.api.get_nvr()
+            else:
+                device = await self.api.get_device(model_type, device_id)
         except (ValidationError, TimeoutError, ClientError, ServerDisconnectedError):
             _LOGGER.warning("Failed to refresh device: %s %s", model_type, device_id)
             return
 
-        devices = getattr(self, f"{model_type.value}s")
-        devices[device.id] = device
+        if model_type == ModelType.NVR:
+            self.nvr = device
+        else:
+            devices = getattr(self, f"{model_type.value}s")
+            devices[device.id] = device
         _LOGGER.debug("Successfully refresh device: %s %s", model_type, device_id)
