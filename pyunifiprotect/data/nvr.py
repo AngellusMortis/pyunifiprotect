@@ -692,7 +692,7 @@ class NVR(ProtectDeviceModel):
     enable_crash_reporting: bool
     disable_audio: bool
     analytics_data: AnalyticsOption
-    anonymous_device_id: UUID
+    anonymous_device_id: Optional[UUID]
     camera_utilization: int
     is_recycling: bool
     avg_motions: List[float]

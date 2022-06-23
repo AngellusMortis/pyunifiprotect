@@ -1,6 +1,7 @@
 """UniFi Protect Bootstrap."""
 from __future__ import annotations
 
+import asyncio
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
@@ -8,7 +9,8 @@ import logging
 from typing import Any, Dict, List, Optional, Set, Tuple, cast
 from uuid import UUID
 
-from pydantic.fields import PrivateAttr
+from aiohttp.client_exceptions import ServerDisconnectedError
+from pydantic import PrivateAttr, ValidationError
 
 from pyunifiprotect.data.base import (
     RECENT_EVENT_MAX,
@@ -36,6 +38,7 @@ from pyunifiprotect.data.websocket import (
     WSPacket,
     WSSubscriptionMessage,
 )
+from pyunifiprotect.exceptions import ClientError
 from pyunifiprotect.utils import utc_now
 
 _LOGGER = logging.getLogger(__name__)
@@ -380,9 +383,11 @@ class Bootstrap(ProtectBaseObject):
             self._create_stat(packet, [], True)
             return None
 
-        key = model_type + "s"
+        key = f"{model_type}s"
         devices = getattr(self, key)
         if action["id"] in devices:
+            if action["id"] not in devices:
+                raise ValueError(f"Unknown device update for {model_type}: { action['id']}")
             obj: ProtectModelWithId = devices[action["id"]]
             data = obj.unifi_dict_to_dict(data)
             old_obj = obj.copy()
@@ -452,15 +457,47 @@ class Bootstrap(ProtectBaseObject):
             self._create_stat(packet, [], True)
             return None
 
-        if action["action"] == "add":
-            return self._process_add_packet(packet, data)
+        try:
+            if action["action"] == "add":
+                return self._process_add_packet(packet, data)
 
-        if action["action"] == "update":
-            if action["modelKey"] == ModelType.NVR.value:
-                return self._process_nvr_update(packet, data, ignore_stats)
-            if action["modelKey"] in ModelType.bootstrap_models() or action["modelKey"] == ModelType.EVENT.value:
-                return self._process_device_update(packet, action, data, ignore_stats)
-            _LOGGER.debug("Unexpected bootstrap model type for update: %s", action["modelKey"])
+            if action["action"] == "update":
+                if action["modelKey"] == ModelType.NVR.value:
+                    return self._process_nvr_update(packet, data, ignore_stats)
+                if action["modelKey"] in ModelType.bootstrap_models() or action["modelKey"] == ModelType.EVENT.value:
+                    return self._process_device_update(packet, action, data, ignore_stats)
+                _LOGGER.debug("Unexpected bootstrap model type deviceadoptedfor update: %s", action["modelKey"])
+        except (ValidationError, ValueError) as err:
+            self._handle_ws_error(action, err)
 
         self._create_stat(packet, [], True)
         return None
+
+    def _handle_ws_error(self, action: Dict[str, Any], err: Exception) -> None:
+        msg = ""
+        if action["modelKey"] == "event":
+            msg = f"Validation error processing event: {action['id']}. Ignoring event."
+        else:
+            try:
+                model_type = ModelType(action["modelKey"])
+                device_id = action["id"]
+                asyncio.create_task(self.refresh_device(model_type, device_id))
+            except (ValueError, IndexError):
+                msg = f"{action['action']} packet caused invalid state. Unable to refresh device."
+            else:
+                msg = f"{action['action']} packet caused invalid state. Refreshing device: {model_type} {device_id}"
+
+            _LOGGER.warning("%s Error: %s", msg, err)
+
+    async def refresh_device(self, model_type: ModelType, device_id: str) -> None:
+        """Refresh a device in the bootstrap."""
+
+        try:
+            device = await self.api.get_device(model_type, device_id)
+        except (ValidationError, TimeoutError, ClientError, ServerDisconnectedError):
+            _LOGGER.warning("Failed to refresh device: %s %s", model_type, device_id)
+            return
+
+        devices = getattr(self, f"{model_type.value}s")
+        devices[device.id] = device
+        _LOGGER.debug("Successfully refresh device: %s %s", model_type, device_id)

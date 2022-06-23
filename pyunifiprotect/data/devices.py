@@ -685,7 +685,7 @@ class Camera(ProtectMotionDeviceModel):
     chime_duration: ChimeDuration
     last_ring: Optional[datetime]
     is_live_heatmap_enabled: bool
-    anonymous_device_id: UUID
+    anonymous_device_id: Optional[UUID]
     event_stats: CameraEventStats
     video_reconfiguration_in_progress: bool
     channels: List[CameraChannel]

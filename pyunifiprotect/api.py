@@ -38,6 +38,7 @@ from pyunifiprotect.data import (
     WSSubscriptionMessage,
     create_from_unifi_dict,
 )
+from pyunifiprotect.data.base import ProtectModelWithId
 from pyunifiprotect.data.devices import Chime
 from pyunifiprotect.data.types import IteratorCallback, ProgressCallback, RecordingMode
 from pyunifiprotect.exceptions import BadRequest, NotAuthorized, NvrError
@@ -821,8 +822,8 @@ class ProtectApiClient(BaseApiClient):
         return await self.api_request_obj(f"{model_type.value}s/{device_id}")
 
     async def get_device(
-        self, model_type: ModelType, device_id: str, expected_type: Optional[Type[ProtectModel]] = None
-    ) -> ProtectModel:
+        self, model_type: ModelType, device_id: str, expected_type: Optional[Type[ProtectModelWithId]] = None
+    ) -> ProtectModelWithId:
         """Gets a device give the device model_type and id, converted into Python object"""
         obj = create_from_unifi_dict(await self.get_device_raw(model_type, device_id), api=self)
 
@@ -831,7 +832,7 @@ class ProtectApiClient(BaseApiClient):
         if self.ignore_unadopted and isinstance(obj, ProtectAdoptableDeviceModel) and not obj.is_adopted:
             raise NvrError("Device is not adopted")
 
-        return obj
+        return cast(ProtectModelWithId, obj)
 
     async def get_nvr(self) -> NVR:
         """
