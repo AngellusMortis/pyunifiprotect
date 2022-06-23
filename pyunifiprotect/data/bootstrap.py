@@ -494,7 +494,7 @@ class Bootstrap(ProtectBaseObject):
 
         try:
             if model_type == ModelType.NVR:
-                device = await self.api.get_nvr()
+                device: ProtectModelWithId = await self.api.get_nvr()
             else:
                 device = await self.api.get_device(model_type, device_id)
         except (ValidationError, TimeoutError, ClientError, ServerDisconnectedError):
