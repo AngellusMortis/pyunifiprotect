@@ -501,7 +501,7 @@ class Bootstrap(ProtectBaseObject):
             _LOGGER.warning("Failed to refresh device: %s %s", model_type, device_id)
             return
 
-        if model_type == ModelType.NVR:
+        if isinstance(device, NVR):
             self.nvr = device
         else:
             devices = getattr(self, f"{model_type.value}s")
