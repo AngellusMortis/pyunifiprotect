@@ -61,7 +61,7 @@ RETRY_TIMEOUT = 10
 EA_WARNING = """
 You are running version %s of UniFi Protect, which is an Early Access version. Early Access versions of UniFi Protect are not supported for Home Asssitant.
 
-If you are using Home Asssitant and have an error, please report errors to https://github.com/briis/pyunifiprotect first. DO NOT REPORT EA ISSUES TO HOME ASSISTANT CORE.
+If have an error, please report errors to https://github.com/briis/pyunifiprotect first. DO NOT REPORT EA ISSUES TO HOME ASSISTANT CORE.
 
 It is recommended you downgrade to a stable version. https://www.home-assistant.io/integrations/unifiprotect#downgrading-unifi-protect.
 """
