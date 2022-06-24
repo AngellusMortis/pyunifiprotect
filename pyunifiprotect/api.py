@@ -65,6 +65,13 @@ If you are using Home Asssitant and have an error, please report errors to https
 It is recommended you downgrade to a stable version. https://www.home-assistant.io/integrations/unifiprotect#downgrading-unifi-protect.
 """
 
+try:
+    import homeasssitant  # pylint: disable=unused-import  # noqa  # type: ignore
+
+    IS_HA = True
+except ImportError:
+    IS_HA = False
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -559,7 +566,7 @@ class ProtectApiClient(BaseApiClient):
         if self._bootstrap is None or now - self._last_update > DEVICE_UPDATE_INTERVAL:
             bootstrap_updated = True
             self._bootstrap = await self.get_bootstrap()
-            if self._last_update == NEVER_RAN and self._bootstrap.nvr.version.is_prerelease:
+            if self._last_update == NEVER_RAN and IS_HA and self._bootstrap.nvr.version.is_prerelease:
                 _LOGGER.warning(EA_WARNING, self._bootstrap.nvr.version)
 
             self._last_update = now
