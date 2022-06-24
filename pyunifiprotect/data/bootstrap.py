@@ -486,8 +486,7 @@ class Bootstrap(ProtectBaseObject):
                 msg = f"{action['action']} packet caused invalid state. Unable to refresh device."
             else:
                 msg = f"{action['action']} packet caused invalid state. Refreshing device: {model_type} {device_id}"
-
-            _LOGGER.warning("%s Error: %s", msg, err)
+        _LOGGER.debug("%s Error: %s", msg, err)
 
     async def refresh_device(self, model_type: ModelType, device_id: str) -> None:
         """Refresh a device in the bootstrap."""
