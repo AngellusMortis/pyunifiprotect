@@ -66,7 +66,7 @@ It is recommended you downgrade to a stable version. https://www.home-assistant.
 """
 
 try:
-    import homeasssitant  # pylint: disable=unused-import  # noqa  # type: ignore
+    import homeasssitant  # type: ignore # pylint: disable=unused-import # noqa
 
     IS_HA = True
 except ImportError:
