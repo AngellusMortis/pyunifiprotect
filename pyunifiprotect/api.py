@@ -240,16 +240,16 @@ class BaseApiClient:
                     _LOGGER.debug("%s %s %s", response.status, response.content_type, response)
                     if auto_close:
                         response.release()
-                    return response
                 except Exception:
                     # make sure response is released
                     response.release()
                     # re-raise exception
                     raise
 
-                if require_auth and response.status in (401, 403):
+                if attempt == 0 and require_auth and response.status in (401, 403):
                     await self.authenticate()
                     continue
+                return response
             except aiohttp.ServerDisconnectedError as err:
                 # If the server disconnected, try again
                 # since HTTP/1.1 allows the server to disconnect
