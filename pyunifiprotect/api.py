@@ -233,18 +233,19 @@ class BaseApiClient:
             try:
                 req_context = session.request(method, url, headers=headers, **kwargs)
                 response = await req_context.__aenter__()  # pylint: disable=unnecessary-dunder-call
+
                 if token_cookie := response.cookies.get("TOKEN"):
                     self._last_token_cookie = token_cookie
 
-                try:
-                    _LOGGER.debug("%s %s %s", response.status, response.content_type, response)
-                    if auto_close:
+                if auto_close:
+                    try:
+                        _LOGGER.debug("%s %s %s", response.status, response.content_type, response)
                         response.release()
-                except Exception:
-                    # make sure response is released
-                    response.release()
-                    # re-raise exception
-                    raise
+                    except Exception:
+                        # make sure response is released
+                        response.release()
+                        # re-raise exception
+                        raise
 
                 if attempt == 0 and require_auth and response.status in (401, 403):
                     await self.authenticate()
