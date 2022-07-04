@@ -412,7 +412,7 @@ class BaseApiClient:
         if self._last_token_cookie and self._last_token_cookie_decode is None:
             self._last_token_cookie_decode = decode_token_cookie(self._last_token_cookie)
 
-        if "exp" not in self._last_token_cookie_decode:
+        if self._last_token_cookie_decode is None or "exp" not in self._last_token_cookie_decode:
             return False
 
         token_expires_at = self._last_token_cookie_decode["exp"]
