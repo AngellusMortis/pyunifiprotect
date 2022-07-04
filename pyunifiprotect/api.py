@@ -261,6 +261,9 @@ class BaseApiClient:
             except client_exceptions.ClientError as err:
                 raise NvrError(f"Error requesting data from {self._host}: {err}") from err
 
+        # should never happen
+        raise NvrError(f"Error requesting data from {self._host}")
+
     async def api_request_raw(
         self,
         url: str,
