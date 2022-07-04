@@ -138,7 +138,7 @@ class BaseApiClient:
     _last_update: float = NEVER_RAN
     _last_ws_status: bool = False
     _last_token_cookie: Morsel[str] | None = None
-    _last_token_cookie_decode: Optional[float] = None
+    _last_token_cookie_decode: Optional[Dict[str, Any]] = None
     _session: Optional[aiohttp.ClientSession] = None
 
     headers: Optional[Dict[str, str]] = None

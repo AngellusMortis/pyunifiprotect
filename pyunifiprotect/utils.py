@@ -385,7 +385,7 @@ async def profile_ws(
         print_ws_stat_summary(protect.bootstrap.ws_stats, output=print_output)
 
 
-def decode_token_cookie(token_cookie: Morsel[str] | None) -> dict[str, Any] | None:
+def decode_token_cookie(token_cookie: Morsel[str]) -> Dict[str, Any] | None:
     """Decode a token cookie if it is still valid."""
     try:
         return jwt.decode(
