@@ -415,7 +415,10 @@ class BaseApiClient:
         if "exp" not in self._last_token_cookie_decode:
             return False
 
-        if self._last_token_cookie_decode["exp"] < (time.time() + TOKEN_COOKIE_MAX_EXP_SECONDS):
+        token_expires_at = self._last_token_cookie_decode["exp"]
+        max_expire_time = time.time() + TOKEN_COOKIE_MAX_EXP_SECONDS
+
+        if token_expires_at < max_expire_time:
             return False
 
         return True
