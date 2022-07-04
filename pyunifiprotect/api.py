@@ -44,14 +44,16 @@ from pyunifiprotect.data.devices import Chime
 from pyunifiprotect.data.types import IteratorCallback, ProgressCallback, RecordingMode
 from pyunifiprotect.exceptions import BadRequest, NotAuthorized, NvrError
 from pyunifiprotect.utils import (
+    decode_token_cookie,
     get_response_reason,
     ip_from_host,
     set_debug,
     to_js_time,
-    token_cookie_is_valid,
     utc_now,
 )
 from pyunifiprotect.websocket import Websocket
+
+TOKEN_COOKIE_MAX_EXP_SECONDS = 60
 
 NEVER_RAN = -1000
 # how many seconds before the bootstrap is refreshed from Protect
@@ -136,6 +138,7 @@ class BaseApiClient:
     _last_update: float = NEVER_RAN
     _last_ws_status: bool = False
     _last_token_cookie: Morsel[str] | None = None
+    _last_token_cookie_decode: Optional[float] = None
     _session: Optional[aiohttp.ClientSession] = None
 
     headers: Optional[Dict[str, str]] = None
@@ -222,6 +225,10 @@ class BaseApiClient:
         self, method: str, url: str, require_auth: bool = False, auto_close: bool = True, **kwargs: Any
     ) -> aiohttp.ClientResponse:
         """Make a request to UniFi Protect"""
+
+        if require_auth:
+            await self.ensure_authenticated()
+
         url = urljoin(self.base_url, url)
         headers = kwargs.get("headers") or self.headers
         _LOGGER.debug("Request url: %s", url)
@@ -234,9 +241,7 @@ class BaseApiClient:
                 req_context = session.request(method, url, headers=headers, **kwargs)
                 response = await req_context.__aenter__()  # pylint: disable=unnecessary-dunder-call
 
-                if token_cookie := response.cookies.get("TOKEN"):
-                    self._last_token_cookie = token_cookie
-
+                self._update_last_token_cookie(response)
                 if auto_close:
                     try:
                         _LOGGER.debug("%s %s %s", response.status, response.content_type, response)
@@ -247,9 +252,6 @@ class BaseApiClient:
                         # re-raise exception
                         raise
 
-                if attempt == 0 and require_auth and response.status in (401, 403):
-                    await self.authenticate()
-                    continue
                 return response
             except aiohttp.ServerDisconnectedError as err:
                 # If the server disconnected, try again
@@ -275,7 +277,7 @@ class BaseApiClient:
         """Make a request to UniFi Protect API"""
 
         url = urljoin(self.api_path, url)
-        response = await self.request(method, url, require_auth=False, auto_close=False, **kwargs)
+        response = await self.request(method, url, require_auth=require_auth, auto_close=False, **kwargs)
 
         try:
             if response.status != 200:
@@ -386,8 +388,14 @@ class BaseApiClient:
                 self.headers["x-csrf-token"] = csrf_token
 
             self._is_authenticated = True
-            self._last_token_cookie = response.cookies.get("TOKEN")
+            self._update_last_token_cookie(response)
             _LOGGER.debug("Authenticated successfully!")
+
+    def _update_last_token_cookie(self, response: aiohttp.ClientResponse) -> None:
+        """Update the last token cookie."""
+        if (token_cookie := response.cookies.get("TOKEN")) and token_cookie != self._last_token_cookie:
+            self._last_token_cookie = token_cookie
+            self._last_token_cookie_decode = decode_token_cookie(token_cookie)
 
     def is_authenticated(self) -> bool:
         """Check to see if we are already authenticated."""
@@ -397,7 +405,13 @@ class BaseApiClient:
         if self._is_authenticated is False:
             return False
 
-        return token_cookie_is_valid(self._last_token_cookie)
+        if not self._last_token_cookie_decode:
+            return False
+
+        if self._last_token_cookie_decode.get("exp") > time.time() + TOKEN_COOKIE_MAX_EXP_SECONDS:
+            return False
+
+        return True
 
     async def async_connect_ws(self, force: bool) -> None:
         """Connect to Websocket."""

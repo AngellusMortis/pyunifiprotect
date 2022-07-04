@@ -385,19 +385,16 @@ async def profile_ws(
         print_ws_stat_summary(protect.bootstrap.ws_stats, output=print_output)
 
 
-def token_cookie_is_valid(token_cookie: Morsel[str] | None) -> bool:
-    """Check if a token cookie is still valid."""
-    if token_cookie is None:
-        return False
+def decode_token_cookie(token_cookie: Morsel[str] | None) -> dict[str, Any]:
+    """Decode a token cookie if it is still valid."""
     try:
-        jwt.decode(
+        return jwt.decode(
             token_cookie.value,
             options={"verify_signature": False, "verify_exp": True},
         )
     except jwt.ExpiredSignatureError:
         _LOGGER.debug("Authentication token has expired.")
-        return False
+        return None
     except Exception as broad_ex:  # pylint: disable=broad-except
         _LOGGER.debug("Authentication token decode error: %s", broad_ex)
-        return False
-    return True
+        return None
