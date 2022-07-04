@@ -395,7 +395,7 @@ class BaseApiClient:
         """Update the last token cookie."""
         if (token_cookie := response.cookies.get("TOKEN")) and token_cookie != self._last_token_cookie:
             self._last_token_cookie = token_cookie
-            self._last_token_cookie_decode = decode_token_cookie(token_cookie)
+            self._last_token_cookie_decode = None
 
     def is_authenticated(self) -> bool:
         """Check to see if we are already authenticated."""
@@ -405,8 +405,12 @@ class BaseApiClient:
         if self._is_authenticated is False:
             return False
 
-        if not self._last_token_cookie_decode:
+        if self._last_token_cookie is None:
             return False
+
+        # Lazy decode the token cookie
+        if self._last_token_cookie and self._last_token_cookie_decode is None:
+            self._last_token_cookie_decode = decode_token_cookie(self._last_token_cookie)
 
         if self._last_token_cookie_decode.get("exp") < (time.time() + TOKEN_COOKIE_MAX_EXP_SECONDS):
             return False
