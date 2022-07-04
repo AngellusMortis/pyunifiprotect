@@ -412,7 +412,10 @@ class BaseApiClient:
         if self._last_token_cookie and self._last_token_cookie_decode is None:
             self._last_token_cookie_decode = decode_token_cookie(self._last_token_cookie)
 
-        if self._last_token_cookie_decode.get("exp") < (time.time() + TOKEN_COOKIE_MAX_EXP_SECONDS):
+        if "exp" not in self._last_token_cookie_decode:
+            return False
+
+        if self._last_token_cookie_decode["exp"] < (time.time() + TOKEN_COOKIE_MAX_EXP_SECONDS):
             return False
 
         return True
