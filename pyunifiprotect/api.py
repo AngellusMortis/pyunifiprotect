@@ -562,7 +562,7 @@ class ProtectApiClient(BaseApiClient):
             bootstrap_updated = True
             self._bootstrap = await self.get_bootstrap()
             if self._last_update == NEVER_RAN and IS_HA and self._bootstrap.nvr.version.is_prerelease:
-                _LOGGER.warning(EA_WARNING, self._bootstrap.nvr.version)
+                _LOGGER.info(EA_WARNING, self._bootstrap.nvr.version)
 
             self._last_update = now
             self._last_update_dt = now_dt
