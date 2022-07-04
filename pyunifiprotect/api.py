@@ -408,7 +408,7 @@ class BaseApiClient:
         if not self._last_token_cookie_decode:
             return False
 
-        if self._last_token_cookie_decode.get("exp") > time.time() + TOKEN_COOKIE_MAX_EXP_SECONDS:
+        if self._last_token_cookie_decode.get("exp") < (time.time() + TOKEN_COOKIE_MAX_EXP_SECONDS):
             return False
 
         return True
