@@ -492,7 +492,12 @@ class ProtectBaseObject(BaseModel):
         for key in data:
             setattr(self, key, convert_unifi_data(data[key], self.__fields__[key]))
 
-        self._initial_data = self.dict(exclude=self._get_excluded_changed_fields())
+        # Calling dict with no params has a fast path which is MUCH faster
+        # so we pull out the excluded keys after
+        as_dict = self.dict()
+        for key in self._get_excluded_changed_fields().intersection(as_dict):
+            del as_dict[key]
+        self._initial_data = as_dict
         return self
 
     def get_changed(self) -> Dict[str, Any]:
