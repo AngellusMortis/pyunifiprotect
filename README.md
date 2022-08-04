@@ -29,7 +29,7 @@ commands support JSON output so it works great with `jq` for complex scripting.
 Following traditional [twelve factor app design](https://12factor.net/), the perfered way to provided authentication
 credentials to provided environment variables, but CLI args are also supported.
 
-Please note that MFA codes are not supported by this library.
+Ubiquiti SSO accounts are not supported and actively discouraged from being used. There is no option to use MFA. You are expected to use local access user.
 
 #### Environment Variables
 
