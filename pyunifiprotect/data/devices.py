@@ -652,6 +652,19 @@ class FeatureFlags(ProtectBaseObject):
     # hotplug
 
     @classmethod
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "smartDetectTypes" in data:
+            types = []
+            for smart_type in data.pop("smartDetectTypes"):
+                try:
+                    types.append(SmartDetectObjectType(smart_type))
+                except ValueError:
+                    _LOGGER.warning("Unknown smart detect type: %s", smart_type)
+            data["smartDetectTypes"] = types
+
+        return super().unifi_dict_to_dict(data)
+
+    @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "hasAutoICROnly": "hasAutoIcrOnly"}
 

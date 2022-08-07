@@ -2,7 +2,7 @@
 # pylint: disable=protected-access
 
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Dict, Optional
 from unittest.mock import Mock, patch
 
 from pydantic.error_wrappers import ValidationError
@@ -921,3 +921,15 @@ async def test_camera_set_privacy(
             assert camera_obj.is_privacy_on
         else:
             assert not camera_obj.is_privacy_on
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
+async def test_camera_unknown_smart(camera: Optional[Dict[str, str]]):
+    if camera is None:
+        pytest.skip("No camera obj found")
+
+    camera["featureFlags"]["smartDetectTypes"] = ["alrmSmoke"]
+
+    camera_obj = Camera.from_unifi_dict(None, **camera)
+    assert camera_obj.feature_flags.smart_detect_types == []
