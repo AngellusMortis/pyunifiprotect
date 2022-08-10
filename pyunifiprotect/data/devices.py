@@ -1026,8 +1026,21 @@ class Camera(ProtectMotionDeviceModel):
         iterator_callback: Optional[IteratorCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         chunk_size: int = 65536,
+        fps: Optional[int] = None,
     ) -> Optional[bytes]:
-        """Gets video clip for camera at a given time"""
+        """
+        Exports MP4 video from a given camera at a specific time.
+
+        Start/End of video export are approximate. It may be +/- a few seconds.
+
+        It is recommended to provide a output file or progress callback for larger
+        video clips, otherwise the full video must be downloaded to memory before
+        being written.
+
+        Providing the `fps` parameter creates a "timelapse" export wtih the given FPS
+        value. Protect app gives the opitions for 60x (fps=40), 120x (fps=20), 300x
+        (fps=8), and 600x (fps=4).
+        """
 
         if not self.api.bootstrap.auth_user.can(ModelType.CAMERA, PermissionNode.READ_MEDIA, self):
             raise NotAuthorized(f"Do not have permission to read media for camera: {self.id}")
@@ -1041,6 +1054,7 @@ class Camera(ProtectMotionDeviceModel):
             iterator_callback=iterator_callback,
             progress_callback=progress_callback,
             chunk_size=chunk_size,
+            fps=fps,
         )
 
     async def set_motion_detection(self, enabled: bool) -> None:

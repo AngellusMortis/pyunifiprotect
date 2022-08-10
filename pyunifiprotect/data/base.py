@@ -745,6 +745,8 @@ class WifiConnectionState(WirelessConnectionState):
     channel: Optional[int]
     frequency: Optional[int]
     ssid: Optional[str]
+    bssid: Optional[str] = None
+    tx_rate: Optional[int] = None
 
 
 class ProtectAdoptableDeviceModel(ProtectDeviceModel):

@@ -121,6 +121,7 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     SMART_DETECT_LINE = "smartDetectLine"
     NO_SCHEDULE = "nonScheduledRecording"
     RECORDING_MODE_CHANGED = "recordingModeChanged"
+    HOTPLUG = "hotplug"
     #
     INSTALLED_DISK = "installed"
     OFFLINE = "offline"

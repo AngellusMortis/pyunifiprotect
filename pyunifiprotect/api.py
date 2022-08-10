@@ -1058,14 +1058,20 @@ class ProtectApiClient(BaseApiClient):
         iterator_callback: Optional[IteratorCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         chunk_size: int = 65536,
+        fps: Optional[int] = None,
     ) -> Optional[bytes]:
         """
         Exports MP4 video from a given camera at a specific time.
 
         Start/End of video export are approximate. It may be +/- a few seconds.
 
-        It is recommended to provide a output file for larger video clips, otherwise the
-        full video must be downloaded to memory before being written.
+        It is recommended to provide a output file or progress callback for larger
+        video clips, otherwise the full video must be downloaded to memory before
+        being written.
+
+        Providing the `fps` parameter creates a "timelapse" export wtih the given FPS
+        value. Protect app gives the opitions for 60x (fps=40), 120x (fps=20), 300x
+        (fps=8), and 600x (fps=4).
         """
 
         if validate_channel_id and self._bootstrap is not None:
@@ -1080,6 +1086,10 @@ class ProtectApiClient(BaseApiClient):
             "start": to_js_time(start),
             "end": to_js_time(end),
         }
+
+        if fps is not None:
+            params["fps"] = fps
+            params["type"] = "timelapse"
 
         if channel_index == 3:
             params.update({"lens": 2})

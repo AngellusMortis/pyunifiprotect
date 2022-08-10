@@ -176,6 +176,9 @@ def save_video(
     start: datetime = typer.Argument(...),
     end: datetime = typer.Argument(...),
     channel: int = typer.Option(0, "-c", "--channel", min=0, max=3, help="0 = High, 1 = Medium, 2 = Low, 3 = Package"),
+    fps: Optional[int] = typer.Option(
+        None, "--fps", min=1, max=40, help="Export as timelapse. 40 = 60x, 20 = 120x, 8 = 120x, 4 = 600x"
+    ),
 ) -> None:
     """Exports video of camera.
 
@@ -207,7 +210,7 @@ def save_video(
 
         base.run(
             ctx,
-            obj.get_video(start, end, channel, output_file=output_path, progress_callback=callback),
+            obj.get_video(start, end, channel, output_file=output_path, progress_callback=callback, fps=fps),
         )
 
 

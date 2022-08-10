@@ -505,6 +505,8 @@ NEW_FIELDS = {
     "isPrimary",
     "lastDriveSlowEvent",
     "isUCoreSetup",
+    # 2.2.1-beta2
+    "isInsightsEnabled",
 }
 
 

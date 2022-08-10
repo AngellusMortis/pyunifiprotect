@@ -711,6 +711,7 @@ class NVR(ProtectDeviceModel):
     market_name: Optional[str] = None
     stream_sharing_available: Optional[bool] = None
     is_db_available: Optional[bool] = None
+    is_insights_enabled: Optional[bool] = None
     is_recording_disabled: Optional[bool] = None
     is_recording_motion_only: Optional[bool] = None
     ui_version: Optional[str] = None
