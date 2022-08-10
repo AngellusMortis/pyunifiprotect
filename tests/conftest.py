@@ -618,6 +618,10 @@ def compare_objs(obj_type, expected, actual):
             "experienceScore"
         )
 
+    if "wifiConnectionState" in expected:
+        expected["wifiConnectionState"]["bssid"] = expected["wifiConnectionState"].get("bssid")
+        expected["wifiConnectionState"]["txRate"] = expected["wifiConnectionState"].get("txRate")
+
     # sometimes uptime comes back as a str...
     if "uptime" in expected and expected["uptime"] is not None:
         expected["uptime"] = int(expected["uptime"])
