@@ -426,16 +426,16 @@ async def _download_events(
         )
         result = await db.execute(query)
         smart_types_set = {s.value for s in smart_types}
+        loop = asyncio.get_running_loop()
         for event in result.unique().scalars():
             event = cast(Event, event)
             if event.event_type == d.EventType.SMART_DETECT:
                 if not event.smart_types.intersection(smart_types_set):
                     continue
 
-            while sem.locked():
-                await asyncio.sleep(0.1)
-
-            loop = asyncio.get_running_loop()
+            # wait for a free download slot
+            await sem.acquire()
+            await sem.release()
             loop.create_task(_download_event(ctx, event, force, pb, sem))
 
         while pb.pos < count:
