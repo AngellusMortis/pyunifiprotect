@@ -168,7 +168,7 @@ max-line-length = 120
 [tool.mypy]
 python_version = "3.10"
 warn_unused_configs = true
-plugins = "pydantic.mypy"
+plugins = "pydantic.mypy,sqlalchemy.ext.mypy.plugin"
 disable_error_code = "no-redef"
 exclude = "dist"
 disallow_any_generics = true

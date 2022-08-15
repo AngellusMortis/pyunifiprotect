@@ -11,6 +11,7 @@ import orjson
 import typer
 
 from pyunifiprotect.api import ProtectApiClient
+from pyunifiprotect.cli.backup import app as backup_app
 from pyunifiprotect.cli.base import CliContext, OutputFormatEnum
 from pyunifiprotect.cli.cameras import app as camera_app
 from pyunifiprotect.cli.chimes import app as chime_app
@@ -94,6 +95,7 @@ app.add_typer(doorlock_app, name="doorlocks")
 app.add_typer(light_app, name="lights")
 app.add_typer(sensor_app, name="sensors")
 app.add_typer(viewer_app, name="viewers")
+app.add_typer(backup_app, name="backup")
 
 
 @app.callback()

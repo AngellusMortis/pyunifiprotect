@@ -5,6 +5,7 @@ ufp-data
 *.mp3
 *.mp4
 *.js
+backup
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
