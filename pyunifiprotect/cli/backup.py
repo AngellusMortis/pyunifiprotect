@@ -23,7 +23,6 @@ from sqlalchemy import (
     or_,
     select,
 )
-from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, relationship
 import typer
