@@ -12,7 +12,18 @@ from typing import TYPE_CHECKING, Optional, cast
 
 import aiofiles
 import aiofiles.os as aos
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func, or_, select
+from sqlalchemy import (
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    event as saevent,
+    func,
+    or_,
+    select,
+)
+from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, relationship
 import typer
@@ -29,6 +40,12 @@ app = typer.Typer()
 Base = declarative_base()
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _on_db_connect(dbapi_con, connection_record) -> None:  # type: ignore
+    cursor = dbapi_con.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA synchronous=NORMAL")
 
 
 @dataclass
@@ -52,6 +69,8 @@ class BackupContext(base.CliContext):
         if self._db_engine is None:
             self._db_engine = create_async_engine(f"sqlite+aiosqlite:///{self.db_file}")
             self._db_session = None
+            saevent.listens_for(self._db_engine.sync_engine, "connect")(_on_db_connect)
+
         return self._db_engine
 
     def create_db_session(self) -> AsyncSession:
