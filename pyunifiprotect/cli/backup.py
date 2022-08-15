@@ -456,7 +456,7 @@ async def _events(
     try:
         await ctx.create_db()
 
-        if prune:
+        if prune and not force:
             _LOGGER.warning("Pruned %s old event(s)", await _prune_events(ctx))
 
         original_start = ctx.start
