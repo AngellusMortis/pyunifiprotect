@@ -435,7 +435,7 @@ async def _download_events(
 
             # wait for a free download slot
             await sem.acquire()
-            await sem.release()
+            sem.release()
             loop.create_task(_download_event(ctx, event, force, pb, sem))
 
         while pb.pos < count:
