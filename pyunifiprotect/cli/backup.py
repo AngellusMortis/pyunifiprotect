@@ -184,7 +184,7 @@ def _setup_logger(verbose: bool) -> None:
     root_logger.addHandler(console_handler)
 
 
-@app.callback(invoke_without_command=True)
+@app.callback()
 def main(
     ctx: typer.Context,
     start: Optional[datetime] = OPTION_START,
