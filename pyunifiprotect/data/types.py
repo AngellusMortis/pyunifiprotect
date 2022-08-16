@@ -403,6 +403,14 @@ class PermissionNode(str, enum.Enum):
     DELETE_MEDIA = "deletemedia"
 
 
+@enum.unique
+class LensType(str, enum.Enum):
+    NONE = "none"
+    FULL_360 = "360"
+    WIDE = "wide"
+    TELESCOPIC = "tele"
+
+
 class DoorbellText(ConstrainedStr):
     max_length = 30
 

@@ -159,7 +159,8 @@ class EventMetadata(ProtectBaseObject):
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         for key in cls._collapse_keys.intersection(data.keys()):
-            data[key] = data[key]["text"]
+            if isinstance(data[key], dict):
+                data[key] = data[key]["text"]
 
         return super().unifi_dict_to_dict(data)
 
@@ -172,7 +173,9 @@ class EventMetadata(ProtectBaseObject):
                 del data[key]
 
         for key in self._collapse_keys.intersection(data.keys()):
-            data[key] = {"text": data[key]}
+            # AI Theta/Hotplug exception
+            if key != "type" or data[key] not in ("audio", "video"):
+                data[key] = {"text": data[key]}
 
         return data
 

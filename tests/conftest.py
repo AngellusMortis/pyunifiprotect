@@ -527,10 +527,6 @@ def compare_objs(obj_type, expected, actual):
         del expected["smartDetectLines"]
         if "streamSharing" in expected:
             del expected["streamSharing"]
-        if "hotplug" in expected["featureFlags"]:
-            del expected["featureFlags"]["hotplug"]
-        if "lensType" in expected["featureFlags"]:
-            del expected["featureFlags"]["lensType"]
         del expected["featureFlags"]["focus"]
         del expected["featureFlags"]["pan"]
         del expected["featureFlags"]["tilt"]

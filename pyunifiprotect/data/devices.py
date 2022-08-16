@@ -32,6 +32,7 @@ from pyunifiprotect.data.types import (
     IRLEDMode,
     IteratorCallback,
     LEDLevel,
+    LensType,
     LightModeEnableType,
     LightModeType,
     LockStatusType,
@@ -604,6 +605,11 @@ class PrivacyMaskCapability(ProtectBaseObject):
     rectangle_only: bool
 
 
+class Hotplug(ProtectBaseObject):
+    audio: Optional[bool] = None
+    video: Optional[bool] = None
+
+
 class FeatureFlags(ProtectBaseObject):
     can_adjust_ir_led_level: bool
     can_magic_zoom: bool
@@ -642,14 +648,14 @@ class FeatureFlags(ProtectBaseObject):
     audio_codecs: List[AudioCodecs] = []
     mount_positions: List[MountPosition] = []
     has_infrared: Optional[bool] = None
+    lens_type: Optional[LensType] = None
+    hotplug: Optional[Hotplug] = None
 
     # TODO:
     # focus
     # pan
     # tilt
     # zoom
-    # lensType
-    # hotplug
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -957,6 +963,10 @@ class Camera(ProtectMotionDeviceModel):
     @property
     def is_high_fps_enabled(self) -> bool:
         return self.video_mode == VideoMode.HIGH_FPS
+
+    @property
+    def is_video_ready(self) -> bool:
+        return self.feature_flags.lens_type is None or self.feature_flags.lens_type != LensType.NONE
 
     def set_ring_timeout(self) -> None:
         self._last_ring_timeout = utc_now() + EVENT_PING_INTERVAL
