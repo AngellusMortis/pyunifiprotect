@@ -968,6 +968,10 @@ class Camera(ProtectMotionDeviceModel):
     def is_video_ready(self) -> bool:
         return self.feature_flags.lens_type is None or self.feature_flags.lens_type != LensType.NONE
 
+    @property
+    def has_removable_lens(self) -> bool:
+        return self.feature_flags.lens_type is not None
+
     def set_ring_timeout(self) -> None:
         self._last_ring_timeout = utc_now() + EVENT_PING_INTERVAL
         self._event_callback_ping()
