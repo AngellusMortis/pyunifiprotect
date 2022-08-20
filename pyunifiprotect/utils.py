@@ -37,7 +37,7 @@ import jwt
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_SET, ModelField
 from pydantic.utils import to_camel
 
-from pyunifiprotect.data.types import Version
+from pyunifiprotect.data.types import SmartDetectObjectType, Version
 from pyunifiprotect.exceptions import NvrError
 
 if TYPE_CHECKING:
@@ -258,6 +258,18 @@ def serialize_list(items: Iterable[Any]) -> List[Any]:
         new_items.append(serialize_unifi_obj(item))
 
     return new_items
+
+
+def convert_smart_types(items: Iterable[str]) -> List[SmartDetectObjectType]:
+    """Converts list of str into SmartDetectTypes. Any unknown values will be ignored and logged."""
+
+    types = []
+    for smart_type in items:
+        try:
+            types.append(SmartDetectObjectType(smart_type))
+        except ValueError:
+            _LOGGER.warning("Unknown smart detect type: %s", smart_type)
+    return types
 
 
 def ip_from_host(host: str) -> IPv4Address:

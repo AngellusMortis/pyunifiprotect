@@ -4,7 +4,7 @@
 import base64
 from copy import deepcopy
 from ipaddress import IPv4Address
-from typing import Optional, Set
+from typing import Any, Dict, Optional, Set
 from unittest.mock import Mock, patch
 
 import pytest
@@ -636,3 +636,28 @@ async def test_revert(user_obj: User, camera_obj: Camera):
         await camera_obj.save_device()
 
     assert camera_before == camera_obj.dict()
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio
+async def test_unknown_smart(
+    camera: Optional[Dict[str, Any]], bootstrap: Dict[str, Any], protect_client: ProtectApiClient
+):
+    if camera is None:
+        pytest.skip("No camera obj found")
+
+    camera["featureFlags"]["smartDetectTypes"] = ["alrmSmoke"]
+    camera["smartDetectZones"][0]["objectTypes"] = ["alrmSmoke"]
+    bootstrap["cameras"] = [camera]
+
+    obj: Bootstrap = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
+    camera_obj = list(obj.cameras.values())[0]
+    assert camera_obj.feature_flags.smart_detect_types == []
+    assert camera_obj.smart_detect_zones[0].object_types == []
+
+    set_no_debug()
+    obj: Bootstrap = Bootstrap.from_unifi_dict(**deepcopy(bootstrap))
+    camera_obj = list(obj.cameras.values())[0]
+    assert camera_obj.feature_flags.smart_detect_types == []
+    assert camera_obj.smart_detect_zones[0].object_types == []
+    set_debug()

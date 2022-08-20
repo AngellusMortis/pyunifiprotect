@@ -57,6 +57,7 @@ from pyunifiprotect.data.user import User
 from pyunifiprotect.exceptions import BadRequest, NotAuthorized, StreamError
 from pyunifiprotect.stream import TalkbackStream
 from pyunifiprotect.utils import (
+    convert_smart_types,
     from_js_time,
     process_datetime,
     serialize_point,
@@ -599,6 +600,13 @@ class MotionZone(CameraZone):
 class SmartMotionZone(MotionZone):
     object_types: List[SmartDetectObjectType]
 
+    @classmethod
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "objectTypes" in data:
+            data["objectTypes"] = convert_smart_types(data.pop("objectTypes"))
+
+        return super().unifi_dict_to_dict(data)
+
 
 class PrivacyMaskCapability(ProtectBaseObject):
     max_masks: Optional[int]
@@ -660,13 +668,7 @@ class FeatureFlags(ProtectBaseObject):
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "smartDetectTypes" in data:
-            types = []
-            for smart_type in data.pop("smartDetectTypes"):
-                try:
-                    types.append(SmartDetectObjectType(smart_type))
-                except ValueError:
-                    _LOGGER.warning("Unknown smart detect type: %s", smart_type)
-            data["smartDetectTypes"] = types
+            data["smartDetectTypes"] = convert_smart_types(data.pop("smartDetectTypes"))
 
         return super().unifi_dict_to_dict(data)
 
