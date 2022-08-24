@@ -132,7 +132,7 @@ py-cpuinfo==8.0.0
     # via pytest-benchmark
 pycodestyle==2.8.0
     # via flake8
-pydantic==1.9.0
+pydantic==1.10.0a2
     # via pyunifiprotect (setup.cfg)
 pydocstyle==6.1.1
     # via
