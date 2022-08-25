@@ -470,7 +470,10 @@ class ProtectBaseObject(BaseModel):
         for key in self._get_protect_objs_set().intersection(data_set):
             unifi_obj: Optional[Any] = getattr(self, key)
             if unifi_obj is not None and isinstance(unifi_obj, ProtectBaseObject):
-                setattr(self, key, unifi_obj.update_from_dict(data.pop(key)))
+                item = data.pop(key)
+                if item is not None:
+                    item = unifi_obj.update_from_dict(item)
+                setattr(self, key, item)
 
         data = self._inject_api(data, self._api)
         unifi_lists = self._get_protect_lists()
