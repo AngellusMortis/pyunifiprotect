@@ -297,7 +297,7 @@ class Bootstrap(ProtectBaseObject):
                 )
             )
 
-    def _get_frame_data(self, packet: WSPacket) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def _get_frame_data(self, packet: WSPacket) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
         if self.capture_ws_stats:
             return deepcopy(packet.action_frame.data), deepcopy(packet.data_frame.data)
         return packet.action_frame.data, packet.data_frame.data
@@ -330,7 +330,9 @@ class Bootstrap(ProtectBaseObject):
             action=WSAction.ADD, new_update_id=self.last_update_id, changed_data=updated, new_obj=obj
         )
 
-    def _process_remove_packet(self, packet: WSPacket, data: Dict[str, Any]) -> Optional[WSSubscriptionMessage]:
+    def _process_remove_packet(
+        self, packet: WSPacket, data: Optional[Dict[str, Any]]
+    ) -> Optional[WSSubscriptionMessage]:
 
         model = packet.action_frame.data.get("modelKey")
         device_id = packet.action_frame.data.get("id")
@@ -453,7 +455,7 @@ class Bootstrap(ProtectBaseObject):
         if action["action"] == "remove":
             return self._process_remove_packet(packet, data)
 
-        if len(data) == 0:
+        if data is None or len(data) == 0:
             self._create_stat(packet, [], True)
             return None
 
