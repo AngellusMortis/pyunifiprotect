@@ -203,8 +203,8 @@ class SmartDetectObjectType(str, ValuesEnumMixin, enum.Enum):
 
 @enum.unique
 class SmartDetectAudioType(str, ValuesEnumMixin, enum.Enum):
-    SMOKE = "alarmSmokeCmonx"
-    CMONX = "alarmSmokeCmonx"
+    SMOKE = "alrmSmoke"
+    CMONX = "alrmCmonx"
 
 
 @enum.unique
