@@ -557,6 +557,8 @@ def compare_objs(obj_type, expected, actual):
             del actual["featureFlags"]["hotplug"]
         if "lensType" in actual["featureFlags"] and "lensType" not in expected["featureFlags"]:
             del actual["featureFlags"]["lensType"]
+        if "audioTypes" in actual["smartDetectSettings"] and "audioTypes" not in expected["smartDetectSettings"]:
+            del actual["smartDetectSettings"]["audioTypes"]
     elif obj_type == ModelType.USER.value:
         if "settings" in expected:
             expected.pop("settings", None)

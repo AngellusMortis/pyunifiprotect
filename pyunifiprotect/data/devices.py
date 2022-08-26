@@ -392,7 +392,7 @@ class RecordingSettings(ProtectBaseObject):
 
 class SmartDetectSettings(ProtectBaseObject):
     object_types: List[SmartDetectObjectType]
-    audio_types: List[SmartDetectAudioType]
+    audio_types: Optional[List[SmartDetectAudioType]] = None
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -992,10 +992,6 @@ class Camera(ProtectMotionDeviceModel):
     @property
     def has_removable_speaker(self) -> bool:
         return self.feature_flags.hotplug is not None
-
-    @property
-    def has_speaker(self) -> bool:
-        return self.feature_flags.has_speaker or self.has_removable_speaker
 
     @property
     def has_mic(self) -> bool:
