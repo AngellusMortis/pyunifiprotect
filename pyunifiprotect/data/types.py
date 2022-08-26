@@ -202,6 +202,12 @@ class SmartDetectObjectType(str, ValuesEnumMixin, enum.Enum):
 
 
 @enum.unique
+class SmartDetectAudioType(str, ValuesEnumMixin, enum.Enum):
+    SMOKE = "alarmSmokeCmonx"
+    CMONX = "alarmSmokeCmonx"
+
+
+@enum.unique
 class DoorbellMessageType(str, ValuesEnumMixin, enum.Enum):
     LEAVE_PACKAGE_AT_DOOR = "LEAVE_PACKAGE_AT_DOOR"
     DO_NOT_DISTURB = "DO_NOT_DISTURB"

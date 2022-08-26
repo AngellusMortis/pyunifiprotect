@@ -48,6 +48,7 @@ from pyunifiprotect.data.types import (
     RecordingMode,
     SensorStatusType,
     SleepStateType,
+    SmartDetectAudioType,
     SmartDetectObjectType,
     TwoByteInt,
     VideoMode,
@@ -57,6 +58,7 @@ from pyunifiprotect.data.user import User
 from pyunifiprotect.exceptions import BadRequest, NotAuthorized, StreamError
 from pyunifiprotect.stream import TalkbackStream
 from pyunifiprotect.utils import (
+    convert_smart_audio_types,
     convert_smart_types,
     convert_video_modes,
     from_js_time,
@@ -390,11 +392,14 @@ class RecordingSettings(ProtectBaseObject):
 
 class SmartDetectSettings(ProtectBaseObject):
     object_types: List[SmartDetectObjectType]
+    audio_types: List[SmartDetectAudioType]
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "objectTypes" in data:
             data["objectTypes"] = convert_smart_types(data.pop("objectTypes"))
+        if "audioTypes" in data:
+            data["audioTypes"] = convert_smart_audio_types(data.pop("audioTypes"))
 
         return super().unifi_dict_to_dict(data)
 
@@ -983,6 +988,18 @@ class Camera(ProtectMotionDeviceModel):
     @property
     def has_removable_lens(self) -> bool:
         return self.feature_flags.lens_type is not None
+
+    @property
+    def has_removable_speaker(self) -> bool:
+        return self.feature_flags.hotplug is not None
+
+    @property
+    def has_speaker(self) -> bool:
+        return self.feature_flags.has_speaker or self.has_removable_speaker
+
+    @property
+    def has_mic(self) -> bool:
+        return self.feature_flags.has_mic or self.has_removable_speaker
 
     def set_ring_timeout(self) -> None:
         self._last_ring_timeout = utc_now() + EVENT_PING_INTERVAL

@@ -138,9 +138,9 @@ class SampleDataGenerator:
             "schedule": len(bootstrap["schedules"]),
         }
 
-        await self.record_ws_events()
         motion_event, smart_detection = await self.generate_event_data()
         await self.generate_device_data(motion_event, smart_detection)
+        await self.record_ws_events()
 
         if close_session:
             await self.client.close_session()

@@ -803,6 +803,13 @@ class NVR(ProtectDeviceModel):
         ]
         self._initial_data = self.dict()
 
+    async def set_insights(self, enabled: bool) -> None:
+        """Sets analytics collection for NVR"""
+
+        async with self._update_lock:
+            self.is_insights_enabled = enabled
+            await self.save_device()
+
     async def set_analytics(self, value: AnalyticsOption) -> None:
         """Sets analytics collection for NVR"""
 

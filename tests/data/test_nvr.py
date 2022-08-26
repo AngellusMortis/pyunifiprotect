@@ -16,6 +16,23 @@ from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import to_ms
 
 
+@pytest.mark.parametrize("status", [True, False])
+@pytest.mark.asyncio
+async def test_nvr_set_insights(nvr_obj: NVR, status: bool):
+    nvr_obj.api.api_request.reset_mock()
+
+    nvr_obj.is_insights_enabled = not status
+    nvr_obj._initial_data = nvr_obj.dict()
+
+    await nvr_obj.set_insights(status)
+
+    nvr_obj.api.api_request.assert_called_with(
+        "nvr",
+        method="patch",
+        json={"isInsightsEnabled": status},
+    )
+
+
 @pytest.mark.asyncio
 async def test_nvr_set_anonymous_analytics(nvr_obj: NVR):
     nvr_obj.api.api_request.reset_mock()

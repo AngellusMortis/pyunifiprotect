@@ -37,7 +37,12 @@ import jwt
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_SET, ModelField
 from pydantic.utils import to_camel
 
-from pyunifiprotect.data.types import SmartDetectObjectType, Version, VideoMode
+from pyunifiprotect.data.types import (
+    SmartDetectAudioType,
+    SmartDetectObjectType,
+    Version,
+    VideoMode,
+)
 from pyunifiprotect.exceptions import NvrError
 
 if TYPE_CHECKING:
@@ -261,7 +266,7 @@ def serialize_list(items: Iterable[Any]) -> List[Any]:
 
 
 def convert_smart_types(items: Iterable[str]) -> List[SmartDetectObjectType]:
-    """Converts list of str into SmartDetectTypes. Any unknown values will be ignored and logged."""
+    """Converts list of str into SmartDetectObjectType. Any unknown values will be ignored and logged."""
 
     types = []
     for smart_type in items:
@@ -269,6 +274,18 @@ def convert_smart_types(items: Iterable[str]) -> List[SmartDetectObjectType]:
             types.append(SmartDetectObjectType(smart_type))
         except ValueError:
             _LOGGER.warning("Unknown smart detect type: %s", smart_type)
+    return types
+
+
+def convert_smart_audio_types(items: Iterable[str]) -> List[SmartDetectAudioType]:
+    """Converts list of str into SmartDetectAudioType. Any unknown values will be ignored and logged."""
+
+    types = []
+    for smart_type in items:
+        try:
+            types.append(SmartDetectAudioType(smart_type))
+        except ValueError:
+            _LOGGER.warning("Unknown smart detect audio type: %s", smart_type)
     return types
 
 
