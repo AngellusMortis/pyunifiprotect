@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, tzinfo
 from ipaddress import IPv4Address
+import logging
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -55,6 +56,7 @@ from pyunifiprotect.utils import process_datetime
 if TYPE_CHECKING:
     from pydantic.typing import SetStr
 
+_LOGGER = logging.getLogger(__name__)
 MAX_SUPPORTED_CAMERAS = 256
 MAX_EVENT_HISTORY_IN_STATE_MACHINE = MAX_SUPPORTED_CAMERAS * 2
 
@@ -401,6 +403,18 @@ class StorageInfo(ProtectBaseObject):
     type: StorageType
     used: int
     devices: List[StorageDevice]
+
+    @classmethod
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "type" in data:
+            storage_type = data.pop("type")
+            try:
+                data["type"] = StorageType(storage_type)
+            except ValueError:
+                _LOGGER.warning("Unknown storage type: %s", storage_type)
+                data["type"] = StorageType.UNKNOWN
+
+        return super().unifi_dict_to_dict(data)
 
 
 class StorageSpace(ProtectBaseObject):

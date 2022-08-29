@@ -364,6 +364,7 @@ class StorageType(str, ValuesEnumMixin, enum.Enum):
     DISK = "hdd"
     RAID = "raid"
     SD_CARD = "sdcard"
+    INTERNAL_SSD = "internalSSD"
     UNKNOWN = "UNKNOWN"
 
 

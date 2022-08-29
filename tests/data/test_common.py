@@ -21,6 +21,7 @@ from pyunifiprotect.data import (
     ModelType,
     Permission,
     RecordingMode,
+    StorageType,
     User,
     VideoMode,
     WSPacket,
@@ -640,9 +641,7 @@ async def test_revert(user_obj: User, camera_obj: Camera):
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
-async def test_unknown_smart(
-    camera: Optional[Dict[str, Any]], bootstrap: Dict[str, Any], protect_client: ProtectApiClient
-):
+def test_unknown_smart(camera: Optional[Dict[str, Any]], bootstrap: Dict[str, Any], protect_client: ProtectApiClient):
     if camera is None:
         pytest.skip("No camera obj found")
 
@@ -658,7 +657,7 @@ async def test_unknown_smart(
     assert camera_obj.smart_detect_settings.object_types == []
 
     set_no_debug()
-    obj: Bootstrap = Bootstrap.from_unifi_dict(**deepcopy(bootstrap))
+    obj: Bootstrap = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
     camera_obj = list(obj.cameras.values())[0]
     assert camera_obj.feature_flags.smart_detect_types == []
     assert camera_obj.smart_detect_zones[0].object_types == []
@@ -668,9 +667,7 @@ async def test_unknown_smart(
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
-async def test_unknown_video(
-    camera: Optional[Dict[str, Any]], bootstrap: Dict[str, Any], protect_client: ProtectApiClient
-):
+def test_unknown_video(camera: Optional[Dict[str, Any]], bootstrap: Dict[str, Any], protect_client: ProtectApiClient):
     if camera is None:
         pytest.skip("No camera obj found")
 
@@ -682,7 +679,20 @@ async def test_unknown_video(
     assert camera_obj.feature_flags.video_modes == []
 
     set_no_debug()
-    obj: Bootstrap = Bootstrap.from_unifi_dict(**deepcopy(bootstrap))
+    obj: Bootstrap = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
     camera_obj = list(obj.cameras.values())[0]
     assert camera_obj.feature_flags.video_modes == []
+    set_debug()
+
+
+@pytest.mark.asyncio
+def test_unknown_storage_type(bootstrap: Dict[str, Any], protect_client: ProtectApiClient):
+    bootstrap["nvr"]["systemInfo"]["storage"]["type"] = "test"
+
+    obj: Bootstrap = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
+    assert obj.nvr.system_info.storage.type == StorageType.UNKNOWN
+
+    set_no_debug()
+    obj: Bootstrap = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
+    assert obj.nvr.system_info.storage.type == StorageType.UNKNOWN
     set_debug()
