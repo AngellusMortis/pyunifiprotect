@@ -1,6 +1,7 @@
 """Tests for pyunifiprotect.data"""
 # pylint: disable=protected-access
 
+import asyncio
 import base64
 from copy import deepcopy
 from ipaddress import IPv4Address
@@ -641,6 +642,34 @@ async def test_revert(user_obj: User, camera_obj: Camera):
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
+async def test_multiple_updates(user_obj: User, camera_obj: Camera):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    api = user_obj.api
+    camera_obj.id = "test_id_1"
+    camera_obj.recording_settings.enable_motion_detection = False
+    camera_obj.smart_detect_settings.object_types = []
+    camera_obj._initial_data = camera_obj.dict()
+    api.bootstrap.cameras[camera_obj.id] = camera_obj
+
+    await asyncio.gather(
+        camera_obj.set_motion_detection(True),
+        camera_obj.set_person_detection(True),
+        camera_obj.set_vehicle_detection(True),
+    )
+
+    camera_obj.api.api_request.assert_called_with(  # type: ignore
+        f"cameras/{camera_obj.id}",
+        method="patch",
+        json={
+            "recordingSettings": {"enableMotionDetection": True},
+            "smartDetectSettings": {"objectTypes": ["person", "vehicle"]},
+        },
+    )
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 def test_unknown_smart(camera: Optional[Dict[str, Any]], bootstrap: Dict[str, Any], protect_client: ProtectApiClient):
     if camera is None:
         pytest.skip("No camera obj found")
@@ -666,7 +695,6 @@ def test_unknown_smart(camera: Optional[Dict[str, Any]], bootstrap: Dict[str, An
 
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
-@pytest.mark.asyncio
 def test_unknown_video(camera: Optional[Dict[str, Any]], bootstrap: Dict[str, Any], protect_client: ProtectApiClient):
     if camera is None:
         pytest.skip("No camera obj found")
@@ -685,7 +713,6 @@ def test_unknown_video(camera: Optional[Dict[str, Any]], bootstrap: Dict[str, An
     set_debug()
 
 
-@pytest.mark.asyncio
 def test_unknown_storage_type(bootstrap: Dict[str, Any], protect_client: ProtectApiClient):
     bootstrap["nvr"]["systemInfo"]["storage"]["type"] = "test"
 

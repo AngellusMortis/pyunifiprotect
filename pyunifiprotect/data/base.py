@@ -8,6 +8,7 @@ import logging
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     ClassVar,
     Dict,
     List,
@@ -18,6 +19,7 @@ from typing import (
     Union,
 )
 
+from async_timeout import timeout
 from pydantic import BaseModel
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, PrivateAttr
 
@@ -81,7 +83,7 @@ class ProtectBaseObject(BaseModel):
     class Config:
         arbitrary_types_allowed = True
         validate_assignment = True
-        copy_on_model_validation = False
+        copy_on_model_validation = "shallow"
 
     def __init__(self, api: Optional[ProtectApiClient] = None, **data: Any) -> None:
         """
@@ -543,17 +545,27 @@ class ProtectModelWithId(ProtectModel):
     id: str
 
     _update_lock: asyncio.Lock = PrivateAttr(...)
+    _update_queue: asyncio.Queue[Callable[[], None]] = PrivateAttr(...)
+    _update_event: asyncio.Event = PrivateAttr(...)
 
     def __init__(self, **data: Any) -> None:
         update_lock = data.pop("update_lock", None)
+        update_queue = data.pop("update_queue", None)
+        update_event = data.pop("update_event", None)
         super().__init__(**data)
         self._update_lock = update_lock or asyncio.Lock()
+        self._update_queue = update_queue or asyncio.Queue()
+        self._update_event = update_event or asyncio.Event()
 
     @classmethod
     def construct(cls, _fields_set: Optional[Set[str]] = None, **values: Any) -> ProtectModelWithId:
         update_lock = values.pop("update_lock", None)
+        update_queue = values.pop("update_queue", None)
+        update_event = values.pop("update_event", None)
         obj = super().construct(_fields_set=_fields_set, **values)
         obj._update_lock = update_lock or asyncio.Lock()  # pylint: disable=protected-access
+        obj._update_queue = update_queue or asyncio.Queue()  # pylint: disable=protected-access
+        obj._update_event = update_event or asyncio.Event()  # pylint: disable=protected-access
 
         return obj
 
@@ -594,6 +606,32 @@ class ProtectModelWithId(ProtectModel):
             return True
 
         return user.can(self.model, PermissionNode.DELETE, self)
+
+    async def queue_update(self, callback: Callable[[], None]) -> None:
+        """
+        Queues a device update.
+
+        This allows aggregating devices updates so if multiple ones come in all at once,
+        they can be combined in a single PATCH.
+        """
+
+        self._update_queue.put_nowait(callback)
+
+        self._update_event.set()
+        await asyncio.sleep(0.001)  # release execution so other `queue_update` calls can abort
+        self._update_event.clear()
+
+        try:
+            async with timeout(0.05):
+                await self._update_event.wait()
+            self._update_event.clear()
+            return
+        except asyncio.TimeoutError:
+            async with self._update_lock:
+                while not self._update_queue.empty():
+                    callback = self._update_queue.get_nowait()
+                    callback()
+                await self.save_device()
 
     async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True) -> None:
         """
@@ -725,9 +763,10 @@ class ProtectDeviceModel(ProtectModelWithId):
     async def set_name(self, name: str | None) -> None:
         """Sets name for the device"""
 
-        async with self._update_lock:
+        def callback() -> None:
             self.name = name
-            await self.save_device()
+
+        await self.queue_update(callback)
 
 
 class WiredConnectionState(ProtectBaseObject):
@@ -861,9 +900,10 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     async def set_ssh(self, enabled: bool) -> None:
         """Sets ssh status for protect device"""
 
-        async with self._update_lock:
+        def callback() -> None:
             self.is_ssh_enabled = enabled
-            await self.save_device()
+
+        await self.queue_update(callback)
 
     async def reboot(self) -> None:
         """Reboots an adopted device"""

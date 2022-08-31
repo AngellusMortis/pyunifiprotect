@@ -15,7 +15,9 @@ aiosignal==1.2.0
 asttokens==2.0.8
     # via stack-data
 async-timeout==4.0.2
-    # via aiohttp
+    # via
+    #   aiohttp
+    #   pyunifiprotect (setup.cfg)
 attrs==22.1.0
     # via aiohttp
 backcall==0.2.0
@@ -62,7 +64,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pydantic==1.10.0
+pydantic==1.10.1
     # via pyunifiprotect (setup.cfg)
 pygments==2.13.0
     # via ipython

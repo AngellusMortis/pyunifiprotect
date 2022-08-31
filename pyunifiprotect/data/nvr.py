@@ -820,16 +820,18 @@ class NVR(ProtectDeviceModel):
     async def set_insights(self, enabled: bool) -> None:
         """Sets analytics collection for NVR"""
 
-        async with self._update_lock:
+        def callback() -> None:
             self.is_insights_enabled = enabled
-            await self.save_device()
+
+        await self.queue_update(callback)
 
     async def set_analytics(self, value: AnalyticsOption) -> None:
         """Sets analytics collection for NVR"""
 
-        async with self._update_lock:
+        def callback() -> None:
             self.analytics_data = value
-            await self.save_device()
+
+        await self.queue_update(callback)
 
     async def set_anonymous_analytics(self, enabled: bool) -> None:
         """Enables or disables anonymous analystics for NVR"""
@@ -842,16 +844,18 @@ class NVR(ProtectDeviceModel):
     async def set_default_reset_timeout(self, timeout: timedelta) -> None:
         """Sets the default message reset timeout"""
 
-        async with self._update_lock:
+        def callback() -> None:
             self.doorbell_settings.default_message_reset_timeout = timeout
-            await self.save_device()
+
+        await self.queue_update(callback)
 
     async def set_default_doorbell_message(self, message: str) -> None:
         """Sets default doorbell message"""
 
-        async with self._update_lock:
+        def callback() -> None:
             self.doorbell_settings.default_message_text = DoorbellText(message)
-            await self.save_device()
+
+        await self.queue_update(callback)
 
     async def add_custom_doorbell_message(self, message: str) -> None:
         """Adds custom doorbell message"""
