@@ -9,6 +9,7 @@ import math
 import os
 from pathlib import Path
 import sys
+import time
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 import aiofiles
@@ -406,6 +407,7 @@ async def _download_watcher(count: int, tasks: _DownloadEventQueue, no_error_fla
     processed = 0
     loop = asyncio.get_running_loop()
     downloaded = 0
+    last_print = time.monotonic()
     while processed < count:
         download = await tasks.get()
         task = download.task
@@ -439,6 +441,10 @@ async def _download_watcher(count: int, tasks: _DownloadEventQueue, no_error_fla
             if exception is None or retries >= 5:
                 no_error_flag.set()
                 processed += 1
+                now = time.monotonic()
+                if now - last_print > 60:
+                    _LOGGER.info("Processed %s/%s (%.2f%%) events", processed, count, processed / count)
+                    last_print = now
                 if exception is None and task.result():
                     downloaded += 1
                 break
@@ -494,7 +500,7 @@ async def _download_events(
             .where(or_(Event.end_naive <= end, Event.end_naive is None))
         )
         count = cast(int, (await db.execute(count_query)).scalar())
-        _LOGGER.debug("Found %s events", count)
+        _LOGGER.info("Downloading %s events", count)
 
         pb: ProgressBar[None] = typer.progressbar(
             [], label="Downloading Events", length=count, show_pos=True, show_percent=True
