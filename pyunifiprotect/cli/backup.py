@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 import logging
+import math
 import os
 from pathlib import Path
 import sys
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import aiofiles
 import aiofiles.os as aos
@@ -56,6 +57,8 @@ class BackupContext(base.CliContext):
     thumbnail_format: str
     event_format: str
     max_download: int
+    page_size: int
+    length_cutoff: timedelta
     _db_engine: AsyncEngine | None = None
     _db_session: AsyncSession | None = None
 
@@ -165,9 +168,23 @@ class Event(Base):
         return ctx.output / file_path
 
 
+@dataclass
+class QueuedDownload:
+    task: asyncio.Task[bool] | None
+    args: list[Any]
+
+
+_DownloadEventQueue = asyncio.Queue[QueuedDownload]
+
 OPTION_OUTPUT = typer.Option(None, help="Base dir for creating files. Defaults to PWD", envvar="UFP_BACKUP_OUTPUT")
 OPTION_START = typer.Option(
     None, "-s", "--start", help="Defaults to start of recording for NVR", envvar="UFP_BACKUP_START"
+)
+OPTION_PAGE_SIZE = typer.Option(1000, "--page-size", help="Number of events fetched at once")
+OPTION_LENGTH_CUTOFF = typer.Option(
+    timedelta(hours=1).total_seconds(),
+    "--length-cutoff",
+    help="Event size cutoff for detecting abnormal events (in seconds)",
 )
 OPTION_END = typer.Option(None, "-e", "--end", help="Defaults to now", envvar="UFP_BACKUP_END")
 OPTION_EVENT_TYPES = typer.Option(list(EventTypeChoice), "-t", "--event-type")
@@ -212,6 +229,8 @@ def main(
     event_format: str = OPTION_EVENT_FORMAT,
     verbose: bool = OPTION_VERBOSE,
     max_download: int = OPTION_MAX_DOWNLOAD,
+    page_size: int = OPTION_PAGE_SIZE,
+    length_cutoff: int = OPTION_LENGTH_CUTOFF,
     seperator: str = OPTION_SPERATOR,
 ) -> None:
     """Backup your UniFi Protect Cameras."""
@@ -240,6 +259,8 @@ def main(
         thumbnail_format=thumbnail_format,
         event_format=event_format,
         max_download=max_download,
+        page_size=page_size,
+        length_cutoff=timedelta(seconds=length_cutoff),
         seperator=seperator,
     )
     ctx.obj = context
@@ -381,46 +402,89 @@ async def _update_events(ctx: BackupContext) -> int:
     return len(processed)
 
 
-async def _download_event(
-    ctx: BackupContext, event: Event, force: bool, pb: ProgressBar[None], sem: asyncio.Semaphore
-) -> None:
+async def _download_watcher(count: int, tasks: _DownloadEventQueue, no_error_flag: asyncio.Event) -> int:
+    processed = 0
+    loop = asyncio.get_running_loop()
+    downloaded = 0
+    while processed < count:
+        download = await tasks.get()
+        task = download.task
+        if task is None:
+            processed += 1
+            continue
 
-    async with sem:
-        camera = ctx.protect.bootstrap.get_device_from_mac(event.camera_mac)  # type: ignore
-        if camera is not None:
-            camera = cast(d.Camera, camera)
+        retries = 0
+        while True:
+            try:
+                await task
+            except asyncio.CancelledError:
+                return downloaded
+            except Exception:  # pylint: disable=broad-except
+                pass
 
-            thumb_path = event.get_thumbnail_path(ctx)
-            if force and thumb_path.exists():
-                _LOGGER.debug("Delete file %s", thumb_path)
-                await aos.remove(thumb_path)
-            if not thumb_path.exists():
-                _LOGGER.debug("Download thumbnail %s: %s %s: %s", event.id, event.start, event.event_type, thumb_path)
-                thumbnail = await ctx.protect.get_event_thumbnail(event.id)  # type: ignore
-                if thumbnail is not None:
-                    await aos.makedirs(thumb_path.parent, exist_ok=True)
-                    async with aiofiles.open(thumb_path, mode="wb") as f:
-                        await f.write(thumbnail)
+            event: Event = download.args[1]
+            if exception := task.exception():
+                no_error_flag.clear()
+                if retries < 5:
+                    wait = math.pow(2, retries)
+                    _LOGGER.warning(
+                        "Exception while downloading event (%s): %s. Retring in %s second(s)", event.id, exception, wait
+                    )
+                    await asyncio.sleep(wait)
+                    retries += 1
+                    task = loop.create_task(_download_event(*download.args))
+                else:
+                    _LOGGER.error("Failed to download event %s", event.id)
 
-            event_path = event.get_event_path(ctx)
-            if force and event_path.exists():
-                _LOGGER.debug("Delete file %s", event_path)
-                await aos.remove(event_path)
-            if not event_path.exists() and event.end is not None:
-                _LOGGER.debug(
-                    "Download event %s: %s %s %s: %s", event.id, event.start, event.end, event.event_type, event_path
-                )
-                await aos.makedirs(event_path.parent, exist_ok=True)
-                await camera.get_video(event.start, event.end, output_file=event_path)
+            if exception is None or retries >= 5:
+                no_error_flag.set()
+                processed += 1
+                if exception is None and task.result():
+                    downloaded += 1
+                break
+    return downloaded
+
+
+async def _download_event(ctx: BackupContext, event: Event, force: bool, pb: ProgressBar[None]) -> bool:
+
+    downloaded = False
+    camera = ctx.protect.bootstrap.get_device_from_mac(event.camera_mac)  # type: ignore
+    if camera is not None:
+        camera = cast(d.Camera, camera)
+
+        thumb_path = event.get_thumbnail_path(ctx)
+        if force and thumb_path.exists():
+            _LOGGER.debug("Delete file %s", thumb_path)
+            await aos.remove(thumb_path)
+        if not thumb_path.exists():
+            _LOGGER.debug("Download thumbnail %s: %s %s: %s", event.id, event.start, event.event_type, thumb_path)
+            thumbnail = await ctx.protect.get_event_thumbnail(event.id)  # type: ignore
+            if thumbnail is not None:
+                downloaded = True
+                await aos.makedirs(thumb_path.parent, exist_ok=True)
+                async with aiofiles.open(thumb_path, mode="wb") as f:
+                    await f.write(thumbnail)
+
+        event_path = event.get_event_path(ctx)
+        if force and event_path.exists():
+            _LOGGER.debug("Delete file %s", event_path)
+            await aos.remove(event_path)
+        if not event_path.exists() and event.end is not None:
+            downloaded = True
+            _LOGGER.debug(
+                "Download event %s: %s %s %s: %s", event.id, event.start, event.end, event.event_type, event_path
+            )
+            await aos.makedirs(event_path.parent, exist_ok=True)
+            await camera.get_video(event.start, event.end, output_file=event_path)
     pb.update(1)
+    return downloaded
 
 
 async def _download_events(
     ctx: BackupContext, event_types: list[d.EventType], smart_types: list[d.SmartDetectObjectType], force: bool
-) -> int:
+) -> tuple[int, int]:
     start = ctx.start
     end = ctx.end or utc_now()
-    downloaded = 0
     db = ctx.create_db_session()
     async with db:
         count_query = (
@@ -432,8 +496,9 @@ async def _download_events(
         count = cast(int, (await db.execute(count_query)).scalar())
         _LOGGER.debug("Found %s events", count)
 
-        sem = asyncio.Semaphore(ctx.max_download)
-        pb: ProgressBar[None] = typer.progressbar([], label="Downloading Events", length=count)
+        pb: ProgressBar[None] = typer.progressbar(
+            [], label="Downloading Events", length=count, show_pos=True, show_percent=True
+        )
         pb.render_progress()
 
         query = (
@@ -441,26 +506,47 @@ async def _download_events(
             .where(Event.event_type.in_([e.value for e in event_types]))
             .where(Event.start_naive >= start)
             .where(or_(Event.end_naive <= end, Event.end_naive is None))
+            .limit(ctx.page_size)
         )
-        result = await db.execute(query)
         smart_types_set = {s.value for s in smart_types}
         loop = asyncio.get_running_loop()
-        for event in result.unique().scalars():
-            event = cast(Event, event)
-            if event.event_type == d.EventType.SMART_DETECT:
-                if not event.smart_types.intersection(smart_types_set):
+        tasks: _DownloadEventQueue = asyncio.Queue(maxsize=ctx.max_download - 1)
+        no_error_flag = asyncio.Event()
+        no_error_flag.set()
+        watcher_task = loop.create_task(_download_watcher(count, tasks, no_error_flag))
+
+        offset = 0
+        page = query
+        while offset < count:
+            result = await db.execute(page)
+            for event in result.unique().scalars():
+                length = event.end - event.start
+                if length > ctx.length_cutoff:
+                    _LOGGER.warning("Skipping event %s because it is too long (%s)", event.id, length)
+                    await tasks.put(QueuedDownload(task=None, args=[]))
                     continue
+                # ensure no tasks are currently in a retry state
+                await no_error_flag.wait()
 
-            # wait for a free download slot
-            await sem.acquire()
-            sem.release()
-            loop.create_task(_download_event(ctx, event, force, pb, sem))
+                event = cast(Event, event)
+                if event.event_type == d.EventType.SMART_DETECT:
+                    if not event.smart_types.intersection(smart_types_set):
+                        continue
 
-        while pb.pos < count:
-            await asyncio.sleep(1)
+                # wait for a free download slot
+                task = loop.create_task(_download_event(ctx, event, force, pb))
+                await tasks.put(QueuedDownload(task=task, args=[ctx, event, force, pb]))
+
+            offset += ctx.page_size
+            page = query.offset(offset)
+
+        try:
+            await watcher_task
+            downloaded = watcher_task.result()
+        except asyncio.CancelledError:
+            downloaded = 0
         pb.render_finish()
-
-    return downloaded
+    return count, downloaded
 
 
 async def _events(
@@ -485,7 +571,11 @@ async def _events(
 
         _LOGGER.warning("Updated %s event(s)", await _update_events(ctx))
         ctx.start = original_start
-        _LOGGER.warning("Downloaded %s event(s)", await _download_events(ctx, event_types, smart_types, force))
+        count, downloaded = await _download_events(ctx, event_types, smart_types, force)
+        verified = count - downloaded
+        _LOGGER.warning(
+            "Total events: %s. Verified %s existing event(s). Downloaded %s new event(s)", count, verified, downloaded
+        )
     finally:
         _LOGGER.debug("Cleaning up Protect connection/database...")
         await ctx.protect.close_session()
