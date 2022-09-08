@@ -533,8 +533,8 @@ async def _download_events(
                     if not event.smart_types.intersection(smart_types_set):
                         continue
 
-                # wait for a free download slot
                 task = loop.create_task(_download_event(ctx, event, force, pb))
+                # waits for a free processing slot
                 await tasks.put(QueuedDownload(task=task, args=[ctx, event, force, pb]))
 
             offset += ctx.page_size
