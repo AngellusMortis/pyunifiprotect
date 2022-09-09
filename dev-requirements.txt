@@ -14,7 +14,7 @@ aiosignal==1.2.0
     # via aiohttp
 aiosqlite==0.17.0
     # via pyunifiprotect (setup.cfg)
-astroid==2.12.8
+astroid==2.12.9
     # via pylint
 asttokens==2.0.8
     # via stack-data
@@ -47,6 +47,8 @@ coverage[toml]==6.4.4
     # via
     #   pytest-cov
     #   pyunifiprotect (setup.cfg)
+dateparser==1.1.1
+    # via pyunifiprotect (setup.cfg)
 decorator==5.1.1
     # via ipython
 dill==0.3.5.1
@@ -152,7 +154,7 @@ pygments==2.13.0
     # via ipython
 pyjwt==2.4.0
     # via pyunifiprotect (setup.cfg)
-pylint==2.15.0
+pylint==2.15.2
     # via
     #   pylint-strict-informational
     #   pyunifiprotect (setup.cfg)
@@ -186,15 +188,25 @@ pytest-timeout==2.1.0
     # via pyunifiprotect (setup.cfg)
 pytest-xdist==2.5.0
     # via pyunifiprotect (setup.cfg)
+python-dateutil==2.8.2
+    # via dateparser
 python-dotenv==0.21.0
     # via pyunifiprotect (setup.cfg)
 pytz==2022.2.1
-    # via pyunifiprotect (setup.cfg)
+    # via
+    #   dateparser
+    #   pyunifiprotect (setup.cfg)
+pytz-deprecation-shim==0.1.0.post0
+    # via tzlocal
+regex==2022.3.2
+    # via dateparser
 six==1.16.0
-    # via asttokens
+    # via
+    #   asttokens
+    #   python-dateutil
 snowballstemmer==2.2.0
     # via pydocstyle
-sqlalchemy[asyncio,mypy]==1.4.40
+sqlalchemy[asyncio,mypy]==1.4.41
     # via pyunifiprotect (setup.cfg)
 sqlalchemy2-stubs==0.0.2a27
     # via sqlalchemy
@@ -222,7 +234,9 @@ traitlets==5.3.0
     #   matplotlib-inline
 typer==0.6.1
     # via pyunifiprotect (setup.cfg)
-types-aiofiles==0.8.11
+types-aiofiles==22.1.0
+    # via pyunifiprotect (setup.cfg)
+types-dateparser==1.1.4
     # via pyunifiprotect (setup.cfg)
 types-pillow==9.2.1
     # via pyunifiprotect (setup.cfg)
@@ -236,6 +250,10 @@ typing-extensions==4.3.0
     #   mypy
     #   pydantic
     #   sqlalchemy2-stubs
+tzdata==2022.2
+    # via pytz-deprecation-shim
+tzlocal==4.2
+    # via dateparser
 wcwidth==0.2.5
     # via prompt-toolkit
 wheel==0.37.1

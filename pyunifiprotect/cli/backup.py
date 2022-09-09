@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 
 import aiofiles
 import aiofiles.os as aos
+import dateparser
 from sqlalchemy import (
     Column,
     DateTime,
@@ -36,6 +37,7 @@ from pyunifiprotect.utils import utc_now
 
 if TYPE_CHECKING:
     from click._termui_impl import ProgressBar
+    from click.core import Parameter
 
 app = typer.Typer()
 Base = declarative_base()
@@ -175,11 +177,22 @@ class QueuedDownload:
     args: list[Any]
 
 
+def relative_datetime(ctx: typer.Context, value: str, param: Parameter) -> datetime:
+    if dt := dateparser.parse(value):
+        return dt
+
+    raise typer.BadParameter("Must be a ISO 8601 format or human readable relative format", ctx, param)
+
+
 _DownloadEventQueue = asyncio.Queue[QueuedDownload]
 
 OPTION_OUTPUT = typer.Option(None, help="Base dir for creating files. Defaults to PWD", envvar="UFP_BACKUP_OUTPUT")
 OPTION_START = typer.Option(
-    None, "-s", "--start", help="Defaults to start of recording for NVR", envvar="UFP_BACKUP_START"
+    None,
+    "-s",
+    "--start",
+    help="Defaults to start of recording for NVR",
+    envvar="UFP_BACKUP_START",
 )
 OPTION_PAGE_SIZE = typer.Option(1000, "--page-size", help="Number of events fetched at once")
 OPTION_LENGTH_CUTOFF = typer.Option(
@@ -223,8 +236,8 @@ def _setup_logger(verbose: bool) -> None:
 @app.callback()
 def main(
     ctx: typer.Context,
-    start: Optional[datetime] = OPTION_START,
-    end: Optional[datetime] = OPTION_END,
+    start: Optional[str] = OPTION_START,
+    end: Optional[str] = OPTION_END,
     output_folder: Optional[Path] = OPTION_OUTPUT,
     thumbnail_format: str = OPTION_THUMBNAIL_FORMAT,
     event_format: str = OPTION_EVENT_FORMAT,
@@ -240,21 +253,27 @@ def main(
 
     protect: ProtectApiClient = ctx.obj.protect
     local_tz = datetime.now(timezone.utc).astimezone().tzinfo
+
     if start is None:
-        start = protect.bootstrap.recording_start
+        start_dt = protect.bootstrap.recording_start
     else:
-        start = start.replace(tzinfo=local_tz)
-    if start is None:
-        start = utc_now()
+        start_dt = relative_datetime(ctx, start, ctx.command.params[0])
+        start_dt = start_dt.replace(tzinfo=local_tz)
+    if start_dt is None:
+        start_dt = utc_now()
+
+    end_dt = None
     if end is not None:
-        end = end.replace(tzinfo=local_tz)
+        end_dt = relative_datetime(ctx, end, ctx.command.params[1])
+        end_dt = end_dt.replace(tzinfo=local_tz)
+
     if output_folder is None:
         output_folder = Path(os.getcwd())
 
     context = BackupContext(
         protect=ctx.obj.protect,
-        start=start,
-        end=end,
+        start=start_dt,
+        end=end_dt,
         output_format=ctx.obj.output_format,
         output=output_folder,
         thumbnail_format=thumbnail_format,

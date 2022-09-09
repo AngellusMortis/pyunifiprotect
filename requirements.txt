@@ -28,6 +28,8 @@ charset-normalizer==2.1.1
     # via aiohttp
 click==8.1.3
     # via typer
+dateparser==1.1.1
+    # via pyunifiprotect (setup.cfg)
 decorator==5.1.1
     # via ipython
 executing==1.0.0
@@ -80,13 +82,23 @@ pyjwt==2.4.0
     # via pyunifiprotect (setup.cfg)
 pyparsing==3.0.9
     # via packaging
+python-dateutil==2.8.2
+    # via dateparser
 python-dotenv==0.21.0
     # via pyunifiprotect (setup.cfg)
 pytz==2022.2.1
-    # via pyunifiprotect (setup.cfg)
+    # via
+    #   dateparser
+    #   pyunifiprotect (setup.cfg)
+pytz-deprecation-shim==0.1.0.post0
+    # via tzlocal
+regex==2022.3.2
+    # via dateparser
 six==1.16.0
-    # via asttokens
-sqlalchemy[asyncio,mypy]==1.4.40
+    # via
+    #   asttokens
+    #   python-dateutil
+sqlalchemy[asyncio,mypy]==1.4.41
     # via pyunifiprotect (setup.cfg)
 sqlalchemy2-stubs==0.0.2a27
     # via sqlalchemy
@@ -108,6 +120,10 @@ typing-extensions==4.3.0
     #   mypy
     #   pydantic
     #   sqlalchemy2-stubs
+tzdata==2022.2
+    # via pytz-deprecation-shim
+tzlocal==4.2
+    # via dateparser
 wcwidth==0.2.5
     # via prompt-toolkit
 yarl==1.8.1
