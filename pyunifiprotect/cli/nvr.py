@@ -9,7 +9,7 @@ import typer
 from pyunifiprotect.cli import base
 from pyunifiprotect.data import NVR, AnalyticsOption
 
-app = typer.Typer()
+app = typer.Typer(rich_markup_mode="rich")
 
 ARG_TIMEOUT = typer.Argument(..., help="Timeout (in seconds)")
 ARG_DOORBELL_MESSAGE = typer.Argument(..., help="ASCII only. Max length 30")

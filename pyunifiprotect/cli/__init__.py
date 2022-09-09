@@ -8,6 +8,7 @@ import sys
 from typing import Optional, cast
 
 import orjson
+from rich.progress import track
 import typer
 
 from pyunifiprotect.api import ProtectApiClient
@@ -85,7 +86,7 @@ ARG_WS_DATA = typer.Argument(None, help="base64 encoded Websocket message")
 SLEEP_INTERVAL = 2
 
 
-app = typer.Typer()
+app = typer.Typer(rich_markup_mode="rich")
 app.add_typer(nvr_app, name="nvr")
 app.add_typer(event_app, name="events")
 app.add_typer(liveview_app, name="liveviews")
@@ -135,10 +136,9 @@ def _setup_logger(level: int = logging.DEBUG, show_level: bool = False) -> None:
 
 
 async def _progress_bar(wait_time: int, label: str) -> None:
-    with typer.progressbar(range(wait_time // SLEEP_INTERVAL), label=label) as progress:
-        for i in progress:
-            if i > 0:
-                await asyncio.sleep(SLEEP_INTERVAL)
+    for i in track(range(wait_time // SLEEP_INTERVAL), description=label):
+        if i > 0:
+            await asyncio.sleep(SLEEP_INTERVAL)
 
 
 @app.command()

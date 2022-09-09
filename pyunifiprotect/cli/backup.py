@@ -15,6 +15,15 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 import aiofiles
 import aiofiles.os as aos
 import dateparser
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    TaskProgressColumn,
+    TextColumn,
+    TimeRemainingColumn,
+    track,
+)
 from sqlalchemy import (
     Column,
     DateTime,
@@ -36,10 +45,9 @@ from pyunifiprotect.cli import base
 from pyunifiprotect.utils import utc_now
 
 if TYPE_CHECKING:
-    from click._termui_impl import ProgressBar
     from click.core import Parameter
 
-app = typer.Typer()
+app = typer.Typer(rich_markup_mode="rich")
 Base = declarative_base()
 
 _LOGGER = logging.getLogger(__name__)
@@ -294,13 +302,11 @@ def _wipe_files(ctx: BackupContext, no_input: bool) -> None:
     if ctx.db_file.exists():
         os.remove(ctx.db_file)
 
-    with typer.progressbar(ctx.output.glob("**/*.jpg"), label="Deleting Thumbnails") as pb:
-        for path in pb:
-            os.remove(path)
+    for path in track(ctx.output.glob("**/*.jpg"), description="Deleting Thumbnails"):
+        os.remove(path)
 
-    with typer.progressbar(ctx.output.glob("**/*.mp4"), label="Deleting Clips") as pb:
-        for path in pb:
-            os.remove(path)
+    for path in track(ctx.output.glob("**/*.mp4"), description="Deleting Clips"):
+        os.remove(path)
 
 
 async def _newest_event(ctx: BackupContext) -> Event | None:
@@ -317,25 +323,24 @@ async def _prune_events(ctx: BackupContext) -> int:
     db = ctx.create_db_session()
     async with db:
         result = await db.execute(select(Event).join(EventSmartType).where(Event.start_naive < ctx.start))
-        with typer.progressbar(result.unique().scalars(), label="Pruning Events") as pb:
-            for event in pb:
-                event = cast(Event, event)
+        for event in track(result.unique().scalars(), description="Pruning Events"):
+            event = cast(Event, event)
 
-                thumb_path = event.get_thumbnail_path(ctx)
-                if thumb_path.exists():
-                    _LOGGER.debug("Delete file %s", thumb_path)
-                    await aos.remove(thumb_path)
+            thumb_path = event.get_thumbnail_path(ctx)
+            if thumb_path.exists():
+                _LOGGER.debug("Delete file %s", thumb_path)
+                await aos.remove(thumb_path)
 
-                event_path = event.get_event_path(ctx)
-                if event_path.exists():
-                    _LOGGER.debug("Delete file %s", event_path)
-                    await aos.remove(event_path)
+            event_path = event.get_event_path(ctx)
+            if event_path.exists():
+                _LOGGER.debug("Delete file %s", event_path)
+                await aos.remove(event_path)
 
-                if event.event_type == d.EventType.SMART_DETECT:
-                    for smart_type in event.smart_detect_types:
-                        await db.delete(smart_type)
-                await db.delete(event)
-                deleted += 1
+            if event.event_type == d.EventType.SMART_DETECT:
+                for smart_type in event.smart_detect_types:
+                    await db.delete(smart_type)
+            await db.delete(event)
+            deleted += 1
         await db.commit()
 
     return deleted
@@ -389,9 +394,7 @@ async def _update_ongoing_events(ctx: BackupContext) -> int:
 
     if len(events) == 0:
         return 0
-    pb: ProgressBar[None] = typer.progressbar(events, label="Updating Events")
-    pb.render_progress()
-    for event in pb:
+    for event in track(events, description="Updating Events"):
         event = cast(Event, event)
         event_id = cast(str, event.id)
         await _update_event(ctx, await ctx.protect.get_event(event_id))
@@ -407,37 +410,35 @@ async def _update_events(ctx: BackupContext) -> int:
 
     total = int((end - ctx.start).total_seconds())
     _LOGGER.debug("total: %s: %s %s", total, start, end)
-    pb: ProgressBar[None] = typer.progressbar(None, length=total, label="Fetching New Events")
-    pb.render_progress()
 
     prev_start = start
-    while True:
-        progress = int((start - prev_start).total_seconds())
-        pb.update(progress)
-        _LOGGER.debug("progress: +%s: %s/%s: %s %s", progress, pb.pos, pb.length, start, end)
+    with Progress() as pb:
+        task_id = pb.add_task("Fetching New Events", total=total)
+        task = pb.tasks[0]
+        pb.refresh()
+        while not pb.finished:
+            progress = int((start - prev_start).total_seconds())
+            pb.update(task_id, advance=progress)
+            _LOGGER.debug("progress: +%s: %s/%s: %s %s", progress, task.completed, task.total, start, end)
 
-        events = await ctx.protect.get_events(
-            start,
-            end,
-            limit=100,
-            types=[d.EventType.MOTION, d.EventType.RING, d.EventType.SMART_DETECT],
-        )
+            events = await ctx.protect.get_events(
+                start,
+                end,
+                limit=100,
+                types=[d.EventType.MOTION, d.EventType.RING, d.EventType.SMART_DETECT],
+            )
 
-        prev_start = start
-        count = 0
-        for event in events:
-            start = event.start
-            if event.id not in processed:
-                count += 1
-                processed.add(event.id)
-                await _update_event(ctx, event)
+            prev_start = start
+            count = 0
+            for event in events:
+                start = event.start
+                if event.id not in processed:
+                    count += 1
+                    processed.add(event.id)
+                    await _update_event(ctx, event)
 
-        if start == prev_start and count == 0:
-            break
-
-    pb.pos = total
-    pb.render_progress()
-    pb.render_finish()
+            if start == prev_start and count == 0:
+                pb.update(task_id, completed=total)
 
     return updated_ongoing + len(processed)
 
@@ -490,7 +491,7 @@ async def _download_watcher(count: int, tasks: _DownloadEventQueue, no_error_fla
     return downloaded
 
 
-async def _download_event(ctx: BackupContext, event: Event, force: bool, pb: ProgressBar[None]) -> bool:
+async def _download_event(ctx: BackupContext, event: Event, force: bool, pb: Progress) -> bool:
 
     downloaded = False
     camera = ctx.protect.bootstrap.get_device_from_mac(event.camera_mac)  # type: ignore
@@ -521,7 +522,7 @@ async def _download_event(ctx: BackupContext, event: Event, force: bool, pb: Pro
             )
             await aos.makedirs(event_path.parent, exist_ok=True)
             await camera.get_video(event.start, event.end, output_file=event_path)
-    pb.update(1)
+    pb.update(pb.tasks[0].id, advance=1)
     return downloaded
 
 
@@ -541,56 +542,61 @@ async def _download_events(
         count = cast(int, (await db.execute(count_query)).scalar())
         _LOGGER.info("Downloading %s events", count)
 
-        pb: ProgressBar[None] = typer.progressbar(
-            [], label="Downloading Events", length=count, show_pos=True, show_percent=True
-        )
-        pb.render_progress()
+        columns = [
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            MofNCompleteColumn(),
+            TimeRemainingColumn(),
+        ]
+        with Progress(*columns) as pb:
+            task_id = pb.add_task("Downloading Events", total=count)
 
-        query = (
-            select(Event)
-            .where(Event.event_type.in_([e.value for e in event_types]))
-            .where(Event.start_naive >= start)
-            .where(or_(Event.end_naive <= end, Event.end_naive is None))
-            .limit(ctx.page_size)
-        )
-        smart_types_set = {s.value for s in smart_types}
-        loop = asyncio.get_running_loop()
-        tasks: _DownloadEventQueue = asyncio.Queue(maxsize=ctx.max_download - 1)
-        no_error_flag = asyncio.Event()
-        no_error_flag.set()
-        watcher_task = loop.create_task(_download_watcher(count, tasks, no_error_flag))
+            query = (
+                select(Event)
+                .where(Event.event_type.in_([e.value for e in event_types]))
+                .where(Event.start_naive >= start)
+                .where(or_(Event.end_naive <= end, Event.end_naive is None))
+                .limit(ctx.page_size)
+            )
+            smart_types_set = {s.value for s in smart_types}
+            loop = asyncio.get_running_loop()
+            tasks: _DownloadEventQueue = asyncio.Queue(maxsize=ctx.max_download - 1)
+            no_error_flag = asyncio.Event()
+            no_error_flag.set()
+            watcher_task = loop.create_task(_download_watcher(count, tasks, no_error_flag))
 
-        offset = 0
-        page = query
-        while offset < count:
-            result = await db.execute(page)
-            for event in result.unique().scalars():
-                event = cast(Event, event)
-                length = event.end - event.start
-                if length > ctx.length_cutoff:
-                    _LOGGER.warning("Skipping event %s because it is too long (%s)", event.id, length)
-                    await tasks.put(QueuedDownload(task=None, args=[]))
-                    continue
-                # ensure no tasks are currently in a retry state
-                await no_error_flag.wait()
-
-                if event.event_type == d.EventType.SMART_DETECT:
-                    if not event.smart_types.intersection(smart_types_set):
+            offset = 0
+            page = query
+            while offset < count:
+                result = await db.execute(page)
+                for event in result.unique().scalars():
+                    event = cast(Event, event)
+                    length = event.end - event.start
+                    if length > ctx.length_cutoff:
+                        _LOGGER.warning("Skipping event %s because it is too long (%s)", event.id, length)
+                        await tasks.put(QueuedDownload(task=None, args=[]))
                         continue
+                    # ensure no tasks are currently in a retry state
+                    await no_error_flag.wait()
 
-                task = loop.create_task(_download_event(ctx, event, force, pb))
-                # waits for a free processing slot
-                await tasks.put(QueuedDownload(task=task, args=[ctx, event, force, pb]))
+                    if event.event_type == d.EventType.SMART_DETECT:
+                        if not event.smart_types.intersection(smart_types_set):
+                            continue
 
-            offset += ctx.page_size
-            page = query.offset(offset)
+                    task = loop.create_task(_download_event(ctx, event, force, pb))
+                    # waits for a free processing slot
+                    await tasks.put(QueuedDownload(task=task, args=[ctx, event, force, pb]))
 
-        try:
-            await watcher_task
-            downloaded = watcher_task.result()
-        except asyncio.CancelledError:
-            downloaded = 0
-        pb.render_finish()
+                offset += ctx.page_size
+                page = query.offset(offset)
+
+            try:
+                await watcher_task
+                downloaded = watcher_task.result()
+            except asyncio.CancelledError:
+                downloaded = 0
+            pb.update(task_id, completed=count)
     return count, downloaded
 
 

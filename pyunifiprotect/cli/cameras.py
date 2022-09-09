@@ -5,13 +5,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, cast
 
+from rich.progress import Progress
 import typer
 
 from pyunifiprotect import data as d
 from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.cli import base
 
-app = typer.Typer()
+app = typer.Typer(rich_markup_mode="rich")
 
 ARG_DEVICE_ID = typer.Argument(None, help="ID of camera to select for subcommands")
 
@@ -201,12 +202,11 @@ def save_video(
         typer.secho("Camera does not have package camera", fg="red")
         raise typer.Exit(1)
 
-    with typer.progressbar(length=0, label="(1/2) Exporting") as pbar:
+    with Progress() as pb:
+        task_id = pb.add_task("(1/2) Exporting", total=100)
 
         async def callback(step: int, current: int, total: int) -> None:
-            pbar.label = "(2/2) Downloading"
-            pbar.length = total
-            pbar.update(step)
+            pb.update(task_id, total=total, completed=current, description="(2/2) Downloading")
 
         base.run(
             ctx,

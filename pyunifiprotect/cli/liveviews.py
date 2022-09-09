@@ -9,7 +9,7 @@ from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.cli import base
 from pyunifiprotect.data import Liveview
 
-app = typer.Typer()
+app = typer.Typer(rich_markup_mode="rich")
 
 ARG_DEVICE_ID = typer.Argument(None, help="ID of liveview to select for subcommands")
 ALL_COMMANDS = {"list-ids": app.command(name="list-ids")(base.list_ids)}

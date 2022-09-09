@@ -10,7 +10,7 @@ from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.cli import base
 from pyunifiprotect.data import Light
 
-app = typer.Typer()
+app = typer.Typer(rich_markup_mode="rich")
 
 ARG_DEVICE_ID = typer.Argument(None, help="ID of light to select for subcommands")
 

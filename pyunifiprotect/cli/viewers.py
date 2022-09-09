@@ -9,7 +9,7 @@ from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.cli import base
 from pyunifiprotect.data import Viewer
 
-app = typer.Typer()
+app = typer.Typer(rich_markup_mode="rich")
 
 ARG_DEVICE_ID = typer.Argument(None, help="ID of viewer to select for subcommands")
 
