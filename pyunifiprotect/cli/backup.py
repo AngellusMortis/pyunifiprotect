@@ -361,14 +361,34 @@ async def _update_event(ctx: BackupContext, event: d.Event) -> None:
         await db.commit()
 
 
+async def _update_ongoing_events(ctx: BackupContext) -> int:
+    db = ctx.create_db_session()
+    async with db:
+        result = await db.execute(select(Event).where(Event.event_type != "ring").where(Event.end_naive is None))
+
+        events = list(result.unique().scalars())
+
+    if len(events) == 0:
+        return 0
+    pb: ProgressBar[None] = typer.progressbar(events, label="Updating Events")
+    pb.render_progress()
+    for event in pb:
+        event = cast(Event, event)
+        event_id = cast(str, event.id)
+        await _update_event(ctx, await ctx.protect.get_event(event_id))
+    return len(events)
+
+
 async def _update_events(ctx: BackupContext) -> int:
+    # update any events that are still set as ongoing in the database
+    updated_ongoing = await _update_ongoing_events(ctx)
     start = ctx.start
     end = ctx.end or utc_now()
     processed: set[str] = set()
 
     total = int((end - ctx.start).total_seconds())
     _LOGGER.debug("total: %s: %s %s", total, start, end)
-    pb: ProgressBar[None] = typer.progressbar(None, length=total, label="Updating Events")
+    pb: ProgressBar[None] = typer.progressbar(None, length=total, label="Fetching New Events")
     pb.render_progress()
 
     prev_start = start
@@ -400,7 +420,7 @@ async def _update_events(ctx: BackupContext) -> int:
     pb.render_progress()
     pb.render_finish()
 
-    return len(processed)
+    return updated_ongoing + len(processed)
 
 
 async def _download_watcher(count: int, tasks: _DownloadEventQueue, no_error_flag: asyncio.Event) -> int:
@@ -526,6 +546,7 @@ async def _download_events(
         while offset < count:
             result = await db.execute(page)
             for event in result.unique().scalars():
+                event = cast(Event, event)
                 length = event.end - event.start
                 if length > ctx.length_cutoff:
                     _LOGGER.warning("Skipping event %s because it is too long (%s)", event.id, length)
@@ -534,7 +555,6 @@ async def _download_events(
                 # ensure no tasks are currently in a retry state
                 await no_error_flag.wait()
 
-                event = cast(Event, event)
                 if event.event_type == d.EventType.SMART_DETECT:
                     if not event.smart_types.intersection(smart_types_set):
                         continue
