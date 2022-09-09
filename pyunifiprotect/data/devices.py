@@ -22,7 +22,6 @@ from pyunifiprotect.data.types import (
     DEFAULT_TYPE,
     AudioCodecs,
     AutoExposureMode,
-    ChimeDuration,
     ChimeType,
     Color,
     DoorbellMessageType,
@@ -722,7 +721,7 @@ class Camera(ProtectMotionDeviceModel):
     # Recording Quality -> High Frame
     video_mode: VideoMode
     is_probing_for_wifi: bool
-    chime_duration: ChimeDuration
+    chime_duration: timedelta
     last_ring: Optional[datetime]
     is_live_heatmap_enabled: bool
     anonymous_device_id: Optional[UUID]
@@ -807,6 +806,8 @@ class Camera(ProtectMotionDeviceModel):
         # LCD messages comes back as empty dict {}
         if "lcdMessage" in data and len(data["lcdMessage"].keys()) == 0:
             del data["lcdMessage"]
+        if "chimeDuration" in data and not isinstance(data["chimeDuration"], timedelta):
+            data["chimeDuration"] = timedelta(milliseconds=data["chimeDuration"])
 
         return super().unifi_dict_to_dict(data)
 
@@ -944,11 +945,16 @@ class Camera(ProtectMotionDeviceModel):
         return utc_now() < self._last_ring_timeout
 
     @property
-    def chime_type(self) -> Optional[ChimeType]:
-        try:
-            return ChimeType(self.chime_duration)
-        except ValueError:
-            return None
+    def chime_type(self) -> ChimeType:
+        if self.chime_duration.total_seconds() == 0.3:
+            return ChimeType.MECHANICAL
+        if self.chime_duration.total_seconds() > 0.3:
+            return ChimeType.DIGITAL
+        return ChimeType.NONE
+
+    @property
+    def is_digital_chime(self) -> bool:
+        return self.chime_type is ChimeType.DIGITAL
 
     @property
     def high_camera_channel(self) -> Optional[CameraChannel]:
@@ -1208,16 +1214,26 @@ class Camera(ProtectMotionDeviceModel):
     async def set_chime_type(self, chime_type: ChimeType) -> None:
         """Sets chime type for doorbell. Requires camera to be a doorbell"""
 
-        await self.set_chime_duration(chime_type.value)
+        await self.set_chime_duration(timedelta(milliseconds=chime_type.value))
 
-    async def set_chime_duration(self, duration: int) -> None:
+    async def set_chime_duration(self, duration: timedelta | float | int) -> None:
         """Sets chime duration for doorbell. Requires camera to be a doorbell"""
 
         if not self.feature_flags.has_chime:
             raise BadRequest("Camera does not have a chime")
 
+        if isinstance(duration, (float, int)):
+            if duration < 0:
+                raise BadRequest("Chime duration must be a positive number of seconds")
+            duration_td = timedelta(seconds=duration)
+        else:
+            duration_td = duration
+
+        if duration_td.total_seconds() > 10:
+            raise BadRequest("Chime duration is too long")
+
         def callback() -> None:
-            self.chime_duration = ChimeDuration(duration)
+            self.chime_duration = duration_td
 
         await self.queue_update(callback)
 

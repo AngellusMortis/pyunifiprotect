@@ -442,11 +442,6 @@ class PercentFloat(ConstrainedFloat):
     le = 100
 
 
-class ChimeDuration(ConstrainedInt):
-    ge = 0
-    le = 10000
-
-
 class WDRLevel(ConstrainedInt):
     ge = 0
     le = 3

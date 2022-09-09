@@ -442,7 +442,7 @@ async def test_camera_set_chime_duration_no_chime(camera_obj: Optional[Camera]):
 
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
-@pytest.mark.parametrize("duration", [-1, 0, 5000, 10000, 20000])
+@pytest.mark.parametrize("duration", [-1, 0, 0.5, 1, 20])
 @pytest.mark.asyncio
 async def test_camera_set_chime_duration_duration(camera_obj: Optional[Camera], duration: int):
     if camera_obj is None:
@@ -455,8 +455,8 @@ async def test_camera_set_chime_duration_duration(camera_obj: Optional[Camera], 
     camera_obj.mic_volume = 10
     camera_obj._initial_data = camera_obj.dict()
 
-    if duration in (-1, 20000):
-        with pytest.raises(ValidationError):
+    if duration in (-1, 20):
+        with pytest.raises(BadRequest):
             await camera_obj.set_chime_duration(duration)
 
         assert not camera_obj.api.api_request.called
@@ -466,7 +466,7 @@ async def test_camera_set_chime_duration_duration(camera_obj: Optional[Camera], 
         camera_obj.api.api_request.assert_called_with(
             f"cameras/{camera_obj.id}",
             method="patch",
-            json={"chimeDuration": duration},
+            json={"chimeDuration": duration * 1000},
         )
 
 
