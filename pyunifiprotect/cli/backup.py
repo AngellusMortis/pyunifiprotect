@@ -573,7 +573,7 @@ async def _download_event_video(ctx: BackupContext, camera: d.Camera, event: Eve
                     length = (event.end - event.start).total_seconds()
                     slength = float(video.streams.video[0].duration * video.streams.video[0].time_base)
                     valid = (
-                        (slength / length) > 0.85  # export is fuzzy
+                        (slength / length) > 0.80  # export is fuzzy
                         and video.streams.video[0].codec_context.width == camera.channels[0].width
                         and video.streams.video[0].codec_context.height == camera.channels[0].height
                     )
