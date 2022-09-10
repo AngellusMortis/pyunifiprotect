@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 from PIL import Image
 import aiofiles
 import aiofiles.os as aos
+from asyncify import asyncify
 import av
 import dateparser
 from rich.progress import (
@@ -44,7 +45,7 @@ import typer
 from pyunifiprotect import data as d
 from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.cli import base
-from pyunifiprotect.utils import utc_now
+from pyunifiprotect.utils import format_duration, utc_now
 
 if TYPE_CHECKING:
     from click.core import Parameter
@@ -69,6 +70,7 @@ class BackupContext(base.CliContext):
     seperator: str
     thumbnail_format: str
     event_format: str
+    title_format: str
     max_download: int
     page_size: int
     length_cutoff: timedelta
@@ -150,31 +152,63 @@ class Event(Base):
         if self._context is None:
             camera = ctx.protect.bootstrap.get_device_from_mac(self.camera_mac)  # type: ignore
             camera_slug = ""
+            display_name = ""
+            length = timedelta(seconds=0)
             if camera is not None:
                 camera_slug = camera.display_name.lower().replace(" ", ctx.seperator) + ctx.seperator
-            event_type = self.event_type
+                display_name = camera.display_name
+            if self.end is not None:
+                length = self.end - self.start
+
+            event_type = str(self.event_type)
+            event_type_pretty = f"{event_type.title()} Event"
             if event_type == d.EventType.SMART_DETECT.value:
                 smart_types = list(self.smart_types)
                 smart_types.sort()
                 event_type = f"{event_type}[{','.join(smart_types)}]"
+                smart_types_title = [s.title() for s in smart_types]
+                event_type_pretty = f"Smart Detection ({', '.join(smart_types_title)})"
 
+            local_tz = datetime.now(timezone.utc).astimezone().tzinfo
+            start_local = self.start.astimezone(local_tz)
             self._context = {
                 "year": str(self.start.year),
                 "month": str(self.start.month),
                 "day": str(self.start.day),
-                "datetime": self.start.strftime("%Y-%m-%dT%H-%M-%S+0000"),
-                "time": self.start.strftime("%H-%M-%S+0000"),
+                "hour": str(self.start.hour),
+                "minute": str(self.start.minute),
+                "datetime": self.start.strftime("%Y-%m-%dT%H-%M-%S%z"),
+                "date": self.start.strftime("%Y-%m-%d"),
+                "time": self.start.strftime("%H-%M-%S%z"),
+                "time_sort_pretty": self.start.strftime("%H:%M:%S (%Z)"),
+                "time_pretty": self.start.strftime("%I:%M:%S %p (%Z)"),
+                "year_local": str(start_local.year),
+                "month_local": str(start_local.month),
+                "day_local": str(start_local.day),
+                "hour_local": str(start_local.hour),
+                "minute_local": str(start_local.minute),
+                "datetime_local": start_local.strftime("%Y-%m-%dT%H-%M-%S%z"),
+                "date_local": start_local.strftime("%Y-%m-%d"),
+                "time_local": start_local.strftime("%H-%M-%S%z"),
+                "time_sort_pretty_local": start_local.strftime("%H:%M:%S (%Z)"),
+                "time_pretty_local": start_local.strftime("%I:%M:%S %p (%Z)"),
                 "mac": str(self.camera_mac),
+                "camera_name": display_name,
                 "camera_slug": camera_slug,
-                "event_type": str(event_type),
+                "event_type": event_type,
+                "event_type_pretty": event_type_pretty,
+                "length_pretty": format_duration(length),
                 "sep": ctx.seperator,
             }
+
+            self._context["title"] = ctx.title_format.format(**self._context)
         return self._context
 
     def get_glob_file_context(self, ctx: BackupContext) -> dict[str, str]:
         if self._glob_context is None:
             self._glob_context = self.get_file_context(ctx).copy()
             self._glob_context["camera_slug"] = "*"
+            self._glob_context["camera_name"] = "*"
         return self._glob_context
 
     def get_thumbnail_path(self, ctx: BackupContext) -> Path:
@@ -240,10 +274,14 @@ OPTION_EVENT_TYPES = typer.Option(list(EventTypeChoice), "-t", "--event-type")
 OPTION_SMART_TYPES = typer.Option(list(d.SmartDetectObjectType), "-m", "--smart-type")
 OPTION_SPERATOR = typer.Option("-", "--sep")
 OPTION_THUMBNAIL_FORMAT = typer.Option(
-    "{year}/{month}/{day}/{datetime}{sep}{mac}{sep}{camera_slug}{event_type}{sep}thumb.jpg", "--thumb-format"
+    "{year}/{month}/{day}/{hour}/{datetime}{sep}{mac}{sep}{camera_slug}{event_type}{sep}thumb.jpg", "--thumb-format"
 )
 OPTION_EVENT_FORMAT = typer.Option(
-    "{year}/{month}/{day}/{datetime}{sep}{mac}{sep}{camera_slug}{event_type}.mp4", "--event-format"
+    "{year}/{month}/{day}/{hour}/{datetime}{sep}{mac}{sep}{camera_slug}{event_type}.mp4", "--event-format"
+)
+OPTION_TITLE_FORMAT = typer.Option(
+    "{time_pretty_local} {sep} {camera_name} {sep} {event_type_pretty} {sep} {length_pretty}",
+    "--title-format",
 )
 OPTION_VERBOSE = typer.Option(False, "-v", "--verbose", help="Debug logging")
 OPTION_MAX_DOWNLOAD = typer.Option(10, "-d", "--max-download", help="Max number of concurrent downloads")
@@ -276,6 +314,7 @@ def main(
     output_folder: Optional[Path] = OPTION_OUTPUT,
     thumbnail_format: str = OPTION_THUMBNAIL_FORMAT,
     event_format: str = OPTION_EVENT_FORMAT,
+    title_format: str = OPTION_TITLE_FORMAT,
     verbose: bool = OPTION_VERBOSE,
     max_download: int = OPTION_MAX_DOWNLOAD,
     page_size: int = OPTION_PAGE_SIZE,
@@ -313,6 +352,7 @@ def main(
         output=output_folder,
         thumbnail_format=thumbnail_format,
         event_format=event_format,
+        title_format=title_format,
         max_download=max_download,
         page_size=page_size,
         length_cutoff=timedelta(seconds=length_cutoff),
@@ -518,6 +558,17 @@ async def _download_watcher(count: int, tasks: _DownloadEventQueue, no_error_fla
     return downloaded
 
 
+@asyncify
+def _verify_thumbnail(path: Path) -> bool:
+    try:
+        image = Image.open(path)
+        image.verify()
+    # no docs on what exception could be
+    except Exception:  # pylint: disable=broad-except
+        return False
+    return True
+
+
 async def _download_event_thumb(ctx: BackupContext, event: Event, verify: bool, force: bool) -> bool:
     thumb_path = event.get_thumbnail_path(ctx)
     existing_thumb_path = event.get_existing_thumbnail_path(ctx)
@@ -530,16 +581,12 @@ async def _download_event_thumb(ctx: BackupContext, event: Event, verify: bool, 
         _LOGGER.debug(
             "Rename thumb file %s: %s %s %s: %s", event.id, event.start, event.end, event.event_type, thumb_path
         )
+        await aos.makedirs(thumb_path.parent, exist_ok=True)
         await aos.rename(existing_thumb_path, thumb_path)
 
-    if verify and thumb_path.exists():
-        try:
-            image = Image.open(thumb_path)
-            image.verify()
-        # no docs on what exception could be
-        except Exception:  # pylint: disable=broad-except
-            _LOGGER.warning("Corrupted thumb file for event (%s), redownloading", event.id)
-            await aos.remove(thumb_path)
+    if verify and thumb_path.exists() and not await _verify_thumbnail(thumb_path):
+        _LOGGER.warning("Corrupted thumb file for event (%s), redownloading", event.id)
+        await aos.remove(thumb_path)
 
     if not thumb_path.exists():
         _LOGGER.debug("Download thumbnail %s: %s %s: %s", event.id, event.start, event.event_type, thumb_path)
@@ -550,6 +597,49 @@ async def _download_event_thumb(ctx: BackupContext, event: Event, verify: bool, 
                 await f.write(thumbnail)
             return True
     return False
+
+
+@asyncify
+def _verify_video_file(path: Path, length: float, width: int, height: int) -> bool:
+    try:
+        with av.open(str(path)) as video:
+            slength = float(video.streams.video[0].duration * video.streams.video[0].time_base)
+            return (
+                (slength / length) > 0.80  # export is fuzzy
+                and video.streams.video[0].codec_context.width == width
+                and video.streams.video[0].codec_context.height == height
+            )
+    # no docs on what exception could be
+    except Exception:  # pylint: disable=broad-except
+        return False
+
+
+@asyncify
+def _add_metadata(path: Path, creation: datetime, title: str) -> None:
+    local_tz = datetime.now(timezone.utc).astimezone().tzinfo
+    creation = creation.astimezone(local_tz)
+    output_path = path.parent / path.name.replace(".mp4", ".metadata.mp4")
+    with av.open(str(path)) as input_file:
+        output_file = av.open(str(output_path), "w")
+        for key, value in input_file.metadata.items():
+            output_file.metadata[key] = value
+        output_file.metadata["creation_time"] = creation.isoformat()
+        output_file.metadata["title"] = title
+        output_file.metadata["year"] = creation.date().isoformat()
+        output_file.metadata["release"] = creation.date().isoformat()
+
+        in_stream = input_file.streams.video[0]
+        out_stream = output_file.add_stream(template=in_stream)
+
+        for packet in input_file.demux(in_stream):
+            if packet.dts is None:
+                continue
+
+            packet.stream = out_stream
+            output_file.mux(packet)
+        output_file.close()
+    os.remove(path)
+    output_path.rename(path)
 
 
 async def _download_event_video(ctx: BackupContext, camera: d.Camera, event: Event, verify: bool, force: bool) -> bool:
@@ -563,34 +653,38 @@ async def _download_event_video(ctx: BackupContext, camera: d.Camera, event: Eve
         _LOGGER.debug(
             "Rename event file %s: %s %s %s: %s", event.id, event.start, event.end, event.event_type, event_path
         )
+        await aos.makedirs(event_path.parent, exist_ok=True)
         await aos.rename(existing_event_path, event_path)
 
     if verify and event_path.exists():
         valid = False
         if event.end is not None:
-            try:
-                with av.open(str(event_path)) as video:
-                    length = (event.end - event.start).total_seconds()
-                    slength = float(video.streams.video[0].duration * video.streams.video[0].time_base)
-                    valid = (
-                        (slength / length) > 0.80  # export is fuzzy
-                        and video.streams.video[0].codec_context.width == camera.channels[0].width
-                        and video.streams.video[0].codec_context.height == camera.channels[0].height
-                    )
-            # no docs on what exception could be
-            except Exception:  # pylint: disable=broad-except
-                pass
+            valid = await _verify_video_file(
+                event_path,
+                (event.end - event.start).total_seconds(),
+                camera.channels[0].width,
+                camera.channels[0].height,
+            )
 
         if not valid:
             _LOGGER.warning("Corrupted video file for event (%s), redownloading", event.id)
             await aos.remove(event_path)
 
+    downloaded = False
     if not event_path.exists() and event.end is not None:
         _LOGGER.debug("Download event %s: %s %s %s: %s", event.id, event.start, event.end, event.event_type, event_path)
         await aos.makedirs(event_path.parent, exist_ok=True)
         await camera.get_video(event.start, event.end, output_file=event_path)
-        return True
-    return False
+        downloaded = True
+
+    if (verify or downloaded) and event.end is not None:
+        file_context = event.get_file_context(ctx)
+        try:
+            await _add_metadata(event_path, event.start, file_context["title"])
+        # no docs on what exception could be
+        except Exception as e:  # pylint: disable=broad-except
+            _LOGGER.warning("Failed to write metadta for event (%s): %s", event.id, e)
+    return downloaded
 
 
 async def _download_event(ctx: BackupContext, event: Event, verify: bool, force: bool, pb: Progress) -> bool:

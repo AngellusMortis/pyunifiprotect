@@ -439,3 +439,22 @@ def decode_token_cookie(token_cookie: Morsel[str]) -> Dict[str, Any] | None:
     except Exception as broad_ex:  # pylint: disable=broad-except
         _LOGGER.debug("Authentication token decode error: %s", broad_ex)
         return None
+
+
+def format_duration(duration: timedelta) -> str:
+    """Formats a timedelta as a string."""
+
+    seconds = int(duration.total_seconds())
+    hours = seconds // 3600
+    seconds -= hours * 3600
+    minutes = seconds // 60
+    seconds -= minutes * 60
+
+    output = ""
+    if hours > 0:
+        output = f"{hours}h"
+    if minutes > 0:
+        output = f"{output}{minutes}m"
+    output = f"{output}{seconds}s"
+
+    return output
