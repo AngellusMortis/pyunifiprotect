@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Callable, List, Optional
 
@@ -12,6 +12,7 @@ from pyunifiprotect import data as d
 from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.cli import base
 from pyunifiprotect.exceptions import NvrError
+from pyunifiprotect.utils import local_datetime
 
 app = typer.Typer(rich_markup_mode="rich")
 
@@ -110,8 +111,6 @@ def list_ids(ctx: typer.Context) -> None:
     the TZ environment variable.
     """
 
-    local_tz = datetime.now(timezone.utc).astimezone().tzinfo
-
     require_no_event_id(ctx)
     objs: dict[str, d.Event] = ctx.obj.events
     to_print: list[tuple[str, str, datetime]] = []
@@ -123,7 +122,7 @@ def list_ids(ctx: typer.Context) -> None:
         if len(event_type) > longest_event:
             longest_event = len(event_type)
         dt = obj.timestamp or obj.start
-        dt = dt.astimezone(local_tz)
+        dt = local_datetime(dt)
 
         to_print.append((obj.id, event_type, dt))
 

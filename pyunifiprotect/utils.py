@@ -7,6 +7,7 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone, tzinfo
 from decimal import Decimal
 from enum import Enum
+from hashlib import sha224
 from http.cookies import Morsel
 from inspect import isclass
 from ipaddress import AddressValueError, IPv4Address
@@ -31,6 +32,7 @@ from typing import (
     Union,
 )
 from uuid import UUID
+import zoneinfo
 
 from aiohttp import ClientResponse
 import jwt
@@ -59,6 +61,7 @@ SNAKE_CASE_KEYS = [
     "total_bytes",
     "used_bytes",
 ]
+TIMEZONE_GLOBAL: tzinfo | None = None
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -458,3 +461,62 @@ def format_duration(duration: timedelta) -> str:
     output = f"{output}{seconds}s"
 
     return output
+
+
+def _set_timezone(tz: tzinfo | str) -> tzinfo:
+    global TIMEZONE_GLOBAL  # pylint: disable=global-statement
+
+    if isinstance(tz, str):
+        tz = zoneinfo.ZoneInfo(tz)
+
+    TIMEZONE_GLOBAL = tz
+
+    return TIMEZONE_GLOBAL
+
+
+def get_local_timezone() -> tzinfo:
+    """Gets Olson timezone name for localizing datetimes"""
+
+    if TIMEZONE_GLOBAL is not None:
+        return TIMEZONE_GLOBAL
+
+    try:
+        from homeassistant.util import (  # pylint: disable=import-outside-toplevel
+            dt as dt_util,
+        )
+
+        return _set_timezone(dt_util.DEFAULT_TIME_ZONE)
+    except ImportError:
+        pass
+
+    timezone_name = os.environ.get("TZ")
+    if timezone_name:
+        return _set_timezone(timezone_name)
+
+    timezone_name = "UTC"
+    timezone_locale = Path("/etc/localtime")
+    if timezone_locale.exists():
+        with open(timezone_locale, "rb") as tzfile:
+            tzfile_digest = sha224(tzfile.read()).hexdigest()
+
+        for root, _, filenames in os.walk(Path("/usr/share/zoneinfo/")):
+            for filename in filenames:
+                fullname = os.path.join(root, filename)
+                with open(fullname, "rb") as f:
+                    digest = sha224(f.read()).hexdigest()
+                    if digest == tzfile_digest:
+                        timezone_name = "/".join((fullname.split("/"))[-2:])
+
+    return _set_timezone(timezone_name)
+
+
+def local_datetime(dt: datetime | None = None) -> datetime:
+    """Returns datetime in local timezone"""
+
+    if dt is None:
+        dt = datetime.utcnow().replace(tzinfo=zoneinfo.ZoneInfo("UTC"))
+
+    local_tz = get_local_timezone()
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=local_tz)
+    return dt.astimezone(local_tz)

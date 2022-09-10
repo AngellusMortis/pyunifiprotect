@@ -205,9 +205,7 @@ python-dateutil==2.8.2
 python-dotenv==0.21.0
     # via pyunifiprotect (setup.cfg)
 pytz==2022.2.1
-    # via
-    #   dateparser
-    #   pyunifiprotect (setup.cfg)
+    # via dateparser
 pytz-deprecation-shim==0.1.0.post0
     # via tzlocal
 regex==2022.3.2
@@ -255,8 +253,6 @@ types-aiofiles==22.1.0
 types-dateparser==1.1.4
     # via pyunifiprotect (setup.cfg)
 types-pillow==9.2.1
-    # via pyunifiprotect (setup.cfg)
-types-pytz==2022.2.1.0
     # via pyunifiprotect (setup.cfg)
 types-termcolor==1.1.5
     # via pyunifiprotect (setup.cfg)

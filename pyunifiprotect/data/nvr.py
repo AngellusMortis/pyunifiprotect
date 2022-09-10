@@ -18,9 +18,9 @@ from typing import (
     Union,
 )
 from uuid import UUID
+import zoneinfo
 
 from pydantic.fields import PrivateAttr
-import pytz
 
 from pyunifiprotect.data.base import (
     ProtectBaseObject,
@@ -775,7 +775,7 @@ class NVR(ProtectDeviceModel):
         if "recordingRetentionDurationMs" in data and data["recordingRetentionDurationMs"] is not None:
             data["recordingRetentionDuration"] = timedelta(milliseconds=data.pop("recordingRetentionDurationMs"))
         if "timezone" in data and not isinstance(data["timezone"], tzinfo):
-            data["timezone"] = pytz.timezone(data["timezone"])
+            data["timezone"] = zoneinfo.ZoneInfo(data["timezone"])
 
         return super().unifi_dict_to_dict(data)
 

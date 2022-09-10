@@ -45,7 +45,12 @@ import typer
 from pyunifiprotect import data as d
 from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.cli import base
-from pyunifiprotect.utils import format_duration, utc_now
+from pyunifiprotect.utils import (
+    format_duration,
+    get_local_timezone,
+    local_datetime,
+    utc_now,
+)
 
 if TYPE_CHECKING:
     from click.core import Parameter
@@ -169,8 +174,7 @@ class Event(Base):
                 smart_types_title = [s.title() for s in smart_types]
                 event_type_pretty = f"Smart Detection ({', '.join(smart_types_title)})"
 
-            local_tz = datetime.now(timezone.utc).astimezone().tzinfo
-            start_local = self.start.astimezone(local_tz)
+            start_local = local_datetime(self.start)
             self._context = {
                 "year": str(self.start.year),
                 "month": str(self.start.month),
@@ -326,7 +330,7 @@ def main(
     _setup_logger(verbose)
 
     protect: ProtectApiClient = ctx.obj.protect
-    local_tz = datetime.now(timezone.utc).astimezone().tzinfo
+    local_tz = get_local_timezone()
 
     if start is None:
         start_dt = protect.bootstrap.recording_start
@@ -615,31 +619,46 @@ def _verify_video_file(path: Path, length: float, width: int, height: int) -> bo
 
 
 @asyncify
-def _add_metadata(path: Path, creation: datetime, title: str) -> None:
-    local_tz = datetime.now(timezone.utc).astimezone().tzinfo
-    creation = creation.astimezone(local_tz)
+def _add_metadata(path: Path, creation: datetime, title: str) -> bool:
+    creation = local_datetime(creation)
     output_path = path.parent / path.name.replace(".mp4", ".metadata.mp4")
-    with av.open(str(path)) as input_file:
-        output_file = av.open(str(output_path), "w")
-        for key, value in input_file.metadata.items():
-            output_file.metadata[key] = value
-        output_file.metadata["creation_time"] = creation.isoformat()
-        output_file.metadata["title"] = title
-        output_file.metadata["year"] = creation.date().isoformat()
-        output_file.metadata["release"] = creation.date().isoformat()
 
-        in_stream = input_file.streams.video[0]
-        out_stream = output_file.add_stream(template=in_stream)
+    success = True
+    try:
+        with av.open(str(path)) as input_file:
+            with av.open(str(output_path), "w") as output_file:
+                for key, value in input_file.metadata.items():
+                    output_file.metadata[key] = value
+                output_file.metadata["creation_time"] = creation.isoformat()
+                output_file.metadata["title"] = title
+                output_file.metadata["year"] = creation.date().isoformat()
+                output_file.metadata["release"] = creation.date().isoformat()
 
-        for packet in input_file.demux(in_stream):
-            if packet.dts is None:
-                continue
+                in_to_out: dict[str, Any] = {}
+                for stream in input_file.streams:
+                    in_to_out[stream] = output_file.add_stream(template=stream)
+                    in_to_out[stream].metadata["creation_time"] = creation.isoformat()
 
-            packet.stream = out_stream
-            output_file.mux(packet)
-        output_file.close()
-    os.remove(path)
-    output_path.rename(path)
+                for packet in input_file.demux(list(in_to_out.keys())):
+                    if packet.dts is None:
+                        continue
+
+                    packet.stream = in_to_out[packet.stream]
+                    try:
+                        output_file.mux(packet)
+                    # some frames may be corrupted on disk from NVR
+                    except ValueError:
+                        continue
+    # no docs on what exception could be
+    except Exception:  # pylint: disable=broad-except
+        success = False
+    finally:
+        if success:
+            os.remove(path)
+            output_path.rename(path)
+        elif output_path.exists():
+            os.remove(output_path)
+    return success
 
 
 async def _download_event_video(ctx: BackupContext, camera: d.Camera, event: Event, verify: bool, force: bool) -> bool:
@@ -679,11 +698,8 @@ async def _download_event_video(ctx: BackupContext, camera: d.Camera, event: Eve
 
     if (verify or downloaded) and event.end is not None:
         file_context = event.get_file_context(ctx)
-        try:
-            await _add_metadata(event_path, event.start, file_context["title"])
-        # no docs on what exception could be
-        except Exception as e:  # pylint: disable=broad-except
-            _LOGGER.warning("Failed to write metadta for event (%s): %s", event.id, e)
+        if not await _add_metadata(event_path, event.start, file_context["title"]):
+            _LOGGER.warning("Failed to write metadata for event (%s)", event.id)
     return downloaded
 
 
@@ -824,6 +840,8 @@ def events_cmd(
 ) -> None:
     """Backup thumbnails and video clips for camera events."""
 
+    # surpress av logging messages
+    av.logging.set_level(av.logging.PANIC)  # pylint: disable=c-extension-no-member
     ufp_events = [d.EventType(e.value) for e in event_types]
     if prune and force:
         _wipe_files(ctx.obj, no_input)
