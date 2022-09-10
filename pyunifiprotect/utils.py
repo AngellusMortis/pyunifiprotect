@@ -481,7 +481,7 @@ def get_local_timezone() -> tzinfo:
         return TIMEZONE_GLOBAL
 
     try:
-        from homeassistant.util import (  # pylint: disable=import-outside-toplevel  # type: ignore
+        from homeassistant.util import (  # type: ignore  # pylint: disable=import-outside-toplevel
             dt as dt_util,
         )
 
