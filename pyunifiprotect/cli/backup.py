@@ -284,7 +284,7 @@ OPTION_EVENT_FORMAT = typer.Option(
     "{year}/{month}/{day}/{hour}/{datetime}{sep}{mac}{sep}{camera_slug}{event_type}.mp4", "--event-format"
 )
 OPTION_TITLE_FORMAT = typer.Option(
-    "{time_pretty_local} {sep} {camera_name} {sep} {event_type_pretty} {sep} {length_pretty}",
+    "{time_sort_pretty_local} {sep} {camera_name} {sep} {event_type_pretty} {sep} {length_pretty}",
     "--title-format",
 )
 OPTION_VERBOSE = typer.Option(False, "-v", "--verbose", help="Debug logging")
