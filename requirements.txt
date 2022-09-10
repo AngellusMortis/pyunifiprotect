@@ -22,6 +22,8 @@ async-timeout==4.0.2
     #   pyunifiprotect (setup.cfg)
 attrs==22.1.0
     # via aiohttp
+av==9.2.0
+    # via pyunifiprotect (setup.cfg)
 backcall==0.2.0
     # via ipython
 charset-normalizer==2.1.1

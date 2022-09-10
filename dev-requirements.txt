@@ -26,6 +26,8 @@ attrs==22.1.0
     # via
     #   aiohttp
     #   pytest
+av==9.2.0
+    # via pyunifiprotect (setup.cfg)
 backcall==0.2.0
     # via ipython
 base36==0.1.1

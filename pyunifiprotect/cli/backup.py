@@ -12,8 +12,10 @@ import sys
 import time
 from typing import TYPE_CHECKING, Any, Optional, cast
 
+from PIL import Image
 import aiofiles
 import aiofiles.os as aos
+import av
 import dateparser
 from rich.progress import (
     BarColumn,
@@ -123,6 +125,7 @@ class Event(Base):
     _end: datetime | None = None
     _smart_types: set[str] | None = None
     _context: dict[str, str] | None = None
+    _glob_context: dict[str, str] | None = None
 
     @property
     def start(self) -> datetime:
@@ -168,15 +171,39 @@ class Event(Base):
             }
         return self._context
 
+    def get_glob_file_context(self, ctx: BackupContext) -> dict[str, str]:
+        if self._glob_context is None:
+            self._glob_context = self.get_file_context(ctx).copy()
+            self._glob_context["camera_slug"] = "*"
+        return self._glob_context
+
     def get_thumbnail_path(self, ctx: BackupContext) -> Path:
         context = self.get_file_context(ctx)
         file_path = ctx.thumbnail_format.format(**context)
         return ctx.output / file_path
 
+    def get_existing_thumbnail_path(self, ctx: BackupContext) -> Path | None:
+        context = self.get_glob_file_context(ctx)
+        file_path = ctx.thumbnail_format.format(**context)
+
+        paths = list(ctx.output.glob(file_path))
+        if paths:
+            return paths[0]
+        return None
+
     def get_event_path(self, ctx: BackupContext) -> Path:
         context = self.get_file_context(ctx)
         file_path = ctx.event_format.format(**context)
         return ctx.output / file_path
+
+    def get_existing_event_path(self, ctx: BackupContext) -> Path | None:
+        context = self.get_glob_file_context(ctx)
+        file_path = ctx.event_format.format(**context)
+
+        paths = list(ctx.output.glob(file_path))
+        if paths:
+            return paths[0]
+        return None
 
 
 @dataclass
@@ -491,43 +518,100 @@ async def _download_watcher(count: int, tasks: _DownloadEventQueue, no_error_fla
     return downloaded
 
 
-async def _download_event(ctx: BackupContext, event: Event, force: bool, pb: Progress) -> bool:
+async def _download_event_thumb(ctx: BackupContext, event: Event, verify: bool, force: bool) -> bool:
+    thumb_path = event.get_thumbnail_path(ctx)
+    existing_thumb_path = event.get_existing_thumbnail_path(ctx)
+
+    if force and existing_thumb_path:
+        _LOGGER.debug("Delete file %s", existing_thumb_path)
+        await aos.remove(existing_thumb_path)
+
+    if existing_thumb_path and str(existing_thumb_path) != str(thumb_path):
+        _LOGGER.debug(
+            "Rename thumb file %s: %s %s %s: %s", event.id, event.start, event.end, event.event_type, thumb_path
+        )
+        await aos.rename(existing_thumb_path, thumb_path)
+
+    if verify and thumb_path.exists():
+        try:
+            image = Image.open(thumb_path)
+            image.verify()
+        # no docs on what exception could be
+        except Exception:  # pylint: disable=broad-except
+            _LOGGER.warning("Corrupted thumb file for event (%s), redownloading", event.id)
+            await aos.remove(thumb_path)
+
+    if not thumb_path.exists():
+        _LOGGER.debug("Download thumbnail %s: %s %s: %s", event.id, event.start, event.event_type, thumb_path)
+        thumbnail = await ctx.protect.get_event_thumbnail(event.id)  # type: ignore
+        if thumbnail is not None:
+            await aos.makedirs(thumb_path.parent, exist_ok=True)
+            async with aiofiles.open(thumb_path, mode="wb") as f:
+                await f.write(thumbnail)
+            return True
+    return False
+
+
+async def _download_event_video(ctx: BackupContext, camera: d.Camera, event: Event, verify: bool, force: bool) -> bool:
+    event_path = event.get_event_path(ctx)
+    existing_event_path = event.get_existing_event_path(ctx)
+    if force and existing_event_path:
+        _LOGGER.debug("Delete file %s", existing_event_path)
+        await aos.remove(existing_event_path)
+
+    if existing_event_path and str(existing_event_path) != str(event_path):
+        _LOGGER.debug(
+            "Rename event file %s: %s %s %s: %s", event.id, event.start, event.end, event.event_type, event_path
+        )
+        await aos.rename(existing_event_path, event_path)
+
+    if verify and event_path.exists():
+        valid = False
+        if event.end is not None:
+            try:
+                with av.open(str(event_path)) as video:
+                    length = (event.end - event.start).total_seconds()
+                    slength = float(video.streams.video[0].duration * video.streams.video[0].time_base)
+                    valid = (
+                        (slength / length) > 0.85  # export is fuzzy
+                        and video.streams.video[0].codec_context.width == camera.channels[0].width
+                        and video.streams.video[0].codec_context.height == camera.channels[0].height
+                    )
+            # no docs on what exception could be
+            except Exception:  # pylint: disable=broad-except
+                pass
+
+        if not valid:
+            _LOGGER.warning("Corrupted video file for event (%s), redownloading", event.id)
+            await aos.remove(event_path)
+
+    if not event_path.exists() and event.end is not None:
+        _LOGGER.debug("Download event %s: %s %s %s: %s", event.id, event.start, event.end, event.event_type, event_path)
+        await aos.makedirs(event_path.parent, exist_ok=True)
+        await camera.get_video(event.start, event.end, output_file=event_path)
+        return True
+    return False
+
+
+async def _download_event(ctx: BackupContext, event: Event, verify: bool, force: bool, pb: Progress) -> bool:
 
     downloaded = False
     camera = ctx.protect.bootstrap.get_device_from_mac(event.camera_mac)  # type: ignore
     if camera is not None:
         camera = cast(d.Camera, camera)
 
-        thumb_path = event.get_thumbnail_path(ctx)
-        if force and thumb_path.exists():
-            _LOGGER.debug("Delete file %s", thumb_path)
-            await aos.remove(thumb_path)
-        if not thumb_path.exists():
-            _LOGGER.debug("Download thumbnail %s: %s %s: %s", event.id, event.start, event.event_type, thumb_path)
-            thumbnail = await ctx.protect.get_event_thumbnail(event.id)  # type: ignore
-            if thumbnail is not None:
-                downloaded = True
-                await aos.makedirs(thumb_path.parent, exist_ok=True)
-                async with aiofiles.open(thumb_path, mode="wb") as f:
-                    await f.write(thumbnail)
-
-        event_path = event.get_event_path(ctx)
-        if force and event_path.exists():
-            _LOGGER.debug("Delete file %s", event_path)
-            await aos.remove(event_path)
-        if not event_path.exists() and event.end is not None:
-            downloaded = True
-            _LOGGER.debug(
-                "Download event %s: %s %s %s: %s", event.id, event.start, event.end, event.event_type, event_path
-            )
-            await aos.makedirs(event_path.parent, exist_ok=True)
-            await camera.get_video(event.start, event.end, output_file=event_path)
+        downloaded = await _download_event_thumb(ctx, event, verify, force)
+        downloaded = downloaded | await _download_event_video(ctx, camera, event, verify, force)
     pb.update(pb.tasks[0].id, advance=1)
     return downloaded
 
 
 async def _download_events(
-    ctx: BackupContext, event_types: list[d.EventType], smart_types: list[d.SmartDetectObjectType], force: bool
+    ctx: BackupContext,
+    event_types: list[d.EventType],
+    smart_types: list[d.SmartDetectObjectType],
+    verify: bool,
+    force: bool,
 ) -> tuple[int, int]:
     start = ctx.start
     end = ctx.end or utc_now()
@@ -584,9 +668,9 @@ async def _download_events(
                         if not event.smart_types.intersection(smart_types_set):
                             continue
 
-                    task = loop.create_task(_download_event(ctx, event, force, pb))
+                    task = loop.create_task(_download_event(ctx, event, verify, force, pb))
                     # waits for a free processing slot
-                    await tasks.put(QueuedDownload(task=task, args=[ctx, event, force, pb]))
+                    await tasks.put(QueuedDownload(task=task, args=[ctx, event, verify, force, pb]))
 
                 offset += ctx.page_size
                 page = query.offset(offset)
@@ -606,6 +690,7 @@ async def _events(
     smart_types: list[d.SmartDetectObjectType],
     prune: bool,
     force: bool,
+    verify: bool,
     no_input: bool,
 ) -> None:
     try:
@@ -622,7 +707,7 @@ async def _events(
 
         _LOGGER.warning("Updated %s event(s)", await _update_events(ctx))
         ctx.start = original_start
-        count, downloaded = await _download_events(ctx, event_types, smart_types, force)
+        count, downloaded = await _download_events(ctx, event_types, smart_types, verify, force)
         verified = count - downloaded
         _LOGGER.warning(
             "Total events: %s. Verified %s existing event(s). Downloaded %s new event(s)", count, verified, downloaded
@@ -640,6 +725,7 @@ def events_cmd(
     smart_types: list[d.SmartDetectObjectType] = OPTION_SMART_TYPES,
     prune: bool = typer.Option(False, "-p", "--prune", help="Prune events older then start"),
     force: bool = typer.Option(False, "-f", "--force", help="Force update all events and redownload all clips"),
+    verify: bool = typer.Option(False, "-v", "--verify", help="Verify files on disk"),
     no_input: bool = typer.Option(False, "--no-input"),
 ) -> None:
     """Backup thumbnails and video clips for camera events."""
@@ -647,4 +733,4 @@ def events_cmd(
     ufp_events = [d.EventType(e.value) for e in event_types]
     if prune and force:
         _wipe_files(ctx.obj, no_input)
-    asyncio.run(_events(ctx.obj, ufp_events, smart_types, prune, force, no_input))
+    asyncio.run(_events(ctx.obj, ufp_events, smart_types, prune, force, verify, no_input))
