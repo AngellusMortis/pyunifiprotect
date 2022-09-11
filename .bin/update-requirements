@@ -11,9 +11,9 @@ setRoot
 pushd "$ROOT_PATH" 2>&1 >/dev/null
 
 echo "Updating requirements.txt..."
-pip-compile --upgrade --extra=full --output-file=requirements.txt --pip-args='--root-user-action=ignore' setup.cfg
+pip-compile --upgrade --extra=full --output-file=requirements.txt --pip-args='--root-user-action=ignore' pyproject.toml
 echo "Updating dev-requirements.txt..."
-pip-compile --upgrade --extra=full --extra=dev --output-file=dev-requirements.txt --pip-args='--root-user-action=ignore -c requirements.txt' setup.cfg
+pip-compile --upgrade --extra=full --extra=dev --output-file=dev-requirements.txt --pip-args='--root-user-action=ignore -c requirements.txt' pyproject.toml
 # TODO: replace pytest-sugar with pytest-rich once it supports xdist
 # pytest-sugar has unreleased fix for disutils deprecation
 sed -i -e 's|pytest-sugar==0.9.4|git+https://github.com/Teemu/pytest-sugar@ee02ada2#egg=pytest-sugar|' dev-requirements.txt
