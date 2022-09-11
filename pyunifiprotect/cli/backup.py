@@ -604,18 +604,23 @@ async def _download_event_thumb(ctx: BackupContext, event: Event, verify: bool, 
 
 
 @asyncify
-def _verify_video_file(path: Path, length: float, width: int, height: int) -> bool:
+def _verify_video_file(path: Path, length: float, width: int, height: int, title: str) -> tuple[bool, bool]:
     try:
         with av.open(str(path)) as video:
             slength = float(video.streams.video[0].duration * video.streams.video[0].time_base)
-            return (
+            valid = (
                 (slength / length) > 0.80  # export is fuzzy
                 and video.streams.video[0].codec_context.width == width
                 and video.streams.video[0].codec_context.height == height
             )
+            metadata_valid = False
+            if valid:
+                metadata_valid = bool(video.metadata["title"] == title)
+            return valid, metadata_valid
+
     # no docs on what exception could be
     except Exception:  # pylint: disable=broad-except
-        return False
+        return False, False
 
 
 @asyncify
@@ -675,14 +680,16 @@ async def _download_event_video(ctx: BackupContext, camera: d.Camera, event: Eve
         await aos.makedirs(event_path.parent, exist_ok=True)
         await aos.rename(existing_event_path, event_path)
 
+    metadata_valid = True
     if verify and event_path.exists():
         valid = False
         if event.end is not None:
-            valid = await _verify_video_file(
+            valid, metadata_valid = await _verify_video_file(
                 event_path,
                 (event.end - event.start).total_seconds(),
                 camera.channels[0].width,
                 camera.channels[0].height,
+                event.get_file_context(ctx)["title"],
             )
 
         if not valid:
@@ -696,7 +703,7 @@ async def _download_event_video(ctx: BackupContext, camera: d.Camera, event: Eve
         await camera.get_video(event.start, event.end, output_file=event_path)
         downloaded = True
 
-    if (verify or downloaded) and event.end is not None:
+    if (downloaded or not metadata_valid) and event.end is not None:
         file_context = event.get_file_context(ctx)
         if not await _add_metadata(event_path, event.start, file_context["title"]):
             _LOGGER.warning("Failed to write metadata for event (%s)", event.id)
