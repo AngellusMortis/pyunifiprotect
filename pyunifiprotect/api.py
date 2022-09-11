@@ -1145,7 +1145,9 @@ class ProtectApiClient(BaseApiClient):
         retry_timeout: int = RETRY_TIMEOUT,
     ) -> Optional[bytes]:
         """
-        Gets given thumbanil from a given event
+        Gets given thumbanail from a given event.
+
+        Thumbnail response is a JPEG image.
 
         Note: thumbnails / heatmaps do not generate _until after the event ends_. Events that last longer then
         your retry timeout will always return 404.
@@ -1165,13 +1167,50 @@ class ProtectApiClient(BaseApiClient):
             f"events/{thumbnail_id}/thumbnail", params=params, retry_timeout=retry_timeout
         )
 
+    async def get_event_animated_thumbnail(
+        self,
+        thumbnail_id: str,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        *,
+        speedup: int = 10,
+        retry_timeout: int = RETRY_TIMEOUT,
+    ) -> Optional[bytes]:
+        """
+        Gets given animated thumbanil from a given event.
+
+        Animated thumbnail response is a GIF image.
+
+        Note: thumbnails / do not generate _until after the event ends_. Events that last longer then
+        your retry timeout will always return 404.
+        """
+
+        params: Dict[str, Any] = {
+            "keyFrameOnly": "true",
+            "speedup": speedup,
+        }
+
+        if width is not None:
+            params.update({"w": width})
+
+        if height is not None:
+            params.update({"h": height})
+
+        # old thumbnail URL use thumbnail ID, which is just `e-{event_id}`
+        thumbnail_id = thumbnail_id.replace("e-", "")
+        return await self._get_image_with_retry(
+            f"events/{thumbnail_id}/animated-thumbnail", params=params, retry_timeout=retry_timeout
+        )
+
     async def get_event_heatmap(
         self,
         heatmap_id: str,
         retry_timeout: int = RETRY_TIMEOUT,
     ) -> Optional[bytes]:
         """
-        Gets given heatmap from a given event
+        Gets given heatmap from a given event.
+
+        Heatmap response is a PNG image.
 
         Note: thumbnails / heatmaps do not generate _until after the event ends_. Events that last longer then
         your retry timeout will always return None.

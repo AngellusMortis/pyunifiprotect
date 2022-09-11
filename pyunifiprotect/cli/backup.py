@@ -74,6 +74,7 @@ class BackupContext(base.CliContext):
     output: Path
     seperator: str
     thumbnail_format: str
+    gif_format: str
     event_format: str
     title_format: str
     max_download: int
@@ -81,6 +82,18 @@ class BackupContext(base.CliContext):
     length_cutoff: timedelta
     _db_engine: AsyncEngine | None = None
     _db_session: AsyncSession | None = None
+
+    @property
+    def download_thumbnails(self) -> bool:
+        return self.thumbnail_format == ""
+
+    @property
+    def download_gifs(self) -> bool:
+        return self.gif_format == ""
+
+    @property
+    def download_videos(self) -> bool:
+        return self.event_format == ""
 
     @property
     def db_file(self) -> Path:
@@ -229,6 +242,20 @@ class Event(Base):
             return paths[0]
         return None
 
+    def get_gif_path(self, ctx: BackupContext) -> Path:
+        context = self.get_file_context(ctx)
+        file_path = ctx.gif_format.format(**context)
+        return ctx.output / file_path
+
+    def get_existing_gif_path(self, ctx: BackupContext) -> Path | None:
+        context = self.get_glob_file_context(ctx)
+        file_path = ctx.gif_format.format(**context)
+
+        paths = list(ctx.output.glob(file_path))
+        if paths:
+            return paths[0]
+        return None
+
     def get_event_path(self, ctx: BackupContext) -> Path:
         context = self.get_file_context(ctx)
         file_path = ctx.event_format.format(**context)
@@ -278,17 +305,26 @@ OPTION_EVENT_TYPES = typer.Option(list(EventTypeChoice), "-t", "--event-type")
 OPTION_SMART_TYPES = typer.Option(list(d.SmartDetectObjectType), "-m", "--smart-type")
 OPTION_SPERATOR = typer.Option("-", "--sep")
 OPTION_THUMBNAIL_FORMAT = typer.Option(
-    "{year}/{month}/{day}/{hour}/{datetime}{sep}{mac}{sep}{camera_slug}{event_type}{sep}thumb.jpg", "--thumb-format"
+    "{year}/{month}/{day}/{hour}/{datetime}{sep}{mac}{sep}{camera_slug}{event_type}{sep}thumb.jpg",
+    "--thumb-format",
+    help='Filename format to save event thumbnails to. Set to empty string ("") to skip saving event thumbnails',
+)
+OPTION_GIF_FORMAT = typer.Option(
+    "{year}/{month}/{day}/{hour}/{datetime}{sep}{mac}{sep}{camera_slug}{event_type}{sep}animated.gif",
+    "--gif-format",
+    help='Filename format to save event gifs to. Set to empty string ("") to skip saving event gif',
 )
 OPTION_EVENT_FORMAT = typer.Option(
-    "{year}/{month}/{day}/{hour}/{datetime}{sep}{mac}{sep}{camera_slug}{event_type}.mp4", "--event-format"
+    "{year}/{month}/{day}/{hour}/{datetime}{sep}{mac}{sep}{camera_slug}{event_type}.mp4",
+    "--event-format",
+    help='Filename format to save event gifs to. Set to empty string ("") to skip saving event videos',
 )
 OPTION_TITLE_FORMAT = typer.Option(
     "{time_sort_pretty_local} {sep} {camera_name} {sep} {event_type_pretty} {sep} {length_pretty}",
     "--title-format",
 )
 OPTION_VERBOSE = typer.Option(False, "-v", "--verbose", help="Debug logging")
-OPTION_MAX_DOWNLOAD = typer.Option(10, "-d", "--max-download", help="Max number of concurrent downloads")
+OPTION_MAX_DOWNLOAD = typer.Option(5, "-d", "--max-download", help="Max number of concurrent downloads")
 
 
 def _setup_logger(verbose: bool) -> None:
@@ -317,6 +353,7 @@ def main(
     end: Optional[str] = OPTION_END,
     output_folder: Optional[Path] = OPTION_OUTPUT,
     thumbnail_format: str = OPTION_THUMBNAIL_FORMAT,
+    gif_format: str = OPTION_GIF_FORMAT,
     event_format: str = OPTION_EVENT_FORMAT,
     title_format: str = OPTION_TITLE_FORMAT,
     verbose: bool = OPTION_VERBOSE,
@@ -355,6 +392,7 @@ def main(
         output_format=ctx.obj.output_format,
         output=output_folder,
         thumbnail_format=thumbnail_format,
+        gif_format=gif_format,
         event_format=event_format,
         title_format=title_format,
         max_download=max_download,
@@ -573,9 +611,17 @@ def _verify_thumbnail(path: Path) -> bool:
     return True
 
 
-async def _download_event_thumb(ctx: BackupContext, event: Event, verify: bool, force: bool) -> bool:
-    thumb_path = event.get_thumbnail_path(ctx)
-    existing_thumb_path = event.get_existing_thumbnail_path(ctx)
+async def _download_event_thumb(
+    ctx: BackupContext, event: Event, verify: bool, force: bool, animated: bool = False
+) -> bool:
+    if animated:
+        thumb_type = "gif"
+        thumb_path = event.get_gif_path(ctx)
+        existing_thumb_path = event.get_existing_gif_path(ctx)
+    else:
+        thumb_type = "thumbnail"
+        thumb_path = event.get_thumbnail_path(ctx)
+        existing_thumb_path = event.get_existing_thumbnail_path(ctx)
 
     if force and existing_thumb_path:
         _LOGGER.debug("Delete file %s", existing_thumb_path)
@@ -583,18 +629,30 @@ async def _download_event_thumb(ctx: BackupContext, event: Event, verify: bool, 
 
     if existing_thumb_path and str(existing_thumb_path) != str(thumb_path):
         _LOGGER.debug(
-            "Rename thumb file %s: %s %s %s: %s", event.id, event.start, event.end, event.event_type, thumb_path
+            "Rename event %s file %s: %s %s %s: %s",
+            thumb_type,
+            event.id,
+            event.start,
+            event.end,
+            event.event_type,
+            thumb_path,
         )
         await aos.makedirs(thumb_path.parent, exist_ok=True)
         await aos.rename(existing_thumb_path, thumb_path)
 
     if verify and thumb_path.exists() and not await _verify_thumbnail(thumb_path):
-        _LOGGER.warning("Corrupted thumb file for event (%s), redownloading", event.id)
+        _LOGGER.warning("Corrupted event %s file for event (%s), redownloading", thumb_type, event.id)
         await aos.remove(thumb_path)
 
     if not thumb_path.exists():
-        _LOGGER.debug("Download thumbnail %s: %s %s: %s", event.id, event.start, event.event_type, thumb_path)
-        thumbnail = await ctx.protect.get_event_thumbnail(event.id)  # type: ignore
+        _LOGGER.debug(
+            "Download event %s %s: %s %s: %s", thumb_type, event.id, event.start, event.event_type, thumb_path
+        )
+        event_id = str(event.id)
+        if animated:
+            thumbnail = await ctx.protect.get_event_animated_thumbnail(event_id)
+        else:
+            thumbnail = await ctx.protect.get_event_thumbnail(event_id)
         if thumbnail is not None:
             await aos.makedirs(thumb_path.parent, exist_ok=True)
             async with aiofiles.open(thumb_path, mode="wb") as f:
@@ -716,9 +774,15 @@ async def _download_event(ctx: BackupContext, event: Event, verify: bool, force:
     camera = ctx.protect.bootstrap.get_device_from_mac(event.camera_mac)  # type: ignore
     if camera is not None:
         camera = cast(d.Camera, camera)
+        downloads = []
+        if ctx.download_thumbnails:
+            downloads.append(_download_event_thumb(ctx, event, verify, force))
+        if ctx.download_gifs:
+            downloads.append(_download_event_thumb(ctx, event, verify, force, animated=True))
+        if ctx.download_thumbnails:
+            downloads.append(_download_event_video(ctx, camera, event, verify, force))
 
-        downloaded = await _download_event_thumb(ctx, event, verify, force)
-        downloaded = downloaded | await _download_event_video(ctx, camera, event, verify, force)
+        downloaded = any(await asyncio.gather(*downloads))
     pb.update(pb.tasks[0].id, advance=1)
     return downloaded
 

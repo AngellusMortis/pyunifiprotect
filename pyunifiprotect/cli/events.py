@@ -159,9 +159,31 @@ def save_thumbnail(
 
 
 @app.command()
+def save_animated_thumbnail(
+    ctx: typer.Context,
+    output_path: Path = typer.Argument(..., help="GIF format"),
+) -> None:
+    """Saves animated thumbnail for event.
+
+    Only for ring, motion and smartDetectZone events.
+    """
+
+    require_event_id(ctx)
+    event: d.Event = ctx.obj.event
+
+    thumbnail = base.run(ctx, event.get_animated_thumbnail())
+    if thumbnail is None:
+        typer.secho("Could not get thumbnail", fg="red")
+        raise typer.Exit(1)
+
+    with open(output_path, "wb") as f:
+        f.write(thumbnail)
+
+
+@app.command()
 def save_heatmap(
     ctx: typer.Context,
-    output_path: Path = typer.Argument(..., help="JPEG format"),
+    output_path: Path = typer.Argument(..., help="PNG format"),
 ) -> None:
     """
     Saves heatmap for event.

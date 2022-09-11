@@ -268,6 +268,17 @@ class Event(ProtectModelWithId):
             raise NotAuthorized(f"Do not have permission to read media for camera: {self.id}")
         return await self.api.get_event_thumbnail(self.thumbnail_id, width, height)
 
+    async def get_animated_thumbnail(
+        self, width: Optional[int] = None, height: Optional[int] = None, *, speedup: int = 10
+    ) -> Optional[bytes]:
+        """Gets animated thumbnail for event"""
+
+        if self.thumbnail_id is None:
+            return None
+        if not self.api.bootstrap.auth_user.can(ModelType.CAMERA, PermissionNode.READ_MEDIA, self.camera):
+            raise NotAuthorized(f"Do not have permission to read media for camera: {self.id}")
+        return await self.api.get_event_animated_thumbnail(self.thumbnail_id, width, height, speedup=speedup)
+
     async def get_heatmap(self) -> Optional[bytes]:
         """Gets heatmap for event"""
 
