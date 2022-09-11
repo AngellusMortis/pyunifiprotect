@@ -1,9 +1,117 @@
 [build-system]
 requires = [
-  "setuptools >= 40.9.0",
+  "setuptools >= 61.0.0", "setuptools_scm[toml]>=6.2",
   "wheel",
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyunifiprotect"
+description = "Unofficial UniFi Protect Python API and CLI"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    {name="Bjarne Riis", email="bjarne@briis.com"},
+    {name="Christopher Bailey", email="cbailey@mort.is"},
+]
+maintainers = [
+    {name="Christopher Bailey", email="cbailey@mort.is"},
+    {name="J. Nick Koston", email="nick@koston.org"},
+]
+license = {text="MIT"}
+keywords = ["UniFiProtect", "UniFi Protect", "Surveilance", "UniFi", "Home Assistant", "Python"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Build Tools",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10"
+]
+dynamic = ["version"]
+dependencies = [
+    "aiofiles",
+    "aiohttp",
+    "aioshutil",
+    "async-timeout",
+    "dateparser",
+    "orjson",
+    "packaging",
+    "pillow",
+    "pydantic!=1.9.1", # unexpected breaking change
+    "pyjwt",
+    "typer[all]>0.6",
+]
+
+[project.urls]
+"Source Code" = "https://github.com/AngellusMortis/pyunifiprotect"
+"Bug Reports" = "https://github.com/AngellusMortis/pyunifiprotect/issues"
+
+[project.optional-dependencies]
+dev = [
+    "base36",
+    "black",
+    "build",
+    "coverage[toml]",
+    "flake8-docstrings",
+    "flake8",
+    "ipython",
+    "mypy",
+    "pip-tools",
+    "pydocstyle",
+    "pylint_strict_informational",
+    "pylint",
+    "pyproject-flake8",
+    "pytest-asyncio",
+    "pytest-benchmark",
+    "pytest-cov",
+    "pytest-sugar",
+    "pytest-timeout>=1.2.1",
+    "pytest-xdist",
+    "pytest",
+    "sqlalchemy[asyncio,mypy]",
+    "termcolor",
+    "types-aiofiles",
+    "types-dateparser",
+    "types-pillow",
+    "types-termcolor",
+]
+full = [
+    "aiosqlite",
+    "asyncify",
+    "av",
+    "ipython",
+    "python-dotenv",
+    "sqlalchemy[asyncio]",
+    "termcolor",
+]
+shell = [
+    "ipython",
+    "termcolor",
+    "python-dotenv",
+]
+backup = [
+    "aiosqlite",
+    "asyncify",
+    "av",
+    "sqlalchemy[asyncio]",
+]
+
+
+[project.scripts]
+unifi-protect = "pyunifiprotect.__main__:start"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["pyunifiprotect", "pyunifiprotect.*"]
+exclude = ["tests", "tests.*"]
+
+[tool.setuptools.package-data]
+pyunifiprotect = ["py.typed"]
+
+[tool.setuptools_scm]
 
 [tool.black]
 line-length = 120
