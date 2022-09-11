@@ -486,18 +486,17 @@ class ProtectApiClient(BaseApiClient):
     use `.save_device()` and update themselves using their own `.set_` methods on the object.
 
     Args:
-
-    * `host`: UFP hostname / IP address
-    * `port`: UFP HTTPS port
-    * `username`: UFP username
-    * `password`: UFP password
-    * `verify_ssl`: Verify HTTPS certificate (default: `True`)
-    * `session`: Optional aiohttp session to use (default: generate one)
-    * `override_connection_host`: Use `host` as your `connection_host` for RTSP stream instead of using the one provided by UniFi Protect.
-    * `minimum_score`: minimum score for events (default: `0`)
-    * `subscribed_models`: Model types you want to filter events for WS. You will need to manually check the bootstrap for updates for events that not subscibred.
-    * `ignore_stats`: Ignore storage, system, etc. stats/metrics from NVR and cameras (default: false)
-    * `debug`: Use full type validation (default: false)
+        host: UFP hostname / IP address
+        port: UFP HTTPS port
+        username: UFP username
+        password: UFP password
+        verify_ssl: Verify HTTPS certificate (default: `True`)
+        session: Optional aiohttp session to use (default: generate one)
+        override_connection_host: Use `host` as your `connection_host` for RTSP stream instead of using the one provided by UniFi Protect.
+        minimum_score: minimum score for events (default: `0`)
+        subscribed_models: Model types you want to filter events for WS. You will need to manually check the bootstrap for updates for events that not subscibred.
+        ignore_stats: Ignore storage, system, etc. stats/metrics from NVR and cameras (default: false)
+        debug: Use full type validation (default: false)
     """
 
     _minimum_score: int
@@ -658,11 +657,10 @@ class ProtectApiClient(BaseApiClient):
         Get list of events from Protect
 
         Args:
-
-        * `start`: start time for events
-        * `end`: end time for events
-        * `limit`: max number of events to return
-        * `types`: list of EventTypes to get events for
+            start: start time for events
+            end: end time for events
+            limit: max number of events to return
+            types: list of EventTypes to get events for
 
         If `limit`, `start` and `end` are not provided, it will default to all events in the last 24 hours.
 
@@ -709,12 +707,11 @@ class ProtectApiClient(BaseApiClient):
         * filters out events with too low of a score
 
         Args:
-
-        * `start`: start time for events
-        * `end`: end time for events
-        * `limit`: max number of events to return
-        * `types`: list of EventTypes to get events for
-        * `smart_detect_types`: Filters the Smart detection types for the events
+            start: start time for events
+            end: end time for events
+            limit: max number of events to return
+            types: list of EventTypes to get events for
+            smart_detect_types: Filters the Smart detection types for the events
 
         If `limit`, `start` and `end` are not provided, it will default to all events in the last 24 hours.
 

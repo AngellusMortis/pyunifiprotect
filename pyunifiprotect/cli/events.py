@@ -46,7 +46,7 @@ def main(
     smart_types: Optional[List[d.SmartDetectObjectType]] = OPTION_SMART_TYPES,
 ) -> None:
     """
-    UniFi Protect Event CLI.
+    Events CLI.
 
     Returns list of events from the last 24 hours without any arguments passed.
     """

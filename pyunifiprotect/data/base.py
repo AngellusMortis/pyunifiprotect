@@ -102,9 +102,8 @@ class ProtectBaseObject(BaseModel):
         Main constructor for `ProtectBaseObject`
 
         Args:
-
-        * `api`: Optional reference to the ProtectAPIClient that created generated the UFP JSON
-        * `data`: decoded UFP JSON
+            api: Optional reference to the ProtectAPIClient that created generated the UFP JSON
+            **data: decoded UFP JSON
 
         `api` is is expected as a `@property`. If it is `None` and accessed, a `BadRequest` will be raised.
 
@@ -304,8 +303,7 @@ class ProtectBaseObject(BaseModel):
         * Runs `.unifi_dict_to_dict` for any child UFP objects
 
         Args:
-
-        * `data`: decoded UFP JSON dict
+            data: decoded UFP JSON dict
         """
 
         # get the API client instance
@@ -402,13 +400,12 @@ class ProtectBaseObject(BaseModel):
         * Remaps items from `._get_unifi_remaps()` in reverse
         * Converts snake_case to camelCase
         * Automatically removes any ProtectApiClient instances that might still be in the data
-        * Automaitcally calls `.unifi_dict()` for any UFP Python objects that are detected
+        * Automatically calls `.unifi_dict()` for any UFP Python objects that are detected
 
         Args:
-
-        `data`: Optional output of `.dict()` for the Python object. If `None`, will call `.dict` first
-        `exclude`: Optional set of fields to exclude from convert. Useful for subclassing and having custom
-            processing for dumping to UFP JSON data.
+            data: Optional output of `.dict()` for the Python object. If `None`, will call `.dict` first
+            exclude: Optional set of fields to exclude from convert. Useful for subclassing and having custom
+                processing for dumping to UFP JSON data.
         """
 
         use_obj = False
@@ -643,8 +640,7 @@ class ProtectModelWithId(ProtectModel):
         Tested updates have been added a methods on applicable devices.
 
         Args:
-
-        * `force_emit`: Emit a fake UFP WS message. Should only be use for when UFP does not properly emit a WS message
+            force_emit: Emit a fake UFP WS message. Should only be use for when UFP does not properly emit a WS message
         """
 
         # do not allow multiple save_device calls at once

@@ -18,7 +18,7 @@ from pyunifiprotect.cli.cameras import app as camera_app
 from pyunifiprotect.cli.chimes import app as chime_app
 from pyunifiprotect.cli.doorlocks import app as doorlock_app
 from pyunifiprotect.cli.events import app as event_app
-from pyunifiprotect.cli.light import app as light_app
+from pyunifiprotect.cli.lights import app as light_app
 from pyunifiprotect.cli.liveviews import app as liveview_app
 from pyunifiprotect.cli.nvr import app as nvr_app
 from pyunifiprotect.cli.sensors import app as sensor_app
@@ -40,7 +40,7 @@ OPTION_USERNAME = typer.Option(
     ...,
     "--username",
     "-U",
-    help="UniFi Protect Username",
+    help="UniFi Protect username",
     prompt=True,
     envvar="UFP_USERNAME",
 )
@@ -77,10 +77,10 @@ OPTION_OUTPUT = typer.Option(
 OPTION_OUT_FORMAT = typer.Option(
     OutputFormatEnum.PLAIN,
     "--output-format",
-    help="Output format for commands. Not all commands support plain and will still output in JSON.",
+    help="Preferred output format. Not all commands support both JSON and plain and may still output in one or the other.",
 )
 OPTION_WS_FILE = typer.Option(None, "--file", "-f", help="Path or raw binary Websocket message")
-OPTION_UNADOPTED = typer.Option(False, "-u", "--include-unadopted", help="Include devices not adopted by this NVR")
+OPTION_UNADOPTED = typer.Option(False, "-u", "--include-unadopted", help="Include devices not adopted by this NVR.")
 ARG_WS_DATA = typer.Argument(None, help="base64 encoded Websocket message")
 
 SLEEP_INTERVAL = 2
@@ -147,7 +147,7 @@ async def _progress_bar(wait_time: int, label: str) -> None:
 @app.command()
 def shell(ctx: typer.Context) -> None:
     """
-    Opens ipython shell with Protect client initialized.
+    Opens iPython shell with Protect client initialized.
 
     Requires the `shell` extra to also be installed.
     """

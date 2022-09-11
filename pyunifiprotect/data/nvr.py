@@ -299,8 +299,7 @@ class Event(ProtectModelWithId):
         """Get the MP4 video clip for this given event
 
         Args:
-
-        * `channel_index`: index of `CameraChannel` on the camera to use to retrieve video from
+            channel_index: index of `CameraChannel` on the camera to use to retrieve video from
 
         Will raise an exception if event does not have a camera, end time or the channel index is wrong.
         """

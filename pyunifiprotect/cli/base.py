@@ -89,7 +89,7 @@ def require_no_device_id(ctx: typer.Context) -> None:
 
 
 def list_ids(ctx: typer.Context) -> None:
-    """Prints list of "id name" for each device."""
+    """Requires no device ID. Prints list of "id name" for each device."""
 
     require_no_device_id(ctx)
     objs: dict[str, ProtectAdoptableDeviceModel] = ctx.obj.devices
@@ -183,7 +183,11 @@ def set_name(ctx: typer.Context, name: Optional[str] = typer.Argument(None)) -> 
 
 
 def update(ctx: typer.Context, data: str) -> None:
-    """Updates the device."""
+    """
+    Updates the device.
+
+    Makes a raw PATCH request to update a device. Advanced usage and usually recommended not to use.
+    """
 
     require_device_id(ctx)
     obj: ProtectAdoptableDeviceModel = ctx.obj.device
@@ -203,7 +207,7 @@ def reboot(ctx: typer.Context, force: bool = OPTION_FORCE) -> None:
 
 
 def unadopt(ctx: typer.Context, force: bool = OPTION_FORCE) -> None:
-    """Unadopt/Unmanage adopted device"""
+    """Unadopt/Unmanage adopted device."""
 
     require_device_id(ctx)
     obj: ProtectAdoptableDeviceModel = ctx.obj.device

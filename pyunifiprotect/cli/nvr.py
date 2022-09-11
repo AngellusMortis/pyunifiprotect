@@ -23,7 +23,7 @@ class NVRContext(base.CliContext):
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context) -> None:
     """
-    UniFi Protect NVR CLI.
+    NVR device CLI.
 
     Return NVR object without any arguments passed.
     """

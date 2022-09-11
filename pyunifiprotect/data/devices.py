@@ -195,11 +195,10 @@ class Light(ProtectMotionDeviceModel):
         """Updates various Light settings.
 
         Args:
-
-        * `mode`: Light trigger mode
-        * `enable_at`: Then the light automatically turns on by itself
-        * `duration`: How long the light should remain on after motion, must be timedelta between 15s and 900s
-        * `sensitivity`: PIR Motion sensitivity
+            mode: Light trigger mode
+            enable_at: Then the light automatically turns on by itself
+            duration: How long the light should remain on after motion, must be timedelta between 15s and 900s
+            sensitivity: PIR Motion sensitivity
         """
 
         if duration is not None and (duration.total_seconds() < 15 or duration.total_seconds() > 900):
@@ -1400,9 +1399,8 @@ class Camera(ProtectMotionDeviceModel):
         Requires ffmpeg to use.
 
         Args:
-
-        * `content_url`: Either a URL accessible by python or a path to a file (ffmepg's `-i` parameter)
-        * `ffmpeg_path`: Optional path to ffmpeg binary
+            content_url: Either a URL accessible by python or a path to a file (ffmepg's `-i` parameter)
+            ffmpeg_path: Optional path to ffmpeg binary
 
         Use either `await stream.run_until_complete()` or `await stream.start()` to start subprocess command
         after getting the stream.
@@ -1423,10 +1421,9 @@ class Camera(ProtectMotionDeviceModel):
         Requires ffmpeg to use.
 
         Args:
-
-        * `content_url`: Either a URL accessible by python or a path to a file (ffmepg's `-i` parameter)
-        * `ffmpeg_path`: Optional path to ffmpeg binary
-        * `blocking`: Awaits stream completion and logs stdout/stderr
+            content_url: Either a URL accessible by python or a path to a file (ffmepg's `-i` parameter)
+            ffmpeg_path: Optional path to ffmpeg binary
+            blocking: Awaits stream completion and logs stdout/stderr
         """
 
         stream = self.create_talkback_stream(content_url, ffmpeg_path)
@@ -1495,8 +1492,7 @@ class Viewer(ProtectAdoptableDeviceModel):
         Sets the liveview current set for the viewer
 
         Args:
-
-        * `liveview`: The liveview you want to set
+            liveview: The liveview you want to set
         """
 
         if self._api is not None:

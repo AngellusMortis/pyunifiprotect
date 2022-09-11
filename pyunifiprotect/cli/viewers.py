@@ -26,7 +26,7 @@ ALL_COMMANDS, DEVICE_COMMANDS = base.init_common_commands(app)
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context, device_id: Optional[str] = ARG_DEVICE_ID) -> None:
     """
-    UniFi Protect Viewer CLI.
+    Viewers device CLI.
 
     Returns full list of Viewers without any arguments passed.
     """

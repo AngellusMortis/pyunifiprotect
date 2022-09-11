@@ -1,0 +1,69 @@
+site_name: Unofficial UniFi Protect Python API and CLI
+repo_url: https://github.com/AngellusMortis/pyunifiprotect
+copyright: pyunifiprotect is an unofficial API for UniFi Protect. There is no affiliation with Ubiquiti.
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - toc:
+      permalink: true
+      toc_depth: "1-5"
+  - pymdownx.highlight:
+      anchor_linenums: true
+      use_pygments: true
+      auto_title: true
+      linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+nav:
+  - Home: "index.md"
+  - Development: "dev.md"
+  - Command Line: "cli.md"
+  - API Reference: "api.md"
+  - Changelog: "https://github.com/AngellusMortis/pyunifiprotect/releases"
+
+plugins:
+  - search
+  - mike:
+      canonical_version: null
+      version_selector: true
+      css_dir: css
+      javascript_dir: js
+  - git-revision-date-localized:
+      enable_creation_date: true
+  - include-markdown
+  - mkdocstrings
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - search.share
+    - header.autohide
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+      primary: blue
+      accent: light blue
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+      primary: blue
+      accent: light blue

@@ -20,6 +20,18 @@
             "type": "shell",
             "command": "${workspaceFolder}/.bin/update-requirements && ${workspaceFolder}/.bin/install-requirements",
             "problemMatcher": []
+        },
+        {
+            "label": "MkDocs: Serve",
+            "type": "shell",
+            "command": "mkdocs serve",
+            "problemMatcher": []
+        },
+        {
+            "label": "MkDocs: Build",
+            "type": "shell",
+            "command": "mkdocs build",
+            "problemMatcher": []
         }
     ]
 }

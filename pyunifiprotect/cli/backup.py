@@ -194,9 +194,9 @@ class Event(Base):
                 "day": str(self.start.day),
                 "hour": str(self.start.hour),
                 "minute": str(self.start.minute),
-                "datetime": self.start.strftime("%Y-%m-%dT%H-%M-%S%z"),
-                "date": self.start.strftime("%Y-%m-%d"),
-                "time": self.start.strftime("%H-%M-%S%z"),
+                "datetime": self.start.strftime("%Y-%m-%dT%H-%M-%S%z").replace("-", ctx.seperator),
+                "date": self.start.strftime("%Y-%m-%d").replace("-", ctx.seperator),
+                "time": self.start.strftime("%H-%M-%S%z").replace("-", ctx.seperator),
                 "time_sort_pretty": self.start.strftime("%H:%M:%S (%Z)"),
                 "time_pretty": self.start.strftime("%I:%M:%S %p (%Z)"),
                 "year_local": str(start_local.year),
@@ -204,9 +204,9 @@ class Event(Base):
                 "day_local": str(start_local.day),
                 "hour_local": str(start_local.hour),
                 "minute_local": str(start_local.minute),
-                "datetime_local": start_local.strftime("%Y-%m-%dT%H-%M-%S%z"),
-                "date_local": start_local.strftime("%Y-%m-%d"),
-                "time_local": start_local.strftime("%H-%M-%S%z"),
+                "datetime_local": start_local.strftime("%Y-%m-%dT%H-%M-%S%z").replace("-", ctx.seperator),
+                "date_local": start_local.strftime("%Y-%m-%d").replace("-", ctx.seperator),
+                "time_local": start_local.strftime("%H-%M-%S%z").replace("-", ctx.seperator),
                 "time_sort_pretty_local": start_local.strftime("%H:%M:%S (%Z)"),
                 "time_pretty_local": start_local.strftime("%I:%M:%S %p (%Z)"),
                 "mac": str(self.camera_mac),
@@ -286,45 +286,59 @@ def relative_datetime(ctx: typer.Context, value: str, param: Parameter) -> datet
 
 _DownloadEventQueue = asyncio.Queue[QueuedDownload]
 
-OPTION_OUTPUT = typer.Option(None, help="Base dir for creating files. Defaults to PWD", envvar="UFP_BACKUP_OUTPUT")
+OPTION_OUTPUT = typer.Option(None, help="Base dir for creating files. Defaults to $PWD.", envvar="UFP_BACKUP_OUTPUT")
 OPTION_START = typer.Option(
     None,
     "-s",
     "--start",
-    help="Defaults to start of recording for NVR",
+    help="Cutoff for start of backup. Defaults to start of recording for NVR.",
     envvar="UFP_BACKUP_START",
 )
-OPTION_PAGE_SIZE = typer.Option(1000, "--page-size", help="Number of events fetched at once")
+OPTION_PAGE_SIZE = typer.Option(
+    1000, "--page-size", help="Number of events fetched at once from local database. Increases memory usage."
+)
 OPTION_LENGTH_CUTOFF = typer.Option(
     timedelta(hours=1).total_seconds(),
     "--length-cutoff",
-    help="Event size cutoff for detecting abnormal events (in seconds)",
+    help="Event size cutoff for detecting abnormal events (in seconds).",
 )
-OPTION_END = typer.Option(None, "-e", "--end", help="Defaults to now", envvar="UFP_BACKUP_END")
-OPTION_EVENT_TYPES = typer.Option(list(EventTypeChoice), "-t", "--event-type")
-OPTION_SMART_TYPES = typer.Option(list(d.SmartDetectObjectType), "-m", "--smart-type")
-OPTION_SPERATOR = typer.Option("-", "--sep")
+OPTION_END = typer.Option(
+    None, "-e", "--end", help="Cutoff for end of backup. Defaults to now.", envvar="UFP_BACKUP_END"
+)
+OPTION_EVENT_TYPES = typer.Option(
+    list(EventTypeChoice), "-t", "--event-type", help="Events to export. Can be used multiple time."
+)
+OPTION_SMART_TYPES = typer.Option(
+    list(d.SmartDetectObjectType),
+    "-m",
+    "--smart-type",
+    help="Smart Detection types to export. Can be used multiple time.",
+)
+OPTION_SPERATOR = typer.Option("-", "--sep", help="Separator used for formatting.")
 OPTION_THUMBNAIL_FORMAT = typer.Option(
     "{year}/{month}/{day}/{hour}/{datetime}{sep}{mac}{sep}{camera_slug}{event_type}{sep}thumb.jpg",
     "--thumb-format",
-    help='Filename format to save event thumbnails to. Set to empty string ("") to skip saving event thumbnails',
+    help='Filename format to save event thumbnails to. Set to empty string ("") to skip saving event thumbnails.',
 )
 OPTION_GIF_FORMAT = typer.Option(
     "{year}/{month}/{day}/{hour}/{datetime}{sep}{mac}{sep}{camera_slug}{event_type}{sep}animated.gif",
     "--gif-format",
-    help='Filename format to save event gifs to. Set to empty string ("") to skip saving event gif',
+    help='Filename format to save event gifs to. Set to empty string ("") to skip saving event gif.',
 )
 OPTION_EVENT_FORMAT = typer.Option(
     "{year}/{month}/{day}/{hour}/{datetime}{sep}{mac}{sep}{camera_slug}{event_type}.mp4",
     "--event-format",
-    help='Filename format to save event gifs to. Set to empty string ("") to skip saving event videos',
+    help='Filename format to save event gifs to. Set to empty string ("") to skip saving event videos.',
 )
 OPTION_TITLE_FORMAT = typer.Option(
     "{time_sort_pretty_local} {sep} {camera_name} {sep} {event_type_pretty} {sep} {length_pretty}",
     "--title-format",
+    help="Format to use to tag title for video metadata.",
 )
-OPTION_VERBOSE = typer.Option(False, "-v", "--verbose", help="Debug logging")
-OPTION_MAX_DOWNLOAD = typer.Option(5, "-d", "--max-download", help="Max number of concurrent downloads")
+OPTION_VERBOSE = typer.Option(False, "-v", "--verbose", help="Debug logging.")
+OPTION_MAX_DOWNLOAD = typer.Option(
+    5, "-d", "--max-download", help="Max number of concurrent downloads. Adds additional loads to NVR."
+)
 
 
 def _setup_logger(verbose: bool) -> None:
@@ -362,7 +376,11 @@ def main(
     length_cutoff: int = OPTION_LENGTH_CUTOFF,
     seperator: str = OPTION_SPERATOR,
 ) -> None:
-    """Backup your UniFi Protect Cameras."""
+    """
+    Backup CLI.
+
+    The backup CLI is still very WIP in progress and consider experimental and potentially unstable (interface may change in the future).
+    """
 
     _setup_logger(verbose)
 
@@ -904,9 +922,9 @@ def events_cmd(
     ctx: typer.Context,
     event_types: list[EventTypeChoice] = OPTION_EVENT_TYPES,
     smart_types: list[d.SmartDetectObjectType] = OPTION_SMART_TYPES,
-    prune: bool = typer.Option(False, "-p", "--prune", help="Prune events older then start"),
-    force: bool = typer.Option(False, "-f", "--force", help="Force update all events and redownload all clips"),
-    verify: bool = typer.Option(False, "-v", "--verify", help="Verify files on disk"),
+    prune: bool = typer.Option(False, "-p", "--prune", help="Prune events older then start."),
+    force: bool = typer.Option(False, "-f", "--force", help="Force update all events and redownload all clips."),
+    verify: bool = typer.Option(False, "-v", "--verify", help="Verifies files on disk."),
     no_input: bool = typer.Option(False, "--no-input"),
 ) -> None:
     """Backup thumbnails and video clips for camera events."""
