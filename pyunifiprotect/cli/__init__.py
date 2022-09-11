@@ -25,7 +25,7 @@ from pyunifiprotect.cli.sensors import app as sensor_app
 from pyunifiprotect.cli.viewers import app as viewer_app
 from pyunifiprotect.data import WSPacket
 from pyunifiprotect.test_util import SampleDataGenerator
-from pyunifiprotect.utils import profile_ws as profile_ws_job
+from pyunifiprotect.utils import get_local_timezone, profile_ws as profile_ws_job
 
 _LOGGER = logging.getLogger("pyunifiprotect")
 
@@ -111,6 +111,9 @@ def main(
     include_unadopted: bool = OPTION_UNADOPTED,
 ) -> None:
     """UniFi Protect CLI"""
+
+    # preload the timezone before any async code runs
+    get_local_timezone()
 
     protect = ProtectApiClient(
         address, port, username, password, verify_ssl=verify, ignore_unadopted=not include_unadopted
