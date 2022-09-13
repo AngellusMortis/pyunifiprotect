@@ -31,7 +31,7 @@ ARG PYUFP_VERSION
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
 COPY --from=builder /usr/local/lib/python3.10/ /usr/local/lib/python3.10/
 COPY . /tmp/pyunifiprotect
-RUN SETUPTOOLS_SCM_PRETEND_VERSION=${PYUFP_VERSION} pip install /tmp/pyunifiprotect \
+RUN SETUPTOOLS_SCM_PRETEND_VERSION=${PYUFP_VERSION} pip install -U "/tmp/pyunifiprotect[tz]" \
     && mv /tmp/pyunifiprotect/.docker/entrypoint.sh /usr/local/bin/entrypoint \
     && chmod +x /usr/local/bin/entrypoint \
     && rm /tmp/pyunifiprotect -rf \

@@ -82,7 +82,9 @@ dev = [
     "types-dateparser",
     "types-pillow",
     "types-termcolor",
+    "tzdata",
 ]
+tz = ["tzdata"]
 full = [
     "aiosqlite",
     "asyncify",
