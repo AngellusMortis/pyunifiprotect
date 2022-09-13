@@ -47,7 +47,7 @@ TZ=America/New_York unifi-protect --help
     If for whatever reason your system does not have then correct timezone data, you can install the `tz` extra to get the data. This just adds the package [tzdata](https://pypi.org/project/tzdata/) as a requirement. It is included by default in the [Docker image](/#using-docker-container).
 
     ```bash
-    pip install pyunifiprotet[tz]
+    pip install pyunifiprotect[tz]
     ```
 
 ## Reference
