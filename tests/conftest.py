@@ -507,6 +507,8 @@ NEW_FIELDS = {
     "isUCoreSetup",
     # 2.2.1-beta2
     "isInsightsEnabled",
+    # 2.2.2
+    "isDownloadingFW",
 }
 
 

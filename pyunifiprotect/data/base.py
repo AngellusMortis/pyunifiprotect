@@ -808,6 +808,7 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     wifi_connection_state: Optional[WifiConnectionState] = None
     bluetooth_connection_state: Optional[BluetoothConnectionState] = None
     bridge_id: Optional[str]
+    is_downloading_firmware: Optional[bool]
 
     # TODO:
     # bridgeCandidates
@@ -826,11 +827,12 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
             "canAdopt",
             "isAttemptingToConnect",
             "bluetoothConnectionState",
+            "isDownloadingFirmware",
         }
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
-        return {**super()._get_unifi_remaps(), "bridge": "bridgeId"}
+        return {**super()._get_unifi_remaps(), "bridge": "bridgeId", "isDownloadingFW": "isDownloadingFirmware"}
 
     async def _api_update(self, data: Dict[str, Any]) -> None:
         if self.model is not None:
