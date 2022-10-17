@@ -748,7 +748,7 @@ class NVR(ProtectDeviceModel):
     is_primary: Optional[bool] = None
     last_drive_slow_event: Optional[datetime] = None
     is_u_core_setup: Optional[bool] = None
-    vault_camera_ids: list[str]
+    vault_camera_ids: list[str] = []
 
     # TODO:
     # errorCode   read only
