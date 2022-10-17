@@ -60,15 +60,6 @@ NEVER_RAN = -1000
 DEVICE_UPDATE_INTERVAL = 900
 # retry timeout for thumbnails/heatmaps
 RETRY_TIMEOUT = 10
-EA_WARNING = """
-You are running version %s of UniFi Protect, which is an Early Access version. Early Access versions of UniFi Protect are not supported for Home Asssitant.
-
-If have an error, please report errors to https://github.com/AngellusMortis/pyunifiprotect first. DO NOT REPORT EA ISSUES TO HOME ASSISTANT CORE.
-
-It is recommended you downgrade to a stable version. https://www.home-assistant.io/integrations/unifiprotect#downgrading-unifi-protect.
-"""
-IS_HA = "homeassistant" in sys.modules
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -598,9 +589,6 @@ class ProtectApiClient(BaseApiClient):
         if self._bootstrap is None or now - self._last_update > DEVICE_UPDATE_INTERVAL:
             bootstrap_updated = True
             self._bootstrap = await self.get_bootstrap()
-            if self._last_update == NEVER_RAN and IS_HA and self._bootstrap.nvr.version.is_prerelease:
-                _LOGGER.warning(EA_WARNING, self._bootstrap.nvr.version)
-
             self._last_update = now
             self._last_update_dt = now_dt
 
