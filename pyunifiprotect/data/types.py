@@ -199,6 +199,9 @@ class SmartDetectObjectType(str, ValuesEnumMixin, enum.Enum):
     PACKAGE = "package"
     # old?
     CAR = "car"
+    # actually audioType?
+    SMOKE = "alrmSmoke"
+    CMONX = "alrmCmonx"
 
 
 @enum.unique

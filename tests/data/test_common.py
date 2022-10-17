@@ -674,9 +674,9 @@ def test_unknown_smart(camera: Optional[Dict[str, Any]], bootstrap: Dict[str, An
     if camera is None:
         pytest.skip("No camera obj found")
 
-    camera["featureFlags"]["smartDetectTypes"] = ["alrmSmoke"]
-    camera["smartDetectZones"][0]["objectTypes"] = ["alrmSmoke"]
-    camera["smartDetectSettings"]["objectTypes"] = ["alrmSmoke"]
+    camera["featureFlags"]["smartDetectTypes"] = ["alrmSmoke3"]
+    camera["smartDetectZones"][0]["objectTypes"] = ["alrmSmoke3"]
+    camera["smartDetectSettings"]["objectTypes"] = ["alrmSmoke3"]
     bootstrap["cameras"] = [camera]
 
     obj: Bootstrap = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)

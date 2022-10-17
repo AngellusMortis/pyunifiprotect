@@ -87,6 +87,7 @@ _LOGGER = logging.getLogger(__name__)
 # * POST /cameras/{id}/reset-isp - reset ISP settings
 # * POST /cameras/{id}/wake - battery powered cameras
 # * POST /cameras/{id}/sleep
+# * POST /cameras/{id}/homekit-talkback-speaker-muted
 # * GET /cameras/{id}/live-heatmap - add live heatmap to WebRTC stream
 # * GET /cameras/{id}/enable-control - PTZ controls
 # * GET /cameras/{id}/disable-control

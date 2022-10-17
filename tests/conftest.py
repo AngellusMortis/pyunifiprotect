@@ -509,6 +509,9 @@ NEW_FIELDS = {
     "isInsightsEnabled",
     # 2.2.2
     "isDownloadingFW",
+    # 2.6.13
+    "vaultCameras",
+    "homekitSettings",
 }
 
 
@@ -598,6 +601,9 @@ def compare_objs(obj_type, expected, actual):
         expected["ports"]["piongw"] = expected["ports"].get("piongw")
         expected["ports"]["stacking"] = expected["ports"].get("stacking")
         expected["ports"]["emsJsonCLI"] = expected["ports"].get("emsJsonCLI")
+
+        if "homekitPaired" in actual["featureFlags"] and "homekitPaired" not in expected["featureFlags"]:
+            del actual["featureFlags"]["homekitPaired"]
 
         # float math...
         if expected["systemInfo"].get("ustorage") is not None:

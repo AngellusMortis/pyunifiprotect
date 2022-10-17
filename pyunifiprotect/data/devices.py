@@ -707,6 +707,13 @@ class CameraLenses(ProtectBaseObject):
     video: VideoStats
 
 
+class CameraHomekitSettings(ProtectBaseObject):
+    microphone_muted: bool
+    speaker_muted: bool
+    stream_in_progress: bool
+    talkback_settings_active: bool
+
+
 class Camera(ProtectMotionDeviceModel):
     is_deleting: bool
     # Microphone Sensitivity
@@ -752,6 +759,8 @@ class Camera(ProtectMotionDeviceModel):
     # requires 1.21+
     is_poor_network: Optional[bool]
     is_wireless_uplink_enabled: Optional[bool]
+    # requires 2.6.13+
+    homekit_settings: Optional[CameraHomekitSettings] = None
 
     # TODO: used for adopting
     # apMac read only

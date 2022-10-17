@@ -691,6 +691,7 @@ class NVRFeatureFlags(ProtectBaseObject):
     beta: bool
     dev: bool
     notifications_v2: bool
+    homekit_paired: Optional[bool] = None
 
 
 class NVR(ProtectDeviceModel):
@@ -747,6 +748,7 @@ class NVR(ProtectDeviceModel):
     is_primary: Optional[bool] = None
     last_drive_slow_event: Optional[datetime] = None
     is_u_core_setup: Optional[bool] = None
+    vault_camera_ids: list[str]
 
     # TODO:
     # errorCode   read only
@@ -755,7 +757,11 @@ class NVR(ProtectDeviceModel):
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
-        return {**super()._get_unifi_remaps(), "recordingRetentionDurationMs": "recordingRetentionDuration"}
+        return {
+            **super()._get_unifi_remaps(),
+            "recordingRetentionDurationMs": "recordingRetentionDuration",
+            "vaultCameras": "vaultCameraIds",
+        }
 
     @classmethod
     def _get_read_only_fields(cls) -> Set[str]:
@@ -803,6 +809,14 @@ class NVR(ProtectDeviceModel):
     @property
     def display_name(self) -> str:
         return self.name or self.market_name or self.type
+
+    @property
+    def vault_cameras(self) -> List[Camera]:
+        """Vault Cameras for NVR"""
+
+        if len(self.vault_camera_ids) == 0:
+            return []
+        return [self.api.bootstrap.cameras[c] for c in self.vault_camera_ids]
 
     def update_all_messages(self) -> None:
         """Updates doorbell_settings.all_messages after adding/removing custom message"""
