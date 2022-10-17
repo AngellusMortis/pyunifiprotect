@@ -7,7 +7,6 @@ from http.cookies import Morsel
 from ipaddress import IPv4Address
 import logging
 from pathlib import Path
-import sys
 import time
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union, cast
 from urllib.parse import urljoin
