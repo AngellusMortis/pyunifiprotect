@@ -533,8 +533,12 @@ class Bootstrap(ProtectBaseObject):
     async def get_is_prerelease(self) -> bool:
         """Get if current version of Protect is a prerelease version."""
 
-        versions = await self._read_cache_file(TMP_RELEASE_CACHE) or await self._read_cache_file(RELEASE_CACHE)
+        # only EA versions have `-beta` in versions
+        if self.nvr.version.is_prerelease:
+            return True
 
+        # 2.6.14 is an EA version that looks like a release version
+        versions = await self._read_cache_file(TMP_RELEASE_CACHE) or await self._read_cache_file(RELEASE_CACHE)
         if versions is None or self.nvr.version not in versions:
             versions = await self.api.get_release_versions()
             try:
