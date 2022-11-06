@@ -543,9 +543,12 @@ class Bootstrap(ProtectBaseObject):
             versions = await self.api.get_release_versions()
             try:
                 _LOGGER.debug("Fetching releases from APT repos...")
-                await aos.makedirs(TMP_RELEASE_CACHE.parent, exist_ok=True)
-                async with aiofiles.open(TMP_RELEASE_CACHE, "wb") as cache_file:
+                base = TMP_RELEASE_CACHE.parent
+                tmp = base / "release_cache.tmp.json"
+                await aos.makedirs(base, exist_ok=True)
+                async with aiofiles.open(tmp, "wb") as cache_file:
                     await cache_file.write(orjson.dumps([str(v) for v in versions]))
+                await aos.rename(tmp, TMP_RELEASE_CACHE)
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.warning("Failed write cache file.")
 
