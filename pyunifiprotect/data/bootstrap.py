@@ -6,10 +6,14 @@ from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 import logging
+from pathlib import Path
+from tempfile import gettempdir
 from typing import Any, Dict, List, Optional, Set, Tuple, cast
 from uuid import UUID
 
+import aiofiles
 from aiohttp.client_exceptions import ServerDisconnectedError
+import orjson
 from pydantic import PrivateAttr, ValidationError
 
 from pyunifiprotect.data.base import (
@@ -30,7 +34,7 @@ from pyunifiprotect.data.devices import (
     Viewer,
 )
 from pyunifiprotect.data.nvr import NVR, Event, Liveview
-from pyunifiprotect.data.types import EventType, FixSizeOrderedDict, ModelType
+from pyunifiprotect.data.types import EventType, FixSizeOrderedDict, ModelType, Version
 from pyunifiprotect.data.user import Group, User
 from pyunifiprotect.data.websocket import (
     WSAction,
@@ -63,6 +67,9 @@ CAMERA_EVENT_ATTR_MAP: Dict[EventType, Tuple[str, str]] = {
     EventType.SMART_DETECT: ("last_smart_detect", "last_smart_detect_event_id"),
     EventType.RING: ("last_ring", "last_ring_event_id"),
 }
+
+TMP_RELEASE_CACHE = Path(gettempdir()) / "ufp_cache" / "release_cache.json"
+RELEASE_CACHE = Path(__file__).parent.parent / "release_cache.json"
 
 
 def _remove_stats_keys(data: Dict[str, Any], ignore_stats: bool) -> Dict[str, Any]:
@@ -508,3 +515,32 @@ class Bootstrap(ProtectBaseObject):
             devices = getattr(self, f"{model_type.value}s")
             devices[device.id] = device
         _LOGGER.debug("Successfully refresh device: %s %s", model_type, device_id)
+
+    async def _read_cache_file(self, file_path: Path) -> set[Version] | None:
+        versions: set[Version] | None = None
+
+        if file_path.is_file():
+            try:
+                _LOGGER.debug("Reading release cache file: %s", file_path)
+                async with aiofiles.open(file_path, "rb") as cache_file:
+                    versions = set(Version(v) for v in orjson.loads(await cache_file.read()))
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.warning("Failed to parse cache file: %s", file_path)
+
+        return versions
+
+    async def get_is_prerelease(self) -> bool:
+        """Get if current version of Protect is a prerelease version."""
+
+        versions = await self._read_cache_file(TMP_RELEASE_CACHE) or await self._read_cache_file(RELEASE_CACHE)
+
+        if versions is None or self.nvr.version not in versions:
+            versions = await self.api.get_release_versions()
+            try:
+                _LOGGER.debug("Fetching releases from APT repos...")
+                async with aiofiles.open(TMP_RELEASE_CACHE, "rb") as cache_file:
+                    await cache_file.write(orjson.dumps([str(v) for v in versions]))
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.warning("Failed write cache file.")
+
+        return self.nvr.version not in versions

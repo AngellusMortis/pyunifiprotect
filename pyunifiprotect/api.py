@@ -7,7 +7,6 @@ from http.cookies import Morsel
 from ipaddress import IPv4Address
 import logging
 from pathlib import Path
-import sys
 import time
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union, cast
 from urllib.parse import urljoin
@@ -34,6 +33,7 @@ from pyunifiprotect.data import (
     Sensor,
     SmartDetectObjectType,
     SmartDetectTrack,
+    Version,
     Viewer,
     WSPacket,
     WSSubscriptionMessage,
@@ -60,14 +60,10 @@ NEVER_RAN = -1000
 DEVICE_UPDATE_INTERVAL = 900
 # retry timeout for thumbnails/heatmaps
 RETRY_TIMEOUT = 10
-EA_WARNING = """
-You are running version %s of UniFi Protect, which is an Early Access version. Early Access versions of UniFi Protect are not supported for Home Asssitant.
-
-If have an error, please report errors to https://github.com/AngellusMortis/pyunifiprotect first. DO NOT REPORT EA ISSUES TO HOME ASSISTANT CORE.
-
-It is recommended you downgrade to a stable version. https://www.home-assistant.io/integrations/unifiprotect#downgrading-unifi-protect.
-"""
-IS_HA = "homeassistant" in sys.modules
+PROTECT_APT_URLS = [
+    "https://apt.artifacts.ui.com/dists/stretch/release/binary-arm64/Packages",
+    "https://apt.artifacts.ui.com/dists/bullseye/release/binary-arm64/Packages",
+]
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -598,9 +594,6 @@ class ProtectApiClient(BaseApiClient):
         if self._bootstrap is None or now - self._last_update > DEVICE_UPDATE_INTERVAL:
             bootstrap_updated = True
             self._bootstrap = await self.get_bootstrap()
-            if self._last_update == NEVER_RAN and IS_HA and self._bootstrap.nvr.version.is_prerelease:
-                _LOGGER.warning(EA_WARNING, self._bootstrap.nvr.version)
-
             self._last_update = now
             self._last_update_dt = now_dt
 
@@ -1311,3 +1304,32 @@ class ProtectApiClient(BaseApiClient):
         """Clears tamper status for sensor"""
 
         await self.api_request(f"sensors/{device_id}/clear-tamper-flag", method="post")
+
+    async def _get_versions_from_api(self, url: str, package: str = "unifi-protect") -> set[Version]:
+        session = await self.get_session()
+        versions: set[Version] = set()
+
+        try:
+            async with session.get(url) as response:
+                is_package = False
+                for line in (await response.text()).split("\n"):
+                    if line.startswith("Package: "):
+                        is_package = False
+                        if line == f"Package: {package}":
+                            is_package = True
+
+                    if is_package and line.startswith("Version: "):
+                        versions.add(Version(line.split(": ")[-1]))
+        except (aiohttp.ServerDisconnectedError, client_exceptions.ClientError) as err:
+            raise NvrError(f"Error packages from {url}: {err}") from err
+
+        return versions
+
+    async def get_release_versions(self) -> set[Version]:
+        """Get all release versions for UniFi Protect"""
+
+        versions: set[Version] = set()
+        for url in PROTECT_APT_URLS:
+            versions |= await self._get_versions_from_api(url)
+
+        return versions

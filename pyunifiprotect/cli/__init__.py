@@ -23,7 +23,7 @@ from pyunifiprotect.cli.liveviews import app as liveview_app
 from pyunifiprotect.cli.nvr import app as nvr_app
 from pyunifiprotect.cli.sensors import app as sensor_app
 from pyunifiprotect.cli.viewers import app as viewer_app
-from pyunifiprotect.data import WSPacket
+from pyunifiprotect.data import Version, WSPacket
 from pyunifiprotect.test_util import SampleDataGenerator
 from pyunifiprotect.utils import get_local_timezone, profile_ws as profile_ws_job
 
@@ -240,3 +240,26 @@ def decode_ws_msg(ws_file: typer.FileBinaryRead = OPTION_WS_FILE, ws_data: Optio
     response = {"action": packet.action_frame.data, "data": packet.data_frame.data}
 
     typer.echo(orjson.dumps(response).decode("utf-8"))
+
+
+@app.command()
+def release_versions(ctx: typer.Context) -> None:
+    """Updates the release version cache on disk."""
+
+    protect = cast(ProtectApiClient, ctx.obj.protect)
+
+    async def callback() -> set[Version]:
+        versions = await protect.get_release_versions()
+        await protect.close_session()
+        return versions
+
+    _setup_logger()
+
+    loop = asyncio.get_event_loop()
+    versions = loop.run_until_complete(callback())
+    output = orjson.dumps(sorted([str(v) for v in versions]))
+
+    with open(Path(__file__).parent.parent / "release_cache.json", "wb") as cache_file:
+        cache_file.write(output)
+
+    typer.echo(output.decode("utf-8"))
