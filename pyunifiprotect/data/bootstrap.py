@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, cast
 from uuid import UUID
 
 import aiofiles
+from aiofiles import os as aos
 from aiohttp.client_exceptions import ServerDisconnectedError
 import orjson
 from pydantic import PrivateAttr, ValidationError
@@ -532,12 +533,13 @@ class Bootstrap(ProtectBaseObject):
     async def get_is_prerelease(self) -> bool:
         """Get if current version of Protect is a prerelease version."""
 
-        versions = await self._read_cache_file(TMP_RELEASE_CACHE) or await self._read_cache_file(RELEASE_CACHE)
+        versions = await self._read_cache_file(TMP_RELEASE_CACHE)
 
         if versions is None or self.nvr.version not in versions:
             versions = await self.api.get_release_versions()
             try:
                 _LOGGER.debug("Fetching releases from APT repos...")
+                await aos.makedirs(TMP_RELEASE_CACHE.parent, exist_ok=True)
                 async with aiofiles.open(TMP_RELEASE_CACHE, "rb") as cache_file:
                     await cache_file.write(orjson.dumps([str(v) for v in versions]))
             except Exception:  # pylint: disable=broad-except
