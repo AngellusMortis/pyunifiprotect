@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, tzinfo
 from ipaddress import IPv4Address
 import logging
 from pathlib import Path
+from tempfile import gettempdir
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,6 +21,9 @@ from typing import (
 from uuid import UUID
 import zoneinfo
 
+import aiofiles
+from aiofiles import os as aos
+import orjson
 from pydantic.fields import PrivateAttr
 
 from pyunifiprotect.data.base import (
@@ -59,6 +63,8 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 MAX_SUPPORTED_CAMERAS = 256
 MAX_EVENT_HISTORY_IN_STATE_MACHINE = MAX_SUPPORTED_CAMERAS * 2
+TMP_RELEASE_CACHE = Path(gettempdir()) / "ufp_cache" / "release_cache.json"
+RELEASE_CACHE = Path(__file__).parent.parent / "release_cache.json"
 
 
 class NVRLocation(UserLocation):
@@ -910,6 +916,43 @@ class NVR(ProtectDeviceModel):
         """Reboots the NVR"""
 
         await self.api.reboot_nvr()
+
+    async def _read_cache_file(self, file_path: Path) -> set[Version] | None:
+        versions: set[Version] | None = None
+
+        if file_path.is_file():
+            try:
+                _LOGGER.debug("Reading release cache file: %s", file_path)
+                async with aiofiles.open(file_path, "rb") as cache_file:
+                    versions = set(Version(v) for v in orjson.loads(await cache_file.read()))
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.warning("Failed to parse cache file: %s", file_path)
+
+        return versions
+
+    async def get_is_prerelease(self) -> bool:
+        """Get if current version of Protect is a prerelease version."""
+
+        # only EA versions have `-beta` in versions
+        if self.version.is_prerelease:
+            return True
+
+        # 2.6.14 is an EA version that looks like a release version
+        versions = await self._read_cache_file(TMP_RELEASE_CACHE) or await self._read_cache_file(RELEASE_CACHE)
+        if versions is None or self.version not in versions:
+            versions = await self.api.get_release_versions()
+            try:
+                _LOGGER.debug("Fetching releases from APT repos...")
+                base = TMP_RELEASE_CACHE.parent
+                tmp = base / "release_cache.tmp.json"
+                await aos.makedirs(base, exist_ok=True)
+                async with aiofiles.open(tmp, "wb") as cache_file:
+                    await cache_file.write(orjson.dumps([str(v) for v in versions]))
+                await aos.rename(tmp, TMP_RELEASE_CACHE)
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.warning("Failed write cache file.")
+
+        return self.version not in versions
 
 
 class LiveviewSlot(ProtectBaseObject):

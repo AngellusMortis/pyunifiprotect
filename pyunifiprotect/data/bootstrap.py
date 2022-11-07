@@ -517,39 +517,7 @@ class Bootstrap(ProtectBaseObject):
             devices[device.id] = device
         _LOGGER.debug("Successfully refresh device: %s %s", model_type, device_id)
 
-    async def _read_cache_file(self, file_path: Path) -> set[Version] | None:
-        versions: set[Version] | None = None
-
-        if file_path.is_file():
-            try:
-                _LOGGER.debug("Reading release cache file: %s", file_path)
-                async with aiofiles.open(file_path, "rb") as cache_file:
-                    versions = set(Version(v) for v in orjson.loads(await cache_file.read()))
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.warning("Failed to parse cache file: %s", file_path)
-
-        return versions
-
     async def get_is_prerelease(self) -> bool:
         """Get if current version of Protect is a prerelease version."""
 
-        # only EA versions have `-beta` in versions
-        if self.nvr.version.is_prerelease:
-            return True
-
-        # 2.6.14 is an EA version that looks like a release version
-        versions = await self._read_cache_file(TMP_RELEASE_CACHE) or await self._read_cache_file(RELEASE_CACHE)
-        if versions is None or self.nvr.version not in versions:
-            versions = await self.api.get_release_versions()
-            try:
-                _LOGGER.debug("Fetching releases from APT repos...")
-                base = TMP_RELEASE_CACHE.parent
-                tmp = base / "release_cache.tmp.json"
-                await aos.makedirs(base, exist_ok=True)
-                async with aiofiles.open(tmp, "wb") as cache_file:
-                    await cache_file.write(orjson.dumps([str(v) for v in versions]))
-                await aos.rename(tmp, TMP_RELEASE_CACHE)
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.warning("Failed write cache file.")
-
-        return self.nvr.version not in versions
+        return await self.nvr.get_is_prerelease()
