@@ -11,10 +11,7 @@ from tempfile import gettempdir
 from typing import Any, Dict, List, Optional, Set, Tuple, cast
 from uuid import UUID
 
-import aiofiles
-from aiofiles import os as aos
 from aiohttp.client_exceptions import ServerDisconnectedError
-import orjson
 from pydantic import PrivateAttr, ValidationError
 
 from pyunifiprotect.data.base import (
@@ -35,7 +32,7 @@ from pyunifiprotect.data.devices import (
     Viewer,
 )
 from pyunifiprotect.data.nvr import NVR, Event, Liveview
-from pyunifiprotect.data.types import EventType, FixSizeOrderedDict, ModelType, Version
+from pyunifiprotect.data.types import EventType, FixSizeOrderedDict, ModelType
 from pyunifiprotect.data.user import Group, User
 from pyunifiprotect.data.websocket import (
     WSAction,
