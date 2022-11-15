@@ -761,6 +761,8 @@ class Camera(ProtectMotionDeviceModel):
     is_wireless_uplink_enabled: Optional[bool]
     # requires 2.6.13+
     homekit_settings: Optional[CameraHomekitSettings] = None
+    # requires 2.6.17+
+    ap_mgmt_ip: Optional[IPv4Address] = None
 
     # TODO: used for adopting
     # apMac read only
@@ -1942,6 +1944,8 @@ class Chime(ProtectAdoptableDeviceModel):
     last_ring: Optional[datetime]
     is_wireless_uplink_enabled: bool
     camera_ids: List[str]
+    # requires 2.6.17+
+    ap_mgmt_ip: Optional[IPv4Address] = None
 
     # TODO: used for adoption
     # apMac  read only

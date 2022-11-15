@@ -512,6 +512,8 @@ NEW_FIELDS = {
     # 2.6.13
     "vaultCameras",
     "homekitSettings",
+    # 2.6.17
+    "apMgmtIp",
 }
 
 
@@ -595,9 +597,6 @@ def compare_objs(obj_type, expected, actual):
         del expected["errorCode"]
         del expected["wifiSettings"]
         del expected["smartDetectAgreement"]
-        expected["isDbAvailable"] = expected.get("isDbAvailable")
-        expected["marketName"] = expected.get("marketName")
-        expected["streamSharingAvailable"] = expected.get("streamSharingAvailable")
         expected["ports"]["piongw"] = expected["ports"].get("piongw")
         expected["ports"]["stacking"] = expected["ports"].get("stacking")
         expected["ports"]["emsJsonCLI"] = expected["ports"].get("emsJsonCLI")
