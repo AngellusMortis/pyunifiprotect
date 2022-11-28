@@ -785,6 +785,9 @@ class WifiConnectionState(WirelessConnectionState):
     ssid: Optional[str]
     bssid: Optional[str] = None
     tx_rate: Optional[int] = None
+    # requires 2.7.5+
+    ap_name: Optional[str] = None
+    experience: Optional[str] = None
 
 
 class ProtectAdoptableDeviceModel(ProtectDeviceModel):
@@ -803,6 +806,8 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     is_connected: bool
     # requires 1.21+
     market_name: Optional[str]
+    # requires 2.7.5+
+    fw_update_state: Optional[str] = None
 
     wired_connection_state: Optional[WiredConnectionState] = None
     wifi_connection_state: Optional[WifiConnectionState] = None

@@ -514,6 +514,11 @@ NEW_FIELDS = {
     "homekitSettings",
     # 2.6.17
     "apMgmtIp",
+    # 2.7.5
+    "fwUpdateState",
+    "isWaterproofCaseAttached",
+    "deletedAt",
+    "deletionType",
 }
 
 
@@ -524,20 +529,18 @@ def compare_objs(obj_type, expected, actual):
     # TODO: fields not supported yet
     if obj_type == ModelType.CAMERA.value:
         # fields does not always exist (G4 Instant)
-        if "apMac" in expected:
-            del expected["apMac"]
-        if "elementInfo" in expected:
-            del expected["elementInfo"]
+        expected.pop("apMac", None)
+        expected.pop("elementInfo")
         del expected["apRssi"]
         del expected["lastPrivacyZonePositionId"]
         del expected["recordingSchedules"]
         del expected["smartDetectLines"]
-        if "streamSharing" in expected:
-            del expected["streamSharing"]
+        expected.pop("streamSharing", None)
         del expected["featureFlags"]["focus"]
         del expected["featureFlags"]["pan"]
         del expected["featureFlags"]["tilt"]
         del expected["featureFlags"]["zoom"]
+        expected.pop("stopStreamLevel", None)
 
         # do not compare detect zones because float math sucks
         assert len(expected["motionZones"]) == len(actual["motionZones"])
@@ -562,6 +565,11 @@ def compare_objs(obj_type, expected, actual):
             actual["eventStats"]["smart"].pop("recentHours", None)
         if "hotplug" in actual["featureFlags"] and "hotplug" not in expected["featureFlags"]:
             del actual["featureFlags"]["hotplug"]
+        if (
+            "smartDetectAudioTypes" in actual["featureFlags"]
+            and "smartDetectAudioTypes" not in expected["featureFlags"]
+        ):
+            del actual["featureFlags"]["smartDetectAudioTypes"]
         if "lensType" in actual["featureFlags"] and "lensType" not in expected["featureFlags"]:
             del actual["featureFlags"]["lensType"]
         if "audioTypes" in actual["smartDetectSettings"] and "audioTypes" not in expected["smartDetectSettings"]:
@@ -577,7 +585,8 @@ def compare_objs(obj_type, expected, actual):
         if "lastLoginTime" not in expected:
             actual.pop("lastLoginTime", None)
     elif obj_type == ModelType.EVENT.value:
-        del expected["partition"]
+        expected.pop("partition", None)
+        expected.pop("deletionType", None)
 
         expected_keys = (expected.get("metadata") or {}).keys()
         actual_keys = (actual.get("metadata") or {}).keys()

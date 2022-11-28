@@ -134,7 +134,7 @@ def from_js_time(num: Union[int, float, str, datetime]) -> datetime:
 def process_datetime(data: Dict[str, Any], key: str) -> Optional[datetime]:
     """Extracts datetime object from Protect dictionary"""
 
-    return None if data[key] is None else from_js_time(data[key])
+    return None if data.get(key) is None else from_js_time(data[key])
 
 
 def format_datetime(dt: Optional[datetime], default: Optional[str] = None) -> Optional[str]:

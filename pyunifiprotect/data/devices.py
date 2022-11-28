@@ -673,6 +673,7 @@ class FeatureFlags(ProtectBaseObject):
     has_infrared: Optional[bool] = None
     lens_type: Optional[LensType] = None
     hotplug: Optional[Hotplug] = None
+    smart_detect_audio_types: Optional[List[SmartDetectAudioType]] = None
 
     # TODO:
     # focus
@@ -684,6 +685,8 @@ class FeatureFlags(ProtectBaseObject):
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if "smartDetectTypes" in data:
             data["smartDetectTypes"] = convert_smart_types(data.pop("smartDetectTypes"))
+        if "smartDetectAudioTypes" in data:
+            data["smartDetectAudioTypes"] = convert_smart_audio_types(data.pop("smartDetectAudioTypes"))
         if "videoModes" in data:
             data["videoModes"] = convert_video_modes(data.pop("videoModes"))
 
@@ -763,6 +766,9 @@ class Camera(ProtectMotionDeviceModel):
     homekit_settings: Optional[CameraHomekitSettings] = None
     # requires 2.6.17+
     ap_mgmt_ip: Optional[IPv4Address] = None
+    # requires 2.7.5+
+    is_waterproof_case_attached: Optional[bool] = None
+    last_disconnect: Optional[datetime] = None
 
     # TODO: used for adopting
     # apMac read only
@@ -774,6 +780,7 @@ class Camera(ProtectMotionDeviceModel):
     # recordingSchedule
     # smartDetectLines
     # streamSharing read only
+    # stopStreamLevel
 
     # not directly from UniFi
     last_ring_event_id: Optional[str] = None
@@ -818,6 +825,8 @@ class Camera(ProtectMotionDeviceModel):
             del data["lcdMessage"]
         if "chimeDuration" in data and not isinstance(data["chimeDuration"], timedelta):
             data["chimeDuration"] = timedelta(milliseconds=data["chimeDuration"])
+        if "lastDisconnect" in data and isinstance(data["lastDisconnect"], int):
+            data["lastDisconnect"] = timedelta(milliseconds=data["lastDisconnect"])
 
         return super().unifi_dict_to_dict(data)
 
@@ -939,6 +948,20 @@ class Camera(ProtectMotionDeviceModel):
     @property
     def is_license_plate_detection_on(self) -> bool:
         return SmartDetectObjectType.LICENSE_PLATE in self.smart_detect_settings.object_types
+
+    @property
+    def can_detect_smoke(self) -> bool:
+        return (
+            self.feature_flags.smart_detect_audio_types is not None
+            and SmartDetectAudioType.SMOKE_CMONX in self.feature_flags.smart_detect_audio_types
+        )
+
+    @property
+    def is_smoke_detection_on(self) -> bool:
+        return (
+            self.smart_detect_settings.audio_types is not None
+            and SmartDetectAudioType.SMOKE_CMONX in self.smart_detect_settings.audio_types
+        )
 
     @property
     def can_detect_package(self) -> bool:
@@ -1302,6 +1325,17 @@ class Camera(ProtectMotionDeviceModel):
 
         await self.queue_update(callback)
 
+    async def set_smart_audio_detect_types(self, types: List[SmartDetectAudioType]) -> None:
+        """Sets current enabled smart audio detection types. Requires camera to have smart detection"""
+
+        if not self.feature_flags.has_smart_detect:
+            raise BadRequest("Camera does not have a smart detections")
+
+        def callback() -> None:
+            self.smart_detect_settings.audio_types = types
+
+        await self.queue_update(callback)
+
     async def _set_object_detect(self, obj_to_mod: SmartDetectObjectType, enabled: bool) -> None:
 
         if obj_to_mod not in self.feature_flags.smart_detect_types:
@@ -1317,6 +1351,27 @@ class Camera(ProtectMotionDeviceModel):
                 if obj_to_mod in objects:
                     objects.remove(obj_to_mod)
             self.smart_detect_settings.object_types = objects
+
+        await self.queue_update(callback)
+
+    async def _set_audio_detect(self, obj_to_mod: SmartDetectAudioType, enabled: bool) -> None:
+
+        if (
+            self.feature_flags.smart_detect_audio_types is None
+            or obj_to_mod not in self.feature_flags.smart_detect_audio_types
+        ):
+            raise BadRequest(f"Camera does not support the {obj_to_mod} detection type")
+
+        def callback() -> None:
+            objects = self.smart_detect_settings.audio_types or []
+            if enabled:
+                if obj_to_mod not in objects:
+                    objects = objects + [obj_to_mod]
+                    objects.sort()
+            else:
+                if obj_to_mod in objects:
+                    objects.remove(obj_to_mod)
+            self.smart_detect_settings.audio_types = objects
 
         await self.queue_update(callback)
 
@@ -1349,6 +1404,11 @@ class Camera(ProtectMotionDeviceModel):
         """Toggles package smart detection. Requires camera to have smart detection"""
 
         return await self._set_object_detect(SmartDetectObjectType.PACKAGE, enabled)
+
+    async def set_smoke_detection(self, enabled: bool) -> None:
+        """Toggles smoke_cmonx smart detection. Requires camera to have smart detection"""
+
+        return await self._set_audio_detect(SmartDetectAudioType.SMOKE_CMONX, enabled)
 
     async def set_lcd_text(
         self,

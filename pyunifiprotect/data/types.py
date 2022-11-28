@@ -115,13 +115,18 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     CAMERA_POWER_CYCLE = "cameraPowerCycling"
     RING = "ring"
     RESOLUTION_LOWERED = "resolutionLowered"
+    POOR_CONNECTION = "poorConnection"
+    STREAM_RECOVERY = "streamRecovery"
     MOTION = "motion"
     RECORDING_DELETED = "recordingDeleted"
+    SMART_AUDIO_DETECT = "smartAudioDetect"
     SMART_DETECT = "smartDetectZone"
     SMART_DETECT_LINE = "smartDetectLine"
     NO_SCHEDULE = "nonScheduledRecording"
     RECORDING_MODE_CHANGED = "recordingModeChanged"
     HOTPLUG = "hotplug"
+    CONSOLIDATED_RESOLUTION_LOWERED = "consolidatedResolutionLowered"
+    CONSOLIDATED_POOR_CONNECTION = "consolidatedPoorConnection"
     #
     INSTALLED_DISK = "installed"
     OFFLINE = "offline"
@@ -133,6 +138,19 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     DRIVE_FAILED = "driveFailed"
     CAMERA_UTILIZATION_LIMIT_REACHED = "cameraUtilizationLimitReached"
     CAMERA_UTILIZATION_LIMIT_EXCEEDED = "cameraUtilizationLimitExceeded"
+    #
+    UNADOPTED_DEVICE_DISCOVERED = "unadoptedDeviceDiscovered"
+    DEVICE_ADOPTED = "deviceAdopted"
+    DEVICE_UNADOPTED = "deviceUnadopted"
+    UVF_DISCOVERED = "ufvDiscovered"
+    DEVICE_PASSWORD_UPDATE = "devicesPasswordUpdated"
+    #
+    USER_LEFT = "userLeft"
+    USER_ARRIVED = "userArrived"
+    VIDEO_EXPORTED = "videoExported"
+    MIC_DISABLED = "microphoneDisabled"
+    VIDEO_DELETED = "videoDeleted"
+    SCHEDULE_CHANGED = "recordingScheduleChanged"
     #
     MOTION_SENSOR = "sensorMotion"
     SENSOR_OPENED = "sensorOpened"
@@ -147,19 +165,7 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     DOORLOCK_OPEN = "doorlockOpened"
     DOORLOCK_CLOSE = "doorlockClosed"
     DOORLOCK_BATTERY_LOW = "doorlockBatteryLow"
-    #
-    UNADOPTED_DEVICE_DISCOVERED = "unadoptedDeviceDiscovered"
-    DEVICE_ADOPTED = "deviceAdopted"
-    DEVICE_UNADOPTED = "deviceUnadopted"
-    UVF_DISCOVERED = "ufvDiscovered"
-    DEVICE_PASSWORD_UPDATE = "devicesPasswordUpdated"
-    #
-    USER_LEFT = "userLeft"
-    USER_ARRIVED = "userArrived"
-    VIDEO_EXPORTED = "videoExported"
-    MIC_DISABLED = "microphoneDisabled"
-    VIDEO_DELETED = "videoDeleted"
-    SCHEDULE_CHANGED = "recordingScheduleChanged"
+
     #
     RECORDING_OFF = "recordingOff"
 
@@ -208,6 +214,7 @@ class SmartDetectObjectType(str, ValuesEnumMixin, enum.Enum):
 class SmartDetectAudioType(str, ValuesEnumMixin, enum.Enum):
     SMOKE = "alrmSmoke"
     CMONX = "alrmCmonx"
+    SMOKE_CMONX = "smoke_cmonx"
 
 
 @enum.unique
