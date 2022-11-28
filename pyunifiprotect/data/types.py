@@ -165,7 +165,6 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     DOORLOCK_OPEN = "doorlockOpened"
     DOORLOCK_CLOSE = "doorlockClosed"
     DOORLOCK_BATTERY_LOW = "doorlockBatteryLow"
-
     #
     RECORDING_OFF = "recordingOff"
 
