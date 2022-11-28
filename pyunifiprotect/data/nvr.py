@@ -120,6 +120,11 @@ class SmartDetectTrack(ProtectBaseObject):
         return self.api.bootstrap.events.get(self.event_id)
 
 
+class LicensePlateMetadata(ProtectBaseObject):
+    name: str
+    confidence_level: int
+
+
 class EventMetadata(ProtectBaseObject):
     client_platform: Optional[str]
     reason: Optional[str]
@@ -139,6 +144,8 @@ class EventMetadata(ProtectBaseObject):
     alarm_type: Optional[str]
     device_id: Optional[str]
     mac: Optional[str]
+    # require 2.7.5+
+    license_plate: Optional[LicensePlateMetadata] = None
 
     _collapse_keys: ClassVar[SetStr] = {
         "lightId",

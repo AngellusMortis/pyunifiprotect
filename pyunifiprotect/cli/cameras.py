@@ -275,6 +275,57 @@ def smart_detects(
 
 
 @app.command()
+def smart_audio_detects(
+    ctx: typer.Context,
+    values: list[d.SmartDetectAudioType] = typer.Argument(None, help="Set to [] to empty list of detect types."),
+    add: bool = typer.Option(False, "-a", "--add", help="Add values instead of set"),
+    remove: bool = typer.Option(False, "-r", "--remove", help="Remove values instead of set"),
+) -> None:
+    """Returns/set smart detect types for camera."""
+
+    base.require_device_id(ctx)
+    obj: d.Camera = ctx.obj.device
+
+    if add and remove:
+        typer.secho("Add and remove are mutually exclusive", fg="red")
+        raise typer.Exit(1)
+
+    if not obj.feature_flags.has_smart_detect:
+        typer.secho("Camera does not support smart detections", fg="red")
+        raise typer.Exit(1)
+
+    obj.smart_detect_settings.audio_types = obj.smart_detect_settings.audio_types or []
+    obj.smart_detect_settings.audio_types = obj.smart_detect_settings.audio_types or []
+
+    if len(values) == 0:
+        if ctx.obj.output_format == base.OutputFormatEnum.JSON:
+            base.json_output(obj.smart_detect_settings.audio_types)
+        else:
+            for value in obj.smart_detect_settings.audio_types:
+                typer.echo(value.value)
+        return
+
+    if len(values) == 1 and values[0] == "[]":
+        values = []
+
+    for value in values:
+        if (
+            obj.feature_flags.smart_detect_audio_types is None
+            or value not in obj.feature_flags.smart_detect_audio_types
+        ):
+            typer.secho(f"Camera does not support {value}", fg="red")
+            raise typer.Exit(1)
+
+    if add:
+        values = list(set(obj.smart_detect_settings.audio_types) | set(values))
+    elif remove:
+        values = list(set(obj.smart_detect_settings.audio_types) - set(values))
+
+    obj.smart_detect_settings.audio_types = values
+    base.run(ctx, obj.save_device())
+
+
+@app.command()
 def set_motion_detection(ctx: typer.Context, enabled: bool) -> None:
     """Sets motion detection on camera"""
 
