@@ -519,6 +519,7 @@ NEW_FIELDS = {
     "isWaterproofCaseAttached",
     "deletedAt",
     "deletionType",
+    "lastDisconnect",
 }
 
 
@@ -639,6 +640,8 @@ def compare_objs(obj_type, expected, actual):
     if "wifiConnectionState" in expected:
         expected["wifiConnectionState"]["bssid"] = expected["wifiConnectionState"].get("bssid")
         expected["wifiConnectionState"]["txRate"] = expected["wifiConnectionState"].get("txRate")
+        expected["wifiConnectionState"]["experience"] = expected["wifiConnectionState"].get("experience")
+        expected["wifiConnectionState"]["apName"] = expected["wifiConnectionState"].get("apName")
 
     # sometimes uptime comes back as a str...
     if "uptime" in expected and expected["uptime"] is not None:
