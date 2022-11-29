@@ -796,6 +796,7 @@ class Camera(ProtectMotionDeviceModel):
         return super()._get_excluded_changed_fields() | {
             "last_ring_event_id",
             "last_smart_detect",
+            "last_smart_audio_detect",
             "last_smart_detect_event_id",
             "last_smart_audio_detect_event_id",
             "talkback_stream",
