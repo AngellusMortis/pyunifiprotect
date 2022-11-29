@@ -785,7 +785,9 @@ class Camera(ProtectMotionDeviceModel):
     # not directly from UniFi
     last_ring_event_id: Optional[str] = None
     last_smart_detect: Optional[datetime] = None
+    last_smart_audio_detect: Optional[datetime] = None
     last_smart_detect_event_id: Optional[str] = None
+    last_smart_audio_detect_event_id: Optional[str] = None
     talkback_stream: Optional[TalkbackStream] = None
     _last_ring_timeout: Optional[datetime] = PrivateAttr(None)
 
@@ -795,6 +797,7 @@ class Camera(ProtectMotionDeviceModel):
             "last_ring_event_id",
             "last_smart_detect",
             "last_smart_detect_event_id",
+            "last_smart_audio_detect_event_id",
             "talkback_stream",
         }
 
@@ -899,6 +902,13 @@ class Camera(ProtectMotionDeviceModel):
             return None
 
         return self.api.bootstrap.events.get(self.last_smart_detect_event_id)
+
+    @property
+    def last_smart_audio_detect_event(self) -> Optional[Event]:
+        if self.last_smart_audio_detect_event_id is None:
+            return None
+
+        return self.api.bootstrap.events.get(self.last_smart_audio_detect_event_id)
 
     @property
     def timelapse_url(self) -> str:

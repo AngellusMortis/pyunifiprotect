@@ -63,6 +63,7 @@ STATS_KEYS = {
 CAMERA_EVENT_ATTR_MAP: Dict[EventType, Tuple[str, str]] = {
     EventType.MOTION: ("last_motion", "last_motion_event_id"),
     EventType.SMART_DETECT: ("last_smart_detect", "last_smart_detect_event_id"),
+    EventType.SMART_AUDIO_DETECT: ("last_smart_audio_detect", "last_smart_audio_detect_event_id"),
     EventType.RING: ("last_ring", "last_ring_event_id"),
 }
 
