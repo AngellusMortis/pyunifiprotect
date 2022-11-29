@@ -850,8 +850,12 @@ class Camera(ProtectMotionDeviceModel):
             del data["lastRingEventId"]
         if "lastSmartDetect" in data:
             del data["lastSmartDetect"]
+        if "lastSmartAudioDetect" in data:
+            del data["lastSmartAudioDetect"]
         if "lastSmartDetectEventId" in data:
             del data["lastSmartDetectEventId"]
+        if "lastSmartAudioDetectEventId" in data:
+            del data["lastSmartAudioDetectEventId"]
         if "talkbackStream" in data:
             del data["talkbackStream"]
         if "lcdMessage" in data and data["lcdMessage"] is None:
