@@ -829,8 +829,6 @@ class Camera(ProtectMotionDeviceModel):
             del data["lcdMessage"]
         if "chimeDuration" in data and not isinstance(data["chimeDuration"], timedelta):
             data["chimeDuration"] = timedelta(milliseconds=data["chimeDuration"])
-        if "lastDisconnect" in data and isinstance(data["lastDisconnect"], int):
-            data["lastDisconnect"] = timedelta(milliseconds=data["lastDisconnect"])
 
         return super().unifi_dict_to_dict(data)
 
