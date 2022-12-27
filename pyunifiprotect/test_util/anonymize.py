@@ -70,10 +70,12 @@ def anonymize_value(value: Any, name: Optional[str] = None) -> Any:
             value = anonymize_ip(value)
         elif name in ("anonymousDeviceId", "hardwareId"):
             value = random_identifier()
-        elif name == "rtspAlias":
+        elif name in ("rtspAlias", "ssid"):
             value = random_alphanum(16)
         elif name in ("mac", "server_id"):
             value = anonymize_peristent_string(value, random_hex(12).upper())
+        elif name == "bssid":
+            value = anonymize_peristent_string(value, random_seperated_mac())
         elif name in ("latitude", "longitude"):
             value = "0.0"
         elif name == "name" and value != "Default":
@@ -183,6 +185,10 @@ def anonymize_rstp_url(url: str) -> str:
 
 def random_hex(length: int) -> str:
     return secrets.token_hex(length // 2)
+
+
+def random_seperated_mac() -> str:
+    return ":".join(random_hex(2) for _ in range(6))
 
 
 def random_str(length: int, choices: str) -> str:
