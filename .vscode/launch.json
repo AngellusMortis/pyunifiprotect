@@ -12,7 +12,7 @@
             "args": [
                 "-u",
                 "shell",
-        ]
+            ]
         },
         {
             "name": "Python: Debug Tests",
