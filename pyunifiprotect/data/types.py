@@ -200,7 +200,7 @@ class SmartDetectObjectType(str, ValuesEnumMixin, enum.Enum):
     VEHICLE = "vehicle"
     FACE = "face"
     PET = "pet"
-    LICENSE_PLATE = "licenseplate"
+    LICENSE_PLATE = "licensePlate"
     PACKAGE = "package"
     # old?
     CAR = "car"

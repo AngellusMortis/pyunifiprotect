@@ -520,6 +520,13 @@ NEW_FIELDS = {
     "deletedAt",
     "deletionType",
     "lastDisconnect",
+    # 2.7.15
+    "featureFlags",  # added to chime
+}
+
+OLD_FIELDS = {
+    # remove in 2.7.12
+    "avgMotions",
 }
 
 
@@ -589,9 +596,6 @@ def compare_objs(obj_type, expected, actual):
         expected.pop("partition", None)
         expected.pop("deletionType", None)
 
-        # there is a mismatch between licenseplate in SmartDetectTypes and in the event (event has capital P)
-        expected["smartDetectTypes"] = [t.lower() if t == "licensePlate" else t for t in expected["smartDetectTypes"]]
-
         expected_keys = (expected.get("metadata") or {}).keys()
         actual_keys = (actual.get("metadata") or {}).keys()
         # delete all extra metadata keys, many of which are not modeled
@@ -645,6 +649,7 @@ def compare_objs(obj_type, expected, actual):
         expected["wifiConnectionState"]["txRate"] = expected["wifiConnectionState"].get("txRate")
         expected["wifiConnectionState"]["experience"] = expected["wifiConnectionState"].get("experience")
         expected["wifiConnectionState"]["apName"] = expected["wifiConnectionState"].get("apName")
+        expected["wifiConnectionState"]["connectivity"] = expected["wifiConnectionState"].get("connectivity")
 
     # sometimes uptime comes back as a str...
     if "uptime" in expected and expected["uptime"] is not None:
@@ -658,6 +663,9 @@ def compare_objs(obj_type, expected, actual):
     for key in NEW_FIELDS.intersection(actual.keys()):
         if key not in expected:
             del actual[key]
+
+    for key in OLD_FIELDS.intersection(expected.keys()):
+        del expected[key]
 
     assert expected == actual
 

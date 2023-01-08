@@ -747,7 +747,6 @@ class NVR(ProtectDeviceModel):
     anonymous_device_id: Optional[UUID]
     camera_utilization: int
     is_recycling: bool
-    avg_motions: List[float]
     disable_auto_link: bool
     skip_firmware_update: bool
     location_settings: NVRLocation

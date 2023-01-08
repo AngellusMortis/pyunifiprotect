@@ -633,7 +633,7 @@ class Hotplug(ProtectBaseObject):
     video: Optional[bool] = None
 
 
-class FeatureFlags(ProtectBaseObject):
+class CameraFeatureFlags(ProtectBaseObject):
     can_adjust_ir_led_level: bool
     can_magic_zoom: bool
     can_optical_zoom: bool
@@ -748,7 +748,7 @@ class Camera(ProtectMotionDeviceModel):
     privacy_zones: List[CameraZone]
     smart_detect_zones: List[SmartMotionZone]
     stats: CameraStats
-    feature_flags: FeatureFlags
+    feature_flags: CameraFeatureFlags
     pir_settings: PIRSettings
     lcd_message: Optional[LCDMessage]
     lenses: List[CameraLenses]
@@ -2011,6 +2011,10 @@ class Doorlock(ProtectAdoptableDeviceModel):
         await self.api.calibrate_lock(self.id)
 
 
+class ChimeFeatureFlags(ProtectBaseObject):
+    has_wifi: bool
+
+
 class Chime(ProtectAdoptableDeviceModel):
     volume: PercentInt
     is_probing_for_wifi: bool
@@ -2019,6 +2023,8 @@ class Chime(ProtectAdoptableDeviceModel):
     camera_ids: List[str]
     # requires 2.6.17+
     ap_mgmt_ip: Optional[IPv4Address] = None
+    # requires 2.7.15+
+    feature_flags: Optional[ChimeFeatureFlags] = None
 
     # TODO: used for adoption
     # apMac  read only

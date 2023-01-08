@@ -788,6 +788,8 @@ class WifiConnectionState(WirelessConnectionState):
     # requires 2.7.5+
     ap_name: Optional[str] = None
     experience: Optional[str] = None
+    # requires 2.7.15+
+    connectivity: Optional[str] = None
 
 
 class ProtectAdoptableDeviceModel(ProtectDeviceModel):
