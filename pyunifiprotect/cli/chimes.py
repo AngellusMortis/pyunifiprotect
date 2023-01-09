@@ -85,7 +85,7 @@ def cameras(
             typer.secho(f"Invalid camera ID: {camera_id}")
             raise typer.Exit(1)
 
-        if not camera.feature_flags.has_chime:
+        if not camera.feature_flags.is_doorbell:
             typer.secho(f"Camera is not a doorbell: {camera_id}")
             raise typer.Exit(1)
 

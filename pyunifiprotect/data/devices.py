@@ -674,6 +674,8 @@ class CameraFeatureFlags(ProtectBaseObject):
     lens_type: Optional[LensType] = None
     hotplug: Optional[Hotplug] = None
     smart_detect_audio_types: Optional[List[SmartDetectAudioType]] = None
+    # 2.7.18+
+    is_doorbell: bool
 
     # TODO:
     # focus
@@ -689,6 +691,10 @@ class CameraFeatureFlags(ProtectBaseObject):
             data["smartDetectAudioTypes"] = convert_smart_audio_types(data.pop("smartDetectAudioTypes"))
         if "videoModes" in data:
             data["videoModes"] = convert_video_modes(data.pop("videoModes"))
+
+        # backport support for `is_doorbell` to older versions of Protect
+        if "hasChime" in data and "isDoorbell" not in data:
+            data["isDoorbell"] = data["hasChime"]
 
         return super().unifi_dict_to_dict(data)
 
@@ -2054,7 +2060,7 @@ class Chime(ProtectAdoptableDeviceModel):
     async def add_camera(self, camera: Camera) -> None:
         """Adds new paired camera to chime"""
 
-        if not camera.feature_flags.has_chime:
+        if not camera.feature_flags.is_doorbell:
             raise BadRequest("Camera does not have a chime")
 
         if camera.id in self.camera_ids:

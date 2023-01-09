@@ -223,7 +223,7 @@ class Bootstrap(ProtectBaseObject):
     @property
     def has_doorbell(self) -> bool:
         if self._has_doorbell is None:
-            self._has_doorbell = any(c.feature_flags.has_chime for c in self.cameras.values())
+            self._has_doorbell = any(c.feature_flags.is_doorbell for c in self.cameras.values())
 
         return self._has_doorbell
 

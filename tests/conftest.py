@@ -524,6 +524,17 @@ NEW_FIELDS = {
     "featureFlags",  # added to chime
 }
 
+NEW_CAMERA_FEATURE_FLAGS = {
+    "audio",
+    "audioCodecs",
+    "hasInfrared",
+    "hotplug",
+    "smartDetectAudioTypes",
+    "lensType",
+    # 2.7.18+
+    "isDoorbell",
+}
+
 OLD_FIELDS = {
     # remove in 2.7.12
     "avgMotions",
@@ -561,9 +572,6 @@ def compare_objs(obj_type, expected, actual):
         expected["recordingSettings"]["enableMotionDetection"] = expected["recordingSettings"].get(
             "enableMotionDetection"
         )
-        expected["featureFlags"]["audio"] = expected["featureFlags"].get("audio", [])
-        expected["featureFlags"]["audioCodecs"] = expected["featureFlags"].get("audioCodecs", [])
-        expected["featureFlags"]["hasInfrared"] = expected["featureFlags"].get("hasInfrared")
 
         if expected["eventStats"]["motion"].get("recentHours") in [[None], None, []]:
             expected["eventStats"]["motion"].pop("recentHours", None)
@@ -571,17 +579,12 @@ def compare_objs(obj_type, expected, actual):
         if expected["eventStats"]["smart"].get("recentHours") == [[None], None, []]:
             expected["eventStats"]["smart"].pop("recentHours", None)
             actual["eventStats"]["smart"].pop("recentHours", None)
-        if "hotplug" in actual["featureFlags"] and "hotplug" not in expected["featureFlags"]:
-            del actual["featureFlags"]["hotplug"]
-        if (
-            "smartDetectAudioTypes" in actual["featureFlags"]
-            and "smartDetectAudioTypes" not in expected["featureFlags"]
-        ):
-            del actual["featureFlags"]["smartDetectAudioTypes"]
-        if "lensType" in actual["featureFlags"] and "lensType" not in expected["featureFlags"]:
-            del actual["featureFlags"]["lensType"]
         if "audioTypes" in actual["smartDetectSettings"] and "audioTypes" not in expected["smartDetectSettings"]:
             del actual["smartDetectSettings"]["audioTypes"]
+
+        for flag in NEW_CAMERA_FEATURE_FLAGS:
+            if flag not in expected["featureFlags"]:
+                del actual["featureFlags"][flag]
     elif obj_type == ModelType.USER.value:
         if "settings" in expected:
             expected.pop("settings", None)

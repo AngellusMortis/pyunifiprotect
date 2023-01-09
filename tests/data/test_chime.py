@@ -79,7 +79,7 @@ async def test_chime_add_camera(chime_obj: Optional[Chime], camera_obj: Optional
     chime_obj._initial_data = chime_obj.dict()
 
     camera_obj.api.api_request.reset_mock()
-    camera_obj.feature_flags.has_chime = True
+    camera_obj.feature_flags.is_doorbell = True
     camera_obj._initial_data = chime_obj.dict()
 
     await chime_obj.add_camera(camera_obj)
@@ -104,7 +104,7 @@ async def test_chime_add_camera_not_doorbell(chime_obj: Optional[Chime], camera_
     chime_obj._initial_data = chime_obj.dict()
 
     camera_obj.api.api_request.reset_mock()
-    camera_obj.feature_flags.has_chime = False
+    camera_obj.feature_flags.is_doorbell = False
     camera_obj._initial_data = chime_obj.dict()
 
     with pytest.raises(BadRequest):
@@ -126,7 +126,7 @@ async def test_chime_add_camera_exists(chime_obj: Optional[Chime], camera_obj: O
     chime_obj._initial_data = chime_obj.dict()
 
     camera_obj.api.api_request.reset_mock()
-    camera_obj.feature_flags.has_chime = True
+    camera_obj.feature_flags.is_doorbell = True
     camera_obj._initial_data = chime_obj.dict()
 
     with pytest.raises(BadRequest):
@@ -148,7 +148,7 @@ async def test_chime_remove_camera(chime_obj: Optional[Chime], camera_obj: Optio
     chime_obj._initial_data = chime_obj.dict()
 
     camera_obj.api.api_request.reset_mock()
-    camera_obj.feature_flags.has_chime = True
+    camera_obj.feature_flags.is_doorbell = True
     camera_obj._initial_data = chime_obj.dict()
 
     await chime_obj.remove_camera(camera_obj)
@@ -173,7 +173,7 @@ async def test_chime_remove_camera_not_exists(chime_obj: Optional[Chime], camera
     chime_obj._initial_data = chime_obj.dict()
 
     camera_obj.api.api_request.reset_mock()
-    camera_obj.feature_flags.has_chime = True
+    camera_obj.feature_flags.is_doorbell = True
     camera_obj._initial_data = chime_obj.dict()
 
     with pytest.raises(BadRequest):
