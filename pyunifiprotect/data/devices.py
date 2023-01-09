@@ -929,12 +929,34 @@ class Camera(ProtectMotionDeviceModel):
         return index is not None
 
     @property
+    def is_recording_enabled(self) -> bool:
+        """
+        Is recording footage/events from the camera enabled?
+
+        If recording is not enabled, cameras will not produce any footage, thumbnails,
+        motion/smart detection events.
+        """
+
+        return self.recording_settings.mode != RecordingMode.NEVER
+
+    @property
+    def is_motion_detection_on(self) -> bool:
+        """Is Motion Detection available and enabled (camera will produce motion events)?"""
+
+        return self.is_recording_enabled and self.recording_settings.enable_motion_detection is not False
+
+    @property
     def can_detect_person(self) -> bool:
         return SmartDetectObjectType.PERSON in self.feature_flags.smart_detect_types
 
     @property
     def is_person_detection_on(self) -> bool:
-        return SmartDetectObjectType.PERSON in self.smart_detect_settings.object_types
+        """
+        Is Person Detection available and enabled (camera will produce person smart
+        detection events)?
+        """
+
+        return self.is_recording_enabled and SmartDetectObjectType.PERSON in self.smart_detect_settings.object_types
 
     @property
     def can_detect_vehicle(self) -> bool:
@@ -942,7 +964,12 @@ class Camera(ProtectMotionDeviceModel):
 
     @property
     def is_vehicle_detection_on(self) -> bool:
-        return SmartDetectObjectType.VEHICLE in self.smart_detect_settings.object_types
+        """
+        Is Vehicle Detection available and enabled (camera will produce vehicle smart
+        detection events)?
+        """
+
+        return self.is_recording_enabled and SmartDetectObjectType.VEHICLE in self.smart_detect_settings.object_types
 
     @property
     def can_detect_face(self) -> bool:
@@ -950,7 +977,12 @@ class Camera(ProtectMotionDeviceModel):
 
     @property
     def is_face_detection_on(self) -> bool:
-        return SmartDetectObjectType.FACE in self.smart_detect_settings.object_types
+        """
+        Is Face Detection available and enabled (camera will produce face smart
+        detection events)?
+        """
+
+        return self.is_recording_enabled and SmartDetectObjectType.FACE in self.smart_detect_settings.object_types
 
     @property
     def can_detect_pet(self) -> bool:
@@ -958,7 +990,12 @@ class Camera(ProtectMotionDeviceModel):
 
     @property
     def is_pet_detection_on(self) -> bool:
-        return SmartDetectObjectType.PET in self.smart_detect_settings.object_types
+        """
+        Is Pet Detection available and enabled (camera will produce pet smart
+        detection events)?
+        """
+
+        return self.is_recording_enabled and SmartDetectObjectType.PET in self.smart_detect_settings.object_types
 
     @property
     def can_detect_license_plate(self) -> bool:
@@ -966,7 +1003,14 @@ class Camera(ProtectMotionDeviceModel):
 
     @property
     def is_license_plate_detection_on(self) -> bool:
-        return SmartDetectObjectType.LICENSE_PLATE in self.smart_detect_settings.object_types
+        """
+        Is License Plate Detection available and enabled (camera will produce face license
+        plate detection events)?
+        """
+
+        return (
+            self.is_recording_enabled and SmartDetectObjectType.LICENSE_PLATE in self.smart_detect_settings.object_types
+        )
 
     @property
     def can_detect_smoke(self) -> bool:
@@ -977,8 +1021,14 @@ class Camera(ProtectMotionDeviceModel):
 
     @property
     def is_smoke_detection_on(self) -> bool:
+        """
+        Is Smoke Detection available and enabled (camera will produce smoke smart
+        detection events)?
+        """
+
         return (
-            self.smart_detect_settings.audio_types is not None
+            self.is_recording_enabled
+            and self.smart_detect_settings.audio_types is not None
             and SmartDetectAudioType.SMOKE_CMONX in self.smart_detect_settings.audio_types
         )
 
@@ -988,7 +1038,12 @@ class Camera(ProtectMotionDeviceModel):
 
     @property
     def is_package_detection_on(self) -> bool:
-        return SmartDetectObjectType.PACKAGE in self.smart_detect_settings.object_types
+        """
+        Is Package Detection available and enabled (camera will produce package smart
+        detection events)?
+        """
+
+        return self.is_recording_enabled and SmartDetectObjectType.PACKAGE in self.smart_detect_settings.object_types
 
     @property
     def is_ringing(self) -> bool:
