@@ -82,11 +82,11 @@ class Websocket:
             self._ws_connection = await session.ws_connect(self.url, ssl=self.verify, headers=self._headers)
             start_event.set()
 
-            await self._reset_timeout()
+            self._reset_timeout()
             async for msg in self._ws_connection:
                 if not self._process_message(msg):
                     break
-                await self._reset_timeout()
+                self._reset_timeout()
         except ClientError as e:
             _LOGGER.exception("Websocket disconnect error: %s", e)
         finally:
@@ -136,7 +136,7 @@ class Websocket:
             _LOGGER.debug("WS Timeout loop sleep %s", sleep_time)
             await asyncio.sleep(sleep_time)
 
-    async def _reset_timeout(self) -> None:
+    def _reset_timeout(self) -> None:
         self._timeout = time.monotonic() + self.timeout_interval
 
         if self._timer_task is None:
