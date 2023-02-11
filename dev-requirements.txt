@@ -113,7 +113,7 @@ importlib-metadata==4.12.0
     # via mkdocs
 iniconfig==1.1.1
     # via pytest
-ipython==8.5.0
+ipython==8.10.0
     # via pyunifiprotect (pyproject.toml)
 isort==5.10.1
     # via pylint
