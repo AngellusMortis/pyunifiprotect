@@ -30,7 +30,7 @@ from pyunifiprotect.utils import get_local_timezone, profile_ws as profile_ws_jo
 _LOGGER = logging.getLogger("pyunifiprotect")
 
 try:
-    from IPython import embed  # type: ignore
+    from IPython import embed
     from termcolor import colored
     from traitlets.config import get_config
 except ImportError:
@@ -161,7 +161,7 @@ def shell(ctx: typer.Context) -> None:
 
     c = get_config()  # type: ignore
     c.InteractiveShellEmbed.colors = "Linux"
-    embed(header=colored("protect = ProtectApiClient(*args)", "green"), config=c, using="asyncio")
+    embed(header=colored("protect = ProtectApiClient(*args)", "green"), config=c, using="asyncio")  # type: ignore
 
 
 @app.command()

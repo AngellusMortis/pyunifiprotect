@@ -46,6 +46,8 @@ from pyunifiprotect.utils import (
 )
 
 if TYPE_CHECKING:
+    from typing import Self  # requires Python 3.11+
+
     from pydantic.typing import DictStrAny, SetStr
 
     from pyunifiprotect.api import ProtectApiClient
@@ -97,7 +99,7 @@ class ProtectBaseObject(BaseModel):
         self._api = api
 
     @classmethod
-    def from_unifi_dict(cls, api: Optional[ProtectApiClient] = None, **data: Any) -> ProtectObject:
+    def from_unifi_dict(cls, api: Optional[ProtectApiClient] = None, **data: Any) -> Self:
         """
         Main constructor for `ProtectBaseObject`
 
@@ -116,13 +118,13 @@ class ProtectBaseObject(BaseModel):
 
         if is_debug():
             data.pop("api", None)
-            return cls(api=api, **data)  # type: ignore
+            return cls(api=api, **data)
 
         obj = cls.construct(**data)
-        return obj  # type: ignore
+        return obj
 
     @classmethod
-    def construct(cls, _fields_set: Optional[Set[str]] = None, **values: Any) -> ProtectObject:
+    def construct(cls, _fields_set: Optional[Set[str]] = None, **values: Any) -> ProtectBaseObject:
         api = values.pop("api", None)
         values_set = set(values)
 
@@ -147,7 +149,7 @@ class ProtectBaseObject(BaseModel):
         obj._initial_data = obj.dict(exclude=cls._get_excluded_changed_fields())  # pylint: disable=protected-access
         obj._api = api  # pylint: disable=protected-access
 
-        return obj  # type: ignore
+        return obj
 
     @classmethod
     def _get_excluded_changed_fields(cls) -> Set[str]:

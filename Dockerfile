@@ -1,4 +1,4 @@
-FROM python:3.10-slim-bullseye as base
+FROM python:3.11-slim-bullseye as base
 
 LABEL org.opencontainers.image.source https://github.com/AngellusMortis/pyunifiprotect
 
@@ -29,7 +29,7 @@ FROM base as prod
 ARG PYUFP_VERSION
 
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
-COPY --from=builder /usr/local/lib/python3.10/ /usr/local/lib/python3.10/
+COPY --from=builder /usr/local/lib/python3.11/ /usr/local/lib/python3.11/
 COPY . /tmp/pyunifiprotect
 RUN SETUPTOOLS_SCM_PRETEND_VERSION=${PYUFP_VERSION} pip install -U "/tmp/pyunifiprotect[tz]" \
     && mv /tmp/pyunifiprotect/.docker/entrypoint.sh /usr/local/bin/entrypoint \
@@ -54,7 +54,7 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/pip pip install -r /dev-req
 FROM base as dev
 
 COPY --from=builder-dev /usr/local/bin/ /usr/local/bin/
-COPY --from=builder-dev /usr/local/lib/python3.10/ /usr/local/lib/python3.10/
+COPY --from=builder-dev /usr/local/lib/python3.11/ /usr/local/lib/python3.11/
 RUN --mount=type=cache,mode=0755,id=apt-$TARGETPLATFORM,target=/var/lib/apt/lists apt-get update -qq \
     && apt-get install -yqq git curl vim procps curl jq sudo \
     && echo 'python ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers \

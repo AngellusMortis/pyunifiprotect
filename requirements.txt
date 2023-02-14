@@ -4,17 +4,17 @@
 #
 #    pip-compile --extra=full --output-file=requirements.txt --pip-args='--root-user-action=ignore' pyproject.toml
 #
-aiofiles==22.1.0
+aiofiles==23.1.0
     # via pyunifiprotect (pyproject.toml)
-aiohttp==3.8.1
+aiohttp==3.8.4
     # via pyunifiprotect (pyproject.toml)
-aioshutil==1.1
+aioshutil==1.2
     # via pyunifiprotect (pyproject.toml)
-aiosignal==1.2.0
+aiosignal==1.3.1
     # via aiohttp
-aiosqlite==0.17.0
+aiosqlite==0.18.0
     # via pyunifiprotect (pyproject.toml)
-asttokens==2.0.8
+asttokens==2.2.1
     # via stack-data
 async-timeout==4.0.2
     # via
@@ -22,49 +22,49 @@ async-timeout==4.0.2
     #   pyunifiprotect (pyproject.toml)
 asyncify==0.9.1
     # via pyunifiprotect (pyproject.toml)
-attrs==22.1.0
+attrs==22.2.0
     # via aiohttp
-av==9.2.0
+av==10.0.0
     # via pyunifiprotect (pyproject.toml)
 backcall==0.2.0
     # via ipython
-charset-normalizer==2.1.1
+charset-normalizer==3.0.1
     # via aiohttp
 click==8.1.3
     # via typer
-colorama==0.4.5
+colorama==0.4.6
     # via typer
 commonmark==0.9.1
     # via rich
-dateparser==1.1.1
+dateparser==1.1.7
     # via pyunifiprotect (pyproject.toml)
 decorator==5.1.1
     # via ipython
-executing==1.0.0
+executing==1.2.0
     # via stack-data
-frozenlist==1.3.1
+frozenlist==1.3.3
     # via
     #   aiohttp
     #   aiosignal
 funkify==0.4.4
     # via asyncify
-greenlet==1.1.3
+greenlet==2.0.2
     # via sqlalchemy
-idna==3.3
+idna==3.4
     # via yarl
-ipython==8.5.0
+ipython==8.10.0
     # via pyunifiprotect (pyproject.toml)
-jedi==0.18.1
+jedi==0.18.2
     # via ipython
 matplotlib-inline==0.1.6
     # via ipython
-multidict==6.0.2
+multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
-orjson==3.8.0
+orjson==3.8.6
     # via pyunifiprotect (pyproject.toml)
-packaging==21.3
+packaging==23.0
     # via pyunifiprotect (pyproject.toml)
 parso==0.8.3
     # via jedi
@@ -72,66 +72,64 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.3.0
+pillow==9.4.0
     # via pyunifiprotect (pyproject.toml)
-prompt-toolkit==3.0.31
+prompt-toolkit==3.0.36
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pydantic==1.10.2
+pydantic==1.10.4
     # via pyunifiprotect (pyproject.toml)
-pygments==2.13.0
+pygments==2.14.0
     # via
     #   ipython
     #   rich
-pyjwt==2.4.0
+pyjwt==2.6.0
     # via pyunifiprotect (pyproject.toml)
-pyparsing==3.0.9
-    # via packaging
 python-dateutil==2.8.2
     # via dateparser
-python-dotenv==0.21.0
+python-dotenv==0.21.1
     # via pyunifiprotect (pyproject.toml)
-pytz==2022.2.1
+pytz==2022.7.1
     # via dateparser
 pytz-deprecation-shim==0.1.0.post0
     # via tzlocal
-regex==2022.3.2
+regex==2022.10.31
     # via dateparser
-rich==12.5.1
+rich==12.6.0
     # via typer
-shellingham==1.5.0
+shellingham==1.5.1
     # via typer
 six==1.16.0
     # via
     #   asttokens
     #   python-dateutil
-sqlalchemy[asyncio]==1.4.41
+sqlalchemy[asyncio]==2.0.3
     # via pyunifiprotect (pyproject.toml)
-stack-data==0.5.0
+stack-data==0.6.2
     # via ipython
-termcolor==2.0.1
+termcolor==2.2.0
     # via pyunifiprotect (pyproject.toml)
-traitlets==5.4.0
+traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-typer[all]==0.6.1
+typer[all]==0.7.0
     # via pyunifiprotect (pyproject.toml)
-typing-extensions==4.3.0
+typing-extensions==4.4.0
     # via
-    #   aiosqlite
     #   pydantic
+    #   sqlalchemy
     #   xtyping
-tzdata==2022.2
+tzdata==2022.7
     # via pytz-deprecation-shim
 tzlocal==4.2
     # via dateparser
-wcwidth==0.2.5
+wcwidth==0.2.6
     # via prompt-toolkit
 xtyping==0.6.1
     # via asyncify
-yarl==1.8.1
+yarl==1.8.2
     # via aiohttp

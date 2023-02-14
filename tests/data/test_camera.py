@@ -651,7 +651,6 @@ async def test_camera_set_lcd_text_no_lcd(camera_obj: Optional[Camera]):
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_lcd_text_custom(camera_obj: Optional[Camera]):
-
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_lcd_screen = True
@@ -681,7 +680,6 @@ async def test_camera_set_lcd_text_custom(camera_obj: Optional[Camera]):
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 @pytest.mark.asyncio
 async def test_camera_set_lcd_text_custom_to_custom(camera_obj: Optional[Camera]):
-
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_lcd_screen = True

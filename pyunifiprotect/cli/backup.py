@@ -39,7 +39,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import Mapped, declarative_base, relationship
 import typer
 
 from pyunifiprotect import data as d
@@ -132,6 +132,7 @@ class EventSmartType(Base):
 
 class Event(Base):
     __tablename__ = "event"
+    __allow_unmapped__ = True
 
     id = Column(String(24), primary_key=True)
     start_naive = Column(DateTime())
@@ -139,7 +140,7 @@ class Event(Base):
     camera_mac = Column(String(12), index=True)
     event_type = Column(String(32), index=True)
 
-    smart_detect_types: list[EventSmartType] = relationship("EventSmartType", lazy="joined", uselist=True)
+    smart_detect_types: Mapped[list[EventSmartType]] = relationship("EventSmartType", lazy="joined", uselist=True)
 
     _start: datetime | None = None
     _end: datetime | None = None
@@ -440,7 +441,7 @@ async def _newest_event(ctx: BackupContext) -> Event | None:
     db = ctx.create_db_session()
     async with db:
         result = await db.execute(select(Event).order_by(Event.start_naive.desc()))
-        return cast(Event | None, result.scalars().first())
+        return result.scalars().first()
 
 
 async def _prune_events(ctx: BackupContext) -> int:
@@ -451,8 +452,6 @@ async def _prune_events(ctx: BackupContext) -> int:
     async with db:
         result = await db.execute(select(Event).join(EventSmartType).where(Event.start_naive < ctx.start))
         for event in track(result.unique().scalars(), description="Pruning Events"):
-            event = cast(Event, event)
-
             thumb_path = event.get_thumbnail_path(ctx)
             if thumb_path.exists():
                 _LOGGER.debug("Delete file %s", thumb_path)
@@ -481,7 +480,7 @@ async def _update_event(ctx: BackupContext, event: d.Event) -> None:
     to_delete: list[EventSmartType] = []
     async with db:
         result = await db.execute(select(Event).where(Event.id == event.id))
-        db_event = cast(Event | None, result.scalars().first())
+        db_event = result.scalars().first()
         do_insert = False
         if db_event is None:
             db_event = Event(id=event.id)
@@ -495,34 +494,33 @@ async def _update_event(ctx: BackupContext, event: d.Event) -> None:
             types = {e.value for e in event.smart_detect_types}
 
             result = await db.execute(select(EventSmartType).where(EventSmartType.event_id == event.id))
-            for event_type in result.unique().scalars():
-                event_type = cast(EventSmartType, event_type)
+            for event_smart_type in result.unique().scalars():
+                event_type = cast(EventSmartType, event_smart_type)
                 if event_type.smart_type not in types:
                     to_delete.append(event_type)
                 else:
                     types.remove(event_type.smart_type)
 
-            for event_type in types:
-                db.add(EventSmartType(event_id=event.id, smart_type=event_type))
+            for smart_type_str in types:
+                db.add(EventSmartType(event_id=event.id, smart_type=smart_type_str))
 
         if do_insert:
             db.add(db_event)
-        for event_type in to_delete:
-            await db.delete(event_type)
+        for smart_type in to_delete:
+            await db.delete(smart_type)
         await db.commit()
 
 
 async def _update_ongoing_events(ctx: BackupContext) -> int:
     db = ctx.create_db_session()
     async with db:
-        result = await db.execute(select(Event).where(Event.event_type != "ring").where(Event.end_naive is None))
+        result = await db.execute(select(Event).where(Event.event_type != "ring").where(Event.end_naive is None))  # type: ignore
 
         events = list(result.unique().scalars())
 
     if len(events) == 0:
         return 0
     for event in track(events, description="Updating Events"):
-        event = cast(Event, event)
         event_id = cast(str, event.id)
         await _update_event(ctx, await ctx.protect.get_event(event_id))
     return len(events)
@@ -787,7 +785,6 @@ async def _download_event_video(ctx: BackupContext, camera: d.Camera, event: Eve
 
 
 async def _download_event(ctx: BackupContext, event: Event, verify: bool, force: bool, pb: Progress) -> bool:
-
     downloaded = False
     camera = ctx.protect.bootstrap.get_device_from_mac(event.camera_mac)  # type: ignore
     if camera is not None:
@@ -817,10 +814,10 @@ async def _download_events(
     db = ctx.create_db_session()
     async with db:
         count_query = (
-            select(func.count(Event.id))
+            select(func.count(Event.id))  # pylint: disable=not-callable
             .where(Event.event_type.in_([e.value for e in event_types]))
             .where(Event.start_naive >= start)
-            .where(or_(Event.end_naive <= end, Event.end_naive is None))
+            .where(or_(Event.end_naive <= end, Event.end_naive is None))  # type: ignore
         )
         count = cast(int, (await db.execute(count_query)).scalar())
         _LOGGER.info("Downloading %s events", count)
@@ -839,7 +836,7 @@ async def _download_events(
                 select(Event)
                 .where(Event.event_type.in_([e.value for e in event_types]))
                 .where(Event.start_naive >= start)
-                .where(or_(Event.end_naive <= end, Event.end_naive is None))
+                .where(or_(Event.end_naive <= end, Event.end_naive is None))  # type: ignore
                 .limit(ctx.page_size)
             )
             smart_types_set = {s.value for s in smart_types}
@@ -854,7 +851,9 @@ async def _download_events(
             while offset < count:
                 result = await db.execute(page)
                 for event in result.unique().scalars():
-                    event = cast(Event, event)
+                    if event.end is None:
+                        continue
+
                     length = event.end - event.start
                     if length > ctx.length_cutoff:
                         _LOGGER.warning("Skipping event %s because it is too long (%s)", event.id, length)

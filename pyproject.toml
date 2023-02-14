@@ -26,7 +26,8 @@ classifiers = [
     "Topic :: Software Development :: Build Tools",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10"
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11"
 ]
 dynamic = ["version"]
 dependencies = [
@@ -124,7 +125,7 @@ pyunifiprotect = ["py.typed"]
 
 [tool.black]
 line-length = 120
-target-version = ["py39", "py310"]
+target-version = ["py39", "py310", "py311"]
 exclude = '''
 (
   /(
@@ -260,9 +261,8 @@ expected-line-ending-format = "LF"
 
 [tool.pylint.EXCEPTIONS]
 overgeneral-exceptions = [
-    "BaseException",
-    "Exception",
-    "HomeAssistantError",
+    "builtins.BaseException",
+    "builtins.Exception",
 ]
 
 [tool.pytest.ini_options]
@@ -283,7 +283,7 @@ ignore = "D10, D202, D210, D205, D4, E501, E126, E128, W504, W503, E203"
 max-line-length = 120
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 warn_unused_configs = true
 plugins = "pydantic.mypy,sqlalchemy.ext.mypy.plugin"
 disable_error_code = "no-redef"

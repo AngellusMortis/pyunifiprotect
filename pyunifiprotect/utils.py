@@ -411,7 +411,6 @@ async def profile_ws(
     do_print: bool = True,
     print_output: Optional[Callable[[Any], Any]] = None,
 ) -> None:
-
     if protect.bootstrap.capture_ws_stats:
         raise NvrError("Profile already in progress")
 

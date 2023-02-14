@@ -45,7 +45,7 @@ class Websocket:
         self.timeout_interval = timeout
         self.backoff = backoff
         self.verify = verify
-        self._auth = auth_callback  # type: ignore
+        self._auth = auth_callback
         self._timeout = time.monotonic()
         self._ws_subscriptions = []
         self._connect_lock = asyncio.Lock()

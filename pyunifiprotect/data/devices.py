@@ -839,7 +839,6 @@ class Camera(ProtectMotionDeviceModel):
         return super().unifi_dict_to_dict(data)
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
-
         if data is not None:
             if "motion_zones" in data:
                 data["motion_zones"] = [MotionZone(**z).unifi_dict() for z in data["motion_zones"]]
@@ -1411,7 +1410,6 @@ class Camera(ProtectMotionDeviceModel):
         await self.queue_update(callback)
 
     async def _set_object_detect(self, obj_to_mod: SmartDetectObjectType, enabled: bool) -> None:
-
         if obj_to_mod not in self.feature_flags.smart_detect_types:
             raise BadRequest(f"Camera does not support the {obj_to_mod} detection type")
 
@@ -1429,7 +1427,6 @@ class Camera(ProtectMotionDeviceModel):
         await self.queue_update(callback)
 
     async def _set_audio_detect(self, obj_to_mod: SmartDetectAudioType, enabled: bool) -> None:
-
         if (
             self.feature_flags.smart_detect_audio_types is None
             or obj_to_mod not in self.feature_flags.smart_detect_audio_types

@@ -268,7 +268,7 @@ class Bootstrap(ProtectBaseObject):
         if ref is None:
             return None
 
-        devices = getattr(self, f"{ref.model}s")
+        devices = getattr(self, f"{ref.model.value}s")
         return cast(ProtectAdoptableDeviceModel, devices.get(ref.id))
 
     def get_device_from_id(self, device_id: str) -> ProtectAdoptableDeviceModel | None:
@@ -277,7 +277,7 @@ class Bootstrap(ProtectBaseObject):
         ref = self.id_lookup.get(device_id)
         if ref is None:
             return None
-        devices = getattr(self, f"{ref.model}s")
+        devices = getattr(self, f"{ref.model.value}s")
         return cast(ProtectAdoptableDeviceModel, devices.get(ref.id))
 
     def process_event(self, event: Event) -> None:
@@ -339,7 +339,6 @@ class Bootstrap(ProtectBaseObject):
     def _process_remove_packet(
         self, packet: WSPacket, data: Optional[Dict[str, Any]]
     ) -> Optional[WSSubscriptionMessage]:
-
         model = packet.action_frame.data.get("modelKey")
         device_id = packet.action_frame.data.get("id")
         devices = getattr(self, f"{model}s", None)

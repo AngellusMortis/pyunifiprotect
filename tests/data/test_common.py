@@ -5,7 +5,7 @@ import asyncio
 import base64
 from copy import deepcopy
 from ipaddress import IPv4Address
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, Optional, Set, cast
 from unittest.mock import Mock, patch
 
 import pytest
@@ -152,7 +152,7 @@ def test_events(raw_events):
         compare_devices(event)
 
 
-def test_bootstrap(bootstrap):
+def test_bootstrap(bootstrap: dict[str, Any]):
     obj = Bootstrap.from_unifi_dict(**deepcopy(bootstrap))
 
     set_no_debug()
@@ -190,10 +190,10 @@ def test_bootstrap(bootstrap):
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
 def test_bootstrap_device_not_adopted(bootstrap, protect_client: ProtectApiClient):
     bootstrap["cameras"][0]["isAdopted"] = False
-    obj: Bootstrap = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
+    obj = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
 
     set_no_debug()
-    obj_construct: Bootstrap = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
+    obj_construct = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
     set_debug()
 
     expected_count = sum(1 if c["isAdopted"] else 0 for c in bootstrap["cameras"])
@@ -207,7 +207,7 @@ def test_bootstrap_device_not_adopted_no_api(bootstrap):
     obj = Bootstrap.from_unifi_dict(**deepcopy(bootstrap))
 
     set_no_debug()
-    obj_construct: Bootstrap = Bootstrap.from_unifi_dict(**deepcopy(bootstrap))
+    obj_construct = cast(Bootstrap, Bootstrap.from_unifi_dict(**deepcopy(bootstrap)))
     set_debug()
 
     assert len(obj.cameras) == len(bootstrap["cameras"])
@@ -215,13 +215,13 @@ def test_bootstrap_device_not_adopted_no_api(bootstrap):
 
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
-def test_bootstrap_device_not_adopted_enabled(bootstrap, protect_client: ProtectApiClient):
+def test_bootstrap_device_not_adopted_enabled(bootstrap: dict[str, Any], protect_client: ProtectApiClient):
     bootstrap["cameras"][0]["isAdopted"] = False
     protect_client.ignore_unadopted = False
-    obj: Bootstrap = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
+    obj = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
 
     set_no_debug()
-    obj_construct: Bootstrap = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
+    obj_construct = Bootstrap.from_unifi_dict(**deepcopy(bootstrap), api=protect_client)
     set_debug()
 
     assert len(obj.cameras) == len(bootstrap["cameras"])
@@ -230,7 +230,7 @@ def test_bootstrap_device_not_adopted_enabled(bootstrap, protect_client: Protect
 
 @pytest.mark.benchmark(group="construct")
 @pytest.mark.timeout(0)
-def test_bootstrap_benchmark(bootstrap, benchmark: BenchmarkFixture):
+def test_bootstrap_benchmark(bootstrap: dict[str, Any], benchmark: BenchmarkFixture):
     def create():
         Bootstrap.from_unifi_dict(**deepcopy(bootstrap))
 
@@ -239,7 +239,7 @@ def test_bootstrap_benchmark(bootstrap, benchmark: BenchmarkFixture):
 
 @pytest.mark.benchmark(group="construct")
 @pytest.mark.timeout(0)
-def test_bootstrap_benchmark_construct(bootstrap, benchmark: BenchmarkFixture):
+def test_bootstrap_benchmark_construct(bootstrap: dict[str, Any], benchmark: BenchmarkFixture):
     set_no_debug()
 
     def create():

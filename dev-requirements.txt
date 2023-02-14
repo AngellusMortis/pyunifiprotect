@@ -4,19 +4,19 @@
 #
 #    pip-compile --extra=dev --extra=full --output-file=dev-requirements.txt --pip-args='--root-user-action=ignore -c requirements.txt' pyproject.toml
 #
-aiofiles==22.1.0
+aiofiles==23.1.0
     # via pyunifiprotect (pyproject.toml)
-aiohttp==3.8.1
+aiohttp==3.8.4
     # via pyunifiprotect (pyproject.toml)
-aioshutil==1.1
+aioshutil==1.2
     # via pyunifiprotect (pyproject.toml)
-aiosignal==1.2.0
+aiosignal==1.3.1
     # via aiohttp
-aiosqlite==0.17.0
+aiosqlite==0.18.0
     # via pyunifiprotect (pyproject.toml)
-astroid==2.12.9
+astroid==2.14.2
     # via pylint
-asttokens==2.0.8
+asttokens==2.2.1
     # via stack-data
 async-timeout==4.0.2
     # via
@@ -24,33 +24,27 @@ async-timeout==4.0.2
     #   pyunifiprotect (pyproject.toml)
 asyncify==0.9.1
     # via pyunifiprotect (pyproject.toml)
-attrs==22.1.0
+attrs==22.2.0
     # via
     #   aiohttp
     #   pytest
-av==9.2.0
+av==10.0.0
     # via pyunifiprotect (pyproject.toml)
-babel==2.10.3
+babel==2.11.0
     # via mkdocs-git-revision-date-localized-plugin
 backcall==0.2.0
     # via ipython
 base36==0.1.1
     # via pyunifiprotect (pyproject.toml)
-black==22.8.0
+black==23.1.0
     # via pyunifiprotect (pyproject.toml)
-build==0.8.0
+build==0.10.0
     # via
     #   pip-tools
     #   pyunifiprotect (pyproject.toml)
-cairocffi==1.3.0
-    # via cairosvg
-cairosvg==2.5.2
-    # via mkdocs-material
 certifi==2022.12.7
     # via requests
-cffi==1.15.1
-    # via cairocffi
-charset-normalizer==2.1.1
+charset-normalizer==3.0.1
     # via
     #   aiohttp
     #   requests
@@ -60,36 +54,37 @@ click==8.1.3
     #   mkdocs
     #   pip-tools
     #   typer
-colorama==0.4.5
-    # via typer
+colorama==0.4.6
+    # via
+    #   griffe
+    #   mkdocs-material
+    #   typer
 commonmark==0.9.1
     # via rich
-coverage[toml]==6.4.4
+coverage[toml]==7.1.0
     # via
     #   pytest-cov
     #   pyunifiprotect (pyproject.toml)
-cssselect2==0.6.0
-    # via cairosvg
-dateparser==1.1.1
+dateparser==1.1.7
     # via pyunifiprotect (pyproject.toml)
 decorator==5.1.1
     # via ipython
-defusedxml==0.7.1
-    # via cairosvg
-dill==0.3.5.1
+dill==0.3.6
     # via pylint
+exceptiongroup==1.1.0
+    # via pytest
 execnet==1.9.0
     # via pytest-xdist
-executing==1.0.0
+executing==1.2.0
     # via stack-data
-flake8==5.0.4
+flake8==6.0.0
     # via
     #   flake8-docstrings
     #   pyproject-flake8
     #   pyunifiprotect (pyproject.toml)
-flake8-docstrings==1.6.0
+flake8-docstrings==1.7.0
     # via pyunifiprotect (pyproject.toml)
-frozenlist==1.3.1
+frozenlist==1.3.3
     # via
     #   aiohttp
     #   aiosignal
@@ -97,27 +92,25 @@ funkify==0.4.4
     # via asyncify
 ghp-import==2.1.0
     # via mkdocs
-gitdb==4.0.9
+gitdb==4.0.10
     # via gitpython
-gitpython==3.1.27
+gitpython==3.1.30
     # via mkdocs-git-revision-date-localized-plugin
-greenlet==1.1.3
+greenlet==2.0.2
     # via sqlalchemy
-griffe==0.22.1
+griffe==0.25.4
     # via mkdocstrings-python
-idna==3.3
+idna==3.4
     # via
     #   requests
     #   yarl
-importlib-metadata==4.12.0
-    # via mkdocs
-iniconfig==1.1.1
+iniconfig==2.0.0
     # via pytest
-ipython==8.5.0
+ipython==8.10.0
     # via pyunifiprotect (pyproject.toml)
-isort==5.10.1
+isort==5.12.0
     # via pylint
-jedi==0.18.1
+jedi==0.18.2
     # via ipython
 jinja2==3.1.2
     # via
@@ -125,7 +118,7 @@ jinja2==3.1.2
     #   mkdocs
     #   mkdocs-material
     #   mkdocstrings
-lazy-object-proxy==1.7.1
+lazy-object-proxy==1.9.0
     # via astroid
 markdown==3.3.7
     # via
@@ -134,7 +127,7 @@ markdown==3.3.7
     #   mkdocs-material
     #   mkdocstrings
     #   pymdown-extensions
-markupsafe==2.1.1
+markupsafe==2.1.2
     # via
     #   jinja2
     #   mkdocstrings
@@ -148,7 +141,7 @@ mergedeep==1.3.4
     # via mkdocs
 mike==1.1.2
     # via pyunifiprotect (pyproject.toml)
-mkdocs==1.3.1
+mkdocs==1.4.2
     # via
     #   mike
     #   mkdocs-autorefs
@@ -159,34 +152,35 @@ mkdocs-autorefs==0.4.1
     # via mkdocstrings
 mkdocs-git-revision-date-localized-plugin==1.1.0
     # via pyunifiprotect (pyproject.toml)
-mkdocs-include-markdown-plugin==3.7.1
+mkdocs-include-markdown-plugin==4.0.3
     # via pyunifiprotect (pyproject.toml)
-mkdocs-material==8.5.0
+mkdocs-material==9.0.12
     # via pyunifiprotect (pyproject.toml)
-mkdocs-material-extensions==1.0.3
+mkdocs-material-extensions==1.1.1
     # via mkdocs-material
-mkdocstrings[python]==0.19.0
+mkdocstrings[python]==0.20.0
     # via
     #   mkdocstrings-python
     #   pyunifiprotect (pyproject.toml)
-mkdocstrings-python==0.7.1
+mkdocstrings-python==0.8.3
     # via mkdocstrings
-multidict==6.0.2
+multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
-mypy==0.971
+mypy==1.0.0
     # via
     #   pyunifiprotect (pyproject.toml)
     #   sqlalchemy
-mypy-extensions==0.4.3
+mypy-extensions==1.0.0
     # via
     #   black
     #   mypy
-orjson==3.8.0
+orjson==3.8.6
     # via pyunifiprotect (pyproject.toml)
-packaging==21.3
+packaging==23.0
     # via
+    #   black
     #   build
     #   mkdocs
     #   pytest
@@ -194,103 +188,89 @@ packaging==21.3
     #   pyunifiprotect (pyproject.toml)
 parso==0.8.3
     # via jedi
-pathspec==0.10.1
+pathspec==0.11.0
     # via black
-pep517==0.13.0
-    # via build
 pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.3.0
-    # via
-    #   cairosvg
-    #   mkdocs-material
-    #   pyunifiprotect (pyproject.toml)
-pip-tools==6.8.0
+pillow==9.4.0
     # via pyunifiprotect (pyproject.toml)
-platformdirs==2.5.2
+pip-tools==6.12.2
+    # via pyunifiprotect (pyproject.toml)
+platformdirs==3.0.0
     # via
     #   black
     #   pylint
 pluggy==1.0.0
     # via pytest
-prompt-toolkit==3.0.31
+prompt-toolkit==3.0.36
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-py==1.11.0
-    # via
-    #   pytest
-    #   pytest-forked
-py-cpuinfo==8.0.0
+py-cpuinfo==9.0.0
     # via pytest-benchmark
-pycodestyle==2.9.1
+pycodestyle==2.10.0
     # via flake8
-pycparser==2.21
-    # via cffi
-pydantic==1.10.2
+pydantic==1.10.4
     # via pyunifiprotect (pyproject.toml)
-pydocstyle==6.1.1
+pydocstyle==6.3.0
     # via
     #   flake8-docstrings
     #   pyunifiprotect (pyproject.toml)
-pyflakes==2.5.0
+pyflakes==3.0.1
     # via flake8
-pygments==2.13.0
+pygments==2.14.0
     # via
     #   ipython
     #   mkdocs-material
     #   rich
-pyjwt==2.4.0
+pyjwt==2.6.0
     # via pyunifiprotect (pyproject.toml)
-pylint==2.15.2
+pylint==2.16.2
     # via
     #   pylint-strict-informational
     #   pyunifiprotect (pyproject.toml)
 pylint-strict-informational==0.1
     # via pyunifiprotect (pyproject.toml)
-pymdown-extensions==9.5
+pymdown-extensions==9.9.2
     # via
     #   mkdocs-material
     #   mkdocstrings
-pyparsing==3.0.9
-    # via packaging
-pyproject-flake8==5.0.4.post1
+pyproject-flake8==6.0.0.post1
     # via pyunifiprotect (pyproject.toml)
-pytest==7.1.3
+pyproject-hooks==1.0.0
+    # via build
+pytest==7.2.1
     # via
     #   pytest-asyncio
     #   pytest-benchmark
     #   pytest-cov
-    #   pytest-forked
     #   pytest-sugar
     #   pytest-timeout
     #   pytest-xdist
     #   pyunifiprotect (pyproject.toml)
-pytest-asyncio==0.19.0
+pytest-asyncio==0.20.3
     # via pyunifiprotect (pyproject.toml)
-pytest-benchmark==3.4.1
+pytest-benchmark==4.0.0
     # via pyunifiprotect (pyproject.toml)
-pytest-cov==3.0.0
+pytest-cov==4.0.0
     # via pyunifiprotect (pyproject.toml)
-pytest-forked==1.4.0
-    # via pytest-xdist
-pytest-sugar==0.9.5
+pytest-sugar==0.9.6
     # via pyunifiprotect (pyproject.toml)
 pytest-timeout==2.1.0
     # via pyunifiprotect (pyproject.toml)
-pytest-xdist==2.5.0
+pytest-xdist==3.2.0
     # via pyunifiprotect (pyproject.toml)
 python-dateutil==2.8.2
     # via
     #   dateparser
     #   ghp-import
-python-dotenv==0.21.0
+python-dotenv==0.21.1
     # via pyunifiprotect (pyproject.toml)
-pytz==2022.2.1
+pytz==2022.7.1
     # via
     #   babel
     #   dateparser
@@ -303,13 +283,15 @@ pyyaml==6.0
     #   pyyaml-env-tag
 pyyaml-env-tag==0.1
     # via mkdocs
-regex==2022.3.2
-    # via dateparser
-requests==2.28.1
+regex==2022.10.31
+    # via
+    #   dateparser
+    #   mkdocs-material
+requests==2.28.2
     # via mkdocs-material
-rich==12.5.1
+rich==12.6.0
     # via typer
-shellingham==1.5.0
+shellingham==1.5.1
     # via typer
 six==1.16.0
     # via
@@ -319,81 +301,69 @@ smmap==5.0.0
     # via gitdb
 snowballstemmer==2.2.0
     # via pydocstyle
-sqlalchemy[asyncio,mypy]==1.4.41
+sqlalchemy[asyncio,mypy]==2.0.3
     # via pyunifiprotect (pyproject.toml)
-sqlalchemy2-stubs==0.0.2a27
-    # via sqlalchemy
-stack-data==0.5.0
+stack-data==0.6.2
     # via ipython
-termcolor==2.0.1
+termcolor==2.2.0
     # via
     #   pytest-sugar
     #   pyunifiprotect (pyproject.toml)
-tinycss2==1.1.1
-    # via
-    #   cairosvg
-    #   cssselect2
 tomli==2.0.1
     # via
     #   black
     #   build
     #   coverage
     #   mypy
-    #   pep517
     #   pylint
     #   pyproject-flake8
+    #   pyproject-hooks
     #   pytest
-tomlkit==0.11.4
+tomlkit==0.11.6
     # via pylint
-traitlets==5.4.0
+traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-typer[all]==0.6.1
+typer[all]==0.7.0
     # via pyunifiprotect (pyproject.toml)
-types-aiofiles==22.1.0
+types-aiofiles==22.1.0.7
     # via pyunifiprotect (pyproject.toml)
-types-dateparser==1.1.4
+types-dateparser==1.1.4.6
     # via pyunifiprotect (pyproject.toml)
-types-pillow==9.2.1
+types-pillow==9.4.0.11
     # via pyunifiprotect (pyproject.toml)
-types-termcolor==1.1.5
+types-termcolor==1.1.6
     # via pyunifiprotect (pyproject.toml)
-typing-extensions==4.3.0
+typing-extensions==4.4.0
     # via
-    #   aiosqlite
+    #   astroid
     #   mypy
     #   pydantic
-    #   sqlalchemy2-stubs
+    #   sqlalchemy
     #   xtyping
-tzdata==2022.2
+tzdata==2022.7
     # via
     #   pytz-deprecation-shim
     #   pyunifiprotect (pyproject.toml)
 tzlocal==4.2
     # via dateparser
-urllib3==1.26.12
+urllib3==1.26.14
     # via requests
 verspec==0.1.0
     # via mike
-watchdog==2.1.9
+watchdog==2.2.1
     # via mkdocs
-wcwidth==0.2.5
+wcwidth==0.2.6
     # via prompt-toolkit
-webencodings==0.5.1
-    # via
-    #   cssselect2
-    #   tinycss2
-wheel==0.38.1
+wheel==0.38.4
     # via pip-tools
 wrapt==1.14.1
     # via astroid
 xtyping==0.6.1
     # via asyncify
-yarl==1.8.1
+yarl==1.8.2
     # via aiohttp
-zipp==3.8.1
-    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
