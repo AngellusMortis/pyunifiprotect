@@ -1320,7 +1320,7 @@ class ProtectApiClient(BaseApiClient):
 
                     if is_package and line.startswith("Version: "):
                         versions.add(Version(line.split(": ")[-1]))
-        except (aiohttp.ServerDisconnectedError, client_exceptions.ClientError) as err:
+        except (aiohttp.ServerDisconnectedError, client_exceptions.ClientError, asyncio.TimeoutError) as err:
             raise NvrError(f"Error packages from {url}: {err}") from err
 
         return versions
@@ -1330,6 +1330,9 @@ class ProtectApiClient(BaseApiClient):
 
         versions: set[Version] = set()
         for url in PROTECT_APT_URLS:
-            versions |= await self._get_versions_from_api(url)
+            try:
+                versions |= await self._get_versions_from_api(url)
+            except NvrError:
+                _LOGGER.warning("Failed to retrieve release versions from online.")
 
         return versions
