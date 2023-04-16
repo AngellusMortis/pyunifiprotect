@@ -166,6 +166,8 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     DOORLOCK_CLOSE = "doorlockClosed"
     DOORLOCK_BATTERY_LOW = "doorlockBatteryLow"
     #
+    DISRUPTED_CONDITIONS = "ringDisruptedConditions"
+    #
     RECORDING_OFF = "recordingOff"
 
     @staticmethod
