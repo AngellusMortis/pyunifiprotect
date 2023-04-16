@@ -7,6 +7,7 @@ from http.cookies import Morsel
 from ipaddress import IPv4Address
 import logging
 from pathlib import Path
+from tempfile import gettempdir
 import time
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union, cast
 from urllib.parse import urljoin
@@ -504,6 +505,7 @@ class ProtectApiClient(BaseApiClient):
     _last_update_dt: Optional[datetime] = None
     _connection_host: Optional[Union[IPv4Address, str]] = None
 
+    cache_dir: Path
     ignore_unadopted: bool
 
     def __init__(
@@ -520,6 +522,7 @@ class ProtectApiClient(BaseApiClient):
         ignore_stats: bool = False,
         ignore_unadopted: bool = True,
         debug: bool = False,
+        cache_dir: Optional[Path] = None,
     ) -> None:
         super().__init__(
             host=host,
@@ -535,6 +538,7 @@ class ProtectApiClient(BaseApiClient):
         self._ignore_stats = ignore_stats
         self._ws_subscriptions = []
         self.ignore_unadopted = ignore_unadopted
+        self.cache_dir = cache_dir or Path(gettempdir()) / "ufp_cache"
 
         if override_connection_host:
             self._connection_host = ip_from_host(self._host)

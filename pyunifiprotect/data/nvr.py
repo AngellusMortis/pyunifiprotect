@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, tzinfo
 from ipaddress import IPv4Address
 import logging
 from pathlib import Path
-from tempfile import gettempdir
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -55,7 +54,7 @@ from pyunifiprotect.data.types import (
 )
 from pyunifiprotect.data.user import User, UserLocation
 from pyunifiprotect.exceptions import BadRequest, NotAuthorized
-from pyunifiprotect.utils import process_datetime
+from pyunifiprotect.utils import RELEASE_CACHE, process_datetime
 
 if TYPE_CHECKING:
     from pydantic.typing import SetStr
@@ -63,8 +62,6 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 MAX_SUPPORTED_CAMERAS = 256
 MAX_EVENT_HISTORY_IN_STATE_MACHINE = MAX_SUPPORTED_CAMERAS * 2
-TMP_RELEASE_CACHE = Path(gettempdir()) / "ufp_cache" / "release_cache.json"
-RELEASE_CACHE = Path(__file__).parent.parent / "release_cache.json"
 
 
 class NVRLocation(UserLocation):
@@ -972,17 +969,17 @@ class NVR(ProtectDeviceModel):
             return True
 
         # 2.6.14 is an EA version that looks like a release version
-        versions = await self._read_cache_file(TMP_RELEASE_CACHE) or await self._read_cache_file(RELEASE_CACHE)
+        cache_file_path = self.api.cache_dir / "release_cache.json"
+        versions = await self._read_cache_file(cache_file_path) or await self._read_cache_file(RELEASE_CACHE)
         if versions is None or self.version not in versions:
             versions = await self.api.get_release_versions()
             try:
                 _LOGGER.debug("Fetching releases from APT repos...")
-                base = TMP_RELEASE_CACHE.parent
-                tmp = base / "release_cache.tmp.json"
-                await aos.makedirs(base, exist_ok=True)
+                tmp = self.api.cache_dir / "release_cache.tmp.json"
+                await aos.makedirs(self.api.cache_dir, exist_ok=True)
                 async with aiofiles.open(tmp, "wb") as cache_file:
                     await cache_file.write(orjson.dumps([str(v) for v in versions]))
-                await aos.rename(tmp, TMP_RELEASE_CACHE)
+                await aos.rename(tmp, cache_file_path)
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.warning("Failed write cache file.")
 

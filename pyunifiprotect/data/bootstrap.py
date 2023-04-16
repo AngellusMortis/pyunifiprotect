@@ -6,8 +6,6 @@ from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 import logging
-from pathlib import Path
-from tempfile import gettempdir
 from typing import Any, Dict, List, Optional, Set, Tuple, cast
 from uuid import UUID
 
@@ -66,13 +64,6 @@ CAMERA_EVENT_ATTR_MAP: Dict[EventType, Tuple[str, str]] = {
     EventType.SMART_AUDIO_DETECT: ("last_smart_audio_detect", "last_smart_audio_detect_event_id"),
     EventType.RING: ("last_ring", "last_ring_event_id"),
 }
-
-if Path("/config/.HA_VERSION").exists():
-    TMP_RELEASE_CACHE = Path("/config/.storage/unifiprotect_cache/release_cache.json")
-else:
-    TMP_RELEASE_CACHE = Path(gettempdir()) / "ufp_cache" / "release_cache.json"
-
-RELEASE_CACHE = Path(__file__).parent.parent / "release_cache.json"
 
 
 def _remove_stats_keys(data: Dict[str, Any], ignore_stats: bool) -> Dict[str, Any]:

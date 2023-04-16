@@ -70,6 +70,8 @@ SNAKE_CASE_MATCH_3 = re.compile("([a-z0-9])([A-Z])")
 
 _LOGGER = logging.getLogger(__name__)
 
+RELEASE_CACHE = Path(__file__).parent / "release_cache.json"
+
 
 def set_debug() -> None:
     """Sets ENV variable for UFP_DEBUG to on (True)"""

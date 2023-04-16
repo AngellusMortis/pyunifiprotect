@@ -25,7 +25,11 @@ from pyunifiprotect.cli.sensors import app as sensor_app
 from pyunifiprotect.cli.viewers import app as viewer_app
 from pyunifiprotect.data import Version, WSPacket
 from pyunifiprotect.test_util import SampleDataGenerator
-from pyunifiprotect.utils import get_local_timezone, profile_ws as profile_ws_job
+from pyunifiprotect.utils import (
+    RELEASE_CACHE,
+    get_local_timezone,
+    profile_ws as profile_ws_job,
+)
 
 _LOGGER = logging.getLogger("pyunifiprotect")
 
@@ -259,7 +263,7 @@ def release_versions(ctx: typer.Context) -> None:
     versions = loop.run_until_complete(callback())
     output = orjson.dumps(sorted([str(v) for v in versions]))
 
-    with open(Path(__file__).parent.parent / "release_cache.json", "wb") as cache_file:
+    with open(RELEASE_CACHE, "wb") as cache_file:
         cache_file.write(output)
 
     typer.echo(output.decode("utf-8"))
