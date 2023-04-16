@@ -214,6 +214,7 @@ class Event(ProtectModelWithId):
 
     # TODO:
     # partition
+    # description
 
     _smart_detect_events: Optional[List[Event]] = PrivateAttr(None)
     _smart_detect_track: Optional[SmartDetectTrack] = PrivateAttr(None)
@@ -437,6 +438,8 @@ class StorageInfo(ProtectBaseObject):
     type: StorageType
     used: int
     devices: List[StorageDevice]
+    # requires 2.8.14+
+    capability: Optional[str] = None
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -477,7 +480,7 @@ class UOSDisk(ProtectBaseObject):
     sata: Optional[str] = None
     action: Optional[str] = None
     healthy: Optional[str] = None
-    reason: Optional[str] = None
+    reason: Optional[List[Any]] = None
     temperature: Optional[int] = None
     power_on_hours: Optional[int] = None
     life_span: Optional[PercentFloat] = None
@@ -557,6 +560,8 @@ class UOSSpace(ProtectBaseObject):
     action: str
     progress: Optional[PercentFloat] = None
     estimate: Optional[timedelta] = None
+    # requires 2.8.14+
+    health: Optional[str] = None
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
@@ -716,6 +721,7 @@ class NVRFeatureFlags(ProtectBaseObject):
     dev: bool
     notifications_v2: bool
     homekit_paired: Optional[bool] = None
+    ulp_role_management: Optional[bool] = None
 
 
 class NVR(ProtectDeviceModel):
@@ -772,11 +778,22 @@ class NVR(ProtectDeviceModel):
     last_drive_slow_event: Optional[datetime] = None
     is_u_core_setup: Optional[bool] = None
     vault_camera_ids: list[str] = []
+    # requires 2.8.14+
+    corruption_state: Optional[str] = None
+    country_code: Optional[str] = None
+    has_gateway: Optional[bool] = None
+    is_vault_registered: Optional[bool] = None
+    public_ip: Optional[IPv4Address] = None
+    ulp_version: Optional[str] = None
+    wan_ip: Optional[IPv4Address] = None
 
     # TODO:
     # errorCode   read only
     # wifiSettings
     # smartDetectAgreement
+    # dbRecoveryOptions
+    # globalCameraSettings
+    # portStatus
 
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:

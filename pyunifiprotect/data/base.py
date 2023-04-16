@@ -812,6 +812,8 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     market_name: Optional[str]
     # requires 2.7.5+
     fw_update_state: Optional[str] = None
+    # requires 2.8.14+
+    nvr_mac: Optional[str] = None
 
     wired_connection_state: Optional[WiredConnectionState] = None
     wifi_connection_state: Optional[WifiConnectionState] = None

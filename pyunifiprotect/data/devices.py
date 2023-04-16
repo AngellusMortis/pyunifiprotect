@@ -316,6 +316,8 @@ class ISPSettings(ProtectBaseObject):
     touch_focus_y: Optional[int]
     zoom_position: PercentInt
     mount_position: Optional[MountPosition] = None
+    # requires 2.8.14+
+    is_color_night_vision_enabled: Optional[bool] = None
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
@@ -628,9 +630,21 @@ class PrivacyMaskCapability(ProtectBaseObject):
     rectangle_only: bool
 
 
+class HotplugExtender(ProtectBaseObject):
+    has_flash: Optional[bool] = None
+    has_ir: Optional[bool] = None
+    has_radar: Optional[bool] = None
+    is_attached: Optional[bool] = None
+
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "hasIR": "hasIr"}
+
+
 class Hotplug(ProtectBaseObject):
     audio: Optional[bool] = None
     video: Optional[bool] = None
+    extender: Optional[HotplugExtender] = None
 
 
 class CameraFeatureFlags(ProtectBaseObject):
@@ -775,6 +789,10 @@ class Camera(ProtectMotionDeviceModel):
     # requires 2.7.5+
     is_waterproof_case_attached: Optional[bool] = None
     last_disconnect: Optional[datetime] = None
+    # requires 2.8.14+
+    is_2k: Optional[bool] = None
+    is_4k: Optional[bool] = None
+    use_global: Optional[bool] = None
 
     # TODO: used for adopting
     # apMac read only
@@ -796,6 +814,10 @@ class Camera(ProtectMotionDeviceModel):
     last_smart_audio_detect_event_id: Optional[str] = None
     talkback_stream: Optional[TalkbackStream] = None
     _last_ring_timeout: Optional[datetime] = PrivateAttr(None)
+
+    @classmethod
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "is2K": "is2k", "is4K": "is4k"}
 
     @classmethod
     def _get_excluded_changed_fields(cls) -> Set[str]:

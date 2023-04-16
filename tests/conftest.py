@@ -603,6 +603,7 @@ def compare_objs(obj_type, expected, actual):
     elif obj_type == ModelType.EVENT.value:
         expected.pop("partition", None)
         expected.pop("deletionType", None)
+        expected.pop("description", None)
 
         expected_keys = (expected.get("metadata") or {}).keys()
         actual_keys = (actual.get("metadata") or {}).keys()
@@ -622,6 +623,10 @@ def compare_objs(obj_type, expected, actual):
         del expected["errorCode"]
         del expected["wifiSettings"]
         del expected["smartDetectAgreement"]
+        expected.pop("dbRecoveryOptions", None)
+        expected.pop("globalCameraSettings", None)
+        expected.pop("portStatus", None)
+
         expected["ports"]["piongw"] = expected["ports"].get("piongw")
         expected["ports"]["stacking"] = expected["ports"].get("stacking")
         expected["ports"]["emsJsonCLI"] = expected["ports"].get("emsJsonCLI")
