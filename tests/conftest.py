@@ -522,6 +522,18 @@ NEW_FIELDS = {
     "lastDisconnect",
     # 2.7.15
     "featureFlags",  # added to chime
+    # 2.8.14+
+    "nvrMac",
+    "useGlobal",
+    "is2K",
+    "is4K",
+    "ulpVersion",
+    "wanIp",
+    "publicIp",
+    "isVaultRegistered",
+    "hasGateway",
+    "corruptionState",
+    "countryCode",
 }
 
 NEW_CAMERA_FEATURE_FLAGS = {
@@ -533,6 +545,11 @@ NEW_CAMERA_FEATURE_FLAGS = {
     "lensType",
     # 2.7.18+
     "isDoorbell",
+}
+
+NEW_NVR_FEATURE_FLAGS = {
+    # 2.8.14+
+    "ulpRoleManagement",
 }
 
 OLD_FIELDS = {
@@ -572,6 +589,8 @@ def compare_objs(obj_type, expected, actual):
         expected["recordingSettings"]["enableMotionDetection"] = expected["recordingSettings"].get(
             "enableMotionDetection"
         )
+        if "isColorNightVisionEnabled" not in expected["ispSettings"]:
+            actual["ispSettings"].pop("isColorNightVisionEnabled", None)
 
         if expected["eventStats"]["motion"].get("recentHours") in [[None], None, []]:
             expected["eventStats"]["motion"].pop("recentHours", None)
@@ -634,7 +653,15 @@ def compare_objs(obj_type, expected, actual):
         if "homekitPaired" in actual["featureFlags"] and "homekitPaired" not in expected["featureFlags"]:
             del actual["featureFlags"]["homekitPaired"]
 
+        if "capability" not in expected["systemInfo"]["storage"]:
+            actual["systemInfo"]["storage"].pop("capability", None)
+
         # float math...
+        cpu_fields = ["averageLoad", "temperature"]
+        for key in cpu_fields:
+            if math.isclose(expected["systemInfo"]["cpu"][key], actual["systemInfo"]["cpu"][key], rel_tol=0.01):
+                expected["systemInfo"]["cpu"][key] = actual["systemInfo"]["cpu"][key]
+
         if expected["systemInfo"].get("ustorage") is not None:
             for index, disk in enumerate(expected["systemInfo"]["ustorage"]["disks"]):
                 actual_disk = actual["systemInfo"]["ustorage"]["disks"][index]
@@ -651,6 +678,10 @@ def compare_objs(obj_type, expected, actual):
                 if estimate is not None and actual_estimate is not None:
                     if math.isclose(estimate, actual_estimate, rel_tol=0.01):
                         actual["systemInfo"]["ustorage"]["space"][index]["estimate"] = estimate
+
+        for flag in NEW_NVR_FEATURE_FLAGS:
+            if flag not in expected["featureFlags"]:
+                del actual["featureFlags"][flag]
 
     if "bluetoothConnectionState" in expected:
         expected["bluetoothConnectionState"]["experienceScore"] = expected["bluetoothConnectionState"].get(
