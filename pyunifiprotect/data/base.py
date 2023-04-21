@@ -506,7 +506,7 @@ class ProtectBaseObject(BaseModel):
         return self
 
     def get_changed(self) -> Dict[str, Any]:
-        return dict_diff(self._initial_data, self.__dict__.items())
+        return dict_diff(self._initial_data, self.dict())
 
     @property
     def api(self) -> ProtectApiClient:
