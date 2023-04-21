@@ -503,10 +503,8 @@ class ProtectBaseObject(BaseModel):
         # Calling dict with no params has a fast path which is MUCH faster
         # so we pull out the excluded keys after
         as_dict = self.dict()
-        for key in self.__class__._get_excluded_changed_fields().intersection(  # pylint: disable=protected-access
-            as_dict
-        ):
-            del as_dict[key]
+        for key in self.__class__._get_excluded_changed_fields():  # pylint: disable=protected-access
+            as_dict.pop(key, None)
         self._initial_data = as_dict
         return self
 
