@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timedelta
+from functools import cache
 from ipaddress import IPv4Address
 import logging
 from typing import (
@@ -153,6 +154,7 @@ class ProtectBaseObject(BaseModel):
         return obj
 
     @classmethod
+    @cache
     def _get_excluded_changed_fields(cls) -> Set[str]:
         """
         Helper method for override in child classes for fields that excluded from calculating "changed" state for a
@@ -161,6 +163,7 @@ class ProtectBaseObject(BaseModel):
         return set()
 
     @classmethod
+    @cache
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         """
         Helper method for overriding in child classes for remapping UFP JSON keys to Python ones that do not fit the
@@ -531,6 +534,7 @@ class ProtectModel(ProtectBaseObject):
     model: Optional[ModelType]
 
     @classmethod
+    @cache
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "modelKey": "model"}
 
@@ -735,6 +739,7 @@ class ProtectDeviceModel(ProtectModelWithId):
     _callback_ping: Optional[TimerHandle] = PrivateAttr(None)
 
     @classmethod
+    @cache
     def _get_read_only_fields(cls) -> Set[str]:
         return super()._get_read_only_fields() | {
             "mac",
@@ -836,6 +841,7 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     # bridgeCandidates
 
     @classmethod
+    @cache
     def _get_read_only_fields(cls) -> Set[str]:
         return super()._get_read_only_fields() | {
             "connectionHost",
@@ -853,6 +859,7 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
         }
 
     @classmethod
+    @cache
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "bridge": "bridgeId", "isDownloadingFW": "isDownloadingFirmware"}
 
@@ -967,6 +974,7 @@ class ProtectMotionDeviceModel(ProtectAdoptableDeviceModel):
     last_motion_event_id: Optional[str] = None
 
     @classmethod
+    @cache
     def _get_read_only_fields(cls) -> Set[str]:
         return super()._get_read_only_fields() | {"lastMotion", "isDark"}
 
