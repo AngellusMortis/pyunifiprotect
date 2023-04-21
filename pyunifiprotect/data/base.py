@@ -503,7 +503,9 @@ class ProtectBaseObject(BaseModel):
         # Calling dict with no params has a fast path which is MUCH faster
         # so we pull out the excluded keys after
         as_dict = self.dict()
-        for key in self.__class__._get_excluded_changed_fields().intersection(as_dict):
+        for key in self.__class__._get_excluded_changed_fields().intersection(  # pylint: disable=protected-access
+            as_dict
+        ):
             del as_dict[key]
         self._initial_data = as_dict
         return self
@@ -665,14 +667,18 @@ class ProtectModelWithId(ProtectModel):
                     self.revert_changes()
                 raise NotAuthorized(f"Do not have write permission for obj: {self.id}")
 
-            new_data = self.dict(exclude=self.__class__._get_excluded_changed_fields())
+            new_data = self.dict(
+                exclude=self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
+            )
             updated = self.unifi_dict(data=self.get_changed())
 
             # do not patch when there are no updates
             if updated == {}:
                 return
 
-            read_only_keys = self.__class__._get_read_only_fields().intersection(updated.keys())
+            read_only_keys = self.__class__._get_read_only_fields().intersection(  # pylint: disable=protected-access
+                updated.keys()
+            )
             if len(read_only_keys) > 0:
                 self.revert_changes()
                 raise BadRequest(f"The following key(s) are read only: {read_only_keys}")
@@ -913,7 +919,7 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     def get_changed(self) -> Dict[str, Any]:
         """Gets dictionary of all changed fields"""
 
-        new_data = self.dict(exclude=self.__class__._get_excluded_changed_fields())
+        new_data = self.dict(exclude=self.__class__._get_excluded_changed_fields())  # pylint: disable=protected-access
         updated = dict_diff(self._initial_data, new_data)
 
         return updated
