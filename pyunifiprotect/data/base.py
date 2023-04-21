@@ -420,7 +420,7 @@ class ProtectBaseObject(BaseModel):
             excluded_fields = self._get_protect_objs_set() | self._get_protect_lists_set()
             if exclude is not None:
                 excluded_fields = excluded_fields | exclude
-            data = {k: v for k, v in self.__dict__.items() if k not in excluded_fields}
+            data = self.dict(exclude=excluded_fields)
             use_obj = True
 
         for key, klass in self._get_protect_objs().items():
@@ -663,7 +663,7 @@ class ProtectModelWithId(ProtectModel):
                 raise NotAuthorized(f"Do not have write permission for obj: {self.id}")
 
             excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
-            new_data = {k: v for k, v in self.__dict__.items() if k not in excludes}
+            new_data = self.dict(exclude=excludes)
             updated = self.unifi_dict(data=self.get_changed())
 
             # do not patch when there are no updates
@@ -914,7 +914,7 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
         """Gets dictionary of all changed fields"""
 
         excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
-        new_data = {k: v for k, v in self.__dict__.items() if k not in excludes}
+        new_data = self.dict(exclude=excludes)
         updated = dict_diff(self._initial_data, new_data)
 
         return updated
