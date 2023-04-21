@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, tzinfo
+from functools import cache
 from ipaddress import IPv4Address
 import logging
 from pathlib import Path
@@ -79,6 +80,7 @@ class SmartDetectItem(ProtectBaseObject):
     zone_ids: List[int]
     duration: timedelta
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {
@@ -100,6 +102,7 @@ class SmartDetectTrack(ProtectBaseObject):
     camera_id: str
     event_id: str
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {
@@ -160,6 +163,7 @@ class EventMetadata(ProtectBaseObject):
         "mac",
     }
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {
@@ -217,6 +221,7 @@ class Event(ProtectModelWithId):
     _smart_detect_track: Optional[SmartDetectTrack] = PrivateAttr(None)
     _smart_detect_zones: Optional[Dict[int, CameraZone]] = PrivateAttr(None)
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {
@@ -401,6 +406,7 @@ class PortConfig(ProtectBaseObject):
     ems_json_cli: Optional[int] = None
     stacking: Optional[int] = None
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {
@@ -486,6 +492,7 @@ class UOSDisk(ProtectBaseObject):
     progress: Optional[PercentFloat] = None
     estimate: Optional[timedelta] = None
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {
@@ -560,6 +567,7 @@ class UOSSpace(ProtectBaseObject):
     # requires 2.8.14+
     health: Optional[str] = None
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {
@@ -617,6 +625,7 @@ class DoorbellSettings(ProtectBaseObject):
     all_messages: List[DoorbellMessage]
     custom_messages: List[DoorbellText]
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "defaultMessageResetTimeoutMs": "defaultMessageResetTimeout"}
@@ -792,6 +801,7 @@ class NVR(ProtectDeviceModel):
     # globalCameraSettings
     # portStatus
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {
@@ -800,6 +810,7 @@ class NVR(ProtectDeviceModel):
             "vaultCameras": "vaultCameraIds",
         }
 
+    @cache
     @classmethod
     def _get_read_only_fields(cls) -> Set[str]:
         return super()._get_read_only_fields() | {
@@ -993,6 +1004,7 @@ class LiveviewSlot(ProtectBaseObject):
 
     _cameras: Optional[List[Camera]] = PrivateAttr(None)
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "cameras": "cameraIds"}
@@ -1015,10 +1027,12 @@ class Liveview(ProtectModelWithId):
     slots: List[LiveviewSlot]
     owner_id: str
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "owner": "ownerId"}
 
+    @cache
     @classmethod
     def _get_read_only_fields(cls) -> Set[str]:
         return super()._get_read_only_fields() | {"isDefault", "owner"}

@@ -114,10 +114,12 @@ class Light(ProtectMotionDeviceModel):
     camera_id: Optional[str]
     is_camera_paired: bool
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "camera": "cameraId"}
 
+    @cache
     @classmethod
     def _get_read_only_fields(cls) -> Set[str]:
         return super()._get_read_only_fields() | {"isPirMotionDetected", "isLightOn", "isLocating"}
@@ -497,6 +499,7 @@ class VideoStats(ProtectBaseObject):
     timelapse_start_lq: Optional[datetime]
     timelapse_end_lq: Optional[datetime]
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {
@@ -637,6 +640,7 @@ class HotplugExtender(ProtectBaseObject):
     has_radar: Optional[bool] = None
     is_attached: Optional[bool] = None
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "hasIR": "hasIr"}
@@ -713,6 +717,7 @@ class CameraFeatureFlags(ProtectBaseObject):
 
         return super().unifi_dict_to_dict(data)
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "hasAutoICROnly": "hasAutoIcrOnly"}
@@ -816,12 +821,13 @@ class Camera(ProtectMotionDeviceModel):
     talkback_stream: Optional[TalkbackStream] = None
     _last_ring_timeout: Optional[datetime] = PrivateAttr(None)
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "is2K": "is2k", "is4K": "is4k"}
 
-    @classmethod
     @cache
+    @classmethod
     def _get_excluded_changed_fields(cls) -> Set[str]:
         return super()._get_excluded_changed_fields() | {
             "last_ring_event_id",
@@ -832,8 +838,8 @@ class Camera(ProtectMotionDeviceModel):
             "talkback_stream",
         }
 
-    @classmethod
     @cache
+    @classmethod
     def _get_read_only_fields(cls) -> Set[str]:
         return super()._get_read_only_fields() | {
             "stats",
@@ -1647,10 +1653,12 @@ class Viewer(ProtectAdoptableDeviceModel):
     liveview_id: str
     anonymous_device_id: Optional[UUID] = None
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "liveview": "liveviewId"}
 
+    @cache
     @classmethod
     def _get_read_only_fields(cls) -> Set[str]:
         return super()._get_read_only_fields() | {"softwareVersion"}
@@ -1742,10 +1750,12 @@ class Sensor(ProtectAdoptableDeviceModel):
     _tamper_timeout: Optional[datetime] = PrivateAttr(None)
     _alarm_timeout: Optional[datetime] = PrivateAttr(None)
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "camera": "cameraId"}
 
+    @cache
     @classmethod
     def _get_read_only_fields(cls) -> Set[str]:
         return super()._get_read_only_fields() | {
@@ -2020,10 +2030,12 @@ class Doorlock(ProtectAdoptableDeviceModel):
     has_homekit: bool
     private_token: str
 
+    @cache
     @classmethod
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "camera": "cameraId", "autoCloseTimeMs": "autoCloseTime"}
 
+    @cache
     @classmethod
     def _get_read_only_fields(cls) -> Set[str]:
         return super()._get_read_only_fields() | {"credentials", "lockStatus", "batteryStatus"}
@@ -2120,6 +2132,7 @@ class Chime(ProtectAdoptableDeviceModel):
     # apRssi  read only
     # elementInfo  read only
 
+    @cache
     @classmethod
     def _get_read_only_fields(cls) -> Set[str]:
         return super()._get_read_only_fields() | {"isProbingForWifi", "lastRing"}
