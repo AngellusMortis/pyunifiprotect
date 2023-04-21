@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from datetime import datetime, timedelta
+from functools import cache
 from ipaddress import IPv4Address
 import logging
 from pathlib import Path
@@ -820,6 +821,7 @@ class Camera(ProtectMotionDeviceModel):
         return {**super()._get_unifi_remaps(), "is2K": "is2k", "is4K": "is4k"}
 
     @classmethod
+    @cache
     def _get_excluded_changed_fields(cls) -> Set[str]:
         return super()._get_excluded_changed_fields() | {
             "last_ring_event_id",
@@ -831,6 +833,7 @@ class Camera(ProtectMotionDeviceModel):
         }
 
     @classmethod
+    @cache
     def _get_read_only_fields(cls) -> Set[str]:
         return super()._get_read_only_fields() | {
             "stats",
