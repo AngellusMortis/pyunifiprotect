@@ -153,8 +153,8 @@ class ProtectBaseObject(BaseModel):
 
         return obj
 
-    @cache
     @classmethod
+    @cache
     def _get_excluded_changed_fields(cls) -> Set[str]:
         """
         Helper method for override in child classes for fields that excluded from calculating "changed" state for a
@@ -162,8 +162,8 @@ class ProtectBaseObject(BaseModel):
         """
         return set()
 
-    @cache
     @classmethod
+    @cache
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         """
         Helper method for overriding in child classes for remapping UFP JSON keys to Python ones that do not fit the
@@ -531,8 +531,8 @@ class ProtectModel(ProtectBaseObject):
 
     model: Optional[ModelType]
 
-    @cache
     @classmethod
+    @cache
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "modelKey": "model"}
 
@@ -732,8 +732,8 @@ class ProtectDeviceModel(ProtectModelWithId):
 
     _callback_ping: Optional[TimerHandle] = PrivateAttr(None)
 
-    @cache
     @classmethod
+    @cache
     def _get_read_only_fields(cls) -> Set[str]:
         return super()._get_read_only_fields() | {
             "mac",
@@ -834,8 +834,8 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     # TODO:
     # bridgeCandidates
 
-    @cache
     @classmethod
+    @cache
     def _get_read_only_fields(cls) -> Set[str]:
         return super()._get_read_only_fields() | {
             "connectionHost",
@@ -852,8 +852,8 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
             "isDownloadingFirmware",
         }
 
-    @cache
     @classmethod
+    @cache
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "bridge": "bridgeId", "isDownloadingFW": "isDownloadingFirmware"}
 
@@ -967,8 +967,8 @@ class ProtectMotionDeviceModel(ProtectAdoptableDeviceModel):
     # not directly from UniFi
     last_motion_event_id: Optional[str] = None
 
-    @cache
     @classmethod
+    @cache
     def _get_read_only_fields(cls) -> Set[str]:
         return super()._get_read_only_fields() | {"lastMotion", "isDark"}
 

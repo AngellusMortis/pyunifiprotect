@@ -82,8 +82,8 @@ class CloudAccount(ProtectModelWithId):
     location: Optional[UserLocation]
     profile_img: Optional[str] = None
 
-    @cache
     @classmethod
+    @cache
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "user": "userId"}
 
@@ -155,8 +155,8 @@ class User(ProtectModelWithId):
 
         return super().unifi_dict_to_dict(data)
 
-    @cache
     @classmethod
+    @cache
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "groups": "groupIds"}
 
