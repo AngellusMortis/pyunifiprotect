@@ -120,6 +120,7 @@ class EventTypeChoice(str, Enum):
     MOTION = d.EventType.MOTION.value
     RING = d.EventType.RING.value
     SMART_DETECT = d.EventType.SMART_DETECT.value
+    SMART_DETECT_LINE = d.EventType.SMART_DETECT_LINE.value
 
 
 class EventSmartType(Base):
@@ -181,7 +182,7 @@ class Event(Base):
 
             event_type = str(self.event_type)
             event_type_pretty = f"{event_type.title()} Event"
-            if event_type == d.EventType.SMART_DETECT.value:
+            if event_type in (d.EventType.SMART_DETECT.value, d.EventType.SMART_DETECT_LINE.value):
                 smart_types = list(self.smart_types)
                 smart_types.sort()
                 event_type = f"{event_type}[{','.join(smart_types)}]"
@@ -462,7 +463,7 @@ async def _prune_events(ctx: BackupContext) -> int:
                 _LOGGER.debug("Delete file %s", event_path)
                 await aos.remove(event_path)
 
-            if event.event_type == d.EventType.SMART_DETECT:
+            if event.event_type in (d.EventType.SMART_DETECT.value, d.EventType.SMART_DETECT_LINE.value):
                 for smart_type in event.smart_detect_types:
                     await db.delete(smart_type)
             await db.delete(event)
@@ -490,7 +491,7 @@ async def _update_event(ctx: BackupContext, event: d.Event) -> None:
         db_event.camera_mac = event.camera.mac
         db_event.event_type = event.type.value
 
-        if event.type == d.EventType.SMART_DETECT:
+        if event.type in (d.EventType.SMART_DETECT.value, d.EventType.SMART_DETECT_LINE.value):
             types = {e.value for e in event.smart_detect_types}
 
             result = await db.execute(select(EventSmartType).where(EventSmartType.event_id == event.id))
@@ -550,7 +551,7 @@ async def _update_events(ctx: BackupContext) -> int:
                 start,
                 end,
                 limit=100,
-                types=[d.EventType.MOTION, d.EventType.RING, d.EventType.SMART_DETECT],
+                types=[d.EventType.MOTION, d.EventType.RING, d.EventType.SMART_DETECT, d.EventType.SMART_DETECT_LINE],
             )
 
             prev_start = start
@@ -862,7 +863,7 @@ async def _download_events(
                     # ensure no tasks are currently in a retry state
                     await no_error_flag.wait()
 
-                    if event.event_type == d.EventType.SMART_DETECT:
+                    if event.event_type in (d.EventType.SMART_DETECT.value, d.EventType.SMART_DETECT_LINE.value):
                         if not event.smart_types.intersection(smart_types_set):
                             continue
 

@@ -351,7 +351,7 @@ class Event(ProtectModelWithId):
         If event is not a smart detect event, it will raise a `BadRequest`
         """
 
-        if self.type != EventType.SMART_DETECT:
+        if self.type not in (EventType.SMART_DETECT, EventType.SMART_DETECT_LINE):
             raise BadRequest("Not a smart detect event")
 
         if self._smart_detect_track is None:

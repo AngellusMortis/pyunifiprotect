@@ -117,7 +117,7 @@ def list_ids(ctx: typer.Context) -> None:
     longest_event = 0
     for obj in objs.values():
         event_type = obj.type.value
-        if event_type == d.EventType.SMART_DETECT:
+        if event_type in (d.EventType.SMART_DETECT.value, d.EventType.SMART_DETECT_LINE.value):
             event_type = f"{event_type}[{','.join(obj.smart_detect_types)}]"
         if len(event_type) > longest_event:
             longest_event = len(event_type)
