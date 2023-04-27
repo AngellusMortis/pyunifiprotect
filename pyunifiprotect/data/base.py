@@ -514,7 +514,7 @@ class ProtectBaseObject(BaseModel):
         excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
         self._initial_data = {k: v for k, v in self.dict().items() if k not in excludes}
 
-        _LOGGER.debug("dict diff: %s", dict_diff(original, self._initial_data))
+        _LOGGER.debug("%s: dict diff: %s", type(self), dict_diff(original, self._initial_data))
         return self
 
     def get_changed(self) -> Dict[str, Any]:
@@ -652,7 +652,7 @@ class ProtectModelWithId(ProtectModel):
         new_data = self.dict(exclude=excludes)
         changed = self.get_changed()
         updated = self.unifi_dict(data=changed)
-        _LOGGER.debug("_generate_update_diff: new_data=%s, excludes=%s, changed=%s updated=%s", new_data, excludes, changed, updated)
+        _LOGGER.debug("_generate_update_diff: excludes=%s, changed=%s updated=%s", new_data, excludes, changed, updated)
         return new_data, updated
 
     async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True) -> None:
