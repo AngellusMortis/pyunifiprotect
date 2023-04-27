@@ -507,7 +507,7 @@ class ProtectBaseObject(BaseModel):
             setattr(self, key, convert_unifi_data(data[key], self.__fields__[key]))
 
         excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
-        exclude_fields = self.__exclude_fields__
+        exclude_fields = self.__exclude_fields__ or {}
         self._initial_data = {k: v for k, v in self.__dict__.items() if k in exclude_fields and k not in excludes}
         return self
 
