@@ -393,7 +393,9 @@ class Bootstrap(ProtectBaseObject):
             if action["id"] not in devices:
                 raise ValueError(f"Unknown device update for {model_type}: { action['id']}")
             obj: ProtectModelWithId = devices[action["id"]]
+            _LOGGER.debug("_process_device_update: in=%s", data)
             data = obj.unifi_dict_to_dict(data)
+            _LOGGER.debug("_process_device_update: out=%s", data)
             old_obj = obj.copy()
             obj = obj.update_from_dict(deepcopy(data))
             now = utc_now()
