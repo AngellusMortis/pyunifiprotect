@@ -652,7 +652,7 @@ class ProtectModelWithId(ProtectModel):
         new_data = self.dict(exclude=excludes)
         changed = self.get_changed()
         updated = self.unifi_dict(data=changed)
-        _LOGGER.debug("_generate_update_diff: excludes=%s, changed=%s updated=%s", new_data, excludes, changed, updated)
+        _LOGGER.debug("_generate_update_diff: type=%s, excludes=%s, changed=%s updated=%s", self, new_data, excludes, changed, updated)
         return new_data, updated
 
     async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True) -> None:
@@ -698,7 +698,7 @@ class ProtectModelWithId(ProtectModel):
 
             if len(read_only_keys) > 0:
                 self.revert_changes()
-                raise BadRequest(f"The following key(s) are read only: {read_only_keys}, updated: {updated}")
+                raise BadRequest(f"{type(self)} The following key(s) are read only: {read_only_keys}, updated: {updated}")
 
             try:
                 await self._api_update(updated)
