@@ -63,6 +63,10 @@ ProtectObject = TypeVar("ProtectObject", bound="ProtectBaseObject")
 RECENT_EVENT_MAX = timedelta(seconds=30)
 EVENT_PING_INTERVAL = timedelta(seconds=3)
 QUEUE_WAIT_TIMEOUT = 0.05
+# The time it takes for the NVR to reflect changes made via the API
+# before it is sent back of the websocket. This is based on how long
+# it takes for isRecording to update after changing the recording mode.
+UFP_UPDATE_REFLECT_TIME = 2.0
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -681,7 +685,7 @@ class ProtectModelWithId(ProtectModel):
             read_only_keys = read_only_fields.intersection(updated.keys())
             if len(read_only_keys) > 0:
                 # Try to wait for a bit to see if the read only fields are updated by UFP
-                await asyncio.sleep(1)
+                await asyncio.sleep(UFP_UPDATE_REFLECT_TIME)
                 new_data, updated = self._generate_update_diff()
                 read_only_keys = read_only_fields.intersection(updated.keys())
 
