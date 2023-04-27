@@ -480,7 +480,8 @@ class ProtectBaseObject(BaseModel):
     def update_from_dict(self: ProtectObject, data: Dict[str, Any]) -> ProtectObject:
         """Updates current object from a cleaned UFP JSON dict"""
 
-        _LOGGER.debug("Updating %s from dict: %s - %s",type(self), data, self._initial_data)
+        _LOGGER.debug("Updating %s from dict: %s",type(self), data)
+        original=self._initial_data
         data_set = set(data)
         for key in self._get_protect_objs_set().intersection(data_set):
             unifi_obj: Optional[Any] = getattr(self, key)
@@ -512,6 +513,8 @@ class ProtectBaseObject(BaseModel):
 
         excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
         self._initial_data = {k: v for k, v in self.__dict__.items() if k not in excludes}
+
+        _LOGGER.debug("dict diff: %s", dict_diff(original, self._initial_data))
         return self
 
     def get_changed(self) -> Dict[str, Any]:
