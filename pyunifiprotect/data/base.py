@@ -508,7 +508,9 @@ class ProtectBaseObject(BaseModel):
 
         read_only_fields = self.__class__._get_read_only_fields()  # pylint: disable=protected-access
         excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
-        self._initial_data = {k: v for k, v in self.__dict__.items() if k not in excludes and k not in read_only_fields}
+        self._initial_data = {
+            k: v for k, v in self.__dict__.items() if k == "type" or k not in excludes and k not in read_only_fields
+        }
         return self
 
     def get_changed(self) -> Dict[str, Any]:
