@@ -15,6 +15,7 @@ from typing import (
     List,
     Optional,
     Set,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -634,6 +635,13 @@ class ProtectModelWithId(ProtectModel):
                     callback()
                 await self.save_device()
 
+    def _generate_update_diff(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """Generate an update diff to save."""
+        excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
+        new_data = self.dict(exclude=excludes)
+        updated = self.unifi_dict(data=self.get_changed())
+        return new_data, updated
+
     async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True) -> None:
         """
         Generates a diff for unsaved changed on the device and sends them back to UFP
@@ -652,6 +660,7 @@ class ProtectModelWithId(ProtectModel):
         if not self._update_lock.locked():
             await self._update_lock.acquire()
             release_lock = True
+        read_only_fields = self.__class__._get_read_only_fields()  # pylint: disable=protected-access
 
         try:
             if self.model is None:
@@ -662,17 +671,18 @@ class ProtectModelWithId(ProtectModel):
                     self.revert_changes()
                 raise NotAuthorized(f"Do not have write permission for obj: {self.id}")
 
-            excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
-            new_data = self.dict(exclude=excludes)
-            updated = self.unifi_dict(data=self.get_changed())
-
+            new_data, updated = self._generate_update_diff()
             # do not patch when there are no updates
             if updated == {}:
                 return
 
-            read_only_keys = self.__class__._get_read_only_fields().intersection(  # pylint: disable=protected-access
-                updated.keys()
-            )
+            read_only_keys = read_only_fields.intersection(updated.keys())
+            if len(read_only_keys) > 0:
+                # Try to wait for a bit to see if the read only fields are updated by UFP
+                await asyncio.sleep(0)
+                new_data, updated = self._generate_update_diff()
+                read_only_keys = read_only_fields.intersection(updated.keys())
+
             if len(read_only_keys) > 0:
                 self.revert_changes()
                 raise BadRequest(f"The following key(s) are read only: {read_only_keys}")
