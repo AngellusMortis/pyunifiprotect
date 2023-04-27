@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from functools import cache
 from typing import Any, Dict, List, Optional, Set
 
 from pydantic.fields import PrivateAttr
@@ -83,7 +82,6 @@ class CloudAccount(ProtectModelWithId):
     profile_img: Optional[str] = None
 
     @classmethod
-    @cache
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "user": "userId"}
 
@@ -156,7 +154,6 @@ class User(ProtectModelWithId):
         return super().unifi_dict_to_dict(data)
 
     @classmethod
-    @cache
     def _get_unifi_remaps(cls) -> Dict[str, str]:
         return {**super()._get_unifi_remaps(), "groups": "groupIds"}
 
