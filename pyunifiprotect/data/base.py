@@ -681,7 +681,7 @@ class ProtectModelWithId(ProtectModel):
             read_only_keys = read_only_fields.intersection(updated.keys())
             if len(read_only_keys) > 0:
                 # Try to wait for a bit to see if the read only fields are updated by UFP
-                await asyncio.sleep(QUEUE_WAIT_TIMEOUT * 2)
+                await asyncio.sleep(1)
                 new_data, updated = self._generate_update_diff()
                 read_only_keys = read_only_fields.intersection(updated.keys())
 
