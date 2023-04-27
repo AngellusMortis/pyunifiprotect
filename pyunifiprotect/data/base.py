@@ -652,7 +652,7 @@ class ProtectModelWithId(ProtectModel):
         new_data = self.dict(exclude=excludes)
         changed = self.get_changed()
         updated = self.unifi_dict(data=changed)
-        _LOGGER.debug("_generate_update_diff: type=%s, excludes=%s, changed=%s updated=%s", self, new_data, excludes, changed, updated)
+        _LOGGER.debug("_generate_update_diff: type=%s, excludes=%s, changed=%s updated=%s", type(self), excludes, changed, updated)
         return new_data, updated
 
     async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True) -> None:
