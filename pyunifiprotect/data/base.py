@@ -650,7 +650,9 @@ class ProtectModelWithId(ProtectModel):
         """Generate an update diff to save."""
         excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
         new_data = self.dict(exclude=excludes)
-        updated = self.unifi_dict(data=self.get_changed())
+        changed = self.get_changed()
+        updated = self.unifi_dict(data=changed)
+        _LOGGER.debug("_generate_update_diff: new_data=%s, excludes=%s, changed=%s updated=%s", new_data, excludes, changed, updated)
         return new_data, updated
 
     async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True) -> None:
