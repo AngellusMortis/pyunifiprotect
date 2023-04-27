@@ -156,11 +156,6 @@ class ProtectBaseObject(BaseModel):
 
     @classmethod
     @cache
-    def _get_read_only_fields(cls) -> Set[str]:
-        return set()
-
-    @classmethod
-    @cache
     def _get_excluded_changed_fields(cls) -> Set[str]:
         """
         Helper method for override in child classes for fields that excluded from calculating "changed" state for a
@@ -506,9 +501,9 @@ class ProtectBaseObject(BaseModel):
         for key in data:
             setattr(self, key, convert_unifi_data(data[key], self.__fields__[key]))
 
-        excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
         exclude_fields = self.__exclude_fields__ or {}
-        self._initial_data = {k: v for k, v in self.__dict__.items() if k in exclude_fields and k not in excludes}
+        excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
+        self._initial_data = {k: v for k, v in self.__dict__.items() if k not in excludes and k not in exclude_fields}
         return self
 
     def get_changed(self) -> Dict[str, Any]:
@@ -575,6 +570,10 @@ class ProtectModelWithId(ProtectModel):
         obj._update_event = update_event or asyncio.Event()  # pylint: disable=protected-access
 
         return obj
+
+    @classmethod
+    def _get_read_only_fields(cls) -> Set[str]:
+        return set()
 
     async def _api_update(self, data: Dict[str, Any]) -> None:
         raise NotImplementedError()
