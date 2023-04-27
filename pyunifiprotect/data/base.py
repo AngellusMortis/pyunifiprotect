@@ -62,6 +62,8 @@ if TYPE_CHECKING:
 ProtectObject = TypeVar("ProtectObject", bound="ProtectBaseObject")
 RECENT_EVENT_MAX = timedelta(seconds=30)
 EVENT_PING_INTERVAL = timedelta(seconds=3)
+QUEUE_WAIT_TIMEOUT = 0.05
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -624,7 +626,7 @@ class ProtectModelWithId(ProtectModel):
         self._update_event.clear()
 
         try:
-            async with timeout(0.05):
+            async with timeout(QUEUE_WAIT_TIMEOUT):
                 await self._update_event.wait()
             self._update_event.clear()
             return
@@ -679,7 +681,7 @@ class ProtectModelWithId(ProtectModel):
             read_only_keys = read_only_fields.intersection(updated.keys())
             if len(read_only_keys) > 0:
                 # Try to wait for a bit to see if the read only fields are updated by UFP
-                await asyncio.sleep(0)
+                await asyncio.sleep(QUEUE_WAIT_TIMEOUT * 2)
                 new_data, updated = self._generate_update_diff()
                 read_only_keys = read_only_fields.intersection(updated.keys())
 
