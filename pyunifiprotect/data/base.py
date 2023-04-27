@@ -502,7 +502,14 @@ class ProtectBaseObject(BaseModel):
             setattr(self, key, convert_unifi_data(data[key], self.__fields__[key]))
 
         excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
-        self._initial_data = {k: v for k, v in self.__dict__.items() if k not in excludes}
+        # Calling dict with no params has a fast path which is MUCH faster
+        # so we pull out the excluded keys after. At some point the `dict()`
+        # became much slower than it used to be but attempts to speed it up
+        # have not been successful. We need to revisit this at some point.
+        as_dict = self.dict()
+        for key in excludes.intersection(as_dict):
+            del as_dict[key]
+        self._initial_data = as_dict
         return self
 
     def get_changed(self) -> Dict[str, Any]:
