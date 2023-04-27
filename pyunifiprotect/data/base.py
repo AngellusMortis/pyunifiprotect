@@ -480,7 +480,7 @@ class ProtectBaseObject(BaseModel):
     def update_from_dict(self: ProtectObject, data: Dict[str, Any]) -> ProtectObject:
         """Updates current object from a cleaned UFP JSON dict"""
 
-        _LOGGER.debug("Updating %s from dict: %s",self, data)
+        _LOGGER.debug("Updating %s from dict: %s - %s",type(self), data, self._initial_data)
         data_set = set(data)
         for key in self._get_protect_objs_set().intersection(data_set):
             unifi_obj: Optional[Any] = getattr(self, key)
