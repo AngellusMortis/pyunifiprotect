@@ -691,7 +691,7 @@ class ProtectModelWithId(ProtectModel):
 
             if len(read_only_keys) > 0:
                 self.revert_changes()
-                raise BadRequest(f"The following key(s) are read only: {read_only_keys}")
+                raise BadRequest(f"The following key(s) are read only: {read_only_keys}, updated: {updated}")
 
             try:
                 await self._api_update(updated)
