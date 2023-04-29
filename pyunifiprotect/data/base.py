@@ -649,7 +649,7 @@ class ProtectModelWithId(ProtectModel):
         updated = self.unifi_dict(data=changed)
         return updated
 
-    async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True, new_data: Optional[Dict[str, Any]] = None, updated: Optional[Dict[str, Any]] = None) -> None:
+    async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True) -> None:
         """
         Generates a diff for unsaved changed on the device and sends them back to UFP
 
