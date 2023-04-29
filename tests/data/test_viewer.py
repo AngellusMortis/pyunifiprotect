@@ -31,7 +31,6 @@ async def test_viewer_set_liveview_valid(viewer_obj: Viewer, liveview_obj: Livev
     viewer_obj.api.emit_message = Mock()
 
     viewer_obj.liveview_id = "bad_id"
-    viewer_obj._initial_data = viewer_obj.dict()
 
     await viewer_obj.set_liveview(liveview_obj)
     viewer_obj.api.api_request.assert_called_with(

@@ -270,9 +270,9 @@ def smart_detects(
     elif remove:
         values = list(set(obj.smart_detect_settings.object_types) - set(values))
 
-    initial_data = obj.dict_with_excludes()
+    data_before_changes = obj.dict_with_excludes()
     obj.smart_detect_settings.object_types = values
-    base.run(ctx, obj.save_device(initial_data))
+    base.run(ctx, obj.save_device(data_before_changes))
 
 
 @app.command()
@@ -322,9 +322,9 @@ def smart_audio_detects(
     elif remove:
         values = list(set(obj.smart_detect_settings.audio_types) - set(values))
 
-    initial_data = obj.dict_with_excludes()
+    data_before_changes = obj.dict_with_excludes()
     obj.smart_detect_settings.audio_types = values
-    base.run(ctx, obj.save_device(initial_data))
+    base.run(ctx, obj.save_device(data_before_changes))
 
 
 @app.command()

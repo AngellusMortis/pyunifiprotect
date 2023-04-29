@@ -94,9 +94,9 @@ def cameras(
     elif remove:
         camera_ids = list(set(obj.camera_ids) - set(camera_ids))
 
-    initial_data = obj.dict_with_excludes()
+    data_before_changes = obj.dict_with_excludes()
     obj.camera_ids = camera_ids
-    base.run(ctx, obj.save_device(initial_data))
+    base.run(ctx, obj.save_device(data_before_changes))
 
 
 @app.command()

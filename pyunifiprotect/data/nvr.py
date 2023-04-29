@@ -942,9 +942,9 @@ class NVR(ProtectDeviceModel):
             await asyncio.sleep(
                 0
             )  # yield to the event loop once we have the look to ensure websocket updates are processed
-            initial_data = self.dict_with_excludes()
+            data_before_changes = self.dict_with_excludes()
             self.doorbell_settings.custom_messages.append(DoorbellText(message))
-            await self.save_device(initial_data)
+            await self.save_device(data_before_changes)
             self.update_all_messages()
 
     async def remove_custom_doorbell_message(self, message: str) -> None:
@@ -957,9 +957,9 @@ class NVR(ProtectDeviceModel):
             await asyncio.sleep(
                 0
             )  # yield to the event loop once we have the look to ensure websocket updates are processed
-            initial_data = self.dict_with_excludes()
+            data_before_changes = self.dict_with_excludes()
             self.doorbell_settings.custom_messages.remove(DoorbellText(message))
-            await self.save_device(initial_data)
+            await self.save_device(data_before_changes)
             self.update_all_messages()
 
     async def reboot(self) -> None:

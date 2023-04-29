@@ -22,7 +22,6 @@ async def test_nvr_set_insights(nvr_obj: NVR, status: bool):
     nvr_obj.api.api_request.reset_mock()
 
     nvr_obj.is_insights_enabled = not status
-    nvr_obj._initial_data = nvr_obj.dict()
 
     await nvr_obj.set_insights(status)
 
@@ -38,7 +37,6 @@ async def test_nvr_set_anonymous_analytics(nvr_obj: NVR):
     nvr_obj.api.api_request.reset_mock()
 
     nvr_obj.analytics_data = AnalyticsOption.ANONYMOUS
-    nvr_obj._initial_data = nvr_obj.dict()
 
     await nvr_obj.set_anonymous_analytics(False)
 
@@ -89,7 +87,6 @@ async def test_nvr_add_custom_doorbell_message(nvr_obj: NVR, message: str):
     nvr_obj.api.api_request.reset_mock()
 
     nvr_obj.doorbell_settings.custom_messages = ["Welcome"]
-    nvr_obj._initial_data = nvr_obj.dict()
 
     if message != "Test":
         with pytest.raises(BadRequest):
@@ -129,7 +126,6 @@ async def test_nvr_remove_custom_doorbell_message(nvr_obj: NVR, message: str):
     nvr_obj.api.api_request.reset_mock()
 
     nvr_obj.doorbell_settings.custom_messages = ["Welcome"]
-    nvr_obj._initial_data = nvr_obj.dict()
 
     if message == "Test":
         with pytest.raises(BadRequest):

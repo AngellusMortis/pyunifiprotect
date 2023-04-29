@@ -69,7 +69,6 @@ async def test_sensor_set_temperature_status(sensor_obj: Sensor, status: bool):
     sensor_obj.api.api_request.reset_mock()
 
     sensor_obj.temperature_settings.is_enabled = not status
-    sensor_obj._initial_data = sensor_obj.dict()
 
     await sensor_obj.set_temperature_status(status)
 

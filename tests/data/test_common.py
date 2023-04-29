@@ -293,7 +293,6 @@ def test_case_str_enum():
 @pytest.mark.asyncio
 async def test_play_audio_no_speaker(camera_obj: Camera):
     camera_obj.feature_flags.has_speaker = False
-    camera_obj._initial_data = camera_obj.dict()
 
     with pytest.raises(BadRequest):
         await camera_obj.play_audio("test")
@@ -303,7 +302,6 @@ async def test_play_audio_no_speaker(camera_obj: Camera):
 @pytest.mark.usefixtures("disable_camera_validation")
 async def test_play_audio_already_playing(camera_obj: Camera):
     camera_obj.feature_flags.has_speaker = True
-    camera_obj._initial_data = camera_obj.dict()
 
     camera_obj.talkback_stream = Mock()
     camera_obj.talkback_stream.is_running = True
@@ -317,7 +315,6 @@ async def test_play_audio_already_playing(camera_obj: Camera):
 @patch("pyunifiprotect.data.devices.TalkbackStream")
 async def test_play_audio(mock_talkback, camera_obj: Camera):
     camera_obj.feature_flags.has_speaker = True
-    camera_obj._initial_data = camera_obj.dict()
 
     mock_instance = MockTalkback()
     mock_talkback.return_value = mock_instance
@@ -334,7 +331,6 @@ async def test_play_audio(mock_talkback, camera_obj: Camera):
 @patch("pyunifiprotect.data.devices.TalkbackStream")
 async def test_play_audio_no_blocking(mock_talkback, camera_obj: Camera):
     camera_obj.feature_flags.has_speaker = True
-    camera_obj._initial_data = camera_obj.dict()
 
     mock_instance = MockTalkback()
     mock_talkback.return_value = mock_instance
@@ -354,7 +350,6 @@ async def test_play_audio_no_blocking(mock_talkback, camera_obj: Camera):
 @patch("pyunifiprotect.data.devices.TalkbackStream")
 async def test_play_audio_stop(mock_talkback, camera_obj: Camera):
     camera_obj.feature_flags.has_speaker = True
-    camera_obj._initial_data = camera_obj.dict()
 
     mock_instance = MockTalkback()
     mock_talkback.return_value = mock_instance
@@ -374,7 +369,6 @@ async def test_play_audio_stop(mock_talkback, camera_obj: Camera):
 @patch("pyunifiprotect.data.devices.TalkbackStream")
 async def test_play_audio_error(mock_talkback, camera_obj: Camera):
     camera_obj.feature_flags.has_speaker = True
-    camera_obj._initial_data = camera_obj.dict()
 
     mock_instance = MockTalkback()
     mock_instance.is_error = True
@@ -523,9 +517,7 @@ async def test_permissions(
 
     api = user_obj.api
     user_obj.all_permissions = [Permission.from_unifi_dict(rawPermission=p, api=api) for p in permissions]
-    user_obj._initial_data = user_obj.dict()
     camera_obj.id = "test_id_1"
-    camera_obj._initial_data = camera_obj.dict()
     api.bootstrap.cameras[camera_obj.id] = camera_obj
 
     assert camera_obj.can_create(user_obj) is can_create
@@ -563,7 +555,6 @@ async def test_permissions_user(
     user1 = user_obj.copy()
     user1.id = "test_id_1"
     user1.all_permissions = [Permission.from_unifi_dict(rawPermission=p, api=api) for p in permissions]
-    user1._initial_data = user1.dict()
 
     api.bootstrap.auth_user_id = user1.id
     api.bootstrap.users = {user1.id: user1}
@@ -601,11 +592,9 @@ async def test_permissions_self_with_other(
     user1 = user_obj.copy()
     user1.id = "test_id_1"
     user1.all_permissions = [Permission.from_unifi_dict(rawPermission=p, api=api) for p in permissions]
-    user1._initial_data = user1.dict()
 
     user2 = user_obj.copy()
     user2.id = "test_id_2"
-    user2._initial_data = user2.dict()
 
     api.bootstrap.auth_user_id = user1.id
     api.bootstrap.users = {user1.id: user1, user2.id: user2}
@@ -626,11 +615,9 @@ async def test_revert(user_obj: User, camera_obj: Camera):
     camera_obj.id = "test_id_1"
     camera_obj.add_privacy_zone()
     camera_obj.recording_settings.mode = RecordingMode.NEVER
-    camera_obj._initial_data = camera_obj.dict()
     api.bootstrap.cameras[camera_obj.id] = camera_obj
 
     user_obj.all_permissions = [Permission.from_unifi_dict(rawPermission="camera:read:*", api=api)]
-    user_obj._initial_data = user_obj.dict()
 
     camera_before = camera_obj.dict()
 
@@ -652,7 +639,6 @@ async def test_multiple_updates(user_obj: User, camera_obj: Camera):
     camera_obj.id = "test_id_1"
     camera_obj.recording_settings.enable_motion_detection = False
     camera_obj.smart_detect_settings.object_types = []
-    camera_obj._initial_data = camera_obj.dict()
     api.bootstrap.cameras[camera_obj.id] = camera_obj
 
     await asyncio.gather(

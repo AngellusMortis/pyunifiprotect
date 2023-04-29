@@ -34,7 +34,6 @@ async def test_camera_set_motion_detection(camera_obj: Optional[Camera], status:
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.recording_settings.enable_motion_detection = not status
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_motion_detection(status)
 
@@ -55,7 +54,6 @@ async def test_camera_set_recording_mode(camera_obj: Optional[Camera], mode: Rec
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.recording_settings.mode = RecordingMode.NEVER
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_recording_mode(mode)
 
@@ -75,7 +73,6 @@ async def test_camera_set_ir_led_model_no_ir(camera_obj: Optional[Camera]):
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_led_ir = False
-    camera_obj._initial_data = camera_obj.dict()
 
     with pytest.raises(BadRequest):
         await camera_obj.set_ir_led_model(IRLEDMode.AUTO)
@@ -94,7 +91,6 @@ async def test_camera_set_ir_led_model(camera_obj: Optional[Camera], mode: IRLED
 
     camera_obj.feature_flags.has_led_ir = True
     camera_obj.isp_settings.ir_led_mode = IRLEDMode.OFF
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_ir_led_model(mode)
 
@@ -114,7 +110,6 @@ async def test_camera_set_status_light_no_status(camera_obj: Optional[Camera]):
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_led_status = False
-    camera_obj._initial_data = camera_obj.dict()
 
     with pytest.raises(BadRequest):
         await camera_obj.set_status_light(True)
@@ -134,7 +129,6 @@ async def test_camera_set_status_light(camera_obj: Optional[Camera], status: boo
     camera_obj.feature_flags.has_led_status = True
     camera_obj.led_settings.is_enabled = not status
     camera_obj.led_settings.blink_rate = 10
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_status_light(status)
 
@@ -154,7 +148,6 @@ async def test_camera_set_hdr_no_hdr(camera_obj: Optional[Camera]):
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_hdr = False
-    camera_obj._initial_data = camera_obj.dict()
 
     with pytest.raises(BadRequest):
         await camera_obj.set_hdr(True)
@@ -173,7 +166,6 @@ async def test_camera_set_hdr(camera_obj: Optional[Camera], status: bool):
 
     camera_obj.feature_flags.has_hdr = True
     camera_obj.hdr_mode = not status
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_hdr(status)
 
@@ -194,7 +186,6 @@ async def test_camera_set_ssh(camera_obj: Optional[Camera], status: bool):
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.is_ssh_enabled = not status
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_ssh(status)
 
@@ -215,7 +206,6 @@ async def test_camera_set_video_mode_no_highfps(camera_obj: Optional[Camera]):
 
     camera_obj.feature_flags.video_modes = [VideoMode.DEFAULT]
     camera_obj.video_mode = VideoMode.DEFAULT
-    camera_obj._initial_data = camera_obj.dict()
 
     with pytest.raises(BadRequest):
         await camera_obj.set_video_mode(VideoMode.HIGH_FPS)
@@ -233,7 +223,6 @@ async def test_camera_set_video_mode(camera_obj: Optional[Camera]):
 
     camera_obj.feature_flags.video_modes = [VideoMode.DEFAULT, VideoMode.HIGH_FPS]
     camera_obj.video_mode = VideoMode.DEFAULT
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_video_mode(VideoMode.HIGH_FPS)
 
@@ -253,7 +242,6 @@ async def test_camera_set_camera_zoom_no_zoom(camera_obj: Optional[Camera]):
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.can_optical_zoom = False
-    camera_obj._initial_data = camera_obj.dict()
 
     with pytest.raises(BadRequest):
         await camera_obj.set_camera_zoom(True)
@@ -272,7 +260,6 @@ async def test_camera_set_camera_zoom(camera_obj: Optional[Camera], level: int):
 
     camera_obj.feature_flags.can_optical_zoom = True
     camera_obj.isp_settings.zoom_position = 10
-    camera_obj._initial_data = camera_obj.dict()
 
     if level in (-1, 200):
         with pytest.raises(ValidationError):
@@ -300,7 +287,6 @@ async def test_camera_set_wdr_level(camera_obj: Optional[Camera], level: int):
 
     camera_obj.feature_flags.has_hdr = False
     camera_obj.isp_settings.wdr = 2
-    camera_obj._initial_data = camera_obj.dict()
 
     if level in (-1, 4):
         with pytest.raises(ValidationError):
@@ -326,7 +312,6 @@ async def test_camera_set_wdr_level_hdr(camera_obj: Optional[Camera]):
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_hdr = True
-    camera_obj._initial_data = camera_obj.dict()
 
     with pytest.raises(BadRequest):
         await camera_obj.set_wdr_level(1)
@@ -343,7 +328,6 @@ async def test_camera_set_mic_volume_no_mic(camera_obj: Optional[Camera]):
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_mic = False
-    camera_obj._initial_data = camera_obj.dict()
 
     with pytest.raises(BadRequest):
         await camera_obj.set_mic_volume(True)
@@ -362,7 +346,6 @@ async def test_camera_set_mic_volume(camera_obj: Optional[Camera], level: int):
 
     camera_obj.feature_flags.has_mic = True
     camera_obj.mic_volume = 10
-    camera_obj._initial_data = camera_obj.dict()
 
     if level in (-1, 200):
         with pytest.raises(ValidationError):
@@ -388,7 +371,6 @@ async def test_camera_set_speaker_volume_no_speaker(camera_obj: Optional[Camera]
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_speaker = False
-    camera_obj._initial_data = camera_obj.dict()
 
     with pytest.raises(BadRequest):
         await camera_obj.set_speaker_volume(True)
@@ -407,7 +389,6 @@ async def test_camera_set_speaker_volume(camera_obj: Optional[Camera], level: in
 
     camera_obj.feature_flags.has_speaker = True
     camera_obj.speaker_settings.volume = 10
-    camera_obj._initial_data = camera_obj.dict()
 
     if level in (-1, 200):
         with pytest.raises(ValidationError):
@@ -433,7 +414,6 @@ async def test_camera_set_chime_duration_no_chime(camera_obj: Optional[Camera]):
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_chime = False
-    camera_obj._initial_data = camera_obj.dict()
 
     with pytest.raises(BadRequest):
         await camera_obj.set_chime_duration(1000)
@@ -453,7 +433,6 @@ async def test_camera_set_chime_duration_duration(camera_obj: Optional[Camera], 
     camera_obj.feature_flags.has_chime = True
     camera_obj.chime_duration = 300
     camera_obj.mic_volume = 10
-    camera_obj._initial_data = camera_obj.dict()
 
     if duration in (-1, 20):
         with pytest.raises(BadRequest):
@@ -479,7 +458,6 @@ async def test_camera_set_system_sounds_no_speaker(camera_obj: Optional[Camera])
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_speaker = False
-    camera_obj._initial_data = camera_obj.dict()
 
     with pytest.raises(BadRequest):
         await camera_obj.set_system_sounds(True)
@@ -498,7 +476,6 @@ async def test_camera_set_system_sounds(camera_obj: Optional[Camera], status: bo
 
     camera_obj.feature_flags.has_speaker = True
     camera_obj.speaker_settings.are_system_sounds_enabled = not status
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_system_sounds(status)
 
@@ -519,7 +496,6 @@ async def test_camera_set_osd_name(camera_obj: Optional[Camera], status: bool):
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.osd_settings.is_name_enabled = not status
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_osd_name(status)
 
@@ -540,7 +516,6 @@ async def test_camera_set_osd_date(camera_obj: Optional[Camera], status: bool):
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.osd_settings.is_date_enabled = not status
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_osd_date(status)
 
@@ -561,7 +536,6 @@ async def test_camera_set_osd_logo(camera_obj: Optional[Camera], status: bool):
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.osd_settings.is_logo_enabled = not status
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_osd_logo(status)
 
@@ -582,7 +556,6 @@ async def test_camera_set_osd_bitrate(camera_obj: Optional[Camera], status: bool
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.osd_settings.is_debug_enabled = not status
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_osd_bitrate(status)
 
@@ -602,7 +575,6 @@ async def test_camera_set_smart_detect_types_no_smart(camera_obj: Optional[Camer
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_smart_detect = False
-    camera_obj._initial_data = camera_obj.dict()
 
     with pytest.raises(BadRequest):
         await camera_obj.set_smart_detect_types([])
@@ -620,7 +592,6 @@ async def test_camera_set_smart_detect_types(camera_obj: Optional[Camera]):
 
     camera_obj.feature_flags.has_smart_detect = True
     camera_obj.smart_detect_settings.object_types = []
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_smart_detect_types([SmartDetectObjectType.PERSON])
 
@@ -640,7 +611,6 @@ async def test_camera_set_lcd_text_no_lcd(camera_obj: Optional[Camera]):
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_lcd_screen = False
-    camera_obj._initial_data = camera_obj.dict()
 
     with pytest.raises(BadRequest):
         await camera_obj.set_lcd_text(DoorbellMessageType.DO_NOT_DISTURB)
@@ -659,7 +629,6 @@ async def test_camera_set_lcd_text_custom(camera_obj: Optional[Camera]):
         text=DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " "),
         reset_at=None,
     )
-    camera_obj._initial_data = camera_obj.dict()
 
     now = datetime.utcnow()
     await camera_obj.set_lcd_text(DoorbellMessageType.CUSTOM_MESSAGE, "Test", now)
@@ -688,7 +657,6 @@ async def test_camera_set_lcd_text_custom_to_custom(camera_obj: Optional[Camera]
         text="Welcome",
         reset_at=None,
     )
-    camera_obj._initial_data = camera_obj.dict()
 
     now = datetime.utcnow()
     await camera_obj.set_lcd_text(DoorbellMessageType.CUSTOM_MESSAGE, "Test", now)
@@ -715,7 +683,6 @@ async def test_camera_set_lcd_text_invalid_text(camera_obj: Optional[Camera]):
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_lcd_screen = True
-    camera_obj._initial_data = camera_obj.dict()
 
     with pytest.raises(BadRequest):
         await camera_obj.set_lcd_text(DoorbellMessageType.DO_NOT_DISTURB, "Test")
@@ -737,7 +704,6 @@ async def test_camera_set_lcd_text(camera_obj: Optional[Camera]):
         text=DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " "),
         reset_at=None,
     )
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_lcd_text(DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR)
 
@@ -772,7 +738,6 @@ async def test_camera_set_lcd_text_none(mock_now, camera_obj: Optional[Camera], 
         text=DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " "),
         reset_at=None,
     )
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_lcd_text(None)
 
@@ -817,7 +782,6 @@ async def test_camera_set_lcd_text_default(mock_now, camera_obj: Optional[Camera
         text=DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " "),
         reset_at=None,
     )
-    camera_obj._initial_data = camera_obj.dict()
 
     await camera_obj.set_lcd_text(DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR, reset_at=DEFAULT)
 
@@ -844,7 +808,6 @@ async def test_camera_set_privacy_no_privacy(camera_obj: Optional[Camera]):
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_privacy_mask = False
-    camera_obj._initial_data = camera_obj.dict()
 
     with pytest.raises(BadRequest):
         await camera_obj.set_privacy(True)
@@ -876,7 +839,6 @@ async def test_camera_set_privacy(
         camera_obj.add_privacy_zone()
     camera_obj.mic_volume = 10
     camera_obj.recording_settings.mode = RecordingMode.NEVER
-    camera_obj._initial_data = camera_obj.dict()
 
     if level in (-1, 200):
         with pytest.raises(ValidationError):

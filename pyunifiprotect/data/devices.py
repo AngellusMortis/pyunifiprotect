@@ -139,12 +139,12 @@ class Light(ProtectMotionDeviceModel):
 
         async with self._update_lock:
             await asyncio.sleep(0)  # yield to the event loop once we have the lock to process any pending updates
-            initial_data = self.dict_with_excludes()
+            data_before_changes = self.dict_with_excludes()
             if camera is None:
                 self.camera_id = None
             else:
                 self.camera_id = camera.id
-            await self.save_device(initial_data, force_emit=True)
+            await self.save_device(data_before_changes, force_emit=True)
 
     async def set_status_light(self, enabled: bool) -> None:
         """Sets the status indicator light for the light"""
@@ -1535,10 +1535,10 @@ class Camera(ProtectMotionDeviceModel):
         if text_type is None:
             async with self._update_lock:
                 await asyncio.sleep(0)  # yield to the event loop once we have the lock to process any pending updates
-                initial_data = self.dict_with_excludes()
+                data_before_changes = self.dict_with_excludes()
                 self.lcd_message = None
                 # UniFi Protect bug: clearing LCD text message does _not_ emit a WS message
-                await self.save_device(initial_data, force_emit=True)
+                await self.save_device(data_before_changes, force_emit=True)
                 return
 
         if text_type != DoorbellMessageType.CUSTOM_MESSAGE:
@@ -1687,10 +1687,10 @@ class Viewer(ProtectAdoptableDeviceModel):
 
         async with self._update_lock:
             await asyncio.sleep(0)  # yield to the event loop once we have the lock to process any pending updates
-            initial_data = self.dict_with_excludes()
+            data_before_changes = self.dict_with_excludes()
             self.liveview_id = liveview.id
             # UniFi Protect bug: changing the liveview does _not_ emit a WS message
-            await self.save_device(initial_data, force_emit=True)
+            await self.save_device(data_before_changes, force_emit=True)
 
 
 class Bridge(ProtectAdoptableDeviceModel):
