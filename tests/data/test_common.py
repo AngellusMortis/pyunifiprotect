@@ -466,7 +466,9 @@ def test_bootstrap_dns_host(bootstrap):
 async def test_save_device_no_changes(camera_obj: Camera):
     camera_obj.api.api_request.reset_mock()  # type: ignore
 
-    await camera_obj.save_device()
+    data_before_changes = camera_obj.dict_with_excludes()
+
+    await camera_obj.save_device(data_before_changes)
 
     assert not camera_obj.api.api_request.called  # type: ignore
 
@@ -624,7 +626,7 @@ async def test_revert(user_obj: User, camera_obj: Camera):
     camera_obj.remove_privacy_zone()
     camera_obj.recording_settings.mode = RecordingMode.ALWAYS
     with pytest.raises(NotAuthorized):
-        await camera_obj.save_device()
+        await camera_obj.save_device(camera_before)
 
     assert camera_before == camera_obj.dict()
 
