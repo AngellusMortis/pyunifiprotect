@@ -662,6 +662,7 @@ class ProtectModelWithId(ProtectModel):
         if not self._update_lock.locked():
             await self._update_lock.acquire()
             release_lock = True
+
         try:
             await self._save_device_changes(
                 updated=self._generate_unifi_update_diff(), force_emit=force_emit, revert_on_fail=revert_on_fail
