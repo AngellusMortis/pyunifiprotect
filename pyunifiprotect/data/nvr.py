@@ -1,6 +1,7 @@
 """UniFi Protect Data."""
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timedelta, tzinfo
 from functools import cache
 from ipaddress import IPv4Address
@@ -939,6 +940,9 @@ class NVR(ProtectDeviceModel):
             raise BadRequest("Custom doorbell message already exists")
 
         async with self._update_lock:
+            await asyncio.sleep(
+                0
+            )  # yield to the event loop once we have the look to ensure websocket updates are processed
             initial_data = self.dict_with_excludes()
             self.doorbell_settings.custom_messages.append(DoorbellText(message))
             await self.save_device(initial_data)
@@ -951,6 +955,9 @@ class NVR(ProtectDeviceModel):
             raise BadRequest("Custom doorbell message does not exists")
 
         async with self._update_lock:
+            await asyncio.sleep(
+                0
+            )  # yield to the event loop once we have the look to ensure websocket updates are processed
             initial_data = self.dict_with_excludes()
             self.doorbell_settings.custom_messages.remove(DoorbellText(message))
             await self.save_device(initial_data)

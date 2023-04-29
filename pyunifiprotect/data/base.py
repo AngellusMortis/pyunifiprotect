@@ -638,7 +638,9 @@ class ProtectModelWithId(ProtectModel):
                 # otherwise we may miss updates from the websocket
                 await self._save_device_changes(initial_data, self.unifi_dict(data=self.get_changed(initial_data)))
 
-    async def save_device(self, initial_data: dict[str, Any], force_emit: bool = False, revert_on_fail: bool = True) -> None:
+    async def save_device(
+        self, initial_data: dict[str, Any], force_emit: bool = False, revert_on_fail: bool = True
+    ) -> None:
         """
         Generates a diff for unsaved changed on the device and sends them back to UFP
 
@@ -658,14 +660,21 @@ class ProtectModelWithId(ProtectModel):
 
         try:
             await self._save_device_changes(
-                initial_data, self.unifi_dict(data=self.get_changed(initial_data)), force_emit=force_emit, revert_on_fail=revert_on_fail,
+                initial_data,
+                self.unifi_dict(data=self.get_changed(initial_data)),
+                force_emit=force_emit,
+                revert_on_fail=revert_on_fail,
             )
         finally:
             if release_lock:
                 self._update_lock.release()
 
     async def _save_device_changes(
-        self, initial_data: Dict[str, Any], updated: Optional[Dict[str, Any]], force_emit: bool = False, revert_on_fail: bool = True
+        self,
+        initial_data: Dict[str, Any],
+        updated: Optional[Dict[str, Any]],
+        force_emit: bool = False,
+        revert_on_fail: bool = True,
     ) -> None:
         """Saves the current device changes to UFP."""
         assert self._update_lock.locked(), "save_device_changes should only be called when the update lock is held"
@@ -924,7 +933,7 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     def get_changed(self, initial_data: dict[str, Any]) -> Dict[str, Any]:
         """Gets dictionary of all changed fields"""
         return dict_diff(initial_data, self.dict_with_excludes())
- 
+
     async def set_ssh(self, enabled: bool) -> None:
         """Sets ssh status for protect device"""
 
