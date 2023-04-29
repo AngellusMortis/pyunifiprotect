@@ -643,10 +643,14 @@ class ProtectModelWithId(ProtectModel):
             return
         except asyncio.TimeoutError:
             async with self._update_lock:
+                await asyncio.sleep(0) # yield to event loop to ensure any pending updates are processed
                 while not self._update_queue.empty():
                     callback = self._update_queue.get_nowait()
                     callback()
-                await self.save_device()
+                # Generate the diff before we yield to the event loop
+                # to ensure nothing else can change the object in the meantime
+                new_data, updated = self._generate_update_diff()
+                await self.save_device(new_data=new_data, updated=updated)
 
     def _generate_update_diff(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """Generate an update diff to save."""
@@ -657,7 +661,7 @@ class ProtectModelWithId(ProtectModel):
         _LOGGER.debug("_generate_update_diff: type=%s, excludes=%s, changed=%s updated=%s", type(self), excludes, changed, updated)
         return new_data, updated
 
-    async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True) -> None:
+    async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True, new_data: Optional[Dict[str, Any]] = None, updated: Optional[Dict[str, Any]] = None) -> None:
         """
         Generates a diff for unsaved changed on the device and sends them back to UFP
 
@@ -675,40 +679,48 @@ class ProtectModelWithId(ProtectModel):
         if not self._update_lock.locked():
             await self._update_lock.acquire()
             release_lock = True
-        read_only_fields = self.__class__._get_read_only_fields()  # pylint: disable=protected-access
-
+        
         try:
-            if self.model is None:
-                raise BadRequest("Unknown model type")
-
-            if not self.api.bootstrap.auth_user.can(self.model, PermissionNode.WRITE, self):
-                if revert_on_fail:
-                    self.revert_changes()
-                raise NotAuthorized(f"Do not have write permission for obj: {self.id}")
-
             new_data, updated = self._generate_update_diff()
-            # do not patch when there are no updates
-            if updated == {}:
-                return
-
-            read_only_keys = read_only_fields.intersection(updated.keys())
-            if len(read_only_keys) > 0:
-                self.revert_changes()
-                raise BadRequest(f"{type(self)} The following key(s) are read only: {read_only_keys}, updated: {updated}")
-
-            try:
-                await self._api_update(updated)
-            except ClientError:
-                if revert_on_fail:
-                    self.revert_changes()
-                raise
-            self._initial_data = new_data
-
-            if force_emit:
-                await self.emit_message(updated)
+            await self._save_device_changes(new_data=new_data, updated=updated, force_emit=force_emit, revert_on_fail=revert_on_fail)
         finally:
             if release_lock:
                 self._update_lock.release()
+
+    async def _save_device_changes(self, new_data: Optional[Dict[str, Any]], updated: Optional[Dict[str, Any]], force_emit: bool = False, revert_on_fail: bool = True) -> None:
+        """Saves the current device changes to UFP."""
+        assert self._update_lock.locked(), "save_device_changes should only be called when the update lock is held"
+        read_only_fields = self.__class__._get_read_only_fields()  # pylint: disable=protected-access
+
+        if self.model is None:
+            raise BadRequest("Unknown model type")
+
+        if not self.api.bootstrap.auth_user.can(self.model, PermissionNode.WRITE, self):
+            if revert_on_fail:
+                self.revert_changes()
+            raise NotAuthorized(f"Do not have write permission for obj: {self.id}")
+          
+        # do not patch when there are no updates
+        if updated == {}:
+            return
+
+        read_only_keys = read_only_fields.intersection(updated.keys())
+        if len(read_only_keys) > 0:
+            self.revert_changes()
+            raise BadRequest(f"{type(self)} The following key(s) are read only: {read_only_keys}, updated: {updated}")
+
+        try:
+            await self._api_update(updated)
+        except ClientError:
+            if revert_on_fail:
+                self.revert_changes()
+            raise
+        
+        self._initial_data = new_data
+
+        if force_emit:
+            await self.emit_message(updated)
+
 
     async def emit_message(self, updated: Dict[str, Any]) -> None:
         """Emites fake WS message for ProtectApiClient to process."""
