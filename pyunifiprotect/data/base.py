@@ -503,8 +503,7 @@ class ProtectBaseObject(BaseModel):
         del data["api"]
 
         for key in data:
-            val = convert_unifi_data(data[key], self.__fields__[key])
-            setattr(self, key, val)
+            setattr(self, key, convert_unifi_data(data[key], self.__fields__[key]))
 
         exclude_fields = self.__exclude_fields__ or {}
         excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
