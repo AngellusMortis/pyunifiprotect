@@ -537,12 +537,12 @@ class ProtectModel(ProtectBaseObject):
         return {**super()._get_unifi_remaps(), "modelKey": "model"}
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
-        unifi_data = super().unifi_dict(data=data, exclude=exclude)
+        data = super().unifi_dict(data=data, exclude=exclude)
 
-        if "modelKey" in unifi_data and unifi_data["modelKey"] is None:
-            del unifi_data["modelKey"]
+        if "modelKey" in data and data["modelKey"] is None:
+            del data["modelKey"]
 
-        return unifi_data
+        return
 
 
 class ProtectModelWithId(ProtectModel):
@@ -585,7 +585,7 @@ class ProtectModelWithId(ProtectModel):
 
         changed = self.get_changed()
         for key in changed.keys():
-            _LOGGER.debug("revert_changes: setattr: %s %s=%s", id(self), key, self._initial_data[key])            
+            _LOGGER.debug("revert_changes: setattr: %s %s=%s", id(self), key, self._initial_data[key])
             setattr(self, key, self._initial_data[key])
 
     def can_create(self, user: User) -> bool:
@@ -668,12 +668,16 @@ class ProtectModelWithId(ProtectModel):
             await self._update_lock.acquire()
             release_lock = True
         try:
-            await self._save_device_changes(updated=self._generate_unifi_update_diff(), force_emit=force_emit, revert_on_fail=revert_on_fail)
+            await self._save_device_changes(
+                updated=self._generate_unifi_update_diff(), force_emit=force_emit, revert_on_fail=revert_on_fail
+            )
         finally:
             if release_lock:
                 self._update_lock.release()
 
-    async def _save_device_changes(self, updated: Optional[Dict[str, Any]], force_emit: bool = False, revert_on_fail: bool = True) -> None:
+    async def _save_device_changes(
+        self, updated: Optional[Dict[str, Any]], force_emit: bool = False, revert_on_fail: bool = True
+    ) -> None:
         """Saves the current device changes to UFP."""
         assert self._update_lock.locked(), "save_device_changes should only be called when the update lock is held"
         read_only_fields = self.__class__._get_read_only_fields()  # pylint: disable=protected-access
@@ -685,7 +689,7 @@ class ProtectModelWithId(ProtectModel):
             if revert_on_fail:
                 self.revert_changes()
             raise NotAuthorized(f"Do not have write permission for obj: {self.id}")
-          
+
         # do not patch when there are no updates
         if updated == {}:
             return
@@ -708,7 +712,6 @@ class ProtectModelWithId(ProtectModel):
 
         if force_emit:
             await self.emit_message(updated)
-
 
     async def emit_message(self, updated: Dict[str, Any]) -> None:
         """Emites fake WS message for ProtectApiClient to process."""
