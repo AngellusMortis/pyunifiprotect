@@ -952,7 +952,6 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
         excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
         new_data = self.dict(exclude=excludes)
         updated = dict_diff(self._initial_data, new_data)
-        _LOGGER.debug("ProtectAdoptableDeviceModel(%s): get_changed = updated: %s", type(self), updated)
 
         return updated
 
