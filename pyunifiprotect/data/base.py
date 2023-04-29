@@ -63,10 +63,6 @@ ProtectObject = TypeVar("ProtectObject", bound="ProtectBaseObject")
 RECENT_EVENT_MAX = timedelta(seconds=30)
 EVENT_PING_INTERVAL = timedelta(seconds=3)
 QUEUE_WAIT_TIMEOUT = 0.05
-# The time it takes for the NVR to reflect changes made via the API
-# before it is sent back of the websocket. This is based on how long
-# it takes for isRecording to update after changing the recording mode.
-UFP_UPDATE_REFLECT_TIME = 7.5
 
 _LOGGER = logging.getLogger(__name__)
 
