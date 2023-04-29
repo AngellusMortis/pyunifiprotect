@@ -506,14 +506,13 @@ class ProtectBaseObject(BaseModel):
             val = convert_unifi_data(data[key], self.__fields__[key])
             setattr(self, key, val)
 
+        exclude_fields = self.__exclude_fields__ or {}
         excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
         self._initial_data = {k: v for k, v in self.__dict__.items() if k not in excludes and k not in exclude_fields}
         return self
 
     def get_changed(self) -> Dict[str, Any]:
-        changed = dict_diff(self._initial_data, self.dict())
-        _LOGGER.debug("ProtectBaseObject(%s): get_changed: %s", type(self), changed)
-        return changed
+        return dict_diff(self._initial_data, self.dict())
 
     @property
     def api(self) -> ProtectApiClient:
