@@ -939,8 +939,9 @@ class NVR(ProtectDeviceModel):
             raise BadRequest("Custom doorbell message already exists")
 
         async with self._update_lock:
+            initial_data = self.dict_with_excludes()
             self.doorbell_settings.custom_messages.append(DoorbellText(message))
-            await self.save_device()
+            await self.save_device(initial_data)
             self.update_all_messages()
 
     async def remove_custom_doorbell_message(self, message: str) -> None:
@@ -950,8 +951,9 @@ class NVR(ProtectDeviceModel):
             raise BadRequest("Custom doorbell message does not exists")
 
         async with self._update_lock:
+            initial_data = self.dict_with_excludes()
             self.doorbell_settings.custom_messages.remove(DoorbellText(message))
-            await self.save_device()
+            await self.save_device(initial_data)
             self.update_all_messages()
 
     async def reboot(self) -> None:
