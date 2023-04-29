@@ -651,33 +651,20 @@ class ProtectModelWithId(ProtectModel):
             return
         except asyncio.TimeoutError:
             async with self._update_lock:
-                await asyncio.sleep(0) # yield to event loop to ensure any pending updates are processed
-                _LOGGER.debug("queue_update: %s: processing update queue", type(self))
-                new_data, updated = self._generate_update_diff()
-
+                # Important! Now that we have the lock, we yield to the event loop so any
+                # updates from the websocket are processed before we generate the diff
+                await asyncio.sleep(0)
                 while not self._update_queue.empty():
                     callback = self._update_queue.get_nowait()
                     callback()
-                _LOGGER.debug("queue_update: %s: finished processing update queue", type(self))               
-                # Generate the diff before we yield to the event loop
-                # to ensure nothing else can change the object in the meantime
-                new_data, updated = self._generate_update_diff()
-                await self._save_device_changes(new_data=new_data, updated=updated)
+                updated = self._generate_unifi_update_diff()
+                await self._save_device_changes(updated=updated)
 
-    def _generate_update_diff(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def _generate_unifi_update_diff(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """Generate an update diff to save."""
-        excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
-        new_data = self.dict(exclude=excludes)
         changed = self.get_changed()
-        if "is_recording" in changed:
-            _LOGGER.debug("_generate_update_diff: %s type=%s, init is_recording=%s, current is_recording=%s", id(self), type(self), self._initial_data["is_recording"], self.is_recording)
-
-        _LOGGER.debug("_generate_update_diff: %s type=%s, excludes=%s, changed=%s", id(self), type(self), excludes, changed)
-
         updated = self.unifi_dict(data=changed)
-        _LOGGER.debug("_generate_update_diff: %s type=%s, excludes=%s, updated=%s", id(self), type(self), excludes, updated)
-
-        return new_data, updated
+        return updated
 
     async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True, new_data: Optional[Dict[str, Any]] = None, updated: Optional[Dict[str, Any]] = None) -> None:
         """
@@ -691,21 +678,18 @@ class ProtectModelWithId(ProtectModel):
         Args:
             force_emit: Emit a fake UFP WS message. Should only be use for when UFP does not properly emit a WS message
         """
-
         # do not allow multiple save_device calls at once
         release_lock = False
         if not self._update_lock.locked():
             await self._update_lock.acquire()
             release_lock = True
-        
         try:
-            new_data, updated = self._generate_update_diff()
-            await self._save_device_changes(new_data=new_data, updated=updated, force_emit=force_emit, revert_on_fail=revert_on_fail)
+            await self._save_device_changes(updated=self._generate_unifi_update_diff(), force_emit=force_emit, revert_on_fail=revert_on_fail)
         finally:
             if release_lock:
                 self._update_lock.release()
 
-    async def _save_device_changes(self, new_data: Optional[Dict[str, Any]], updated: Optional[Dict[str, Any]], force_emit: bool = False, revert_on_fail: bool = True) -> None:
+    async def _save_device_changes(self, updated: Optional[Dict[str, Any]], force_emit: bool = False, revert_on_fail: bool = True) -> None:
         """Saves the current device changes to UFP."""
         assert self._update_lock.locked(), "save_device_changes should only be called when the update lock is held"
         read_only_fields = self.__class__._get_read_only_fields()  # pylint: disable=protected-access
@@ -727,8 +711,6 @@ class ProtectModelWithId(ProtectModel):
             self.revert_changes()
             raise BadRequest(f"{type(self)} The following key(s) are read only: {read_only_keys}, updated: {updated}")
 
-
-
         try:
             await self._api_update(updated)
         except ClientError:
@@ -736,12 +718,9 @@ class ProtectModelWithId(ProtectModel):
                 self.revert_changes()
             raise
 
-        _LOGGER.debug("save_device_changes: %s type=%s, new_data=%s, updated=%s", id(self), type(self), new_data, updated)
-
-        # do not change initial data here as it will be updated by the WS message
-        # and we will end up with a race condition between the WS messages if we do
-        # it here
-        # self._initial_data = new_data
+        # do not change initial data here as it may have been updated via the websocket
+        # while we were awaiting the _api_update call. The change we made in _api_update
+        # will be reflected in the websocket update.
 
         if force_emit:
             await self.emit_message(updated)
