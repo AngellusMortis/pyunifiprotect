@@ -888,7 +888,6 @@ class NVR(ProtectDeviceModel):
                 for message in messages
             ),
         ]
-        self._initial_data = self.dict()
 
     async def set_insights(self, enabled: bool) -> None:
         """Sets analytics collection for NVR"""
