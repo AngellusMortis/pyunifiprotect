@@ -489,6 +489,7 @@ class ProtectBaseObject(BaseModel):
                 item = data.pop(key)
                 if item is not None:
                     item = unifi_obj.update_from_dict(item)
+                _LOGGER.debug("update_from_dict: setattr1: %s %s=%s", id(self), key, item)
                 setattr(self, key, item)
 
         data = self._inject_api(data, self._api)
@@ -503,20 +504,23 @@ class ProtectBaseObject(BaseModel):
                     new_items.append(item)
                 elif isinstance(item, dict):
                     new_items.append(klass(**item))
+            _LOGGER.debug("update_from_dict: setattr2: %s %s=%s", id(self), key, new_items)
             setattr(self, key, new_items)
 
         # Always injected above
         del data["api"]
 
         for key in data:
-            setattr(self, key, convert_unifi_data(data[key], self.__fields__[key]))
+            val = convert_unifi_data(data[key], self.__fields__[key])
+            _LOGGER.debug("update_from_dict: setattr3: %s %s=%s", id(self), key, val)
+            setattr(self, key, val)
 
         excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
         self._initial_data = {k: v for k, v in self.dict().items() if k not in excludes}
         _LOGGER.debug("%s: dict diff: %s", type(self), dict_diff(original, self._initial_data))
 
         if hasattr(self,"is_recording"):
-            _LOGGER.warning("After update is_recording: %s, _initial_data: %s", self.is_recording, self._initial_data['is_recording'])
+            _LOGGER.warning("After update %s is_recording: %s, _initial_data: %s", id(self), self.is_recording, self._initial_data['is_recording'])
 
         return self
 
@@ -551,12 +555,12 @@ class ProtectModel(ProtectBaseObject):
         return {**super()._get_unifi_remaps(), "modelKey": "model"}
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
-        data = super().unifi_dict(data=data, exclude=exclude)
+        unifi_data = super().unifi_dict(data=data, exclude=exclude)
 
-        if "modelKey" in data and data["modelKey"] is None:
-            del data["modelKey"]
+        if "modelKey" in unifi_data and unifi_data["modelKey"] is None:
+            del unifi_data["modelKey"]
 
-        return data
+        return unifi_data
 
 
 class ProtectModelWithId(ProtectModel):
@@ -599,6 +603,7 @@ class ProtectModelWithId(ProtectModel):
 
         changed = self.get_changed()
         for key in changed.keys():
+            _LOGGER.debug("revert_changes: setattr: %s %s=%s", id(self), key, self._initial_data[key])            
             setattr(self, key, self._initial_data[key])
 
     def can_create(self, user: User) -> bool:
@@ -648,10 +653,12 @@ class ProtectModelWithId(ProtectModel):
             async with self._update_lock:
                 await asyncio.sleep(0) # yield to event loop to ensure any pending updates are processed
                 _LOGGER.debug("queue_update: %s: processing update queue", type(self))
+                new_data, updated = self._generate_update_diff()
+
                 while not self._update_queue.empty():
                     callback = self._update_queue.get_nowait()
                     callback()
-                await asyncio.sleep(0) # yield to event loop to ensure any pending updates are processed
+                _LOGGER.debug("queue_update: %s: finished processing update queue", type(self))               
                 # Generate the diff before we yield to the event loop
                 # to ensure nothing else can change the object in the meantime
                 new_data, updated = self._generate_update_diff()
@@ -662,8 +669,14 @@ class ProtectModelWithId(ProtectModel):
         excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
         new_data = self.dict(exclude=excludes)
         changed = self.get_changed()
+        if "is_recording" in changed:
+            _LOGGER.debug("_generate_update_diff: %s type=%s, init is_recording, current is_recording", id(self), type(self), self._initial_data["is_recording"], self.is_recording)
+
+        _LOGGER.debug("_generate_update_diff: %s type=%s, excludes=%s, changed=%s", id(self), type(self), excludes, changed)
+
         updated = self.unifi_dict(data=changed)
-        _LOGGER.debug("_generate_update_diff: type=%s, excludes=%s, changed=%s updated=%s", type(self), excludes, changed, updated)
+        _LOGGER.debug("_generate_update_diff: %s type=%s, excludes=%s, updated=%s", id(self), type(self), excludes, updated)
+
         return new_data, updated
 
     async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True, new_data: Optional[Dict[str, Any]] = None, updated: Optional[Dict[str, Any]] = None) -> None:
