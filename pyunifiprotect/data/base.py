@@ -650,7 +650,7 @@ class ProtectModelWithId(ProtectModel):
                 # Generate the diff before we yield to the event loop
                 # to ensure nothing else can change the object in the meantime
                 new_data, updated = self._generate_update_diff()
-                await self.save_device(new_data=new_data, updated=updated)
+                await self._save_device_changes(new_data=new_data, updated=updated)
 
     def _generate_update_diff(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """Generate an update diff to save."""
@@ -715,7 +715,7 @@ class ProtectModelWithId(ProtectModel):
             if revert_on_fail:
                 self.revert_changes()
             raise
-        
+
         self._initial_data = new_data
 
         if force_emit:
