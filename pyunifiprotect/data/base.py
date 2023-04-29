@@ -641,7 +641,7 @@ class ProtectModelWithId(ProtectModel):
                 )
 
     async def save_device(
-        self, data_before_changes: dict[str, Any], force_emit: bool = False, revert_on_fail: bool = True
+        self, data_before_changes: Dict[str, Any], force_emit: bool = False, revert_on_fail: bool = True
     ) -> None:
         """
         Generates a diff for unsaved changed on the device and sends them back to UFP
@@ -928,7 +928,7 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
 
         return self.is_adopted and not self.is_adopted_by_other
 
-    def get_changed(self, data_before_changes: dict[str, Any]) -> Dict[str, Any]:
+    def get_changed(self, data_before_changes: Dict[str, Any]) -> Dict[str, Any]:
         """Gets dictionary of all changed fields"""
         return dict_diff(data_before_changes, self.dict_with_excludes())
 
