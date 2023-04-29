@@ -516,7 +516,7 @@ class ProtectBaseObject(BaseModel):
         _LOGGER.debug("%s: dict diff: %s", type(self), dict_diff(original, self._initial_data))
 
         if hasattr(self,"is_recording"):
-            _LOGGER.warning("After update is_recording: %s", self.is_recording)
+            _LOGGER.warning("After update is_recording: %s, _initial_data: %s", self.is_recording, self._initial_data['is_recording'])
 
         return self
 
