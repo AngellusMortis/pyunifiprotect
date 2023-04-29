@@ -96,9 +96,6 @@ class ProtectBaseObject(BaseModel):
         Use the static method `.from_unifi_dict()` to create objects from UFP JSON data from then the main class constructor.
         """
         super().__init__(**data)
-
-        excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
-        self._initial_data = self.dict(exclude=excludes)
         self._api = api
 
     @classmethod
@@ -501,9 +498,12 @@ class ProtectBaseObject(BaseModel):
         for key in data:
             setattr(self, key, convert_unifi_data(data[key], self.__fields__[key]))
 
-        excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
-        self._initial_data = {k: v for k, v in self.dict().items() if k not in excludes}
         return self
+
+    def dict_with_excludes(self) -> Dict[str, Any]:
+        """Returns a dict of the current object without any UFP objects converted to dicts."""
+        excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
+        return self.dict(exclude=excludes)
 
     def get_changed(self) -> Dict[str, Any]:
         return dict_diff(self._initial_data, self.dict())
@@ -632,6 +632,7 @@ class ProtectModelWithId(ProtectModel):
                 # Important! Now that we have the lock, we yield to the event loop so any
                 # updates from the websocket are processed before we generate the diff
                 await asyncio.sleep(0)
+                self._initial_data = self.dict_with_excludes()
                 while not self._update_queue.empty():
                     callback = self._update_queue.get_nowait()
                     callback()
@@ -929,13 +930,9 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
 
     def get_changed(self) -> Dict[str, Any]:
         """Gets dictionary of all changed fields"""
-
-        excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
-        new_data = self.dict(exclude=excludes)
-        updated = dict_diff(self._initial_data, new_data)
-
-        return updated
-
+        new_data = self.dict_with_excludes()
+        return dict_diff(self._initial_data, new_data)
+ 
     async def set_ssh(self, enabled: bool) -> None:
         """Sets ssh status for protect device"""
 
