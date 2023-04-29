@@ -674,7 +674,7 @@ class ProtectModelWithId(ProtectModel):
     async def _save_device_changes(
         self,
         data_before_changes: Dict[str, Any],
-        updated: Optional[Dict[str, Any]],
+        updated: Dict[str, Any],
         force_emit: bool = False,
         revert_on_fail: bool = True,
     ) -> None:
