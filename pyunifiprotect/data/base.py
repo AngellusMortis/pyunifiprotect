@@ -670,7 +670,7 @@ class ProtectModelWithId(ProtectModel):
         new_data = self.dict(exclude=excludes)
         changed = self.get_changed()
         if "is_recording" in changed:
-            _LOGGER.debug("_generate_update_diff: %s type=%s, init is_recording, current is_recording", id(self), type(self), self._initial_data["is_recording"], self.is_recording)
+            _LOGGER.debug("_generate_update_diff: %s type=%s, init is_recording, current=%s is_recording=%s", id(self), type(self), self._initial_data["is_recording"], self.is_recording)
 
         _LOGGER.debug("_generate_update_diff: %s type=%s, excludes=%s, changed=%s", id(self), type(self), excludes, changed)
 
@@ -727,6 +727,8 @@ class ProtectModelWithId(ProtectModel):
             self.revert_changes()
             raise BadRequest(f"{type(self)} The following key(s) are read only: {read_only_keys}, updated: {updated}")
 
+
+
         try:
             await self._api_update(updated)
         except ClientError:
@@ -734,7 +736,12 @@ class ProtectModelWithId(ProtectModel):
                 self.revert_changes()
             raise
 
-        self._initial_data = new_data
+        _LOGGER.debug("save_device_changes: %s type=%s, new_data=%s, updated=%s", id(self), type(self), new_data, updated)
+
+        # do not change initial data here as it will be updated by the WS message
+        # and we will end up with a race condition between the WS messages if we do
+        # it here
+        # self._initial_data = new_data
 
         if force_emit:
             await self.emit_message(updated)
