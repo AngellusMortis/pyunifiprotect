@@ -74,7 +74,6 @@ class ProtectBaseObject(BaseModel):
     """
 
     _api: Optional[ProtectApiClient] = PrivateAttr(None)
-    _initial_data: Dict[str, Any] = PrivateAttr()
 
     _protect_objs: ClassVar[Optional[Dict[str, Type[ProtectBaseObject]]]] = None
     _protect_objs_set: ClassVar[Optional[SetStr]] = None
@@ -146,7 +145,6 @@ class ProtectBaseObject(BaseModel):
                 }
 
         obj = super().construct(_fields_set=_fields_set, **values)
-        obj._initial_data = obj.dict(exclude=cls._get_excluded_changed_fields())  # pylint: disable=protected-access
         obj._api = api  # pylint: disable=protected-access
 
         return obj
@@ -505,8 +503,8 @@ class ProtectBaseObject(BaseModel):
         excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
         return self.dict(exclude=excludes)
 
-    def get_changed(self) -> Dict[str, Any]:
-        return dict_diff(self._initial_data, self.dict())
+    def get_changed(self, initial_data: Dict[str, Any]) -> Dict[str, Any]:
+        return dict_diff(initial_data, self.dict())
 
     @property
     def api(self) -> ProtectApiClient:
@@ -577,12 +575,11 @@ class ProtectModelWithId(ProtectModel):
     async def _api_update(self, data: Dict[str, Any]) -> None:
         raise NotImplementedError()
 
-    def revert_changes(self) -> None:
+    def revert_changes(self, initial_data: Dict[str, Any]) -> None:
         """Reverts current changes to device and resets it back to initial state"""
-
-        changed = self.get_changed()
+        changed = self.get_changed(initial_data)
         for key in changed.keys():
-            setattr(self, key, self._initial_data[key])
+            setattr(self, key, initial_data[key])
 
     def can_create(self, user: User) -> bool:
         if self.model is None:
@@ -632,20 +629,16 @@ class ProtectModelWithId(ProtectModel):
                 # Important! Now that we have the lock, we yield to the event loop so any
                 # updates from the websocket are processed before we generate the diff
                 await asyncio.sleep(0)
-                self._initial_data = self.dict_with_excludes()
+                # Save the initial data before we generate the diff
+                initial_data = self.dict_with_excludes()
                 while not self._update_queue.empty():
                     callback = self._update_queue.get_nowait()
                     callback()
                 # Important, do not yield to the event loop before generating the diff
                 # otherwise we may miss updates from the websocket
-                updated = self._generate_unifi_update_diff()
-                await self._save_device_changes(updated=updated)
+                await self._save_device_changes(initial_data, self.unifi_dict(data=self.get_changed(initial_data)))
 
-    def _generate_unifi_update_diff(self) -> Dict[str, Any]:
-        """Generate an update diff to save."""
-        return self.unifi_dict(data=self.get_changed())
-
-    async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True) -> None:
+    async def save_device(self, initial_data: dict[str, Any], force_emit: bool = False, revert_on_fail: bool = True) -> None:
         """
         Generates a diff for unsaved changed on the device and sends them back to UFP
 
@@ -665,14 +658,14 @@ class ProtectModelWithId(ProtectModel):
 
         try:
             await self._save_device_changes(
-                updated=self._generate_unifi_update_diff(), force_emit=force_emit, revert_on_fail=revert_on_fail
+                initial_data, self.unifi_dict(data=self.get_changed(initial_data)), force_emit=force_emit, revert_on_fail=revert_on_fail,
             )
         finally:
             if release_lock:
                 self._update_lock.release()
 
     async def _save_device_changes(
-        self, updated: Optional[Dict[str, Any]], force_emit: bool = False, revert_on_fail: bool = True
+        self, initial_data: Dict[str, Any], updated: Optional[Dict[str, Any]], force_emit: bool = False, revert_on_fail: bool = True
     ) -> None:
         """Saves the current device changes to UFP."""
         assert self._update_lock.locked(), "save_device_changes should only be called when the update lock is held"
@@ -683,7 +676,7 @@ class ProtectModelWithId(ProtectModel):
 
         if not self.api.bootstrap.auth_user.can(self.model, PermissionNode.WRITE, self):
             if revert_on_fail:
-                self.revert_changes()
+                self.revert_changes(initial_data)
             raise NotAuthorized(f"Do not have write permission for obj: {self.id}")
 
         # do not patch when there are no updates
@@ -692,14 +685,14 @@ class ProtectModelWithId(ProtectModel):
 
         read_only_keys = read_only_fields.intersection(updated.keys())
         if len(read_only_keys) > 0:
-            self.revert_changes()
+            self.revert_changes(initial_data)
             raise BadRequest(f"{type(self)} The following key(s) are read only: {read_only_keys}, updated: {updated}")
 
         try:
             await self._api_update(updated)
         except ClientError:
             if revert_on_fail:
-                self.revert_changes()
+                self.revert_changes(initial_data)
             raise
 
         # do not change initial data here as it may have been updated via the websocket
@@ -928,10 +921,9 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
 
         return self.is_adopted and not self.is_adopted_by_other
 
-    def get_changed(self) -> Dict[str, Any]:
+    def get_changed(self, initial_data: dict[str, Any]) -> Dict[str, Any]:
         """Gets dictionary of all changed fields"""
-        new_data = self.dict_with_excludes()
-        return dict_diff(self._initial_data, new_data)
+        return dict_diff(initial_data, self.dict_with_excludes())
  
     async def set_ssh(self, enabled: bool) -> None:
         """Sets ssh status for protect device"""
