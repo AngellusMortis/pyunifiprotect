@@ -18,7 +18,6 @@ async def test_sensor_set_status_light(sensor_obj: Sensor, status: bool):
     sensor_obj.api.api_request.reset_mock()
 
     sensor_obj.led_settings.is_enabled = not status
-    sensor_obj._initial_data = sensor_obj.dict()
 
     await sensor_obj.set_status_light(status)
 
@@ -36,7 +35,6 @@ async def test_sensor_set_mount_type(sensor_obj: Sensor, mount_type: MountType):
     sensor_obj.api.api_request.reset_mock()
 
     sensor_obj.mount_type = MountType.LEAK
-    sensor_obj._initial_data = sensor_obj.dict()
 
     await sensor_obj.set_mount_type(mount_type)
 
@@ -54,7 +52,6 @@ async def test_sensor_set_motion_status(sensor_obj: Sensor, status: bool):
     sensor_obj.api.api_request.reset_mock()
 
     sensor_obj.motion_settings.is_enabled = not status
-    sensor_obj._initial_data = sensor_obj.dict()
 
     await sensor_obj.set_motion_status(status)
 
@@ -90,7 +87,6 @@ async def test_sensor_set_humidity_status(sensor_obj: Sensor, status: bool):
     sensor_obj.api.api_request.reset_mock()
 
     sensor_obj.humidity_settings.is_enabled = not status
-    sensor_obj._initial_data = sensor_obj.dict()
 
     await sensor_obj.set_humidity_status(status)
 
@@ -108,7 +104,6 @@ async def test_sensor_set_light_status(sensor_obj: Sensor, status: bool):
     sensor_obj.api.api_request.reset_mock()
 
     sensor_obj.light_settings.is_enabled = not status
-    sensor_obj._initial_data = sensor_obj.dict()
 
     await sensor_obj.set_light_status(status)
 
@@ -126,7 +121,6 @@ async def test_sensor_set_alarm_status(sensor_obj: Sensor, status: bool):
     sensor_obj.api.api_request.reset_mock()
 
     sensor_obj.alarm_settings.is_enabled = not status
-    sensor_obj._initial_data = sensor_obj.dict()
 
     await sensor_obj.set_alarm_status(status)
 
@@ -147,7 +141,6 @@ async def test_sensor_set_motion_sensitivity(
     sensor_obj.api.api_request.reset_mock()
 
     sensor_obj.motion_settings.sensitivity = 50
-    sensor_obj._initial_data = sensor_obj.dict()
 
     if sensitivity == -10:
         with pytest.raises(ValidationError):
@@ -173,7 +166,6 @@ async def test_sensor_set_temperature_safe_range(sensor_obj: Sensor, low: float,
 
     sensor_obj.temperature_settings.low_threshold = None
     sensor_obj.temperature_settings.high_threshold = None
-    sensor_obj._initial_data = sensor_obj.dict()
 
     if low == -1.0 or high == 50.0 or low > high:
         with pytest.raises(BadRequest):
@@ -199,7 +191,6 @@ async def test_sensor_set_humidity_safe_range(sensor_obj: Sensor, low: float, hi
 
     sensor_obj.humidity_settings.low_threshold = None
     sensor_obj.humidity_settings.high_threshold = None
-    sensor_obj._initial_data = sensor_obj.dict()
 
     if low == 0.0 or high == 100.0 or low > high:
         with pytest.raises(BadRequest):
@@ -225,7 +216,6 @@ async def test_sensor_set_light_safe_range(sensor_obj: Sensor, low: float, high:
 
     sensor_obj.light_settings.low_threshold = None
     sensor_obj.light_settings.high_threshold = None
-    sensor_obj._initial_data = sensor_obj.dict()
 
     if low == 0.0 or high == 1001.0 or low > high:
         with pytest.raises(BadRequest):
@@ -249,7 +239,6 @@ async def test_sensor_remove_temperature_safe_range(sensor_obj: Sensor):
 
     sensor_obj.temperature_settings.low_threshold = 10
     sensor_obj.temperature_settings.high_threshold = 20
-    sensor_obj._initial_data = sensor_obj.dict()
 
     await sensor_obj.remove_temperature_safe_range()
 
@@ -267,7 +256,6 @@ async def test_sensor_remove_humidity_safe_range(sensor_obj: Sensor):
 
     sensor_obj.humidity_settings.low_threshold = 10
     sensor_obj.humidity_settings.high_threshold = 20
-    sensor_obj._initial_data = sensor_obj.dict()
 
     await sensor_obj.remove_humidity_safe_range()
 
@@ -285,7 +273,6 @@ async def test_sensor_remove_light_safe_range(sensor_obj: Sensor):
 
     sensor_obj.light_settings.low_threshold = 10
     sensor_obj.light_settings.high_threshold = 20
-    sensor_obj._initial_data = sensor_obj.dict()
 
     await sensor_obj.remove_light_safe_range()
 
@@ -302,7 +289,6 @@ async def test_sensor_set_paired_camera_none(sensor_obj: Sensor):
     sensor_obj.api.api_request.reset_mock()
 
     sensor_obj.camera_id = "bad_id"
-    sensor_obj._initial_data = sensor_obj.dict()
 
     await sensor_obj.set_paired_camera(None)
 
@@ -319,7 +305,6 @@ async def test_sensor_set_paired_camera(sensor_obj: Light, camera_obj: Camera):
     sensor_obj.api.api_request.reset_mock()
 
     sensor_obj.camera_id = None
-    sensor_obj._initial_data = sensor_obj.dict()
 
     await sensor_obj.set_paired_camera(camera_obj)
 
