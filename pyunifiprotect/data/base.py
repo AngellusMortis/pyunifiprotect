@@ -670,7 +670,7 @@ class ProtectModelWithId(ProtectModel):
         new_data = self.dict(exclude=excludes)
         changed = self.get_changed()
         if "is_recording" in changed:
-            _LOGGER.debug("_generate_update_diff: %s type=%s, init is_recording, current=%s is_recording=%s", id(self), type(self), self._initial_data["is_recording"], self.is_recording)
+            _LOGGER.debug("_generate_update_diff: %s type=%s, init is_recording=%s, current is_recording=%s", id(self), type(self), self._initial_data["is_recording"], self.is_recording)
 
         _LOGGER.debug("_generate_update_diff: %s type=%s, excludes=%s, changed=%s", id(self), type(self), excludes, changed)
 
