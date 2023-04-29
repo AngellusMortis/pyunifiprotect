@@ -515,6 +515,9 @@ class ProtectBaseObject(BaseModel):
         self._initial_data = {k: v for k, v in self.dict().items() if k not in excludes}
         _LOGGER.debug("%s: dict diff: %s", type(self), dict_diff(original, self._initial_data))
 
+        if hasattr(self,"is_recording"):
+            _LOGGER.warning("After update is_recording: %s", self.is_recording)
+
         return self
 
     def get_changed(self) -> Dict[str, Any]:
@@ -644,9 +647,11 @@ class ProtectModelWithId(ProtectModel):
         except asyncio.TimeoutError:
             async with self._update_lock:
                 await asyncio.sleep(0) # yield to event loop to ensure any pending updates are processed
+                _LOGGER.debug("queue_update: %s: processing update queue", type(self))
                 while not self._update_queue.empty():
                     callback = self._update_queue.get_nowait()
                     callback()
+                await asyncio.sleep(0) # yield to event loop to ensure any pending updates are processed
                 # Generate the diff before we yield to the event loop
                 # to ensure nothing else can change the object in the meantime
                 new_data, updated = self._generate_update_diff()
@@ -948,7 +953,7 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
         excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
         new_data = self.dict(exclude=excludes)
         updated = dict_diff(self._initial_data, new_data)
-        _LOGGER.debug("ProtectAdoptableDeviceModel(%s): updated: %s", type(self), updated)
+        _LOGGER.debug("ProtectAdoptableDeviceModel(%s): get_changed = updated: %s", type(self), updated)
 
         return updated
 
