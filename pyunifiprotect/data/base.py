@@ -476,8 +476,6 @@ class ProtectBaseObject(BaseModel):
     def update_from_dict(self: ProtectObject, data: Dict[str, Any]) -> ProtectObject:
         """Updates current object from a cleaned UFP JSON dict"""
 
-        _LOGGER.debug("Updating %s from dict: %s",type(self), data)
-        original=self._initial_data
         data_set = set(data)
         for key in self._get_protect_objs_set().intersection(data_set):
             unifi_obj: Optional[Any] = getattr(self, key)
@@ -485,7 +483,6 @@ class ProtectBaseObject(BaseModel):
                 item = data.pop(key)
                 if item is not None:
                     item = unifi_obj.update_from_dict(item)
-                _LOGGER.debug("update_from_dict: setattr1: %s %s=%s", id(self), key, item)
                 setattr(self, key, item)
 
         data = self._inject_api(data, self._api)
@@ -500,7 +497,6 @@ class ProtectBaseObject(BaseModel):
                     new_items.append(item)
                 elif isinstance(item, dict):
                     new_items.append(klass(**item))
-            _LOGGER.debug("update_from_dict: setattr2: %s %s=%s", id(self), key, new_items)
             setattr(self, key, new_items)
 
         # Always injected above
@@ -508,16 +504,10 @@ class ProtectBaseObject(BaseModel):
 
         for key in data:
             val = convert_unifi_data(data[key], self.__fields__[key])
-            _LOGGER.debug("update_from_dict: setattr3: %s %s=%s", id(self), key, val)
             setattr(self, key, val)
 
         excludes = self.__class__._get_excluded_changed_fields()  # pylint: disable=protected-access
-        self._initial_data = {k: v for k, v in self.dict().items() if k not in excludes}
-        _LOGGER.debug("%s: dict diff: %s", type(self), dict_diff(original, self._initial_data))
-
-        if hasattr(self,"is_recording"):
-            _LOGGER.warning("After update %s is_recording: %s, _initial_data: %s", id(self), self.is_recording, self._initial_data['is_recording'])
-
+        self._initial_data = {k: v for k, v in self.__dict__.items() if k not in excludes and k not in exclude_fields}
         return self
 
     def get_changed(self) -> Dict[str, Any]:
