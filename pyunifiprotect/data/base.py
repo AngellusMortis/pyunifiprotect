@@ -636,7 +636,9 @@ class ProtectModelWithId(ProtectModel):
                     callback()
                 # Important, do not yield to the event loop before generating the diff
                 # otherwise we may miss updates from the websocket
-                await self._save_device_changes(data_before_changes, self.unifi_dict(data=self.get_changed(data_before_changes)))
+                await self._save_device_changes(
+                    data_before_changes, self.unifi_dict(data=self.get_changed(data_before_changes))
+                )
 
     async def save_device(
         self, data_before_changes: dict[str, Any], force_emit: bool = False, revert_on_fail: bool = True
