@@ -540,7 +540,7 @@ class ProtectModel(ProtectBaseObject):
         if "modelKey" in data and data["modelKey"] is None:
             del data["modelKey"]
 
-        return
+        return data
 
 
 class ProtectModelWithId(ProtectModel):
