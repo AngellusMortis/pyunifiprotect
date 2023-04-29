@@ -229,7 +229,7 @@ class BaseApiClient:
 
         url = urljoin(self.base_url, url)
         headers = kwargs.get("headers") or self.headers
-        _LOGGER.debug("Request url with method %s: %s", method, url)
+        _LOGGER.debug("Request url: %s", url)
         if not self._verify_ssl:
             kwargs["ssl"] = False
         session = await self.get_session()
