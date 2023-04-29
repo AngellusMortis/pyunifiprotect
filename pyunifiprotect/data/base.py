@@ -62,7 +62,6 @@ if TYPE_CHECKING:
 ProtectObject = TypeVar("ProtectObject", bound="ProtectBaseObject")
 RECENT_EVENT_MAX = timedelta(seconds=30)
 EVENT_PING_INTERVAL = timedelta(seconds=3)
-QUEUE_WAIT_TIMEOUT = 0.05
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -628,7 +627,7 @@ class ProtectModelWithId(ProtectModel):
         self._update_event.clear()
 
         try:
-            async with timeout(QUEUE_WAIT_TIMEOUT):
+            async with timeout(0.05):
                 await self._update_event.wait()
             self._update_event.clear()
             return
