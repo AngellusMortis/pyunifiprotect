@@ -867,10 +867,7 @@ class Camera(ProtectMotionDeviceModel):
         if "chimeDuration" in data and not isinstance(data["chimeDuration"], timedelta):
             data["chimeDuration"] = timedelta(milliseconds=data["chimeDuration"])
 
-        new_dict = super().unifi_dict_to_dict(data)
-
-        #_LOGGER.debug("Camera.unifi_dict_to_dict: in=%s out=%s", data, new_dict)
-        return new_dict
+        return super().unifi_dict_to_dict(data)
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
         if data is not None:
