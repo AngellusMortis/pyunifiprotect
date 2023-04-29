@@ -15,7 +15,6 @@ from typing import (
     List,
     Optional,
     Set,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -62,7 +61,6 @@ if TYPE_CHECKING:
 ProtectObject = TypeVar("ProtectObject", bound="ProtectBaseObject")
 RECENT_EVENT_MAX = timedelta(seconds=30)
 EVENT_PING_INTERVAL = timedelta(seconds=3)
-
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -644,11 +642,9 @@ class ProtectModelWithId(ProtectModel):
                 updated = self._generate_unifi_update_diff()
                 await self._save_device_changes(updated=updated)
 
-    def _generate_unifi_update_diff(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def _generate_unifi_update_diff(self) -> Dict[str, Any]:
         """Generate an update diff to save."""
-        changed = self.get_changed()
-        updated = self.unifi_dict(data=changed)
-        return updated
+        return self.unifi_dict(data=self.get_changed())
 
     async def save_device(self, force_emit: bool = False, revert_on_fail: bool = True) -> None:
         """
