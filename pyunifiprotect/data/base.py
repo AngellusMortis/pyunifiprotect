@@ -877,7 +877,6 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
 
     async def _api_update(self, data: Dict[str, Any]) -> None:
         if self.model is not None:
-            _LOGGER.debug("Updating %s %s %s", self.model, self.id, data)
             return await self.api.update_device(self.model, self.id, data)
 
     def unifi_dict(self, data: Optional[Dict[str, Any]] = None, exclude: Optional[Set[str]] = None) -> Dict[str, Any]:
