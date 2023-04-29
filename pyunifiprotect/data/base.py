@@ -639,6 +639,8 @@ class ProtectModelWithId(ProtectModel):
                 while not self._update_queue.empty():
                     callback = self._update_queue.get_nowait()
                     callback()
+                # Important, do not yield to the event loop before generating the diff
+                # otherwise we may miss updates from the websocket
                 updated = self._generate_unifi_update_diff()
                 await self._save_device_changes(updated=updated)
 
