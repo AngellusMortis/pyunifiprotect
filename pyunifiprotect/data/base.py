@@ -583,7 +583,6 @@ class ProtectModelWithId(ProtectModel):
 
         changed = self.get_changed()
         for key in changed.keys():
-            _LOGGER.debug("revert_changes: setattr: %s %s=%s", id(self), key, self._initial_data[key])
             setattr(self, key, self._initial_data[key])
 
     def can_create(self, user: User) -> bool:
