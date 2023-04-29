@@ -900,8 +900,8 @@ class Camera(ProtectMotionDeviceModel):
 
         return data
 
-    def get_changed(self) -> Dict[str, Any]:
-        updated = super().get_changed()
+    def get_changed(self, data_before_changes: Dict[str, Any]) -> Dict[str, Any]:
+        updated = super().get_changed(data_before_changes)
 
         if "lcd_message" in updated:
             lcd_message = updated["lcd_message"]
