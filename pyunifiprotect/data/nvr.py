@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timedelta, tzinfo
 from functools import cache
-from ipaddress import IPv4Address
+from ipaddress import IPv4Address, IPv6Address
 import logging
 from pathlib import Path
 from typing import (
@@ -792,7 +792,7 @@ class NVR(ProtectDeviceModel):
     is_vault_registered: Optional[bool] = None
     public_ip: Optional[IPv4Address] = None
     ulp_version: Optional[str] = None
-    wan_ip: Optional[IPv4Address] = None
+    wan_ip: Optional[Union[IPv4Address, IPv6Address]] = None
 
     # TODO:
     # errorCode   read only
