@@ -403,6 +403,8 @@ class RecordingSettings(ProtectBaseObject):
 class SmartDetectSettings(ProtectBaseObject):
     object_types: List[SmartDetectObjectType]
     audio_types: Optional[List[SmartDetectAudioType]] = None
+    # requires 2.8.22+
+    auto_tracking_object_types: Optional[List[SmartDetectObjectType]] = None
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -698,6 +700,8 @@ class CameraFeatureFlags(ProtectBaseObject):
     smart_detect_audio_types: Optional[List[SmartDetectAudioType]] = None
     # 2.7.18+
     is_doorbell: bool
+    # 2.8.22+
+    lens_model: Optional[str] = None
 
     # TODO:
     # focus
@@ -802,6 +806,8 @@ class Camera(ProtectMotionDeviceModel):
     is_2k: Optional[bool] = None
     is_4k: Optional[bool] = None
     use_global: Optional[bool] = None
+    # requires 2.8.22+
+    user_configured_ap: Optional[bool] = None
 
     # TODO: used for adopting
     # apMac read only
@@ -2133,6 +2139,8 @@ class Chime(ProtectAdoptableDeviceModel):
     ap_mgmt_ip: Optional[IPv4Address] = None
     # requires 2.7.15+
     feature_flags: Optional[ChimeFeatureFlags] = None
+    # requires 2.8.22+
+    user_configured_ap: Optional[bool] = None
 
     # TODO: used for adoption
     # apMac  read only

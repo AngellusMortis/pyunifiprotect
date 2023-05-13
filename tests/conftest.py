@@ -534,6 +534,9 @@ NEW_FIELDS = {
     "hasGateway",
     "corruptionState",
     "countryCode",
+    # 2.8.22+
+    "guid",
+    "userConfiguredAp",
 }
 
 NEW_CAMERA_FEATURE_FLAGS = {
@@ -545,6 +548,8 @@ NEW_CAMERA_FEATURE_FLAGS = {
     "lensType",
     # 2.7.18+
     "isDoorbell",
+    # 2.8.22+
+    "lensModel",
 }
 
 NEW_NVR_FEATURE_FLAGS = {
@@ -600,6 +605,11 @@ def compare_objs(obj_type, expected, actual):
             actual["eventStats"]["smart"].pop("recentHours", None)
         if "audioTypes" in actual["smartDetectSettings"] and "audioTypes" not in expected["smartDetectSettings"]:
             del actual["smartDetectSettings"]["audioTypes"]
+        if (
+            "autoTrackingObjectTypes" in actual["smartDetectSettings"]
+            and "autoTrackingObjectTypes" not in expected["smartDetectSettings"]
+        ):
+            del actual["smartDetectSettings"]["autoTrackingObjectTypes"]
 
         for flag in NEW_CAMERA_FEATURE_FLAGS:
             if flag not in expected["featureFlags"]:
@@ -678,6 +688,8 @@ def compare_objs(obj_type, expected, actual):
                 if estimate is not None and actual_estimate is not None:
                     if math.isclose(estimate, actual_estimate, rel_tol=0.01):
                         actual["systemInfo"]["ustorage"]["space"][index]["estimate"] = estimate
+                if "space_type" not in device:
+                    del actual_device["space_type"]
 
         for flag in NEW_NVR_FEATURE_FLAGS:
             if flag not in expected["featureFlags"]:

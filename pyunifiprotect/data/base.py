@@ -19,6 +19,7 @@ from typing import (
     TypeVar,
     Union,
 )
+from uuid import UUID
 
 from async_timeout import timeout
 from pydantic import BaseModel
@@ -842,6 +843,8 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     fw_update_state: Optional[str] = None
     # requires 2.8.14+
     nvr_mac: Optional[str] = None
+    # requires 2.8.22+
+    guid: Optional[UUID] = None
 
     wired_connection_state: Optional[WiredConnectionState] = None
     wifi_connection_state: Optional[WifiConnectionState] = None

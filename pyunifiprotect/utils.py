@@ -61,6 +61,7 @@ SNAKE_CASE_KEYS = [
     "bad_sector",
     "total_bytes",
     "used_bytes",
+    "space_type",
 ]
 TIMEZONE_GLOBAL: tzinfo | None = None
 

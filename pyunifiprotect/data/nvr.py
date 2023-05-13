@@ -567,6 +567,8 @@ class UOSSpace(ProtectBaseObject):
     estimate: Optional[timedelta] = None
     # requires 2.8.14+
     health: Optional[str] = None
+    # requires 2.8.22+
+    space_type: Optional[str] = None
 
     @classmethod
     @cache
@@ -575,6 +577,7 @@ class UOSSpace(ProtectBaseObject):
             **super()._get_unifi_remaps(),
             "total_bytes": "totalBytes",
             "used_bytes": "usedBytes",
+            "space_type": "spaceType",
         }
 
     @classmethod
