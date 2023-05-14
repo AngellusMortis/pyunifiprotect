@@ -75,9 +75,9 @@ _LOGGER = logging.getLogger(__name__)
 RELEASE_CACHE = Path(__file__).parent / "release_cache.json"
 
 if sys.version_info[:2] < (3, 11):
-    from async_timeout import timeout as asyncio_timeout
+    from async_timeout import timeout as asyncio_timeout # noqa: F401
 else:
-    from asyncio import timeout as asyncio_timeout
+    from asyncio import timeout as asyncio_timeout # noqa: F401
 
 
 def set_debug() -> None:
