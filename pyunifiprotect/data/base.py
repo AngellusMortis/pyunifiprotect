@@ -21,7 +21,6 @@ from typing import (
 )
 from uuid import UUID
 
-from async_timeout import timeout
 from pydantic import BaseModel
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, PrivateAttr
 
@@ -45,6 +44,7 @@ from pyunifiprotect.utils import (
     process_datetime,
     serialize_unifi_obj,
     to_snake_case,
+    asyncio_timeout,
 )
 
 if TYPE_CHECKING:
@@ -621,7 +621,7 @@ class ProtectModelWithId(ProtectModel):
         self._update_event.clear()
 
         try:
-            async with timeout(0.05):
+            async with asyncio_timeout(0.05):
                 await self._update_event.wait()
             self._update_event.clear()
             return

@@ -99,7 +99,10 @@ class FfmpegCommand:
             raise StreamError("Could not start stream")
 
         await asyncio.wait(
-            [self._read_stream(self.process.stdout, "stdout"), self._read_stream(self.process.stderr, "stderr")]
+            [
+                asyncio.create_task(self._read_stream(self.process.stdout, "stdout")),
+                asyncio.create_task(self._read_stream(self.process.stderr, "stderr")),
+            ]
         )
         await self.process.wait()
 

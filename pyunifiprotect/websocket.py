@@ -12,6 +12,8 @@ from aiohttp import (
     WSMsgType,
 )
 
+from .utils import asyncio_timeout
+
 _LOGGER = logging.getLogger(__name__)
 CALLBACK_TYPE = Callable[..., Coroutine[Any, Any, Optional[Dict[str, str]]]]
 RECENT_FAILURE_CUT_OFF = 30
@@ -154,7 +156,8 @@ class Websocket:
             _LOGGER.debug("Another connect is already happening")
             return False
         try:
-            await asyncio.wait_for(self._connect_lock.acquire(), timeout=0.1)
+            async with asyncio_timeout(0.1):
+                await self._connect_lock.acquire()
         except asyncio.TimeoutError:
             _LOGGER.debug("Failed to get connection lock")
 
@@ -163,7 +166,8 @@ class Websocket:
         self._websocket_loop_task = asyncio.create_task(self._websocket_loop(start_event))
 
         try:
-            await asyncio.wait_for(start_event.wait(), timeout=self.timeout_interval)
+            async with asyncio_timeout(self.timeout_interval):
+                await start_event.wait()
         except asyncio.TimeoutError:
             _LOGGER.warning("Timed out while waiting for Websocket to connect")
             await self.disconnect()
