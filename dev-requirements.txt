@@ -231,7 +231,7 @@ pylint==2.17.2
     #   pyunifiprotect (pyproject.toml)
 pylint-strict-informational==0.1
     # via pyunifiprotect (pyproject.toml)
-pymdown-extensions==9.11
+pymdown-extensions==10.0
     # via
     #   mkdocs-material
     #   mkdocstrings
