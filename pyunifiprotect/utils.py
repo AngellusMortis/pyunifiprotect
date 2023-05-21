@@ -203,8 +203,8 @@ def to_camel_case(name: str) -> str:
 
 def convert_unifi_data(value: Any, field: ModelField) -> Any:
     """Converts value from UFP data into pydantic field class"""
-    from pyunifiprotect.data import (
-        ProtectBaseObject,  # pylint: disable=import-outside-toplevel
+    from pyunifiprotect.data import (  # pylint: disable=import-outside-toplevel
+        ProtectBaseObject,
     )
 
     shape = field.shape
