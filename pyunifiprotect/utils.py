@@ -42,6 +42,7 @@ from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_SET, ModelField
 from pydantic.utils import to_camel
 
 from pyunifiprotect.data.types import (
+    Color,
     SmartDetectAudioType,
     SmartDetectObjectType,
     Version,
@@ -74,7 +75,9 @@ _LOGGER = logging.getLogger(__name__)
 
 RELEASE_CACHE = Path(__file__).parent / "release_cache.json"
 
-IP_TYPES = (
+_CREATE_TYPES = {IPv6Address, IPv4Address, UUID, Color, Decimal, Path, Version}
+
+IP_TYPES = {
     Union[IPv4Address, str, None],
     Union[IPv4Address, str],
     Union[IPv6Address, str, None],
@@ -83,7 +86,7 @@ IP_TYPES = (
     Union[IPv6Address, IPv4Address, str],
     Union[IPv6Address, IPv4Address],
     Union[IPv6Address, IPv4Address, None],
-)
+}
 
 if sys.version_info[:2] < (3, 11):
     from async_timeout import (  # pylint: disable=unused-import # noqa: F401
@@ -200,34 +203,29 @@ def to_camel_case(name: str) -> str:
 
 def convert_unifi_data(value: Any, field: ModelField) -> Any:
     """Converts value from UFP data into pydantic field class"""
-    from pyunifiprotect.data import (  # pylint: disable=import-outside-toplevel
-        Color,
-        ProtectBaseObject,
+    from pyunifiprotect.data import (
+        ProtectBaseObject,  # pylint: disable=import-outside-toplevel
     )
 
-    if field.shape == SHAPE_LIST and isinstance(value, list):
+    shape = field.shape
+    type_ = field.type_
+
+    if shape == SHAPE_LIST and isinstance(value, list):
         value = [convert_unifi_data(v, field) for v in value]
-    elif field.shape == SHAPE_SET and isinstance(value, list):
+    elif shape == SHAPE_SET and isinstance(value, list):
         value = {convert_unifi_data(v, field) for v in value}
-    elif field.shape == SHAPE_DICT and isinstance(value, dict):
+    elif shape == SHAPE_DICT and isinstance(value, dict):
         value = {k: convert_unifi_data(v, field) for k, v in value.items()}
-    elif field.type_ in IP_TYPES and value is not None:
+    elif type_ in IP_TYPES and value is not None:
         try:
             value = ip_address(value)
         except ValueError:
             pass
-    elif (
-        value is None
-        or not isclass(field.type_)
-        or issubclass(field.type_, ProtectBaseObject)
-        or isinstance(value, field.type_)
-    ):
+    elif value is None or not isclass(type_) or issubclass(type_, ProtectBaseObject) or isinstance(value, type_):
         return value
-    elif field.type_ in (IPv6Address, IPv4Address, UUID, Color, Decimal, Path, Version) or issubclass(
-        field.type_, Enum
-    ):
-        value = field.type_(value)
-    elif field.type_ == datetime:
+    elif type_ in _CREATE_TYPES or issubclass(type_, Enum):
+        value = type_(value)
+    elif type_ == datetime:
         value = from_js_time(value)
 
     return value
