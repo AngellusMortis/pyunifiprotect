@@ -234,7 +234,6 @@ def convert_unifi_data(value: Any, field: ModelField) -> Any:
 def serialize_unifi_obj(value: Any) -> Any:
     """Serializes UFP data"""
     from pyunifiprotect.data import (  # pylint: disable=import-outside-toplevel
-        Color,
         ProtectModel,
     )
 
