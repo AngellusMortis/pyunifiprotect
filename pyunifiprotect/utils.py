@@ -210,6 +210,9 @@ def convert_unifi_data(value: Any, field: ModelField) -> Any:
     shape = field.shape
     type_ = field.type_
 
+    if type_ == Any:
+        return value
+
     if shape == SHAPE_LIST and isinstance(value, list):
         value = [convert_unifi_data(v, field) for v in value]
     elif shape == SHAPE_SET and isinstance(value, list):
