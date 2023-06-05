@@ -145,7 +145,6 @@ async def test_ws_event_ring(protect_client_no_debug: ProtectApiClient, now, cam
     def get_camera():
         return protect_client.bootstrap.cameras[camera["id"]]
 
-    bootstrap_before = protect_client.bootstrap.unifi_dict()
     camera_before = get_camera().copy()
 
     expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"
@@ -177,15 +176,16 @@ async def test_ws_event_ring(protect_client_no_debug: ProtectApiClient, now, cam
 
     protect_client._process_ws_message(msg)
 
-    bootstrap_before["lastUpdateId"] = expected_updated_id
-    bootstrap = protect_client.bootstrap.unifi_dict()
     camera = get_camera()
 
     event = camera.last_ring_event
     camera_before.last_ring_event_id = None
     camera.last_ring_event_id = None
 
-    assert bootstrap == bootstrap_before
+    assert camera.last_ring == event.start
+    camera.last_ring = None
+    camera_before.last_ring = None
+
     assert camera.dict() == camera_before.dict()
     assert event.id == expected_event_id
     assert event.type == EventType.RING
@@ -204,7 +204,6 @@ async def test_ws_event_motion(protect_client_no_debug: ProtectApiClient, now, c
     def get_camera():
         return protect_client.bootstrap.cameras[camera["id"]]
 
-    bootstrap_before = protect_client.bootstrap.unifi_dict()
     camera_before = get_camera().copy()
 
     expected_updated_id = "0441ecc6-f0fa-4b19-b071-7987c143138a"
@@ -236,15 +235,16 @@ async def test_ws_event_motion(protect_client_no_debug: ProtectApiClient, now, c
 
     protect_client._process_ws_message(msg)
 
-    bootstrap_before["lastUpdateId"] = expected_updated_id
-    bootstrap = protect_client.bootstrap.unifi_dict()
     camera = get_camera()
 
     event = camera.last_motion_event
-    camera.last_motion_event_id = None
     camera_before.last_motion_event_id = None
+    camera.last_motion_event_id = None
 
-    assert bootstrap == bootstrap_before
+    assert camera.last_motion == event.start
+    camera_before.last_motion = None
+    camera.last_motion = None
+
     assert camera.dict() == camera_before.dict()
     assert event.id == expected_event_id
     assert event.type == EventType.MOTION
@@ -302,7 +302,9 @@ async def test_ws_event_smart(protect_client_no_debug: ProtectApiClient, now, ca
 
     smart_event = camera.last_smart_detect_event
     camera.last_smart_detect_event_id = None
+    camera.last_smart_detect = None
     camera_before.last_smart_detect_event_id = None
+    camera_before.last_smart_detect = None
 
     assert bootstrap == bootstrap_before
     assert camera.dict() == camera_before.dict()

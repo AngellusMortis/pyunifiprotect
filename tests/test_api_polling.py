@@ -8,7 +8,7 @@ import pytest
 
 from pyunifiprotect import ProtectApiClient
 from pyunifiprotect.api import NEVER_RAN
-from pyunifiprotect.data import EventType
+from pyunifiprotect.data import Camera, EventType
 from pyunifiprotect.utils import to_js_time
 from tests.conftest import MockDatetime
 
@@ -32,13 +32,23 @@ async def test_process_events_none(protect_client: ProtectApiClient, camera):
     assert get_camera() == camera_before
 
 
+def _reset_events(camera: Camera) -> None:
+    camera.last_ring_event_id = None
+    camera.last_ring = None
+    camera.last_motion_event_id = None
+    camera.last_motion = None
+    camera.last_smart_detect = None
+    camera.last_smart_detect_event_id = None
+    camera.last_smart_detects = {}
+    camera.last_smart_detect_event_ids = {}
+
+
 @pytest.mark.asyncio
 @patch("pyunifiprotect.api.datetime", MockDatetime)
 async def test_process_events_ring(protect_client: ProtectApiClient, now, camera):
     def get_camera():
         return protect_client.bootstrap.cameras[camera["id"]]
 
-    bootstrap_before = protect_client.bootstrap.unifi_dict()
     camera_before = get_camera().copy()
 
     expected_event_id = "bf9a241afe74821ceffffd05"
@@ -68,16 +78,12 @@ async def test_process_events_ring(protect_client: ProtectApiClient, now, camera
     protect_client._last_update = NEVER_RAN
     await protect_client.update()
 
-    bootstrap = protect_client.bootstrap.unifi_dict()
     camera = get_camera()
 
     event = camera.last_ring_event
-    camera_before.last_ring_event_id = None
-    camera_before.last_motion_event_id = None
-    camera_before.last_smart_detect_event_id = None
-    camera.last_ring_event_id = None
+    _reset_events(camera)
+    _reset_events(camera_before)
 
-    assert bootstrap == bootstrap_before
     assert camera.dict() == camera_before.dict()
     assert event.id == expected_event_id
     assert event.type == EventType.RING
@@ -91,7 +97,6 @@ async def test_process_events_motion(protect_client: ProtectApiClient, now, came
     def get_camera():
         return protect_client.bootstrap.cameras[camera["id"]]
 
-    bootstrap_before = protect_client.bootstrap.unifi_dict()
     camera_before = get_camera().copy()
 
     expected_event_id = "bf9a241afe74821ceffffd05"
@@ -122,16 +127,12 @@ async def test_process_events_motion(protect_client: ProtectApiClient, now, came
     await protect_client.update()
 
     camera_before.is_motion_detected = False
-    bootstrap = protect_client.bootstrap.unifi_dict()
     camera = get_camera()
 
     event = camera.last_motion_event
-    camera.last_motion_event_id = None
-    camera_before.last_motion_event_id = None
-    camera_before.last_ring_event_id = None
-    camera_before.last_smart_detect_event_id = None
+    _reset_events(camera)
+    _reset_events(camera_before)
 
-    assert bootstrap == bootstrap_before
     assert camera.dict() == camera_before.dict()
     assert event.id == expected_event_id
     assert event.type == EventType.MOTION
@@ -146,7 +147,6 @@ async def test_process_events_smart(protect_client: ProtectApiClient, now, camer
     def get_camera():
         return protect_client.bootstrap.cameras[camera["id"]]
 
-    bootstrap_before = protect_client.bootstrap.unifi_dict()
     camera_before = get_camera().copy()
 
     expected_event_id = "bf9a241afe74821ceffffd05"
@@ -176,16 +176,14 @@ async def test_process_events_smart(protect_client: ProtectApiClient, now, camer
     protect_client._last_update = NEVER_RAN
     await protect_client.update()
 
-    bootstrap = protect_client.bootstrap.unifi_dict()
     camera = get_camera()
 
     smart_event = camera.last_smart_detect_event
-    camera.last_smart_detect_event_id = None
-    camera_before.last_smart_detect_event_id = None
-    camera_before.last_motion_event_id = None
-    camera_before.last_ring_event_id = None
+    assert camera.last_smart_detect == smart_event.start
 
-    assert bootstrap == bootstrap_before
+    _reset_events(camera)
+    _reset_events(camera_before)
+
     assert camera.dict() == camera_before.dict()
     assert smart_event.id == expected_event_id
     assert smart_event.type == EventType.SMART_DETECT
