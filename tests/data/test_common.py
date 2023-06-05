@@ -4,6 +4,7 @@
 import asyncio
 import base64
 from copy import deepcopy
+from datetime import timedelta
 from ipaddress import IPv4Address
 from typing import Any, Dict, Optional, Set, cast
 from unittest.mock import Mock, patch
@@ -22,6 +23,7 @@ from pyunifiprotect.data import (
     ModelType,
     Permission,
     RecordingMode,
+    SmartDetectObjectType,
     StorageType,
     User,
     VideoMode,
@@ -31,7 +33,7 @@ from pyunifiprotect.data import (
 from pyunifiprotect.data.devices import LCDMessage
 from pyunifiprotect.data.types import RecordingType, ResolutionStorageType
 from pyunifiprotect.exceptions import BadRequest, NotAuthorized, StreamError
-from pyunifiprotect.utils import set_debug, set_no_debug
+from pyunifiprotect.utils import set_debug, set_no_debug, utc_now
 from tests.conftest import (
     TEST_BRIDGE_EXISTS,
     TEST_CAMERA_EXISTS,
@@ -150,6 +152,126 @@ def test_bridge(bridge):
 def test_events(raw_events):
     for event in raw_events:
         compare_devices(event)
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+def test_camera_smart_events(camera_obj: Camera):
+    now = utc_now()
+
+    camera_obj.last_smart_detect_event_id = None
+    camera_obj.last_smart_detect = None
+    camera_obj.last_smart_detect_event_ids = {}
+    camera_obj.last_smart_detects = {}
+    events = [
+        Event(
+            api=camera_obj.api,
+            id="test_event_1",
+            camera_id=camera_obj.id,
+            start=now - timedelta(seconds=10),
+            type=EventType.SMART_DETECT_LINE,
+            score=100,
+            smart_detect_types=[SmartDetectObjectType.PERSON],
+            smart_detect_event_ids=[],
+        ),
+        Event(
+            api=camera_obj.api,
+            id="test_event_2",
+            camera_id=camera_obj.id,
+            start=now - timedelta(seconds=15),
+            end=now - timedelta(seconds=8),
+            type=EventType.SMART_DETECT,
+            score=100,
+            smart_detect_types=[SmartDetectObjectType.PACKAGE],
+            smart_detect_event_ids=[],
+        ),
+        Event(
+            api=camera_obj.api,
+            id="test_event_1",
+            camera_id=camera_obj.id,
+            start=now - timedelta(seconds=10),
+            end=now - timedelta(seconds=7),
+            type=EventType.SMART_DETECT_LINE,
+            score=100,
+            smart_detect_types=[SmartDetectObjectType.PERSON, SmartDetectObjectType.VEHICLE],
+            smart_detect_event_ids=[],
+        ),
+        Event(
+            api=camera_obj.api,
+            id="test_event_3",
+            camera_id=camera_obj.id,
+            start=now - timedelta(seconds=5),
+            type=EventType.SMART_DETECT,
+            score=100,
+            smart_detect_types=[SmartDetectObjectType.LICENSE_PLATE],
+            smart_detect_event_ids=[],
+        ),
+    ]
+
+    for event in events:
+        camera_obj.api.bootstrap.process_event(event)
+
+    assert camera_obj.last_smart_detect == now - timedelta(seconds=5)
+    assert camera_obj.last_person_detect == now - timedelta(seconds=10)
+    assert camera_obj.last_vehicle_detect == now - timedelta(seconds=10)
+    assert camera_obj.last_package_detect == now - timedelta(seconds=15)
+    assert camera_obj.last_license_plate_detect == now - timedelta(seconds=5)
+
+    assert camera_obj.last_smart_detect_event is not None
+    assert camera_obj.last_smart_detect_event.id == "test_event_3"
+    assert camera_obj.last_person_detect_event is not None
+    assert camera_obj.last_person_detect_event.id == "test_event_1"
+    assert camera_obj.last_vehicle_detect_event is not None
+    assert camera_obj.last_vehicle_detect_event.id == "test_event_1"
+    assert camera_obj.last_package_detect_event is not None
+    assert camera_obj.last_package_detect_event.id == "test_event_2"
+    assert camera_obj.last_license_plate_detect_event is not None
+    assert camera_obj.last_license_plate_detect_event.id == "test_event_3"
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+def test_camera_smart_audio_events(camera_obj: Camera):
+    now = utc_now()
+
+    camera_obj.last_smart_audio_detect_event_id = None
+    camera_obj.last_smart_audio_detect = None
+    camera_obj.last_smart_audio_detect_event_ids = {}
+    camera_obj.last_smart_audio_detects = {}
+    events = [
+        Event(
+            api=camera_obj.api,
+            id="test_event_1",
+            camera_id=camera_obj.id,
+            start=now - timedelta(seconds=10),
+            type=EventType.SMART_AUDIO_DETECT,
+            score=100,
+            smart_detect_types=[SmartDetectObjectType.SMOKE],
+            smart_detect_event_ids=[],
+        ),
+        Event(
+            api=camera_obj.api,
+            id="test_event_2",
+            camera_id=camera_obj.id,
+            start=now - timedelta(seconds=5),
+            type=EventType.SMART_AUDIO_DETECT,
+            score=100,
+            smart_detect_types=[SmartDetectObjectType.CMONX],
+            smart_detect_event_ids=[],
+        ),
+    ]
+
+    for event in events:
+        camera_obj.api.bootstrap.process_event(event)
+
+    assert camera_obj.last_smart_audio_detect == now - timedelta(seconds=5)
+    assert camera_obj.last_smoke_detect == now - timedelta(seconds=10)
+    assert camera_obj.last_cmonx_detect == now - timedelta(seconds=5)
+
+    assert camera_obj.last_smart_audio_detect_event is not None
+    assert camera_obj.last_smart_audio_detect_event.id == "test_event_2"
+    assert camera_obj.last_smoke_detect_event is not None
+    assert camera_obj.last_smoke_detect_event.id == "test_event_1"
+    assert camera_obj.last_cmonx_detect_event is not None
+    assert camera_obj.last_cmonx_detect_event.id == "test_event_2"
 
 
 def test_bootstrap(bootstrap: dict[str, Any]):

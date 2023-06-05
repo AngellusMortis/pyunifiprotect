@@ -114,6 +114,18 @@ def _process_camera_event(event: Event) -> None:
     dt = getattr(event.camera, dt_attr)
     if dt is None or event.start >= dt or (event.end is not None and event.end >= dt):
         setattr(event.camera, event_attr, event.id)
+        setattr(event.camera, dt_attr, event.start)
+        if event.type in (EventType.SMART_DETECT, EventType.SMART_DETECT_LINE):
+            for smart_type in event.smart_detect_types:
+                event.camera.last_smart_detect_event_ids[smart_type] = event.id
+                event.camera.last_smart_detects[smart_type] = event.start
+        elif event.type == EventType.SMART_AUDIO_DETECT:
+            for smart_type in event.smart_detect_types:
+                audio_type = smart_type.audio_type
+                if audio_type is None:
+                    continue
+                event.camera.last_smart_audio_detect_event_ids[audio_type] = event.id
+                event.camera.last_smart_audio_detects[audio_type] = event.start
 
 
 @dataclass

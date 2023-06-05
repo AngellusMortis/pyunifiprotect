@@ -827,6 +827,10 @@ class Camera(ProtectMotionDeviceModel):
     last_smart_audio_detect: Optional[datetime] = None
     last_smart_detect_event_id: Optional[str] = None
     last_smart_audio_detect_event_id: Optional[str] = None
+    last_smart_detects: dict[SmartDetectObjectType, datetime] = {}
+    last_smart_audio_detects: dict[SmartDetectAudioType, datetime] = {}
+    last_smart_detect_event_ids: dict[SmartDetectObjectType, str] = {}
+    last_smart_audio_detect_event_ids: dict[SmartDetectAudioType, str] = {}
     talkback_stream: Optional[TalkbackStream] = None
     _last_ring_timeout: Optional[datetime] = PrivateAttr(None)
 
@@ -844,6 +848,10 @@ class Camera(ProtectMotionDeviceModel):
             "last_smart_audio_detect",
             "last_smart_detect_event_id",
             "last_smart_audio_detect_event_id",
+            "last_smart_detects",
+            "last_smart_audio_detects",
+            "last_smart_detect_event_ids",
+            "last_smart_audio_detect_event_ids",
             "talkback_stream",
         }
 
@@ -946,17 +954,135 @@ class Camera(ProtectMotionDeviceModel):
 
     @property
     def last_smart_detect_event(self) -> Optional[Event]:
+        """Get the last smart detect event id."""
+
         if self.last_smart_detect_event_id is None:
             return None
 
         return self.api.bootstrap.events.get(self.last_smart_detect_event_id)
 
+    def get_last_smart_detect_event(self, smart_type: SmartDetectObjectType) -> Optional[Event]:
+        """Get the last smart detect event for given type."""
+
+        event_id = self.last_smart_detect_event_ids.get(smart_type)
+        if event_id is None:
+            return None
+
+        return self.api.bootstrap.events.get(event_id)
+
+    @property
+    def last_person_detect_event(self) -> Optional[Event]:
+        """Get the last person smart detection event."""
+
+        return self.get_last_smart_detect_event(SmartDetectObjectType.PERSON)
+
+    @property
+    def last_person_detect(self) -> Optional[datetime]:
+        """Get the last person smart detection event."""
+
+        return self.last_smart_detects.get(SmartDetectObjectType.PERSON)
+
+    @property
+    def last_vehicle_detect_event(self) -> Optional[Event]:
+        """Get the last vehicle smart detection event."""
+
+        return self.get_last_smart_detect_event(SmartDetectObjectType.VEHICLE)
+
+    @property
+    def last_vehicle_detect(self) -> Optional[datetime]:
+        """Get the last vehicle smart detection event."""
+
+        return self.last_smart_detects.get(SmartDetectObjectType.VEHICLE)
+
+    @property
+    def last_package_detect_event(self) -> Optional[Event]:
+        """Get the last package smart detection event."""
+
+        return self.get_last_smart_detect_event(SmartDetectObjectType.PACKAGE)
+
+    @property
+    def last_package_detect(self) -> Optional[datetime]:
+        """Get the last package smart detection event."""
+
+        return self.last_smart_detects.get(SmartDetectObjectType.PACKAGE)
+
+    @property
+    def last_face_detect_event(self) -> Optional[Event]:
+        """Get the last face smart detection event."""
+
+        return self.get_last_smart_detect_event(SmartDetectObjectType.FACE)
+
+    @property
+    def last_face_detect(self) -> Optional[datetime]:
+        """Get the last face smart detection event."""
+
+        return self.last_smart_detects.get(SmartDetectObjectType.FACE)
+
+    @property
+    def last_pet_detect_event(self) -> Optional[Event]:
+        """Get the last pet smart detection event."""
+
+        return self.get_last_smart_detect_event(SmartDetectObjectType.PET)
+
+    @property
+    def last_pet_detect(self) -> Optional[datetime]:
+        """Get the last pet smart detection event."""
+
+        return self.last_smart_detects.get(SmartDetectObjectType.PET)
+
+    @property
+    def last_license_plate_detect_event(self) -> Optional[Event]:
+        """Get the last license plate smart detection event."""
+
+        return self.get_last_smart_detect_event(SmartDetectObjectType.LICENSE_PLATE)
+
+    @property
+    def last_license_plate_detect(self) -> Optional[datetime]:
+        """Get the last license plate smart detection event."""
+
+        return self.last_smart_detects.get(SmartDetectObjectType.LICENSE_PLATE)
+
     @property
     def last_smart_audio_detect_event(self) -> Optional[Event]:
+        """Get the last smart audio detect event id."""
+
         if self.last_smart_audio_detect_event_id is None:
             return None
 
         return self.api.bootstrap.events.get(self.last_smart_audio_detect_event_id)
+
+    def get_last_smart_audio_detect_event(self, smart_type: SmartDetectAudioType) -> Optional[Event]:
+        """Get the last smart audio detect event for given type."""
+
+        event_id = self.last_smart_audio_detect_event_ids.get(smart_type)
+        if event_id is None:
+            return None
+
+        return self.api.bootstrap.events.get(event_id)
+
+    @property
+    def last_smoke_detect_event(self) -> Optional[Event]:
+        """Get the last person smart detection event."""
+
+        return self.get_last_smart_audio_detect_event(SmartDetectAudioType.SMOKE)
+
+    @property
+    def last_smoke_detect(self) -> Optional[datetime]:
+        """Get the last smoke smart detection event."""
+
+        return self.last_smart_audio_detects.get(SmartDetectAudioType.SMOKE)
+
+    @property
+    def last_cmonx_detect_event(self) -> Optional[Event]:
+        """Get the last cmonx smart detection event."""
+
+        return self.get_last_smart_audio_detect_event(SmartDetectAudioType.CMONX)
+
+    @property
+    def last_cmonx_detect(self) -> Optional[datetime]:
+        """Get the last cmonx smart detection event."""
+
+        return self.last_smart_audio_detects.get(SmartDetectAudioType.CMONX)
 
     @property
     def timelapse_url(self) -> str:

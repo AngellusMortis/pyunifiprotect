@@ -210,6 +210,14 @@ class SmartDetectObjectType(str, ValuesEnumMixin, enum.Enum):
     SMOKE = "alrmSmoke"
     CMONX = "alrmCmonx"
 
+    @property
+    def audio_type(self) -> Optional[SmartDetectAudioType]:
+        if self == SmartDetectObjectType.SMOKE:
+            return SmartDetectAudioType.SMOKE
+        if self == SmartDetectObjectType.CMONX:
+            return SmartDetectAudioType.CMONX
+        return None
+
 
 @enum.unique
 class SmartDetectAudioType(str, ValuesEnumMixin, enum.Enum):
