@@ -394,6 +394,10 @@ class Bootstrap(ProtectBaseObject):
         model_type = action["modelKey"]
 
         data = _remove_stats_keys(data, ignore_stats)
+        # `last_motion` from cameras update every 100 milliseconds when a motion event is active
+        # this overrides the behavior to only update `last_motion` so it only updates when a new event starts
+        if model_type == "camera" and "lastMotion" in data:
+            del data["lastMotion"]
         # nothing left to process
         if len(data) == 0:
             self._create_stat(packet, [], True)
