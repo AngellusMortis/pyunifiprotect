@@ -4,7 +4,6 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timedelta
 from http.cookies import Morsel
-from ipaddress import IPv4Address, IPv6Address
 import logging
 from pathlib import Path
 from tempfile import gettempdir
