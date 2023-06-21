@@ -540,7 +540,7 @@ class ProtectApiClient(BaseApiClient):
         self.cache_dir = cache_dir or Path(gettempdir()) / "ufp_cache"
 
         if override_connection_host:
-            self._connection_host = ip_from_host(self._host)
+            self._connection_host = str(ip_from_host(self._host))
 
         if debug:
             set_debug()
