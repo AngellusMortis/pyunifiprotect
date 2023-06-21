@@ -503,7 +503,7 @@ class ProtectApiClient(BaseApiClient):
     _ws_subscriptions: List[Callable[[WSSubscriptionMessage], None]]
     _bootstrap: Optional[Bootstrap] = None
     _last_update_dt: Optional[datetime] = None
-    _connection_host: Optional[Union[IPv4Address, IPv6Address, str]] = None
+    _connection_host: Optional[str] = None
 
     cache_dir: Path
     ignore_unadopted: bool
@@ -558,7 +558,7 @@ class ProtectApiClient(BaseApiClient):
         return self._bootstrap
 
     @property
-    def connection_host(self) -> Union[IPv4Address, IPv6Address, str]:
+    def connection_host(self) -> str:
         """Connection host to use for generating RTSP URLs"""
 
         if self._connection_host is None:
@@ -575,7 +575,7 @@ class ProtectApiClient(BaseApiClient):
                 except ValueError:
                     pass
 
-            self._connection_host = self.bootstrap.nvr.hosts[index]
+            self._connection_host = str(self.bootstrap.nvr.hosts[index])
 
         return self._connection_host
 

@@ -225,17 +225,17 @@ def test_connection_host(protect_client: ProtectApiClient):
     # mismatch between client IP and IP that NVR returns
     protect_client._connection_host = None
     protect_client._host = "192.168.10.1"
-    assert protect_client.connection_host == IPv4Address("192.168.1.1")
+    assert protect_client.connection_host == "192.168.1.1"
 
     # same IP from client and NVR (first match)
     protect_client._connection_host = None
     protect_client._host = "192.168.1.1"
-    assert protect_client.connection_host == IPv4Address("192.168.1.1")
+    assert protect_client.connection_host == "192.168.1.1"
 
     # same IP from client and NVR (not first match)
     protect_client._connection_host = None
     protect_client._host = "192.168.3.1"
-    assert protect_client.connection_host == IPv4Address("192.168.3.1")
+    assert protect_client.connection_host == "192.168.3.1"
 
     # same IP from client and NVR (not first match, DNS host)
     protect_client._connection_host = None
