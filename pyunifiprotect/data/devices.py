@@ -272,20 +272,28 @@ class CameraChannel(ProtectBaseObject):
     min_motion_adaptive_bit_rate: Optional[int]  # read only
     fps_values: List[int]  # read only
     idr_interval: int
+    _rtsp_url: Optional[str] = PrivateAttr(None)
+    _rtsps_url: Optional[str] = PrivateAttr(None)
 
     @property
     def rtsp_url(self) -> Optional[str]:
         if not self.is_rtsp_enabled or self.rtsp_alias is None:
             return None
 
-        return f"rtsp://{self.api.connection_host}:{self.api.bootstrap.nvr.ports.rtsp}/{self.rtsp_alias}"
+        if self._rtsp_url is not None:
+            return self._rtsp_url
+        self._rtsp_url = f"rtsp://{self.api.connection_host}:{self.api.bootstrap.nvr.ports.rtsp}/{self.rtsp_alias}"
+        return self._rtsp_url
 
     @property
-    def rtsps_url(self) -> Optional[str]:
+    def rtsps_url(self) -> Optional[str]:        
         if not self.is_rtsp_enabled or self.rtsp_alias is None:
             return None
 
-        return f"rtsps://{self.api.connection_host}:{self.api.bootstrap.nvr.ports.rtsps}/{self.rtsp_alias}?enableSrtp"
+        if self._rtsps_url is not None:
+            return self._rtsps_url
+        self._rtsps_url = f"rtsps://{self.api.connection_host}:{self.api.bootstrap.nvr.ports.rtsps}/{self.rtsp_alias}?enableSrtp"
+        return self._rtsps_url
 
     @property
     def is_package(self) -> bool:
