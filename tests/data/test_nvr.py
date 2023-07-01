@@ -6,7 +6,6 @@ from __future__ import annotations
 from datetime import timedelta
 from ipaddress import IPv4Address, IPv6Address
 
-from pydantic.error_wrappers import ValidationError
 import pytest
 
 from pyunifiprotect.data import (
@@ -17,6 +16,11 @@ from pyunifiprotect.data import (
 )
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import to_ms
+
+try:
+    from pydantic.v1 import ValidationError
+except ImportError:
+    from pydantic import ValidationError  # type: ignore
 
 
 @pytest.mark.parametrize("status", [True, False])

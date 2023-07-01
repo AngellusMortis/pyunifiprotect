@@ -4,7 +4,6 @@
 from datetime import timedelta
 from typing import Optional
 
-from pydantic.error_wrappers import ValidationError
 import pytest
 
 from pyunifiprotect.data import Camera, Light
@@ -12,6 +11,11 @@ from pyunifiprotect.data.types import LightModeEnableType, LightModeType
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import to_ms
 from tests.conftest import TEST_CAMERA_EXISTS, TEST_LIGHT_EXISTS
+
+try:
+    from pydantic.v1 import ValidationError
+except ImportError:
+    from pydantic import ValidationError  # type: ignore
 
 
 @pytest.mark.skipif(not TEST_LIGHT_EXISTS, reason="Missing testdata")

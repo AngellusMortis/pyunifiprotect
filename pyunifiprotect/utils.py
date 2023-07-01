@@ -38,8 +38,6 @@ import zoneinfo
 
 from aiohttp import ClientResponse
 import jwt
-from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_SET, ModelField
-from pydantic.utils import to_camel
 
 from pyunifiprotect.data.types import (
     Color,
@@ -49,6 +47,18 @@ from pyunifiprotect.data.types import (
     VideoMode,
 )
 from pyunifiprotect.exceptions import NvrError
+
+try:
+    from pydantic.v1.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_SET, ModelField
+    from pydantic.v1.utils import to_camel
+except ImportError:
+    from pydantic.fields import (  # type: ignore
+        SHAPE_DICT,
+        SHAPE_LIST,
+        SHAPE_SET,
+        ModelField,
+    )
+    from pydantic.utils import to_camel  # type: ignore
 
 if TYPE_CHECKING:
     from pyunifiprotect.api import ProtectApiClient

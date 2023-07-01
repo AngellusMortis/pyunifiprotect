@@ -163,7 +163,7 @@ def test_camera_smart_events(camera_obj: Camera):
     camera_obj.last_smart_detect_event_ids = {}
     camera_obj.last_smart_detects = {}
     events = [
-        Event(
+        Event(  # type: ignore
             api=camera_obj.api,
             id="test_event_1",
             camera_id=camera_obj.id,
@@ -173,7 +173,7 @@ def test_camera_smart_events(camera_obj: Camera):
             smart_detect_types=[SmartDetectObjectType.PERSON],
             smart_detect_event_ids=[],
         ),
-        Event(
+        Event(  # type: ignore
             api=camera_obj.api,
             id="test_event_2",
             camera_id=camera_obj.id,
@@ -184,7 +184,7 @@ def test_camera_smart_events(camera_obj: Camera):
             smart_detect_types=[SmartDetectObjectType.PACKAGE],
             smart_detect_event_ids=[],
         ),
-        Event(
+        Event(  # type: ignore
             api=camera_obj.api,
             id="test_event_1",
             camera_id=camera_obj.id,
@@ -195,7 +195,7 @@ def test_camera_smart_events(camera_obj: Camera):
             smart_detect_types=[SmartDetectObjectType.PERSON, SmartDetectObjectType.VEHICLE],
             smart_detect_event_ids=[],
         ),
-        Event(
+        Event(  # type: ignore
             api=camera_obj.api,
             id="test_event_3",
             camera_id=camera_obj.id,
@@ -237,7 +237,7 @@ def test_camera_smart_audio_events(camera_obj: Camera):
     camera_obj.last_smart_audio_detect_event_ids = {}
     camera_obj.last_smart_audio_detects = {}
     events = [
-        Event(
+        Event(  # type: ignore
             api=camera_obj.api,
             id="test_event_1",
             camera_id=camera_obj.id,
@@ -247,7 +247,7 @@ def test_camera_smart_audio_events(camera_obj: Camera):
             smart_detect_types=[SmartDetectObjectType.SMOKE],
             smart_detect_event_ids=[],
         ),
-        Event(
+        Event(  # type: ignore
             api=camera_obj.api,
             id="test_event_2",
             camera_id=camera_obj.id,

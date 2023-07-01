@@ -25,7 +25,6 @@ import zoneinfo
 import aiofiles
 from aiofiles import os as aos
 import orjson
-from pydantic.fields import PrivateAttr
 
 from pyunifiprotect.data.base import (
     ProtectBaseObject,
@@ -58,8 +57,17 @@ from pyunifiprotect.data.user import User, UserLocation
 from pyunifiprotect.exceptions import BadRequest, NotAuthorized
 from pyunifiprotect.utils import RELEASE_CACHE, process_datetime
 
+try:
+    from pydantic.v1.fields import PrivateAttr
+except ImportError:
+    from pydantic.fields import PrivateAttr
+
 if TYPE_CHECKING:
-    from pydantic.typing import SetStr
+    try:
+        from pydantic.v1.typing import SetStr
+    except ImportError:
+        from pydantic.typing import SetStr  # type: ignore
+
 
 _LOGGER = logging.getLogger(__name__)
 MAX_SUPPORTED_CAMERAS = 256
@@ -877,11 +885,11 @@ class NVR(ProtectDeviceModel):
         self.doorbell_settings.all_messages = [
             DoorbellMessage(
                 type=DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR,
-                text=DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR.value.replace("_", " "),
+                text=DoorbellMessageType.LEAVE_PACKAGE_AT_DOOR.value.replace("_", " "),  # type: ignore
             ),
             DoorbellMessage(
                 type=DoorbellMessageType.DO_NOT_DISTURB,
-                text=DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " "),
+                text=DoorbellMessageType.DO_NOT_DISTURB.value.replace("_", " "),  # type: ignore
             ),
             *(
                 DoorbellMessage(

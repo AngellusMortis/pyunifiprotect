@@ -21,9 +21,6 @@ from typing import (
 )
 from uuid import UUID
 
-from pydantic import BaseModel
-from pydantic.fields import SHAPE_DICT, SHAPE_LIST, PrivateAttr
-
 from pyunifiprotect.data.types import (
     ModelType,
     PercentFloat,
@@ -47,11 +44,21 @@ from pyunifiprotect.utils import (
     to_snake_case,
 )
 
+try:
+    from pydantic.v1 import BaseModel
+    from pydantic.v1.fields import SHAPE_DICT, SHAPE_LIST, PrivateAttr
+except ImportError:
+    from pydantic import BaseModel  # type: ignore
+    from pydantic.fields import SHAPE_DICT, SHAPE_LIST, PrivateAttr  # type: ignore
+
 if TYPE_CHECKING:
     from asyncio.events import TimerHandle
     from typing import Self  # requires Python 3.11+
 
-    from pydantic.typing import DictStrAny, SetStr
+    try:
+        from pydantic.v1.typing import DictStrAny, SetStr
+    except ImportError:
+        from pydantic.typing import DictStrAny, SetStr  # type: ignore
 
     from pyunifiprotect.api import ProtectApiClient
     from pyunifiprotect.data.devices import Bridge
@@ -124,7 +131,7 @@ class ProtectBaseObject(BaseModel):
         return obj
 
     @classmethod
-    def construct(cls, _fields_set: Optional[Set[str]] = None, **values: Any) -> ProtectBaseObject:
+    def construct(cls, _fields_set: Optional[Set[str]] = None, **values: Any) -> Self:
         api = values.pop("api", None)
         values_set = set(values)
 
@@ -558,7 +565,7 @@ class ProtectModelWithId(ProtectModel):
         self._update_event = update_event or asyncio.Event()
 
     @classmethod
-    def construct(cls, _fields_set: Optional[Set[str]] = None, **values: Any) -> ProtectModelWithId:
+    def construct(cls, _fields_set: Optional[Set[str]] = None, **values: Any) -> Self:
         update_lock = values.pop("update_lock", None)
         update_queue = values.pop("update_queue", None)
         update_event = values.pop("update_event", None)

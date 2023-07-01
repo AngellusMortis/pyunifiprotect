@@ -6,12 +6,16 @@ from enum import Enum
 from typing import Any, Callable, Coroutine, Mapping, Optional, Sequence, TypeVar
 
 import orjson
-from pydantic import ValidationError
 import typer
 
 from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.data import NVR, ProtectAdoptableDeviceModel, ProtectBaseObject
 from pyunifiprotect.exceptions import BadRequest, NvrError, StreamError
+
+try:
+    from pydantic.v1 import ValidationError
+except ImportError:
+    from pydantic import ValidationError  # type: ignore
 
 T = TypeVar("T")
 

@@ -3,13 +3,17 @@
 
 from typing import Optional
 
-from pydantic.error_wrappers import ValidationError
 import pytest
 
 from pyunifiprotect.data import Camera
 from pyunifiprotect.data.devices import Chime
 from pyunifiprotect.exceptions import BadRequest
 from tests.conftest import TEST_CAMERA_EXISTS, TEST_CHIME_EXISTS
+
+try:
+    from pydantic.v1 import ValidationError
+except ImportError:
+    from pydantic import ValidationError  # type: ignore
 
 
 @pytest.mark.skipif(not TEST_CHIME_EXISTS, reason="Missing testdata")

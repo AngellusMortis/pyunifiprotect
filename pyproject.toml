@@ -40,7 +40,7 @@ dependencies = [
     "orjson",
     "packaging",
     "pillow",
-    "pydantic!=1.9.1,<2",
+    "pydantic!=1.9.1",
     "pyjwt",
     "typer[all]>0.6",
 ]
@@ -83,6 +83,7 @@ dev = [
     "types-aiofiles",
     "types-dateparser",
     "types-pillow",
+    "types-pyjwt",
     "types-termcolor",
     "tzdata",
 ]

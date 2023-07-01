@@ -11,7 +11,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union
 from uuid import UUID
 
-from pydantic.fields import PrivateAttr
+try:
+    from pydantic.v1.fields import PrivateAttr
+except ImportError:
+    from pydantic.fields import PrivateAttr
 
 from pyunifiprotect.data.base import (
     EVENT_PING_INTERVAL,
@@ -625,7 +628,7 @@ class CameraZone(ProtectBaseObject):
     @staticmethod
     def create_privacy_zone(zone_id: int) -> CameraZone:
         return CameraZone(
-            id=zone_id, name=PRIVACY_ZONE_NAME, color=Color("#85BCEC"), points=[[0, 0], [1, 0], [1, 1], [0, 1]]
+            id=zone_id, name=PRIVACY_ZONE_NAME, color=Color("#85BCEC"), points=[[0, 0], [1, 0], [1, 1], [0, 1]]  # type: ignore
         )
 
 
@@ -1700,7 +1703,7 @@ class Camera(ProtectMotionDeviceModel):
             reset_at = utc_now() + self.api.bootstrap.nvr.doorbell_settings.default_message_reset_timeout
 
         def callback() -> None:
-            self.lcd_message = LCDMessage(api=self._api, type=text_type, text=text, reset_at=reset_at)
+            self.lcd_message = LCDMessage(api=self._api, type=text_type, text=text, reset_at=reset_at)  # type: ignore
 
         await self.queue_update(callback)
 

@@ -14,9 +14,15 @@ from typing import (
 )
 
 from packaging.version import Version as BaseVersion
-from pydantic import ConstrainedInt
-from pydantic.color import Color as BaseColor
-from pydantic.types import ConstrainedFloat, ConstrainedStr
+
+try:
+    from pydantic.v1 import ConstrainedInt
+    from pydantic.v1.color import Color as BaseColor
+    from pydantic.v1.types import ConstrainedFloat, ConstrainedStr
+except ImportError:
+    from pydantic import ConstrainedInt  # type: ignore
+    from pydantic.color import Color as BaseColor  # type: ignore
+    from pydantic.types import ConstrainedFloat, ConstrainedStr  # type: ignore
 
 KT = TypeVar("KT")
 VT = TypeVar("VT")

@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from typing import Optional
 from unittest.mock import Mock, patch
 
-from pydantic.error_wrappers import ValidationError
 import pytest
 
 from pyunifiprotect.data import (
@@ -22,6 +21,11 @@ from pyunifiprotect.data.websocket import WSAction, WSSubscriptionMessage
 from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.utils import to_js_time
 from tests.conftest import TEST_CAMERA_EXISTS
+
+try:
+    from pydantic.v1 import ValidationError
+except ImportError:
+    from pydantic import ValidationError  # type: ignore
 
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")

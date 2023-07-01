@@ -1,7 +1,5 @@
 # type: ignore
 # pylint: disable=protected-access
-
-from pydantic.error_wrappers import ValidationError
 import pytest
 
 from pyunifiprotect.data import Camera, Light
@@ -9,6 +7,11 @@ from pyunifiprotect.data.devices import Sensor
 from pyunifiprotect.data.types import MountType
 from pyunifiprotect.exceptions import BadRequest
 from tests.conftest import TEST_CAMERA_EXISTS, TEST_SENSOR_EXISTS
+
+try:
+    from pydantic.v1 import ValidationError
+except ImportError:
+    from pydantic import ValidationError  # type: ignore
 
 
 @pytest.mark.skipif(not TEST_SENSOR_EXISTS, reason="Missing testdata")
