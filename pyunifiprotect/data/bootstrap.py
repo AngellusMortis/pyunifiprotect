@@ -375,13 +375,17 @@ class Bootstrap(ProtectBaseObject):
         if ignore_stats:
             _remove_stats_keys(data)
         # nothing left to process
-        if len(data) == 0:
+        if not data:
             self._create_stat(packet, [], True)
             return None
 
         data = self.nvr.unifi_dict_to_dict(data)
         old_nvr = self.nvr.copy()
         self.nvr = self.nvr.update_from_dict(deepcopy(data))
+
+        if not data:
+            self._create_stat(packet, [], True)
+            return None
 
         self._create_stat(packet, list(data), False)
         return WSSubscriptionMessage(
@@ -405,7 +409,7 @@ class Bootstrap(ProtectBaseObject):
         if model_type == "camera" and "lastMotion" in data:
             del data["lastMotion"]
         # nothing left to process
-        if len(data) == 0:
+        if not data:
             self._create_stat(packet, [], True)
             return None
 
