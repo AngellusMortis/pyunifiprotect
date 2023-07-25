@@ -376,7 +376,7 @@ class Bootstrap(ProtectBaseObject):
         self, packet: WSPacket, data: Dict[str, Any], ignore_stats: bool
     ) -> Optional[WSSubscriptionMessage]:
         if ignore_stats:
-            data = _remove_stats_keys(data)
+            _remove_stats_keys(data)
         # nothing left to process
         if len(data) == 0:
             self._create_stat(packet, [], True)
