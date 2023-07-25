@@ -61,10 +61,7 @@ STATS_KEYS = {
     "recordingSchedules",
     "eventStats",
 }
-IGNORE_DEVICE_KEYS = {
-    "nvrMac",
-    "guid"
-}
+IGNORE_DEVICE_KEYS = {"nvrMac", "guid"}
 
 CAMERA_EVENT_ATTR_MAP: Dict[EventType, Tuple[str, str]] = {
     EventType.MOTION: ("last_motion", "last_motion_event_id"),
@@ -75,7 +72,7 @@ CAMERA_EVENT_ATTR_MAP: Dict[EventType, Tuple[str, str]] = {
 }
 
 
-def _remove_stats_keys(data: Dict[str, Any]) -> Dict[str, Any]:
+def _remove_stats_keys(data: Dict[str, Any]) -> None:
     for key in STATS_KEYS.intersection(data):
         del data[key]
 
