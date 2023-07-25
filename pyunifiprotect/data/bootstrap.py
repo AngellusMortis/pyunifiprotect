@@ -380,12 +380,13 @@ class Bootstrap(ProtectBaseObject):
             return None
 
         data = self.nvr.unifi_dict_to_dict(data)
-        old_nvr = self.nvr.copy()
-        self.nvr = self.nvr.update_from_dict(deepcopy(data))
-
+        # nothing left to process
         if not data:
             self._create_stat(packet, [], True)
             return None
+
+        old_nvr = self.nvr.copy()
+        self.nvr = self.nvr.update_from_dict(deepcopy(data))
 
         self._create_stat(packet, list(data), False)
         return WSSubscriptionMessage(
