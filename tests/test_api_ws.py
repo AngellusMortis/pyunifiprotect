@@ -484,3 +484,60 @@ async def test_check_ws_no_ws(protect_client: ProtectApiClient, caplog: pytest.L
     expected_logs = ["Disconnecting websocket...", "Websocket connection not active, failing back to polling"]
     assert expected_logs == [rec.message for rec in caplog.records]
     assert caplog.records[1].levelname == "DEBUG"
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@patch("pyunifiprotect.data.devices.utc_now")
+@pytest.mark.asyncio
+async def test_ws_ignores_nvr_mac_and_guid(
+    mock_now, protect_client_no_debug: ProtectApiClient, now: datetime, camera, packet: WSPacket
+):
+    mock_now.return_value = now
+    protect_client = protect_client_no_debug
+
+    messages: list[WSSubscriptionMessage] = []
+
+    def capture_ws(message: WSSubscriptionMessage) -> None:
+        messages.append(message)
+
+    unsub = protect_client.subscribe_websocket(capture_ws)
+
+    action_frame: WSJSONPacketFrame = packet.action_frame  # type: ignore
+    action_frame.data = {
+        "action": "update",
+        "newUpdateId": "0441ecc6-f0fa-4b19-b071-7987c143138a",
+        "modelKey": "camera",
+        "id": camera["id"],
+    }
+
+    data_frame: WSJSONPacketFrame = packet.data_frame  # type: ignore
+    data_frame.data = {"nvrMac": "any", "guid": "any", "isMotionDetected": True}
+
+    msg = MagicMock()
+    msg.data = packet.pack_frames()
+
+    assert len(messages) == 0
+
+    packet = WSPacket(msg.data)
+    protect_client._process_ws_message(msg)
+
+    assert len(messages) == 1
+
+    action_frame: WSJSONPacketFrame = packet.action_frame  # type: ignore
+    action_frame.data = {
+        "action": "update",
+        "newUpdateId": "0441ecc6-f0fa-4b19-b071-7987c143138b",
+        "modelKey": "camera",
+        "id": camera["id"],
+    }
+
+    data_frame: WSJSONPacketFrame = packet.data_frame  # type: ignore
+    data_frame.data = {"nvrMac": "any", "guid": "any"}
+
+    msg = MagicMock()
+    msg.data = packet.pack_frames()
+
+    protect_client._process_ws_message(msg)
+
+    assert len(messages) == 1
+    unsub()
