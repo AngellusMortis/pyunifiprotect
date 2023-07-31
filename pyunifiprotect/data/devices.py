@@ -668,6 +668,8 @@ class Hotplug(ProtectBaseObject):
     audio: Optional[bool] = None
     video: Optional[bool] = None
     extender: Optional[HotplugExtender] = None
+    # 2.8.35+
+    standalone_adoption: Optional[bool] = None
 
 
 class CameraFeatureFlags(ProtectBaseObject):

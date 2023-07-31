@@ -571,7 +571,8 @@ def compare_objs(obj_type, expected, actual):
     if obj_type == ModelType.CAMERA.value:
         # fields does not always exist (G4 Instant)
         expected.pop("apMac", None)
-        expected.pop("elementInfo")
+        # field no longer exists on newer cameras
+        expected.pop("elementInfo", None)
         del expected["apRssi"]
         del expected["lastPrivacyZonePositionId"]
         del expected["recordingSchedules"]
