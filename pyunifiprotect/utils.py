@@ -161,7 +161,7 @@ def to_ms(duration: Optional[timedelta]) -> Optional[int]:
 
 
 def utc_now() -> datetime:
-    return datetime.utcnow().replace(tzinfo=timezone.utc)
+    return datetime.now(tz=timezone.utc)
 
 
 def from_js_time(num: Union[int, float, str, datetime]) -> datetime:
@@ -555,7 +555,7 @@ def local_datetime(dt: datetime | None = None) -> datetime:
     """Returns datetime in local timezone"""
 
     if dt is None:
-        dt = datetime.utcnow().replace(tzinfo=zoneinfo.ZoneInfo("UTC"))
+        dt = datetime.now(tz=timezone.utc)
 
     local_tz = get_local_timezone()
     if dt.tzinfo is None:

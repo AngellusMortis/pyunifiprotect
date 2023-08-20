@@ -220,7 +220,7 @@ class SampleDataGenerator:
     async def generate_event_data(self) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         data = await self.client.get_events_raw()
 
-        self.constants["time"] = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
+        self.constants["time"] = datetime.now(tz=timezone.utc).isoformat()
         self.constants["event_count"] = len(data)
 
         motion_event: Optional[Dict[str, Any]] = None
