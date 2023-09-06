@@ -92,7 +92,7 @@ ghp-import==2.1.0
     # via mkdocs
 gitdb==4.0.10
     # via gitpython
-gitpython==3.1.32
+gitpython==3.1.34
     # via mkdocs-git-revision-date-localized-plugin
 greenlet==2.0.2
     # via sqlalchemy
