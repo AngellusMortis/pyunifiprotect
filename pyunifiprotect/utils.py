@@ -39,9 +39,10 @@ import zoneinfo
 from aiohttp import ClientResponse
 import jwt
 
-from pyunifiprotect.data import Percent, ProtectBaseObject, ProtectModel
+from pyunifiprotect.data import ProtectBaseObject, ProtectModel
 from pyunifiprotect.data.types import (
     Color,
+    Percent,
     SmartDetectAudioType,
     SmartDetectObjectType,
     Version,
