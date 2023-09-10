@@ -43,6 +43,7 @@ from pyunifiprotect.data.types import (
 )
 from pyunifiprotect.exceptions import NvrError
 
+
 if TYPE_CHECKING:
     from pyunifiprotect.api import ProtectApiClient
     from pyunifiprotect.data import CoordType
@@ -166,6 +167,7 @@ def to_snake_case(name: str) -> str:
     return name.lower()
 
 
+
 def serialize_coord(coord: CoordType) -> Union[int, float]:
     """Serializes UFP zone coordinate"""
     if not isinstance(coord, Percent):
@@ -182,6 +184,7 @@ def serialize_point(point: Tuple[CoordType, CoordType]) -> List[Union[int, float
         serialize_coord(point[0]),
         serialize_coord(point[1]),
     ]
+
 
 
 def convert_smart_types(items: Iterable[str]) -> List[SmartDetectObjectType]:
