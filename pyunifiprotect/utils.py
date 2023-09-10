@@ -39,6 +39,7 @@ import zoneinfo
 from aiohttp import ClientResponse
 import jwt
 
+from pyunifiprotect.data import Percent, ProtectBaseObject, ProtectModel
 from pyunifiprotect.data.types import (
     Color,
     SmartDetectAudioType,
@@ -47,9 +48,7 @@ from pyunifiprotect.data.types import (
     VideoMode,
 )
 from pyunifiprotect.exceptions import NvrError
-from pyunifiprotect.data import (  
-    ProtectBaseObject,ProtectModel,Percent
-)
+
 try:
     from pydantic.v1.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_SET, ModelField
     from pydantic.v1.utils import to_camel
@@ -215,7 +214,6 @@ def to_camel_case(name: str) -> str:
 
 def convert_unifi_data(value: Any, field: ModelField) -> Any:
     """Converts value from UFP data into pydantic field class"""
-
 
     shape = field.shape
     type_ = field.type_
