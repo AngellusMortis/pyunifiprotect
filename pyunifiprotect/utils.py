@@ -43,7 +43,6 @@ from pyunifiprotect.data.types import (
 )
 from pyunifiprotect.exceptions import NvrError
 
-
 if TYPE_CHECKING:
     from pyunifiprotect.api import ProtectApiClient
     from pyunifiprotect.data import CoordType

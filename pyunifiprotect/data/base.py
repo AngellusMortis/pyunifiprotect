@@ -1057,29 +1057,29 @@ class ProtectMotionDeviceModel(ProtectAdoptableDeviceModel):
 def convert_unifi_data(value: Any, field: ModelField) -> Any:
     """Converts value from UFP data into pydantic field class"""
 
-    shape = field.shape
     type_ = field.type_
 
     if type_ == Any:
         return value
 
+    shape = field.shape
     if shape == SHAPE_LIST and isinstance(value, list):
-        value = [convert_unifi_data(v, field) for v in value]
-    elif shape == SHAPE_SET and isinstance(value, list):
-        value = {convert_unifi_data(v, field) for v in value}
-    elif shape == SHAPE_DICT and isinstance(value, dict):
-        value = {k: convert_unifi_data(v, field) for k, v in value.items()}
-    elif type_ in IP_TYPES and value is not None:
+        return [convert_unifi_data(v, field) for v in value]
+    if shape == SHAPE_SET and isinstance(value, list):
+        return {convert_unifi_data(v, field) for v in value}
+    if shape == SHAPE_DICT and isinstance(value, dict):
+        return {k: convert_unifi_data(v, field) for k, v in value.items()}
+    if type_ in IP_TYPES and value is not None:
         try:
-            value = ip_address(value)
+            return ip_address(value)
         except ValueError:
-            pass
-    elif value is None or not isclass(type_) or issubclass(type_, ProtectBaseObject) or isinstance(value, type_):
+            return value
+    if value is None or not isclass(type_) or issubclass(type_, ProtectBaseObject) or isinstance(value, type_):
         return value
-    elif type_ in _CREATE_TYPES or issubclass(type_, Enum):
-        value = type_(value)
-    elif type_ == datetime:
-        value = from_js_time(value)
+    if type_ in _CREATE_TYPES or issubclass(type_, Enum):
+        return type_(value)
+    if type_ == datetime:
+        return from_js_time(value)
 
     return value
 
@@ -1088,20 +1088,21 @@ def serialize_unifi_obj(value: Any) -> Any:
     """Serializes UFP data"""
     if isinstance(value, ProtectModel):
         value = value.unifi_dict()
+
     if isinstance(value, dict):
-        value = serialize_dict(value)
-    elif isinstance(value, Iterable) and not isinstance(value, str):
-        value = serialize_list(value)
-    elif isinstance(value, Enum):
-        value = value.value
-    elif isinstance(value, (IPv4Address, IPv6Address, UUID, Path, tzinfo, Version)):
-        value = str(value)
-    elif isinstance(value, datetime):
-        value = to_js_time(value)
-    elif isinstance(value, timedelta):
-        value = to_ms(value)
-    elif isinstance(value, Color):
-        value = value.as_hex().upper()
+        return serialize_dict(value)
+    if isinstance(value, Iterable) and not isinstance(value, str):
+        return serialize_list(value)
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, (IPv4Address, IPv6Address, UUID, Path, tzinfo, Version)):
+        return str(value)
+    if isinstance(value, datetime):
+        return to_js_time(value)
+    if isinstance(value, timedelta):
+        return to_ms(value)
+    if isinstance(value, Color):
+        return value.as_hex().upper()
 
     return value
 
