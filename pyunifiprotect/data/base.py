@@ -94,13 +94,13 @@ RECENT_EVENT_MAX = timedelta(seconds=30)
 EVENT_PING_INTERVAL = timedelta(seconds=3)
 _LOGGER = logging.getLogger(__name__)
 
-SNAKE_CASE_KEYS = [
+SNAKE_CASE_KEYS = {
     "life_span",
     "bad_sector",
     "total_bytes",
     "used_bytes",
     "space_type",
-]
+}
 _CREATE_TYPES = {IPv6Address, IPv4Address, UUID, Color, Decimal, Path, Version}
 
 IP_TYPES = {
