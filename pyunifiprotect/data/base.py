@@ -26,7 +26,6 @@ from typing import (
 )
 from uuid import UUID
 
-from pyunifiprotect.data import ProtectBaseObject, ProtectModel
 from pyunifiprotect.data.types import (
     Color,
     ModelType,
