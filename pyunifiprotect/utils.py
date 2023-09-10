@@ -47,7 +47,9 @@ from pyunifiprotect.data.types import (
     VideoMode,
 )
 from pyunifiprotect.exceptions import NvrError
-
+from pyunifiprotect.data import (  
+    ProtectBaseObject,ProtectModel,Percent
+)
 try:
     from pydantic.v1.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_SET, ModelField
     from pydantic.v1.utils import to_camel
@@ -213,9 +215,7 @@ def to_camel_case(name: str) -> str:
 
 def convert_unifi_data(value: Any, field: ModelField) -> Any:
     """Converts value from UFP data into pydantic field class"""
-    from pyunifiprotect.data import (  # pylint: disable=import-outside-toplevel
-        ProtectBaseObject,
-    )
+
 
     shape = field.shape
     type_ = field.type_
@@ -246,10 +246,6 @@ def convert_unifi_data(value: Any, field: ModelField) -> Any:
 
 def serialize_unifi_obj(value: Any) -> Any:
     """Serializes UFP data"""
-    from pyunifiprotect.data import (  # pylint: disable=import-outside-toplevel
-        ProtectModel,
-    )
-
     if isinstance(value, ProtectModel):
         value = value.unifi_dict()
     if isinstance(value, dict):
@@ -283,8 +279,6 @@ def serialize_dict(data: Dict[str, Any]) -> Dict[str, Any]:
 
 def serialize_coord(coord: CoordType) -> Union[int, float]:
     """Serializes UFP zone coordinate"""
-    from pyunifiprotect.data import Percent  # pylint: disable=import-outside-toplevel
-
     if not isinstance(coord, Percent):
         return coord
 
