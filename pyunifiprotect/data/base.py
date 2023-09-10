@@ -21,6 +21,7 @@ from typing import (
 )
 from uuid import UUID
 
+from pyunifiprotect.converters import convert_unifi_data, serialize_unifi_obj
 from pyunifiprotect.data.types import (
     ModelType,
     PercentFloat,
@@ -36,11 +37,9 @@ from pyunifiprotect.data.websocket import (
 from pyunifiprotect.exceptions import BadRequest, ClientError, NotAuthorized
 from pyunifiprotect.utils import (
     asyncio_timeout,
-    convert_unifi_data,
     dict_diff,
     is_debug,
     process_datetime,
-    serialize_unifi_obj,
     to_snake_case,
 )
 
