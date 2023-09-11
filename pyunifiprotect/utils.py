@@ -210,6 +210,7 @@ def to_camel_case(name: str) -> str:
         return name[0].lower() + name[1:]
     return name
 
+
 def convert_unifi_data(value: Any, field: ModelField) -> Any:
     """Converts value from UFP data into pydantic field class"""
 
@@ -238,7 +239,6 @@ def convert_unifi_data(value: Any, field: ModelField) -> Any:
             return from_js_time(value)
 
     return value
-
 
 
 def serialize_unifi_obj(value: Any) -> Any:
@@ -555,4 +555,3 @@ def local_datetime(dt: datetime | None = None) -> datetime:
     if dt.tzinfo is None:
         return dt.replace(tzinfo=local_tz)
     return dt.astimezone(local_tz)
-
