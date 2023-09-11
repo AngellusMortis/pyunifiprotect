@@ -1069,12 +1069,13 @@ def convert_unifi_data(value: Any, field: ModelField) -> Any:
         return {convert_unifi_data(v, field) for v in value}
     if shape == SHAPE_DICT and isinstance(value, dict):
         return {k: convert_unifi_data(v, field) for k, v in value.items()}
-    if type_ in IP_TYPES and value is not None:
-        try:
-            return ip_address(value)
-        except ValueError:
-            return value
+    
     if value is not None:
+        if type_ in IP_TYPES:
+            try:
+                return ip_address(value)
+            except ValueError:
+                return value
         if type_ in _CREATE_TYPES or (isclass(type_) and issubclass(type_, Enum)):
             return type_(value)
         if type_ == datetime:
