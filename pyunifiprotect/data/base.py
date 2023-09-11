@@ -1075,7 +1075,7 @@ def convert_unifi_data(value: Any, field: ModelField) -> Any:
         except ValueError:
             return value
     if value is not None:
-        if type_ in _CREATE_TYPES or issubclass(type_, Enum):
+        if type_ in _CREATE_TYPES or (isclass(type_) and issubclass(type_, Enum)):
             return type_(value)
         if type_ == datetime:
             return from_js_time(value)
