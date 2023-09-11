@@ -1074,12 +1074,11 @@ def convert_unifi_data(value: Any, field: ModelField) -> Any:
             return ip_address(value)
         except ValueError:
             return value
-    if value is None or not isclass(type_) or issubclass(type_, ProtectBaseObject) or isinstance(value, type_):
-        return value
-    if type_ in _CREATE_TYPES or issubclass(type_, Enum):
-        return type_(value)
-    if type_ == datetime:
-        return from_js_time(value)
+    if value is not None:
+        if type_ in _CREATE_TYPES or issubclass(type_, Enum):
+            return type_(value)
+        if type_ == datetime:
+            return from_js_time(value)
 
     return value
 
