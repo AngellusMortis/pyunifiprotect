@@ -1069,7 +1069,7 @@ def convert_unifi_data(value: Any, field: ModelField) -> Any:
         return {convert_unifi_data(v, field) for v in value}
     if shape == SHAPE_DICT and isinstance(value, dict):
         return {k: convert_unifi_data(v, field) for k, v in value.items()}
-    
+
     if value is not None:
         if type_ in IP_TYPES:
             try:
