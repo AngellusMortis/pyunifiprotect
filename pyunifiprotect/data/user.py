@@ -133,6 +133,7 @@ class User(ProtectModelWithId):
     # settings
     # alertRules
     # notificationsV2
+    # notifications
 
     _groups: Optional[List[Group]] = PrivateAttr(None)
     _perm_cache: Dict[str, bool] = PrivateAttr({})

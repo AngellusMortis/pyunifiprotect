@@ -116,10 +116,12 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
 @enum.unique
 class EventType(str, ValuesEnumMixin, enum.Enum):
     DISCONNECT = "disconnect"
+    FACTORY_RESET = "factoryReset"
     PROVISION = "provision"
     UPDATE = "update"
     CAMERA_POWER_CYCLE = "cameraPowerCycling"
     RING = "ring"
+    DOOR_ACCESS = "doorAccess"
     RESOLUTION_LOWERED = "resolutionLowered"
     POOR_CONNECTION = "poorConnection"
     STREAM_RECOVERY = "streamRecovery"
@@ -135,21 +137,25 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     CONSOLIDATED_POOR_CONNECTION = "consolidatedPoorConnection"
     #
     INSTALLED_DISK = "installed"
+    CORRUPTED_DB_RECOVERED = "corruptedDbRecovered"
     OFFLINE = "offline"
     OFF = "off"
     REBOOT = "reboot"
     FIRMWARE_UPDATE = "fwUpdate"
     APP_UPDATE = "applicationUpdate"
+    APPLICATION_UPDATABLE = "applicationUpdatable"
     ACCESS = "access"
     DRIVE_FAILED = "driveFailed"
     CAMERA_UTILIZATION_LIMIT_REACHED = "cameraUtilizationLimitReached"
     CAMERA_UTILIZATION_LIMIT_EXCEEDED = "cameraUtilizationLimitExceeded"
+    GLOBAL_RECORDING_MODE_CHANGED = "globalRecordingModeChanged"
     #
     UNADOPTED_DEVICE_DISCOVERED = "unadoptedDeviceDiscovered"
     DEVICE_ADOPTED = "deviceAdopted"
     DEVICE_UNADOPTED = "deviceUnadopted"
     UVF_DISCOVERED = "ufvDiscovered"
     DEVICE_PASSWORD_UPDATE = "devicesPasswordUpdated"
+    DEVICE_UPDATABLE = "deviceUpdatable"
     #
     USER_LEFT = "userLeft"
     USER_ARRIVED = "userArrived"
@@ -259,6 +265,8 @@ class VideoMode(str, ValuesEnumMixin, enum.Enum):
     DEFAULT = "default"
     HIGH_FPS = "highFps"
     HOMEKIT = "homekit"
+    SPORT = "sport"
+    SLOW_SHUTTER = "slowShutter"
     # should only be for unadopted devices
     UNKNOWN = "unknown"
 
@@ -267,6 +275,7 @@ class VideoMode(str, ValuesEnumMixin, enum.Enum):
 class RecordingMode(str, ValuesEnumMixin, enum.Enum):
     ALWAYS = "always"
     NEVER = "never"
+    SCHEDULE = "schedule"
     DETECTIONS = "detections"
 
 

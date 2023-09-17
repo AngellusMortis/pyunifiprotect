@@ -537,6 +537,13 @@ NEW_FIELDS = {
     # 2.8.22+
     "guid",
     "userConfiguredAp",
+    # 2.9.20+
+    "isRestoring",
+    "hasRecordings",
+    "hardDriveState",
+    "isNetworkInstalled",
+    "isProtectUpdatable",
+    "isUcoreUpdatable",
 }
 
 NEW_CAMERA_FEATURE_FLAGS = {
@@ -550,6 +557,11 @@ NEW_CAMERA_FEATURE_FLAGS = {
     "isDoorbell",
     # 2.8.22+
     "lensModel",
+    # 2.9.20+
+    "hasColorLcdScreen",
+    "hasLineCrossing",
+    "hasLineCrossingCounting",
+    "hasLiveviewTracking",
 }
 
 NEW_NVR_FEATURE_FLAGS = {
@@ -575,7 +587,7 @@ def compare_objs(obj_type, expected, actual):
         expected.pop("elementInfo", None)
         del expected["apRssi"]
         del expected["lastPrivacyZonePositionId"]
-        del expected["recordingSchedules"]
+        expected.pop("recordingSchedules", None)
         del expected["smartDetectLines"]
         expected.pop("streamSharing", None)
         del expected["featureFlags"]["focus"]
@@ -583,6 +595,8 @@ def compare_objs(obj_type, expected, actual):
         del expected["featureFlags"]["tilt"]
         del expected["featureFlags"]["zoom"]
         expected.pop("stopStreamLevel", None)
+        expected.pop("uplinkDevice", None)
+        expected.pop("recordingSchedulesV2", None)
 
         # do not compare detect zones because float math sucks
         assert len(expected["motionZones"]) == len(actual["motionZones"])
@@ -611,13 +625,17 @@ def compare_objs(obj_type, expected, actual):
             and "autoTrackingObjectTypes" not in expected["smartDetectSettings"]
         ):
             del actual["smartDetectSettings"]["autoTrackingObjectTypes"]
+        if "inScheduleMode" in actual["recordingSettings"] and "inScheduleMode" not in expected["recordingSettings"]:
+            del actual["recordingSettings"]["inScheduleMode"]
+        if "outScheduleMode" in actual["recordingSettings"] and "outScheduleMode" not in expected["recordingSettings"]:
+            del actual["recordingSettings"]["outScheduleMode"]
 
         for flag in NEW_CAMERA_FEATURE_FLAGS:
             if flag not in expected["featureFlags"]:
                 del actual["featureFlags"][flag]
 
         # ignore changes to motion for live tests
-        assert type(actual["isMotionDetected"]) == bool
+        assert isinstance(actual["isMotionDetected"], bool)
         expected["isMotionDetected"] = actual["isMotionDetected"]
 
     elif obj_type == ModelType.USER.value:
@@ -625,6 +643,7 @@ def compare_objs(obj_type, expected, actual):
             expected.pop("settings", None)
         del expected["alertRules"]
         del expected["notificationsV2"]
+        expected.pop("notifications", None)
         # lastLoginIp/lastLoginTime is not always present
         if "lastLoginIp" not in expected:
             actual.pop("lastLoginIp", None)
@@ -656,6 +675,8 @@ def compare_objs(obj_type, expected, actual):
         expected.pop("dbRecoveryOptions", None)
         expected.pop("globalCameraSettings", None)
         expected.pop("portStatus", None)
+        expected.pop("cameraCapacity", None)
+        expected.pop("deviceFirmwareSettings", None)
 
         expected["ports"]["piongw"] = expected["ports"].get("piongw")
         expected["ports"]["stacking"] = expected["ports"].get("stacking")
@@ -663,6 +684,13 @@ def compare_objs(obj_type, expected, actual):
 
         if "homekitPaired" in actual["featureFlags"] and "homekitPaired" not in expected["featureFlags"]:
             del actual["featureFlags"]["homekitPaired"]
+        if "detectionLabels" in actual["featureFlags"] and "detectionLabels" not in expected["featureFlags"]:
+            del actual["featureFlags"]["detectionLabels"]
+        if (
+            "hasTwoWayAudioMediaStreams" in actual["featureFlags"]
+            and "hasTwoWayAudioMediaStreams" not in expected["featureFlags"]
+        ):
+            del actual["featureFlags"]["hasTwoWayAudioMediaStreams"]
 
         if "capability" not in expected["systemInfo"]["storage"]:
             actual["systemInfo"]["storage"].pop("capability", None)

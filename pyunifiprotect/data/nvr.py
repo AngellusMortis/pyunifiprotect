@@ -740,6 +740,9 @@ class NVRFeatureFlags(ProtectBaseObject):
     notifications_v2: bool
     homekit_paired: Optional[bool] = None
     ulp_role_management: Optional[bool] = None
+    # 2.9.20+
+    detection_labels: Optional[bool] = None
+    has_two_way_audio_media_streams: Optional[bool] = None
 
 
 class NVR(ProtectDeviceModel):
@@ -804,6 +807,11 @@ class NVR(ProtectDeviceModel):
     public_ip: Optional[IPv4Address] = None
     ulp_version: Optional[str] = None
     wan_ip: Optional[Union[IPv4Address, IPv6Address]] = None
+    # requires 2.9.20+
+    hard_drive_state: Optional[str] = None
+    is_network_installed: Optional[bool] = None
+    is_protect_updatable: Optional[bool] = None
+    is_ucore_updatable: Optional[bool] = None
 
     # TODO:
     # errorCode   read only
@@ -812,6 +820,8 @@ class NVR(ProtectDeviceModel):
     # dbRecoveryOptions
     # globalCameraSettings
     # portStatus
+    # cameraCapacity
+    # deviceFirmwareSettings
 
     @classmethod
     @cache

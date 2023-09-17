@@ -9,7 +9,6 @@ from ipaddress import IPv4Address
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union
-from uuid import UUID
 
 try:
     from pydantic.v1.fields import PrivateAttr
@@ -384,6 +383,9 @@ class RecordingSettings(ProtectBaseObject):
     enable_motion_detection: Optional[bool] = None
     enable_pir_timelapse: bool
     use_new_motion_algorithm: bool
+    # requires 2.9.20+
+    in_schedule_mode: Optional[str] = None
+    out_schedule_mode: Optional[str] = None
 
     @classmethod
     def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -717,6 +719,11 @@ class CameraFeatureFlags(ProtectBaseObject):
     is_doorbell: bool
     # 2.8.22+
     lens_model: Optional[str] = None
+    # 2.9.20+
+    has_color_lcd_screen: Optional[bool] = None
+    has_line_crossing: Optional[bool] = None
+    has_line_crossing_counting: Optional[bool] = None
+    has_liveview_tracking: Optional[bool] = None
 
     # TODO:
     # focus
@@ -781,7 +788,6 @@ class Camera(ProtectMotionDeviceModel):
     chime_duration: timedelta
     last_ring: Optional[datetime]
     is_live_heatmap_enabled: bool
-    anonymous_device_id: Optional[UUID]
     event_stats: CameraEventStats
     video_reconfiguration_in_progress: bool
     channels: List[CameraChannel]
@@ -823,6 +829,8 @@ class Camera(ProtectMotionDeviceModel):
     use_global: Optional[bool] = None
     # requires 2.8.22+
     user_configured_ap: Optional[bool] = None
+    # requires 2.9.20+
+    has_recordings: Optional[bool] = None
 
     # TODO: used for adopting
     # apMac read only
@@ -831,10 +839,11 @@ class Camera(ProtectMotionDeviceModel):
 
     # TODO:
     # lastPrivacyZonePositionId
-    # recordingSchedule
     # smartDetectLines
     # streamSharing read only
     # stopStreamLevel
+    # uplinkDevice
+    # recordingSchedulesV2
 
     # not directly from UniFi
     last_ring_event_id: Optional[str] = None
@@ -883,7 +892,6 @@ class Camera(ProtectMotionDeviceModel):
             "isProbingForWifi",
             "lastRing",
             "isLiveHeatmapEnabled",
-            "anonymousDeviceId",
             "eventStats",
             "videoReconfigurationInProgress",
             "lenses",
@@ -1811,7 +1819,6 @@ class Viewer(ProtectAdoptableDeviceModel):
     stream_limit: int
     software_version: str
     liveview_id: str
-    anonymous_device_id: Optional[UUID] = None
 
     @classmethod
     @cache
@@ -2276,6 +2283,13 @@ class Doorlock(ProtectAdoptableDeviceModel):
 
 class ChimeFeatureFlags(ProtectBaseObject):
     has_wifi: bool
+    # 2.9.20+
+    has_https_client_ota: Optional[bool] = None
+
+    @classmethod
+    @cache
+    def _get_unifi_remaps(cls) -> Dict[str, str]:
+        return {**super()._get_unifi_remaps(), "hasHttpsClientOTA": "hasHttpsClientOta"}
 
 
 class Chime(ProtectAdoptableDeviceModel):

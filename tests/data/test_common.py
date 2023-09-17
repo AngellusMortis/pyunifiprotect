@@ -288,7 +288,7 @@ def test_bootstrap(bootstrap: dict[str, Any]):
         del bootstrap["deviceGroups"]
     del bootstrap["legacyUFVs"]
     del bootstrap["displays"]
-    del bootstrap["schedules"]
+    bootstrap.pop("schedules", None)
     if "deviceGroups" in bootstrap:
         del bootstrap["deviceGroups"]
 

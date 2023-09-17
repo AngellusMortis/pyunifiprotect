@@ -852,6 +852,10 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
     nvr_mac: Optional[str] = None
     # requires 2.8.22+
     guid: Optional[UUID] = None
+    # requires 2.9.20+
+    is_restoring: Optional[bool] = None
+    last_disconnect: Optional[datetime] = None
+    anonymous_device_id: Optional[UUID] = None
 
     wired_connection_state: Optional[WiredConnectionState] = None
     wifi_connection_state: Optional[WifiConnectionState] = None
@@ -878,6 +882,7 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
             "isAttemptingToConnect",
             "bluetoothConnectionState",
             "isDownloadingFirmware",
+            "anonymousDeviceId",
         }
 
     @classmethod
@@ -902,6 +907,13 @@ class ProtectAdoptableDeviceModel(ProtectDeviceModel):
             del data["bridge"]
 
         return data
+
+    @classmethod
+    def unifi_dict_to_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "lastDisconnect" in data and data["lastDisconnect"] is not None:
+            data["lastDisconnect"] = process_datetime(data, "lastDisconnect")
+
+        return super().unifi_dict_to_dict(data)
 
     @property
     def display_name(self) -> str:

@@ -135,7 +135,6 @@ class SampleDataGenerator:
             "sensor": len(bootstrap["sensors"]),
             "doorlock": len(bootstrap["doorlocks"]),
             "chime": len(bootstrap["chimes"]),
-            "schedule": len(bootstrap["schedules"]),
         }
 
         motion_event, smart_detection = await self.generate_event_data()
