@@ -480,7 +480,7 @@ class MemoryInfo(ProtectBaseObject):
 class StorageDevice(ProtectBaseObject):
     model: str
     size: int
-    healthy: Union[str, bool]
+    healthy: Union[bool, str]
 
 
 class StorageInfo(ProtectBaseObject):
