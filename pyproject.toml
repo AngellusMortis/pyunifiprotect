@@ -211,6 +211,10 @@ ignore_missing_imports = true
 module = "av.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "async_timeout.*"
+ignore_missing_imports = true
+
 ## test metadata
 [tool.coverage.run]
 branch = true
