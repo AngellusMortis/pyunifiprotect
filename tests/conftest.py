@@ -563,6 +563,8 @@ NEW_FIELDS = {
     "isNetworkInstalled",
     "isProtectUpdatable",
     "isUcoreUpdatable",
+    # 2.10.10+
+    "isPtz",
 }
 
 NEW_CAMERA_FEATURE_FLAGS = {
@@ -581,6 +583,9 @@ NEW_CAMERA_FEATURE_FLAGS = {
     "hasLineCrossing",
     "hasLineCrossingCounting",
     "hasLiveviewTracking",
+    # 2.10.10+
+    "hasFlash",
+    "isPtz",
 }
 
 NEW_NVR_FEATURE_FLAGS = {
@@ -742,27 +747,30 @@ def compare_objs(obj_type, expected, actual):  # noqa: PLR0915
                 expected["systemInfo"]["cpu"][key] = actual["systemInfo"]["cpu"][key]
 
         if expected["systemInfo"].get("ustorage") is not None:
-            for index, disk in enumerate(expected["systemInfo"]["ustorage"]["disks"]):
-                actual_disk = actual["systemInfo"]["ustorage"]["disks"][index]
+            actual_ustor = actual["systemInfo"]["ustorage"]
+            expected_ustor = expected["systemInfo"]["ustorage"]
+
+            expected_ustor.pop("sdcards", None)
+
+            for index, disk in enumerate(expected_ustor["disks"]):
+                actual_disk = actual_ustor["disks"][index]
                 estimate = disk.get("estimate")
                 actual_estimate = actual_disk.get("estimate")
                 if estimate is not None and actual_estimate is not None:  # noqa: SIM102
                     if math.isclose(estimate, actual_estimate, rel_tol=0.01):
-                        actual["systemInfo"]["ustorage"]["disks"][index][
-                            "estimate"
-                        ] = estimate
+                        actual_ustor["disks"][index]["estimate"] = estimate
 
-            for index, device in enumerate(expected["systemInfo"]["ustorage"]["space"]):
-                actual_device = actual["systemInfo"]["ustorage"]["space"][index]
+            for index, device in enumerate(expected_ustor["space"]):
+                actual_device = actual_ustor["space"][index]
                 estimate = device.get("estimate")
                 actual_estimate = actual_device.get("estimate")
                 if estimate is not None and actual_estimate is not None:  # noqa: SIM102
                     if math.isclose(estimate, actual_estimate, rel_tol=0.01):
-                        actual["systemInfo"]["ustorage"]["space"][index][
-                            "estimate"
-                        ] = estimate
+                        actual_ustor["space"][index]["estimate"] = estimate
                 if "space_type" not in device:
                     del actual_device["space_type"]
+                if "size" in device:
+                    actual_device["size"] = actual_device.pop("size", None)
 
         for flag in NEW_NVR_FEATURE_FLAGS:
             if flag not in expected["featureFlags"]:

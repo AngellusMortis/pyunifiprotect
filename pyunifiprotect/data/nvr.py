@@ -480,7 +480,7 @@ class MemoryInfo(ProtectBaseObject):
 class StorageDevice(ProtectBaseObject):
     model: str
     size: int
-    healthy: bool
+    healthy: bool | str
 
 
 class StorageInfo(ProtectBaseObject):
@@ -540,6 +540,8 @@ class UOSDisk(ProtectBaseObject):
     threshold: Optional[int] = None
     progress: Optional[PercentFloat] = None
     estimate: Optional[timedelta] = None
+    # 2.10.10+
+    size: Optional[int] = None
 
     @classmethod
     @cache
@@ -656,6 +658,9 @@ class UOSSpace(ProtectBaseObject):
 class UOSStorage(ProtectBaseObject):
     disks: list[UOSDisk]
     space: list[UOSSpace]
+
+    # TODO:
+    # sdcards
 
 
 class SystemInfo(ProtectBaseObject):

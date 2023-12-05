@@ -770,6 +770,9 @@ class CameraFeatureFlags(ProtectBaseObject):
     has_line_crossing: Optional[bool] = None
     has_line_crossing_counting: Optional[bool] = None
     has_liveview_tracking: Optional[bool] = None
+    # 2.10.10+
+    has_flash: Optional[bool] = None
+    is_ptz: Optional[bool] = None
 
     # TODO:
     # focus
@@ -879,6 +882,8 @@ class Camera(ProtectMotionDeviceModel):
     user_configured_ap: Optional[bool] = None
     # requires 2.9.20+
     has_recordings: Optional[bool] = None
+    # requires 2.10.10+
+    is_ptz: Optional[bool] = None
 
     # TODO: used for adopting
     # apMac read only

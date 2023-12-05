@@ -12,7 +12,6 @@ from rich.progress import track
 import typer
 
 from pyunifiprotect.api import ProtectApiClient
-from pyunifiprotect.cli.backup import app as backup_app
 from pyunifiprotect.cli.base import CliContext, OutputFormatEnum
 from pyunifiprotect.cli.cameras import app as camera_app
 from pyunifiprotect.cli.chimes import app as chime_app
@@ -27,6 +26,11 @@ from pyunifiprotect.data import Version, WSPacket
 from pyunifiprotect.test_util import SampleDataGenerator
 from pyunifiprotect.utils import RELEASE_CACHE, get_local_timezone
 from pyunifiprotect.utils import profile_ws as profile_ws_job
+
+try:
+    from pyunifiprotect.cli.backup import app as backup_app
+except ImportError:
+    backup_app = None  # type: ignore[assignment]
 
 _LOGGER = logging.getLogger("pyunifiprotect")
 
@@ -123,7 +127,9 @@ app.add_typer(doorlock_app, name="doorlocks")
 app.add_typer(light_app, name="lights")
 app.add_typer(sensor_app, name="sensors")
 app.add_typer(viewer_app, name="viewers")
-app.add_typer(backup_app, name="backup")
+
+if backup_app is not None:
+    app.add_typer(backup_app, name="backup")
 
 
 @app.callback()

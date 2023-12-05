@@ -147,6 +147,9 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     UVF_DISCOVERED = "ufvDiscovered"
     DEVICE_PASSWORD_UPDATE = "devicesPasswordUpdated"
     DEVICE_UPDATABLE = "deviceUpdatable"
+    MULTIPLE_DEVICE_UPDATABLE = "multipleDeviceUpdatable"
+    DEVICE_DISCONNECTED = "deviceDisconnected"
+    NETWORK_DEVICE_OFFLINE = "networkDeviceOffline"
     #
     USER_LEFT = "userLeft"
     USER_ARRIVED = "userArrived"
