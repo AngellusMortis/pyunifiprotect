@@ -23,7 +23,7 @@ from pyunifiprotect import ProtectApiClient
 from pyunifiprotect.data import Camera, ModelType
 from pyunifiprotect.data.nvr import Event
 from pyunifiprotect.data.types import EventType
-from pyunifiprotect.utils import set_debug, set_no_debug
+from pyunifiprotect.utils import _BAD_UUID, set_debug, set_no_debug
 from tests.sample_data.constants import CONSTANTS
 
 UFP_SAMPLE_DIR = os.environ.get("UFP_SAMPLE_DIR")
@@ -808,6 +808,14 @@ def compare_objs(obj_type, expected, actual):  # noqa: PLR0915
     if "hardwareRevision" in expected and expected["hardwareRevision"] is not None:
         expected["hardwareRevision"] = str(expected["hardwareRevision"])
         actual["hardwareRevision"] = str(actual["hardwareRevision"])
+
+    # edge case with broken UUID from Protect
+    if (
+        "guid" in expected
+        and expected["guid"] == _BAD_UUID
+        and actual["guid"] == "00000000-0000-0000-0000-000000000000"
+    ):
+        actual["guid"] = expected["guid"]
 
     for key in NEW_FIELDS.intersection(actual.keys()):
         if key not in expected:

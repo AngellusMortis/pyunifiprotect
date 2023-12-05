@@ -574,5 +574,6 @@
     "canManage": false,
     "isManaged": true,
     "marketName": "G4 Doorbell Pro",
-    "modelKey": "camera"
+    "modelKey": "camera",
+    "guid": "00000000-0000-00 0- 000-000000000000"
 }
