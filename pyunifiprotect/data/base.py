@@ -326,7 +326,7 @@ class ProtectBaseObject(BaseModel):
         """
 
         # get the API client instance
-        api = cls._get_api(data.get("api", None))
+        api = cls._get_api(data.get("api"))
 
         # remap keys that will not be converted correctly by snake_case convert
         remaps = cls._get_unifi_remaps()

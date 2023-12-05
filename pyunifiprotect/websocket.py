@@ -94,7 +94,7 @@ class Websocket:
         try:
             self._ws_connection = await session.ws_connect(
                 self.url,
-                ssl=self.verify,
+                ssl=None if self.verify else False,
                 headers=self._headers,
             )
             start_event.set()
