@@ -24,6 +24,7 @@ from pyunifiprotect.data import Camera, ModelType
 from pyunifiprotect.data.nvr import Event
 from pyunifiprotect.data.types import EventType
 from pyunifiprotect.utils import _BAD_UUID, set_debug, set_no_debug
+from pyunifiprotect.websocket import Websocket
 from tests.sample_data.constants import CONSTANTS
 
 UFP_SAMPLE_DIR = os.environ.get("UFP_SAMPLE_DIR")
@@ -206,9 +207,10 @@ async def setup_client(
     mock_cs = Mock()
     mock_session = AsyncMock()
     mock_session.ws_connect = AsyncMock(return_value=websocket)
+    mock_session.close = AsyncMock()
     mock_cs.return_value = mock_session
 
-    ws = await client.get_websocket()
+    ws: Websocket = await client.get_websocket()
     ws.timeout_interval = timeout
     ws._get_session = mock_cs  # type: ignore[method-assign]
     client.api_request = AsyncMock(side_effect=mock_api_request)  # type: ignore[method-assign]
