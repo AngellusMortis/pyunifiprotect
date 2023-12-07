@@ -1,4 +1,4 @@
-FROM python:3.11-slim-bookworm as base
+FROM python:3.12-slim-bookworm as base
 
 LABEL org.opencontainers.image.source https://github.com/AngellusMortis/pyunifiprotect
 
@@ -63,7 +63,7 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONDEVMODE 1
 
 COPY --from=builder-dev /usr/local/bin/ /usr/local/bin/
-COPY --from=builder-dev /usr/local/lib/python3.11/ /usr/local/lib/python3.11/
+COPY --from=builder-dev /usr/local/lib/python3.12/ /usr/local/lib/python3.12/
 COPY ./.docker/docker-fix.sh /usr/local/bin/docker-fix
 COPY ./.docker/bashrc /root/.bashrc
 COPY ./.docker/bashrc /home/app/.bashrc
