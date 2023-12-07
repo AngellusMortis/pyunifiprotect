@@ -12,7 +12,7 @@ WS_TIMEOUT="${WS_TIMEOUT:-40}"
 
 pushd "$ROOT_PATH" 2>&1 >/dev/null
 
-rm .coverage* -rf
+rm -rf .coverage*
 
 echo -e "\nRunning tests (no benchmarks)..."
 pytest --timeout=10 --color=yes --cov-report= --benchmark-skip --maxfail=10
