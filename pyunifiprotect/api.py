@@ -415,7 +415,6 @@ class BaseApiClient:
 
                 if self.headers is not None and "cookie" in self.headers:
                    del self.headers["cookie"]
- 
 
             auth = {
                 "username": self._username,
