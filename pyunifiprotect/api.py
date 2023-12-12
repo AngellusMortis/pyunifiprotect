@@ -413,6 +413,9 @@ class BaseApiClient:
             if self._session is not None:
                 self._session.cookie_jar.clear()
 
+                if self.headers is not None and "cookie" in self.headers:
+                    del self.headers["cookie"]
+
             auth = {
                 "username": self._username,
                 "password": self._password,
