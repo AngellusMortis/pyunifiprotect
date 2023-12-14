@@ -65,7 +65,8 @@ class ValuesEnumMixin:
 class UnknownValuesEnumMixin(ValuesEnumMixin):
     @classmethod
     def _missing_(cls, value: Any) -> Optional[Any]:
-        return super()._missing_(value) or cls._values_normalized.get("unknown")
+        # value always set in superclass _missing
+        return super()._missing_(value) or cls._values_normalized.get("unknown")  # type: ignore[union-attr]
 
 
 @enum.unique
