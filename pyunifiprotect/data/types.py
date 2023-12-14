@@ -266,7 +266,7 @@ class LightModeType(str, ValuesEnumMixin, enum.Enum):
 
 
 @enum.unique
-class VideoMode(str, UnknownValuesEnumMixin, enum.Enum):
+class VideoMode(str, ValuesEnumMixin, enum.Enum):
     DEFAULT = "default"
     HIGH_FPS = "highFps"
     HOMEKIT = "homekit"
