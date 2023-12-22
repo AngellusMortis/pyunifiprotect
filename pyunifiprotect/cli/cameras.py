@@ -459,6 +459,17 @@ def set_camera_zoom(
 
     base.run(ctx, obj.set_camera_zoom(level))
 
+@app.command()
+def set_auto_track(ctx: typer.Context, enabled: bool) -> None:
+    """Sets auto track on camera"""
+
+    base.require_device_id(ctx)
+    obj: d.Camera = ctx.obj.device
+
+    data_before_changes = obj.dict_with_excludes()
+    obj.smart_detect_settings.auto_tracking_object_types = [d.SmartDetectObjectType.PERSON] if enabled else []
+    base.run(ctx, obj.save_device(data_before_changes))
+
 
 @app.command()
 def set_wdr_level(
