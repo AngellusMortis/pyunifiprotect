@@ -454,6 +454,10 @@ class SmartDetectSettings(ProtectBaseObject):
             data["objectTypes"] = convert_smart_types(data.pop("objectTypes"))
         if "audioTypes" in data:
             data["audioTypes"] = convert_smart_audio_types(data.pop("audioTypes"))
+        if "autoTrackingObjectTypes" in data:
+            data["autoTrackingObjectTypes"] = convert_smart_types(
+                data.pop("autoTrackingObjectTypes"),
+            )
 
         return super().unifi_dict_to_dict(data)
 
