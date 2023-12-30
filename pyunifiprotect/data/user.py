@@ -129,7 +129,7 @@ class User(ProtectModelWithId):
     name: str
     first_name: str
     last_name: str
-    email: str | None
+    email: Optional[str]
     local_username: str
     group_ids: list[str]
     cloud_account: Optional[CloudAccount]
