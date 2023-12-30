@@ -745,6 +745,8 @@ class ProtectApiClient(BaseApiClient):
         logged = False
 
         params["limit"] = 100
+        # greedy algorithm
+        # always force desc to receive faster results in the vast majority of cases
         params["orderDirection"] = "DESC"
 
         _LOGGER.debug("paginate desc %s %s", start_int, end_int)
