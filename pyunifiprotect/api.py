@@ -646,7 +646,7 @@ class ProtectApiClient(BaseApiClient):
 
         now = time.monotonic()
         now_dt = utc_now()
-        max_event_dt = now_dt - timedelta(hours=24)
+        max_event_dt = now_dt - timedelta(hours=1)
         if force:
             self._last_update = NEVER_RAN
             self._last_update_dt = max_event_dt
@@ -731,7 +731,7 @@ class ProtectApiClient(BaseApiClient):
         # if no parameters are passed in, default to all events from last 24 hours
         if limit is None and start is None and end is None:
             end = utc_now() + timedelta(seconds=10)
-            start = end - timedelta(hours=24)
+            start = end - timedelta(hours=1)
 
         params: dict[str, Any] = {}
         if limit is not None:

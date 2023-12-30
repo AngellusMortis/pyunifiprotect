@@ -319,7 +319,7 @@ async def test_get_events_raw_default(protect_client: ProtectApiClient, now: dat
         require_auth=True,
         raise_exception=True,
         params={
-            "start": to_js_time(end - timedelta(hours=24)),
+            "start": to_js_time(end - timedelta(hours=1)),
             "end": to_js_time(end),
         },
     )

@@ -231,6 +231,9 @@ def convert_unifi_data(value: Any, field: ModelField) -> Any:
         if type_ == datetime:
             return from_js_time(value)
         if type_ in _CREATE_TYPES or (isclass(type_) and issubclass(type_, Enum)):
+            # cannot do this check too soon because some types cannot be used in isinstance
+            if isinstance(value, type_):
+                return value
             # handle edge case for improperly formated UUIDs
             # 00000000-0000-00 0- 000-000000000000
             if type_ == UUID and value == _BAD_UUID:

@@ -17,6 +17,7 @@ import aiohttp
 
 from pyunifiprotect.api import ProtectApiClient
 from pyunifiprotect.data import EventType, WSJSONPacketFrame, WSPacket
+from pyunifiprotect.exceptions import BadRequest
 from pyunifiprotect.test_util.anonymize import (
     anonymize_data,
     anonymize_prefixed_event_id,
@@ -385,8 +386,14 @@ class SampleDataGenerator:
             self.log("No smart detection event, skipping smart detection data...")
             return
 
-        data = await self.client.get_event_smart_detect_track_raw(smart_detection["id"])
-        await self.write_json_file("sample_event_smart_track", data)
+        try:
+            data = await self.client.get_event_smart_detect_track_raw(
+                smart_detection["id"],
+            )
+        except BadRequest:
+            self.log_warning("Event smart tracking missing")
+        else:
+            await self.write_json_file("sample_event_smart_track", data)
 
     async def generate_light_data(self) -> None:
         objs = await self.client.api_request_list("lights")
