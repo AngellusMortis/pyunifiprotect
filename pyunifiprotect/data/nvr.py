@@ -216,8 +216,8 @@ class Event(ProtectModelWithId):
     deleted_at: Optional[datetime] = None
     deletion_type: Optional[Literal["manual", "automatic"]] = None
     # only appears if `get_events` is called with category
-    category: EventCategories | None = None
-    sub_category: str | None = None
+    category: Optional[EventCategories] = None
+    sub_category: Optional[str] = None
 
     # TODO:
     # partition
