@@ -21,6 +21,15 @@ VT = TypeVar("VT")
 
 DEFAULT = "DEFAULT_VALUE"
 DEFAULT_TYPE = Literal["DEFAULT_VALUE"]
+EventCategories = Literal[
+    "critical",
+    "update",
+    "admin",
+    "ring",
+    "motion",
+    "smart",
+    "iot",
+]
 
 ProgressCallback = Callable[[int, int, int], Coroutine[Any, Any, None]]
 IteratorCallback = Callable[[int, Optional[bytes]], Coroutine[Any, Any, None]]

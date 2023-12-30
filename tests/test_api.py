@@ -309,7 +309,7 @@ async def test_bootstrap_construct(protect_client_no_debug: ProtectApiClient):
 @pytest.mark.asyncio()
 @patch("pyunifiprotect.utils.datetime", MockDatetime)
 async def test_get_events_raw_default(protect_client: ProtectApiClient, now: datetime):
-    events = await protect_client.get_events_raw()
+    events = await protect_client.get_events_raw(_allow_manual_paginate=False)
 
     end = now + timedelta(seconds=10)
 
@@ -319,6 +319,8 @@ async def test_get_events_raw_default(protect_client: ProtectApiClient, now: dat
         require_auth=True,
         raise_exception=True,
         params={
+            "orderDirection": "ASC",
+            "withoutDescriptions": "false",
             "start": to_js_time(end - timedelta(hours=1)),
             "end": to_js_time(end),
         },
@@ -338,7 +340,7 @@ async def test_get_events_raw_limit(protect_client: ProtectApiClient):
         method="get",
         require_auth=True,
         raise_exception=True,
-        params={"limit": 10},
+        params={"orderDirection": "ASC", "withoutDescriptions": "false", "limit": 10},
     )
 
 
@@ -354,7 +356,12 @@ async def test_get_events_raw_types(protect_client: ProtectApiClient):
         method="get",
         require_auth=True,
         raise_exception=True,
-        params={"limit": 10, "types": ["motion", "smartDetectZone"]},
+        params={
+            "orderDirection": "ASC",
+            "withoutDescriptions": "false",
+            "limit": 10,
+            "types": ["motion", "smartDetectZone"],
+        },
     )
 
 
@@ -370,7 +377,7 @@ async def test_get_events(protect_client: ProtectApiClient, raw_events):
 
     protect_client._minimum_score = 50
 
-    events = await protect_client.get_events()
+    events = await protect_client.get_events(_allow_manual_paginate=False)
 
     assert len(events) == len(expected_events)
     for index, event in enumerate(events):

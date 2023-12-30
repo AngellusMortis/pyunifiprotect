@@ -25,6 +25,7 @@ from pyunifiprotect.data.types import (
     AnalyticsOption,
     DoorbellMessageType,
     DoorbellText,
+    EventCategories,
     EventType,
     FirmwareReleaseChannel,
     IteratorCallback,
@@ -214,6 +215,9 @@ class Event(ProtectModelWithId):
     # requires 2.7.5+
     deleted_at: Optional[datetime] = None
     deletion_type: Optional[Literal["manual", "automatic"]] = None
+    # only appears if `get_events` is called with category
+    category: EventCategories | None = None
+    sub_category: str | None = None
 
     # TODO:
     # partition
@@ -251,6 +255,13 @@ class Event(ProtectModelWithId):
 
         if "deletedAt" in data and data["deletedAt"] is None:
             del data["deletedAt"]
+
+        # category/subCategory optionally added
+        if "category" in data and data["category"] is None:
+            del data["category"]
+
+        if "subCategory" in data and data["subCategory"] is None:
+            del data["subCategory"]
 
         return data
 

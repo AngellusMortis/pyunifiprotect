@@ -194,11 +194,17 @@ def shell(ctx: typer.Context) -> None:
         sys.exit(1)
 
     # locals passed to shell
-    protect = cast(  # noqa: F841
+    protect = cast(
         ProtectApiClient,
         ctx.obj.protect,
     )
     _setup_logger(show_level=True)
+
+    async def wait_forever() -> None:
+        await protect.update()
+        while True:
+            await asyncio.sleep(10)
+            await protect.update()
 
     c = get_config()
     c.InteractiveShellEmbed.colors = "Linux"

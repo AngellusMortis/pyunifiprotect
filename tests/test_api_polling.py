@@ -80,7 +80,8 @@ async def test_process_events_ring(protect_client: ProtectApiClient, now, camera
     protect_client.get_events_raw = get_events  # type: ignore[method-assign]
 
     protect_client._last_update = NEVER_RAN
-    await protect_client.update()
+    await protect_client.update()  # fetch initial bootstrap
+    await protect_client.update()  # process events since bootstrap
 
     camera = get_camera()
 
@@ -128,7 +129,8 @@ async def test_process_events_motion(protect_client: ProtectApiClient, now, came
     protect_client.get_events_raw = get_events  # type: ignore[method-assign]
 
     protect_client._last_update = NEVER_RAN
-    await protect_client.update()
+    await protect_client.update()  # fetch initial bootstrap
+    await protect_client.update()  # process events since bootstrap
 
     camera_before.is_motion_detected = False
     camera = get_camera()
@@ -178,7 +180,8 @@ async def test_process_events_smart(protect_client: ProtectApiClient, now, camer
     protect_client.get_events_raw = get_events  # type: ignore[method-assign]
 
     protect_client._last_update = NEVER_RAN
-    await protect_client.update()
+    await protect_client.update()  # fetch initial bootstrap
+    await protect_client.update()  # process events since bootstrap
 
     camera = get_camera()
 

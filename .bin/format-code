@@ -14,12 +14,12 @@ echo "Running isort..."
 isort .
 echo
 
-echo "Running black..."
-black .
-echo
-
 echo "Running ruff..."
 ruff check --preview --fix-only  .
+echo
+
+echo "Running black..."
+black .
 echo
 
 popd 2>&1 >/dev/null

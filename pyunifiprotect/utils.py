@@ -22,7 +22,7 @@ import re
 import socket
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, overload
 from uuid import UUID
 import zoneinfo
 
@@ -126,6 +126,16 @@ async def get_response_reason(response: ClientResponse) -> str:
             reason = await response.text()
 
     return reason
+
+
+@overload
+def to_js_time(dt: datetime | int) -> int:
+    ...
+
+
+@overload
+def to_js_time(dt: None) -> None:
+    ...
 
 
 def to_js_time(dt: datetime | int | None) -> Optional[int]:

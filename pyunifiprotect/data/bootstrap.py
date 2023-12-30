@@ -624,7 +624,7 @@ class Bootstrap(ProtectBaseObject):
             ClientError,
             ServerDisconnectedError,
         ):
-            _LOGGER.warning("Failed to refresh device: %s %s", model_type, device_id)
+            _LOGGER.warning("Failed to refresh model: %s %s", model_type, device_id)
             return
 
         if isinstance(device, NVR):
@@ -632,7 +632,7 @@ class Bootstrap(ProtectBaseObject):
         else:
             devices = getattr(self, f"{model_type.value}s")
             devices[device.id] = device
-        _LOGGER.debug("Successfully refresh device: %s %s", model_type, device_id)
+        _LOGGER.debug("Successfully refresh model: %s %s", model_type, device_id)
 
     async def get_is_prerelease(self) -> bool:
         """Get if current version of Protect is a prerelease version."""

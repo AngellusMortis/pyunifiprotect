@@ -10,9 +10,10 @@ from http.cookies import Morsel
 from ipaddress import IPv4Address, IPv6Address
 import logging
 from pathlib import Path
+import sys
 from tempfile import gettempdir
 import time
-from typing import Any, Optional, Union, cast
+from typing import Any, Literal, Optional, Union, cast
 from urllib.parse import urljoin
 from uuid import UUID
 
@@ -28,6 +29,7 @@ from pyunifiprotect.data import (
     Camera,
     Doorlock,
     Event,
+    EventCategories,
     EventType,
     Light,
     Liveview,
@@ -68,6 +70,9 @@ PROTECT_APT_URLS = [
     "https://apt.artifacts.ui.com/dists/stretch/release/binary-arm64/Packages",
     "https://apt.artifacts.ui.com/dists/bullseye/release/binary-arm64/Packages",
 ]
+TYPES_BUG_MESSAGE = """There is currently a bug in UniFi Protect that makes `start` / `end` not work if `types` is not provided. This means pyunifiprotect has to iterate over all of the events matching the filters provided to return values.
+
+If your Protect instance has a lot of events, this request will take much longer then expected. It is recommended adding additional filters to speed the request up."""
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -659,11 +664,13 @@ class ProtectApiClient(BaseApiClient):
             self._last_update_dt = now_dt
 
         await self.async_connect_ws(force)
-        active_ws = self.check_ws()
-        if not bootstrap_updated and active_ws:
+        if self.check_ws():
             # If the websocket is connected/connecting
             # we do not need to get events
             _LOGGER.debug("Skipping update since websocket is active")
+            return None
+
+        if bootstrap_updated:
             return None
 
         events = await self.get_events(
@@ -678,6 +685,23 @@ class ProtectApiClient(BaseApiClient):
         return self._bootstrap
 
     def emit_message(self, msg: WSSubscriptionMessage) -> None:
+        if msg.new_obj is not None:
+            _LOGGER.debug(
+                "emitting message: %s:%s:%s:%s",
+                msg.action,
+                msg.new_obj.model,
+                msg.new_obj.id,
+                list(msg.changed_data.keys()),
+            )
+        elif msg.old_obj is not None:
+            _LOGGER.debug(
+                "emitting message: %s:%s:%s",
+                msg.action,
+                msg.old_obj.model,
+                msg.old_obj.id,
+            )
+        else:
+            _LOGGER.debug("emitting message: %s", msg.action)
         for sub in self._ws_subscriptions:
             try:
                 sub(msg)
@@ -705,13 +729,77 @@ class ProtectApiClient(BaseApiClient):
 
         self.emit_message(processed_message)
 
+    async def _get_event_paginate(
+        self,
+        params: dict[str, Any],
+        *,
+        start: datetime,
+        end: Optional[datetime],
+    ) -> list[dict[str, Any]]:
+        start_int = to_js_time(start)
+        end_int = to_js_time(end) if end else None
+        offset = 0
+        current_start = sys.maxsize
+        events: list[dict[str, Any]] = []
+        request_count = 0
+        logged = False
+
+        params["limit"] = 100
+        params["orderDirection"] = "DESC"
+
+        _LOGGER.debug("paginate desc %s %s", start_int, end_int)
+        while current_start > start_int:
+            params["offset"] = offset
+
+            _LOGGER.debug("page desc %s %s", offset, current_start)
+            new_events = await self.api_request_list("events", params=params)
+            request_count += 1
+            if not new_events:
+                break
+
+            if end_int is not None:
+                _LOGGER.debug("page end %s (%s)", new_events[0]["end"], end_int)
+                for event in new_events:
+                    if event["start"] <= end_int:
+                        events.append(event)
+                    else:
+                        break
+            else:
+                events += new_events
+
+            offset += 100
+            if events:
+                current_start = events[-1]["start"]
+            if not logged and request_count > 5:
+                logged = True
+                _LOGGER.warning(TYPES_BUG_MESSAGE)
+
+        to_remove = 0
+        for event in reversed(events):
+            if event["start"] < start_int:
+                to_remove += 1
+            else:
+                break
+        if to_remove:
+            events = events[:-to_remove]
+
+        return events
+
     async def get_events_raw(
         self,
+        *,
         start: Optional[datetime] = None,
         end: Optional[datetime] = None,
         limit: Optional[int] = None,
+        offset: Optional[int] = None,
         types: Optional[list[EventType]] = None,
         smart_detect_types: Optional[list[SmartDetectObjectType]] = None,
+        sorting: Literal["asc", "desc"] = "asc",
+        descriptions: bool = True,
+        all_cameras: Optional[bool] = None,
+        category: EventCategories | None = None,
+        # used for testing
+        _allow_manual_paginate: bool = True,
     ) -> list[dict[str, Any]]:
         """Get list of events from Protect
 
@@ -720,7 +808,13 @@ class ProtectApiClient(BaseApiClient):
             start: start time for events
             end: end time for events
             limit: max number of events to return
+            offset: offset to start fetching events from
             types: list of EventTypes to get events for
+            smart_detect_types: Filters the Smart detection types for the events
+            sorting: sort events by ascending or decending, defaults to ascending (chronologic order)
+            description: included additional event metadata
+            category: event category, will provide additional category/subcategory fields
+
 
         If `limit`, `start` and `end` are not provided, it will default to all events in the last 24 hours.
 
@@ -733,9 +827,14 @@ class ProtectApiClient(BaseApiClient):
             end = utc_now() + timedelta(seconds=10)
             start = end - timedelta(hours=1)
 
-        params: dict[str, Any] = {}
+        params: dict[str, Any] = {
+            "orderDirection": sorting.upper(),
+            "withoutDescriptions": str(not descriptions).lower(),
+        }
         if limit is not None:
             params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
 
         if start is not None:
             params["start"] = to_js_time(start)
@@ -749,6 +848,36 @@ class ProtectApiClient(BaseApiClient):
         if smart_detect_types is not None:
             params["smartDetectTypes"] = [e.value for e in smart_detect_types]
 
+        if all_cameras is not None:
+            params["allCameras"] = str(all_cameras).lower()
+
+        if category is not None:
+            params["categories"] = category
+
+        # manual workaround for a UniFi Protect bug
+        # if types if missing from query params
+        if _allow_manual_paginate and "types" not in params and start is not None:
+            if sorting == "asc":
+                events = await self._get_event_paginate(
+                    params,
+                    start=start,
+                    end=end,
+                )
+                events = list(reversed(events))
+            else:
+                events = await self._get_event_paginate(
+                    params,
+                    start=start,
+                    end=end,
+                )
+
+            if limit:
+                offset = offset or 0
+                events = events[offset : limit + offset]
+            elif offset:
+                events = events[offset:]
+            return events
+
         return await self.api_request_list("events", params=params)
 
     async def get_events(
@@ -756,8 +885,14 @@ class ProtectApiClient(BaseApiClient):
         start: Optional[datetime] = None,
         end: Optional[datetime] = None,
         limit: Optional[int] = None,
+        offset: Optional[int] = None,
         types: Optional[list[EventType]] = None,
         smart_detect_types: Optional[list[SmartDetectObjectType]] = None,
+        sorting: Literal["asc", "desc"] = "asc",
+        descriptions: bool = True,
+        category: EventCategories | None = None,
+        # used for testing
+        _allow_manual_paginate: bool = True,
     ) -> list[Event]:
         """Same as `get_events_raw`, except
 
@@ -770,8 +905,13 @@ class ProtectApiClient(BaseApiClient):
             start: start time for events
             end: end time for events
             limit: max number of events to return
+            offset: offset to start fetching events from
             types: list of EventTypes to get events for
             smart_detect_types: Filters the Smart detection types for the events
+            sorting: sort events by ascending or decending, defaults to ascending (chronologic order)
+            description: included additional event metadata
+            category: event category, will provide additional category/subcategory fields
+
 
         If `limit`, `start` and `end` are not provided, it will default to all events in the last 24 hours.
 
@@ -783,8 +923,13 @@ class ProtectApiClient(BaseApiClient):
             start=start,
             end=end,
             limit=limit,
+            offset=offset,
             types=types,
             smart_detect_types=smart_detect_types,
+            sorting=sorting,
+            descriptions=descriptions,
+            category=category,
+            _allow_manual_paginate=_allow_manual_paginate,
         )
         events = []
 
