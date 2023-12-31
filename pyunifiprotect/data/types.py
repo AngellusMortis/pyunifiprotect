@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Coroutine
 import enum
-from typing import Any, Literal, Optional, TypeVar, Union
+from typing import Any, Literal, Optional, Tuple, TypeVar, Union
 
 from packaging.version import Version as BaseVersion
 
@@ -101,7 +101,7 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
     RECORDING_SCHEDULE = "recordingSchedule"
 
     @staticmethod
-    def bootstrap_models() -> tuple[str, ...]:
+    def bootstrap_models() -> Tuple[str, ...]:
         # TODO:
         # legacyUFV
         # display
