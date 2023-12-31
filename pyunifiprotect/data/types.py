@@ -101,12 +101,12 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
     RECORDING_SCHEDULE = "recordingSchedule"
 
     @staticmethod
-    def bootstrap_models() -> list[str]:
+    def bootstrap_models() -> tuple[str, ...]:
         # TODO:
         # legacyUFV
         # display
 
-        return [
+        return (
             ModelType.CAMERA.value,
             ModelType.USER.value,
             ModelType.GROUP.value,
@@ -117,7 +117,7 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
             ModelType.SENSOR.value,
             ModelType.DOORLOCK.value,
             ModelType.CHIME.value,
-        ]
+        )
 
 
 @enum.unique
