@@ -2478,6 +2478,10 @@ class Sensor(ProtectAdoptableDeviceModel):
     def is_humidity_sensor_enabled(self) -> bool:
         return self.mount_type != MountType.LEAK and self.humidity_settings.is_enabled
 
+    @property
+    def is_leak_sensor_enabled(self) -> bool:
+        return self.mount_type == MountType.LEAK
+
     def set_alarm_timeout(self) -> None:
         self._alarm_timeout = utc_now() + EVENT_PING_INTERVAL
         self._event_callback_ping()
@@ -2509,6 +2513,9 @@ class Sensor(ProtectAdoptableDeviceModel):
             return None
 
         return self.api.bootstrap.events.get(self.last_alarm_event_id)
+
+    def is_leak_detected(self) -> bool:
+        return self.leak_detected_at is not None
 
     async def set_status_light(self, enabled: bool) -> None:
         """Sets the status indicator light for the sensor"""
