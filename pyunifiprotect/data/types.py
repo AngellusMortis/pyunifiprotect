@@ -142,6 +142,9 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     HOTPLUG = "hotplug"
     CONSOLIDATED_RESOLUTION_LOWERED = "consolidatedResolutionLowered"
     CONSOLIDATED_POOR_CONNECTION = "consolidatedPoorConnection"
+    CAMERA_CONNECTED = "cameraConnected"
+    CAMERA_REBOOTED = "cameraRebooted"
+    CAMERA_DISCONNECTED = "cameraDisconnected"
     #
     INSTALLED_DISK = "installed"
     CORRUPTED_DB_RECOVERED = "corruptedDbRecovered"
@@ -155,15 +158,20 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     DRIVE_FAILED = "driveFailed"
     CAMERA_UTILIZATION_LIMIT_REACHED = "cameraUtilizationLimitReached"
     CAMERA_UTILIZATION_LIMIT_EXCEEDED = "cameraUtilizationLimitExceeded"
+    DRIVE_SLOW = "driveSlow"
     GLOBAL_RECORDING_MODE_CHANGED = "globalRecordingModeChanged"
+    NVR_SETTINGS_CHANGED = "nvrSettingsChanged"
     #
     UNADOPTED_DEVICE_DISCOVERED = "unadoptedDeviceDiscovered"
+    MULTIPLE_UNADOPTED_DEVICE_DISCOVERED = "multipleUnadoptedDeviceDiscovered"
     DEVICE_ADOPTED = "deviceAdopted"
     DEVICE_UNADOPTED = "deviceUnadopted"
     UVF_DISCOVERED = "ufvDiscovered"
     DEVICE_PASSWORD_UPDATE = "devicesPasswordUpdated"
     DEVICE_UPDATABLE = "deviceUpdatable"
     MULTIPLE_DEVICE_UPDATABLE = "multipleDeviceUpdatable"
+    DEVICE_CONNECTED = "deviceConnected"
+    DEVICE_REBOOTED = "deviceRebooted"
     DEVICE_DISCONNECTED = "deviceDisconnected"
     NETWORK_DEVICE_OFFLINE = "networkDeviceOffline"
     #
@@ -232,17 +240,19 @@ class SmartDetectObjectType(str, ValuesEnumMixin, enum.Enum):
     PACKAGE = "package"
     # old?
     CAR = "car"
-    # actually audioType?
     SMOKE = "alrmSmoke"
     CMONX = "alrmCmonx"
+    SIREN = "alrmSiren"
+    BABY_CRY = "alrmBabyCry"
+    SPEAK = "alrmSpeak"
+    BARK = "alrmBark"
+    BURGLAR = "alrmBurglar"
+    CAR_HORN = "alrmCarHorn"
+    GLASS_BREAK = "alrmGlassBreak"
 
     @property
     def audio_type(self) -> Optional[SmartDetectAudioType]:
-        if self == SmartDetectObjectType.SMOKE:
-            return SmartDetectAudioType.SMOKE
-        if self == SmartDetectObjectType.CMONX:
-            return SmartDetectAudioType.CMONX
-        return None
+        return OBJECT_TO_AUDIO_MAP.get(self)
 
 
 @enum.unique
@@ -250,6 +260,41 @@ class SmartDetectAudioType(str, ValuesEnumMixin, enum.Enum):
     SMOKE = "alrmSmoke"
     CMONX = "alrmCmonx"
     SMOKE_CMONX = "smoke_cmonx"
+    SIREN = "alrmSiren"
+    BABY_CRY = "alrmBabyCry"
+    SPEAK = "alrmSpeak"
+    BARK = "alrmBark"
+    BURGLAR = "alrmBurglar"
+    CAR_HORN = "alrmCarHorn"
+    GLASS_BREAK = "alrmGlassBreak"
+
+
+@enum.unique
+class DetectionColor(str, ValuesEnumMixin, enum.Enum):
+    BLACK = "black"
+    BLUE = "blue"
+    BROWN = "brown"
+    GRAY = "gray"
+    GREEN = "green"
+    ORANGE = "orange"
+    PINK = "pink"
+    PURPLE = "purple"
+    RED = "red"
+    WHITE = "white"
+    YELLOW = "yellow"
+
+
+OBJECT_TO_AUDIO_MAP = {
+    SmartDetectObjectType.SMOKE: SmartDetectAudioType.SMOKE,
+    SmartDetectObjectType.CMONX: SmartDetectAudioType.CMONX,
+    SmartDetectObjectType.SIREN: SmartDetectAudioType.SIREN,
+    SmartDetectObjectType.BABY_CRY: SmartDetectAudioType.BABY_CRY,
+    SmartDetectObjectType.SPEAK: SmartDetectAudioType.SPEAK,
+    SmartDetectObjectType.BARK: SmartDetectAudioType.BARK,
+    SmartDetectObjectType.BURGLAR: SmartDetectAudioType.BURGLAR,
+    SmartDetectObjectType.CAR_HORN: SmartDetectAudioType.CAR_HORN,
+    SmartDetectObjectType.GLASS_BREAK: SmartDetectAudioType.GLASS_BREAK,
+}
 
 
 @enum.unique
@@ -283,6 +328,12 @@ class VideoMode(str, ValuesEnumMixin, enum.Enum):
     SLOW_SHUTTER = "slowShutter"
     # should only be for unadopted devices
     UNKNOWN = "unknown"
+
+
+@enum.unique
+class AudioStyle(str, UnknownValuesEnumMixin, enum.Enum):
+    NATURE = "nature"
+    NOISE_REDUCED = "noiseReduced"
 
 
 @enum.unique

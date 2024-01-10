@@ -33,6 +33,7 @@ from pyunifiprotect.data.types import (
     DEFAULT,
     DEFAULT_TYPE,
     AnalyticsOption,
+    AudioStyle,
     ChimeType,
     Color,
     CoordType,
@@ -75,6 +76,7 @@ from pyunifiprotect.data.websocket import (
 
 __all__ = [
     "AnalyticsOption",
+    "AudioStyle",
     "Bootstrap",
     "Bridge",
     "Camera",

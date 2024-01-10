@@ -124,6 +124,44 @@ class LicensePlateMetadata(ProtectBaseObject):
     confidence_level: int
 
 
+class EventThumbnailAttribute(ProtectBaseObject):
+    confidence: int
+    val: str
+
+
+class EventThumbnailAttributes(ProtectBaseObject):
+    color: Optional[EventThumbnailAttribute] = None
+    vehicle_type: Optional[EventThumbnailAttribute] = None
+
+    def unifi_dict(
+        self,
+        data: Optional[dict[str, Any]] = None,
+        exclude: Optional[set[str]] = None,
+    ) -> dict[str, Any]:
+        data = super().unifi_dict(data=data, exclude=exclude)
+
+        delete_keys = {"color", "vehicleType"}
+        for key in delete_keys.intersection(data.keys()):
+            if data[key] is None:
+                del data[key]
+
+        return data
+
+
+class EventDetectedThumbnail(ProtectBaseObject):
+    clock_best_wall: datetime
+    type: str
+    cropped_id: str
+    attributes: Optional[EventThumbnailAttributes] = None
+
+    @classmethod
+    def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
+        if "clockBestWall" in data:
+            data["clockBestWall"] = process_datetime(data, "clockBestWall")
+
+        return super().unifi_dict_to_dict(data)
+
+
 class EventMetadata(ProtectBaseObject):
     client_platform: Optional[str]
     reason: Optional[str]
@@ -145,6 +183,8 @@ class EventMetadata(ProtectBaseObject):
     mac: Optional[str]
     # require 2.7.5+
     license_plate: Optional[LicensePlateMetadata] = None
+    # requires 2.11.13+
+    detected_thumbnails: Optional[list[EventDetectedThumbnail]] = None
 
     _collapse_keys: ClassVar[SetStr] = {
         "lightId",
@@ -253,15 +293,10 @@ class Event(ProtectModelWithId):
     ) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
-        if "deletedAt" in data and data["deletedAt"] is None:
-            del data["deletedAt"]
-
-        # category/subCategory optionally added
-        if "category" in data and data["category"] is None:
-            del data["category"]
-
-        if "subCategory" in data and data["subCategory"] is None:
-            del data["subCategory"]
+        delete_keys = {"deletedAt", "category", "subCategory"}
+        for key in delete_keys.intersection(data.keys()):
+            if data[key] is None:
+                del data[key]
 
         return data
 
@@ -896,6 +931,8 @@ class NVR(ProtectDeviceModel):
     is_network_installed: Optional[bool] = None
     is_protect_updatable: Optional[bool] = None
     is_ucore_updatable: Optional[bool] = None
+    # requires 2.11.13+
+    last_device_fw_updates_checked_at: Optional[datetime] = None
 
     # TODO:
     # errorCode   read only
@@ -914,6 +951,7 @@ class NVR(ProtectDeviceModel):
             **super()._get_unifi_remaps(),
             "recordingRetentionDurationMs": "recordingRetentionDuration",
             "vaultCameras": "vaultCameraIds",
+            "lastDeviceFWUpdatesCheckedAt": "lastDeviceFwUpdatesCheckedAt",
         }
 
     @classmethod
@@ -942,6 +980,11 @@ class NVR(ProtectDeviceModel):
     def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
         if "lastUpdateAt" in data:
             data["lastUpdateAt"] = process_datetime(data, "lastUpdateAt")
+        if "lastDeviceFwUpdatesCheckedAt" in data:
+            data["lastDeviceFwUpdatesCheckedAt"] = process_datetime(
+                data,
+                "lastDeviceFwUpdatesCheckedAt",
+            )
         if (
             "recordingRetentionDurationMs" in data
             and data["recordingRetentionDurationMs"] is not None

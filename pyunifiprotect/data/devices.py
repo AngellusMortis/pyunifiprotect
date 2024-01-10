@@ -25,6 +25,7 @@ from pyunifiprotect.data.types import (
     DEFAULT,
     DEFAULT_TYPE,
     AudioCodecs,
+    AudioStyle,
     AutoExposureMode,
     ChimeType,
     Color,
@@ -364,6 +365,18 @@ class RecordingSettings(ProtectBaseObject):
     # requires 2.9.20+
     in_schedule_mode: Optional[str] = None
     out_schedule_mode: Optional[str] = None
+    # 2.11.13+
+    retention_duration: Optional[datetime] = None
+    smart_detect_post_padding: Optional[timedelta] = None
+    smart_detect_pre_padding: Optional[timedelta] = None
+
+    @classmethod
+    @cache
+    def _get_unifi_remaps(cls) -> dict[str, str]:
+        return {
+            **super()._get_unifi_remaps(),
+            "retentionDurationMs": "retentionDuration",
+        }
 
     @classmethod
     def unifi_dict_to_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
@@ -371,6 +384,14 @@ class RecordingSettings(ProtectBaseObject):
             data["prePadding"] = timedelta(seconds=data.pop("prePaddingSecs"))
         if "postPaddingSecs" in data:
             data["postPadding"] = timedelta(seconds=data.pop("postPaddingSecs"))
+        if "smartDetectPrePaddingSecs" in data:
+            data["smartDetectPrePadding"] = timedelta(
+                seconds=data.pop("smartDetectPrePaddingSecs"),
+            )
+        if "smartDetectPostPaddingSecs" in data:
+            data["smartDetectPostPadding"] = timedelta(
+                seconds=data.pop("smartDetectPostPaddingSecs"),
+            )
         if "minMotionEventTrigger" in data and not isinstance(
             data["minMotionEventTrigger"],
             timedelta,
@@ -397,6 +418,20 @@ class RecordingSettings(ProtectBaseObject):
             data["prePaddingSecs"] = data.pop("prePadding") // 1000
         if "postPadding" in data:
             data["postPaddingSecs"] = data.pop("postPadding") // 1000
+        if (
+            "smartDetectPrePadding" in data
+            and data["smartDetectPrePadding"] is not None
+        ):
+            data["smartDetectPrePaddingSecs"] = (
+                data.pop("smartDetectPrePadding") // 1000
+            )
+        if (
+            "smartDetectPostPadding" in data
+            and data["smartDetectPostPadding"] is not None
+        ):
+            data["smartDetectPostPaddingSecs"] = (
+                data.pop("smartDetectPostPadding") // 1000
+            )
         if "minMotionEventTrigger" in data:
             data["minMotionEventTrigger"] = data.pop("minMotionEventTrigger") // 1000
         if "endMotionEventDelay" in data:
@@ -736,6 +771,9 @@ class CameraFeatureFlags(ProtectBaseObject):
     # 2.10.10+
     has_flash: Optional[bool] = None
     is_ptz: Optional[bool] = None
+    # 2.11.13+
+    audio_style: Optional[list[AudioStyle]] = None
+    has_vertical_flip: Optional[bool] = None
 
     # TODO:
     # focus
@@ -784,6 +822,10 @@ class CameraHomekitSettings(ProtectBaseObject):
     speaker_muted: bool
     stream_in_progress: bool
     talkback_settings_active: bool
+
+
+class CameraAudioSettings(ProtectBaseObject):
+    style: list[AudioStyle]
 
 
 class Camera(ProtectMotionDeviceModel):
@@ -846,6 +888,8 @@ class Camera(ProtectMotionDeviceModel):
     has_recordings: Optional[bool] = None
     # requires 2.10.10+
     is_ptz: Optional[bool] = None
+    # requires 2.11.13+
+    audio_settings: Optional[CameraAudioSettings] = None
 
     # TODO: used for adopting
     # apMac read only

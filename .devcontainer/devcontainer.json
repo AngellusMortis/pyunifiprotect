@@ -93,24 +93,25 @@
                 "python.linting.enabled": true,
                 // python linting
                 "black.args": [
-                    "--config=/opt/app/pyproject.toml"
+                    "--config=/workspaces/pyunifiprotect/pyproject.toml"
                 ],
                 "isort.args": [
-                    "--settings-path=/opt/app/pyproject.toml"
+                    "--settings-path=/workspaces/pyunifiprotect/pyproject.toml"
                 ],
                 // "mypy-type-checker.importStrategy": "fromEnvironment",
                 "mypy-type-checker.interpreter": [
                     "/usr/local/bin/python"
                 ],
                 "mypy-type-checker.args": [
-                    "--config-file=/opt/app/pyproject.toml"
+                    "--config-file=/workspaces/pyunifiprotect/pyproject.toml"
                 ],
                 "mypy-type-checker.severity": {
                     "error": "Error",
                     "note": "Warning"
                 },
                 "ruff.lint.args": [
-                    "--preview --config=/opt/app/pyproject.toml"
+                    "--preview",
+                    "--config=/workspaces/pyunifiprotect/pyproject.toml"
                 ],
                 "ruff.fixAll": true,
                 "ruff.organizeImports": false,

@@ -565,6 +565,9 @@ NEW_FIELDS = {
     "isUcoreUpdatable",
     # 2.10.10+
     "isPtz",
+    # 2.11.13+
+    "lastDeviceFWUpdatesCheckedAt",
+    "audioSettings",
 }
 
 NEW_CAMERA_FEATURE_FLAGS = {
@@ -586,6 +589,9 @@ NEW_CAMERA_FEATURE_FLAGS = {
     # 2.10.10+
     "hasFlash",
     "isPtz",
+    # 2.11.13+
+    "audioStyle",
+    "hasVerticalFlip",
 }
 
 NEW_NVR_FEATURE_FLAGS = {
@@ -632,11 +638,6 @@ def compare_objs(obj_type, expected, actual):  # noqa: PLR0915
         expected["motionZones"] = actual["motionZones"] = []
         expected["privacyZones"] = actual["privacyZones"] = []
         expected["smartDetectZones"] = actual["smartDetectZones"] = []
-        expected["recordingSettings"]["enableMotionDetection"] = expected[
-            "recordingSettings"
-        ].get(
-            "enableMotionDetection",
-        )
         if "isColorNightVisionEnabled" not in expected["ispSettings"]:
             actual["ispSettings"].pop("isColorNightVisionEnabled", None)
 
@@ -650,16 +651,22 @@ def compare_objs(obj_type, expected, actual):  # noqa: PLR0915
             and "autoTrackingObjectTypes" not in expected["smartDetectSettings"]
         ):
             del actual["smartDetectSettings"]["autoTrackingObjectTypes"]
-        if (
-            "inScheduleMode" in actual["recordingSettings"]
-            and "inScheduleMode" not in expected["recordingSettings"]
-        ):
-            del actual["recordingSettings"]["inScheduleMode"]
-        if (
-            "outScheduleMode" in actual["recordingSettings"]
-            and "outScheduleMode" not in expected["recordingSettings"]
-        ):
-            del actual["recordingSettings"]["outScheduleMode"]
+
+        exp_settings = expected["recordingSettings"]
+        act_settings = actual["recordingSettings"]
+        exp_settings["enableMotionDetection"] = exp_settings.get(
+            "enableMotionDetection",
+        )
+        if act_settings and "inScheduleMode" not in exp_settings:
+            del act_settings["inScheduleMode"]
+        if "outScheduleMode" in act_settings and "outScheduleMode" not in exp_settings:
+            del act_settings["outScheduleMode"]
+        if "retentionDurationMs" not in exp_settings:
+            act_settings.pop("retentionDurationMs", None)
+        if "smartDetectPostPadding" not in exp_settings:
+            act_settings.pop("smartDetectPostPadding", None)
+        if "smartDetectPrePadding" not in exp_settings:
+            act_settings.pop("smartDetectPrePadding", None)
 
         for flag in NEW_CAMERA_FEATURE_FLAGS:
             if flag not in expected["featureFlags"]:
@@ -684,6 +691,16 @@ def compare_objs(obj_type, expected, actual):  # noqa: PLR0915
         expected.pop("partition", None)
         expected.pop("deletionType", None)
         expected.pop("description", None)
+        if "category" in expected and expected["category"] is None:
+            expected.pop("category", None)
+
+        exp_thumbnails = expected.get("metadata", {}).pop("detectedThumbnails", [])
+        act_thumbnails = actual.get("metadata", {}).pop("detectedThumbnails", [])
+
+        for index, exp_thumb in enumerate(exp_thumbnails):
+            if "attributes" not in exp_thumb:
+                del act_thumbnails[index]["attributes"]
+        assert exp_thumbnails == act_thumbnails
 
         expected_keys = (expected.get("metadata") or {}).keys()
         actual_keys = (actual.get("metadata") or {}).keys()
