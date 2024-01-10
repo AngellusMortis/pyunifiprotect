@@ -234,12 +234,8 @@ class SmartDetectObjectType(str, ValuesEnumMixin, enum.Enum):
     PERSON = "person"
     ANIMAL = "animal"
     VEHICLE = "vehicle"
-    FACE = "face"
-    PET = "pet"
     LICENSE_PLATE = "licensePlate"
     PACKAGE = "package"
-    # old?
-    CAR = "car"
     SMOKE = "alrmSmoke"
     CMONX = "alrmCmonx"
     SIREN = "alrmSiren"
@@ -249,6 +245,10 @@ class SmartDetectObjectType(str, ValuesEnumMixin, enum.Enum):
     BURGLAR = "alrmBurglar"
     CAR_HORN = "alrmCarHorn"
     GLASS_BREAK = "alrmGlassBreak"
+    # old?
+    FACE = "face"
+    CAR = "car"
+    PET = "pet"
 
     @property
     def audio_type(self) -> Optional[SmartDetectAudioType]:

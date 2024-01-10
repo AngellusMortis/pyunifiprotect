@@ -1074,78 +1074,6 @@ class Camera(ProtectMotionDeviceModel):
         return self.api.bootstrap.events.get(event_id)
 
     @property
-    def last_person_detect_event(self) -> Optional[Event]:
-        """Get the last person smart detection event."""
-
-        return self.get_last_smart_detect_event(SmartDetectObjectType.PERSON)
-
-    @property
-    def last_person_detect(self) -> Optional[datetime]:
-        """Get the last person smart detection event."""
-
-        return self.last_smart_detects.get(SmartDetectObjectType.PERSON)
-
-    @property
-    def last_vehicle_detect_event(self) -> Optional[Event]:
-        """Get the last vehicle smart detection event."""
-
-        return self.get_last_smart_detect_event(SmartDetectObjectType.VEHICLE)
-
-    @property
-    def last_vehicle_detect(self) -> Optional[datetime]:
-        """Get the last vehicle smart detection event."""
-
-        return self.last_smart_detects.get(SmartDetectObjectType.VEHICLE)
-
-    @property
-    def last_package_detect_event(self) -> Optional[Event]:
-        """Get the last package smart detection event."""
-
-        return self.get_last_smart_detect_event(SmartDetectObjectType.PACKAGE)
-
-    @property
-    def last_package_detect(self) -> Optional[datetime]:
-        """Get the last package smart detection event."""
-
-        return self.last_smart_detects.get(SmartDetectObjectType.PACKAGE)
-
-    @property
-    def last_face_detect_event(self) -> Optional[Event]:
-        """Get the last face smart detection event."""
-
-        return self.get_last_smart_detect_event(SmartDetectObjectType.FACE)
-
-    @property
-    def last_face_detect(self) -> Optional[datetime]:
-        """Get the last face smart detection event."""
-
-        return self.last_smart_detects.get(SmartDetectObjectType.FACE)
-
-    @property
-    def last_pet_detect_event(self) -> Optional[Event]:
-        """Get the last pet smart detection event."""
-
-        return self.get_last_smart_detect_event(SmartDetectObjectType.PET)
-
-    @property
-    def last_pet_detect(self) -> Optional[datetime]:
-        """Get the last pet smart detection event."""
-
-        return self.last_smart_detects.get(SmartDetectObjectType.PET)
-
-    @property
-    def last_license_plate_detect_event(self) -> Optional[Event]:
-        """Get the last license plate smart detection event."""
-
-        return self.get_last_smart_detect_event(SmartDetectObjectType.LICENSE_PLATE)
-
-    @property
-    def last_license_plate_detect(self) -> Optional[datetime]:
-        """Get the last license plate smart detection event."""
-
-        return self.last_smart_detects.get(SmartDetectObjectType.LICENSE_PLATE)
-
-    @property
     def last_smart_audio_detect_event(self) -> Optional[Event]:
         """Get the last smart audio detect event id."""
 
@@ -1165,30 +1093,6 @@ class Camera(ProtectMotionDeviceModel):
             return None
 
         return self.api.bootstrap.events.get(event_id)
-
-    @property
-    def last_smoke_detect_event(self) -> Optional[Event]:
-        """Get the last person smart detection event."""
-
-        return self.get_last_smart_audio_detect_event(SmartDetectAudioType.SMOKE)
-
-    @property
-    def last_smoke_detect(self) -> Optional[datetime]:
-        """Get the last smoke smart detection event."""
-
-        return self.last_smart_audio_detects.get(SmartDetectAudioType.SMOKE)
-
-    @property
-    def last_cmonx_detect_event(self) -> Optional[Event]:
-        """Get the last cmonx smart detection event."""
-
-        return self.get_last_smart_audio_detect_event(SmartDetectAudioType.CMONX)
-
-    @property
-    def last_cmonx_detect(self) -> Optional[datetime]:
-        """Get the last cmonx smart detection event."""
-
-        return self.last_smart_audio_detects.get(SmartDetectAudioType.CMONX)
 
     @property
     def timelapse_url(self) -> str:
@@ -1219,6 +1123,49 @@ class Camera(ProtectMotionDeviceModel):
         )
 
     @property
+    def is_motion_currently_detected(self) -> bool:
+        """Is motion currently being detected"""
+
+        return (
+            self.is_motion_detection_on
+            and self.is_motion_detected
+            and self.last_motion_event is not None
+            and self.last_motion_event.end is None
+        )
+
+    # object smart detections
+
+    def _is_smart_enabled(self, smart_type: SmartDetectObjectType) -> bool:
+        return (
+            self.is_recording_enabled
+            and smart_type in self.smart_detect_settings.object_types
+        )
+
+    def _is_smart_detected(self, smart_type: SmartDetectObjectType) -> bool:
+        event = self.get_last_smart_detect_event(smart_type)
+        return (
+            self._is_smart_enabled(smart_type)
+            and self.is_smart_detected
+            and event is not None
+            and event.end is None
+            and smart_type in event.smart_detect_types
+        )
+
+    @property
+    def is_smart_currently_detected(self) -> bool:
+        """Is smart detection currently being detected"""
+
+        return (
+            self.is_recording_enabled
+            and bool(self.smart_detect_settings.object_types)
+            and self.is_smart_detected
+            and self.last_smart_detect_event is not None
+            and self.last_smart_detect_event.end is None
+        )
+
+    # person
+
+    @property
     def can_detect_person(self) -> bool:
         return SmartDetectObjectType.PERSON in self.feature_flags.smart_detect_types
 
@@ -1228,10 +1175,27 @@ class Camera(ProtectMotionDeviceModel):
         detection events)?
         """
 
-        return (
-            self.is_recording_enabled
-            and SmartDetectObjectType.PERSON in self.smart_detect_settings.object_types
-        )
+        return self._is_smart_enabled(SmartDetectObjectType.PERSON)
+
+    @property
+    def last_person_detect_event(self) -> Optional[Event]:
+        """Get the last person smart detection event."""
+
+        return self.get_last_smart_detect_event(SmartDetectObjectType.PERSON)
+
+    @property
+    def last_person_detect(self) -> Optional[datetime]:
+        """Get the last person smart detection event."""
+
+        return self.last_smart_detects.get(SmartDetectObjectType.PERSON)
+
+    @property
+    def is_person_currently_detected(self) -> bool:
+        """Is person currently being detected"""
+
+        return self._is_smart_detected(SmartDetectObjectType.PERSON)
+
+    # vehicle
 
     @property
     def can_detect_vehicle(self) -> bool:
@@ -1243,40 +1207,27 @@ class Camera(ProtectMotionDeviceModel):
         detection events)?
         """
 
-        return (
-            self.is_recording_enabled
-            and SmartDetectObjectType.VEHICLE in self.smart_detect_settings.object_types
-        )
+        return self._is_smart_enabled(SmartDetectObjectType.VEHICLE)
 
     @property
-    def can_detect_face(self) -> bool:
-        return SmartDetectObjectType.FACE in self.feature_flags.smart_detect_types
+    def last_vehicle_detect_event(self) -> Optional[Event]:
+        """Get the last vehicle smart detection event."""
+
+        return self.get_last_smart_detect_event(SmartDetectObjectType.VEHICLE)
 
     @property
-    def is_face_detection_on(self) -> bool:
-        """Is Face Detection available and enabled (camera will produce face smart
-        detection events)?
-        """
+    def last_vehicle_detect(self) -> Optional[datetime]:
+        """Get the last vehicle smart detection event."""
 
-        return (
-            self.is_recording_enabled
-            and SmartDetectObjectType.FACE in self.smart_detect_settings.object_types
-        )
+        return self.last_smart_detects.get(SmartDetectObjectType.VEHICLE)
 
     @property
-    def can_detect_pet(self) -> bool:
-        return SmartDetectObjectType.PET in self.feature_flags.smart_detect_types
+    def is_vehicle_currently_detected(self) -> bool:
+        """Is vehicle currently being detected"""
 
-    @property
-    def is_pet_detection_on(self) -> bool:
-        """Is Pet Detection available and enabled (camera will produce pet smart
-        detection events)?
-        """
+        return self._is_smart_detected(SmartDetectObjectType.VEHICLE)
 
-        return (
-            self.is_recording_enabled
-            and SmartDetectObjectType.PET in self.smart_detect_settings.object_types
-        )
+    # license plate
 
     @property
     def can_detect_license_plate(self) -> bool:
@@ -1290,32 +1241,27 @@ class Camera(ProtectMotionDeviceModel):
         plate detection events)?
         """
 
-        return (
-            self.is_recording_enabled
-            and SmartDetectObjectType.LICENSE_PLATE
-            in self.smart_detect_settings.object_types
-        )
+        return self._is_smart_enabled(SmartDetectObjectType.LICENSE_PLATE)
 
     @property
-    def can_detect_smoke(self) -> bool:
-        return (
-            self.feature_flags.smart_detect_audio_types is not None
-            and SmartDetectAudioType.SMOKE_CMONX
-            in self.feature_flags.smart_detect_audio_types
-        )
+    def last_license_plate_detect_event(self) -> Optional[Event]:
+        """Get the last license plate smart detection event."""
+
+        return self.get_last_smart_detect_event(SmartDetectObjectType.LICENSE_PLATE)
 
     @property
-    def is_smoke_detection_on(self) -> bool:
-        """Is Smoke Detection available and enabled (camera will produce smoke smart
-        detection events)?
-        """
+    def last_license_plate_detect(self) -> Optional[datetime]:
+        """Get the last license plate smart detection event."""
 
-        return (
-            self.is_recording_enabled
-            and self.smart_detect_settings.audio_types is not None
-            and SmartDetectAudioType.SMOKE_CMONX
-            in self.smart_detect_settings.audio_types
-        )
+        return self.last_smart_detects.get(SmartDetectObjectType.LICENSE_PLATE)
+
+    @property
+    def is_license_plate_currently_detected(self) -> bool:
+        """Is license plate currently being detected"""
+
+        return self._is_smart_detected(SmartDetectObjectType.LICENSE_PLATE)
+
+    # package
 
     @property
     def can_detect_package(self) -> bool:
@@ -1327,10 +1273,359 @@ class Camera(ProtectMotionDeviceModel):
         detection events)?
         """
 
+        return self._is_smart_enabled(SmartDetectObjectType.PACKAGE)
+
+    @property
+    def last_package_detect_event(self) -> Optional[Event]:
+        """Get the last package smart detection event."""
+
+        return self.get_last_smart_detect_event(SmartDetectObjectType.PACKAGE)
+
+    @property
+    def last_package_detect(self) -> Optional[datetime]:
+        """Get the last package smart detection event."""
+
+        return self.last_smart_detects.get(SmartDetectObjectType.PACKAGE)
+
+    @property
+    def is_package_currently_detected(self) -> bool:
+        """Is package currently being detected"""
+
+        return self._is_smart_detected(SmartDetectObjectType.PACKAGE)
+
+    # audio smart detections
+
+    def _can_detect_audio(self, smart_type: SmartDetectObjectType) -> bool:
+        audio_type = smart_type.audio_type
+        return (
+            audio_type is not None
+            and self.feature_flags.smart_detect_audio_types is not None
+            and audio_type in self.feature_flags.smart_detect_audio_types
+        )
+
+    def _is_audio_enabled(self, smart_type: SmartDetectObjectType) -> bool:
+        audio_type = smart_type.audio_type
+        return (
+            audio_type is not None
+            and self.is_recording_enabled
+            and self.feature_flags.smart_detect_audio_types is not None
+            and self.smart_detect_settings.audio_types is not None
+            and audio_type in self.smart_detect_settings.audio_types
+        )
+
+    def _is_audio_detected(self, smart_type: SmartDetectObjectType) -> bool:
+        audio_type = smart_type.audio_type
+        if audio_type is None:
+            return False
+
+        event = self.get_last_smart_audio_detect_event(audio_type)
+        return (
+            self._is_audio_enabled(smart_type)
+            and self.is_smart_detected
+            and event is not None
+            and event.end is None
+            and smart_type in event.smart_detect_types
+        )
+
+    @property
+    def is_audio_currently_detected(self) -> bool:
+        """Is audio detection currently being detected"""
+
         return (
             self.is_recording_enabled
-            and SmartDetectObjectType.PACKAGE in self.smart_detect_settings.object_types
+            and bool(self.smart_detect_settings.audio_types)
+            and self.is_smart_detected
+            and self.last_smart_audio_detect_event is not None
+            and self.last_smart_audio_detect_event.end is None
         )
+
+    # smoke alarm
+
+    @property
+    def can_detect_smoke(self) -> bool:
+        return self._can_detect_audio(SmartDetectObjectType.SMOKE)
+
+    @property
+    def is_smoke_detection_on(self) -> bool:
+        """Is Smoke Alarm Detection available and enabled (camera will produce smoke
+        smart detection events)?
+        """
+
+        return self._is_audio_enabled(SmartDetectObjectType.SMOKE)
+
+    @property
+    def last_smoke_detect_event(self) -> Optional[Event]:
+        """Get the last person smart detection event."""
+
+        return self.get_last_smart_audio_detect_event(SmartDetectAudioType.SMOKE)
+
+    @property
+    def last_smoke_detect(self) -> Optional[datetime]:
+        """Get the last smoke smart detection event."""
+
+        return self.last_smart_audio_detects.get(SmartDetectAudioType.SMOKE)
+
+    @property
+    def is_smoke_currently_detected(self) -> bool:
+        """Is smoke alarm currently being detected"""
+
+        return self._is_audio_detected(SmartDetectObjectType.SMOKE)
+
+    # co alarm
+
+    @property
+    def can_detect_co(self) -> bool:
+        return self._can_detect_audio(SmartDetectObjectType.CMONX)
+
+    @property
+    def is_co_detection_on(self) -> bool:
+        """Is CO Alarm Detection available and enabled (camera will produce smoke smart
+        detection events)?
+        """
+
+        return self._is_audio_enabled(SmartDetectObjectType.CMONX)
+
+    @property
+    def last_cmonx_detect_event(self) -> Optional[Event]:
+        """Get the last CO alarm smart detection event."""
+
+        return self.get_last_smart_audio_detect_event(SmartDetectAudioType.CMONX)
+
+    @property
+    def last_cmonx_detect(self) -> Optional[datetime]:
+        """Get the last CO alarm smart detection event."""
+
+        return self.last_smart_audio_detects.get(SmartDetectAudioType.CMONX)
+
+    @property
+    def is_cmonx_currently_detected(self) -> bool:
+        """Is CO alarm currently being detected"""
+
+        return self._is_audio_detected(SmartDetectObjectType.CMONX)
+
+    # siren
+
+    @property
+    def can_detect_siren(self) -> bool:
+        return self._can_detect_audio(SmartDetectObjectType.SIREN)
+
+    @property
+    def is_siren_detection_on(self) -> bool:
+        """Is Siren Detection available and enabled (camera will produce siren smart
+        detection events)?
+        """
+
+        return self._is_audio_enabled(SmartDetectObjectType.SIREN)
+
+    @property
+    def last_siren_detect_event(self) -> Optional[Event]:
+        """Get the last Siren smart detection event."""
+
+        return self.get_last_smart_audio_detect_event(SmartDetectAudioType.SIREN)
+
+    @property
+    def last_siren_detect(self) -> Optional[datetime]:
+        """Get the last Siren smart detection event."""
+
+        return self.last_smart_audio_detects.get(SmartDetectAudioType.SIREN)
+
+    @property
+    def is_siren_currently_detected(self) -> bool:
+        """Is Siren currently being detected"""
+
+        return self._is_audio_detected(SmartDetectObjectType.SIREN)
+
+    # baby cry
+
+    @property
+    def can_detect_baby_cry(self) -> bool:
+        return self._can_detect_audio(SmartDetectObjectType.BABY_CRY)
+
+    @property
+    def is_baby_cry_detection_on(self) -> bool:
+        """Is Baby Cry Detection available and enabled (camera will produce baby cry smart
+        detection events)?
+        """
+
+        return self._is_audio_enabled(SmartDetectObjectType.BABY_CRY)
+
+    @property
+    def last_baby_cry_detect_event(self) -> Optional[Event]:
+        """Get the last Baby Cry smart detection event."""
+
+        return self.get_last_smart_audio_detect_event(SmartDetectAudioType.BABY_CRY)
+
+    @property
+    def last_baby_cry_detect(self) -> Optional[datetime]:
+        """Get the last Baby Cry smart detection event."""
+
+        return self.last_smart_audio_detects.get(SmartDetectAudioType.BABY_CRY)
+
+    @property
+    def is_baby_cry_currently_detected(self) -> bool:
+        """Is Baby Cry currently being detected"""
+
+        return self._is_audio_detected(SmartDetectObjectType.BABY_CRY)
+
+    # speaking
+
+    @property
+    def can_detect_speaking(self) -> bool:
+        return self._can_detect_audio(SmartDetectObjectType.SPEAK)
+
+    @property
+    def is_speaking_detection_on(self) -> bool:
+        """Is Speaking Detection available and enabled (camera will produce speaking smart
+        detection events)?
+        """
+
+        return self._is_audio_enabled(SmartDetectObjectType.SPEAK)
+
+    @property
+    def last_speaking_detect_event(self) -> Optional[Event]:
+        """Get the last Speaking smart detection event."""
+
+        return self.get_last_smart_audio_detect_event(SmartDetectAudioType.SPEAK)
+
+    @property
+    def last_speaking_detect(self) -> Optional[datetime]:
+        """Get the last Speaking smart detection event."""
+
+        return self.last_smart_audio_detects.get(SmartDetectAudioType.SPEAK)
+
+    @property
+    def is_speaking_currently_detected(self) -> bool:
+        """Is Speaking currently being detected"""
+
+        return self._is_audio_detected(SmartDetectObjectType.SPEAK)
+
+    # bark
+
+    @property
+    def can_detect_bark(self) -> bool:
+        return self._can_detect_audio(SmartDetectObjectType.BARK)
+
+    @property
+    def is_bark_detection_on(self) -> bool:
+        """Is Bark Detection available and enabled (camera will produce barking smart
+        detection events)?
+        """
+
+        return self._is_audio_enabled(SmartDetectObjectType.BARK)
+
+    @property
+    def last_bark_detect_event(self) -> Optional[Event]:
+        """Get the last Bark smart detection event."""
+
+        return self.get_last_smart_audio_detect_event(SmartDetectAudioType.BARK)
+
+    @property
+    def last_bark_detect(self) -> Optional[datetime]:
+        """Get the last Bark smart detection event."""
+
+        return self.last_smart_audio_detects.get(SmartDetectAudioType.BARK)
+
+    @property
+    def is_bark_currently_detected(self) -> bool:
+        """Is Bark currently being detected"""
+
+        return self._is_audio_detected(SmartDetectObjectType.BARK)
+
+    # car alarm (burglar in code, car alarm in Protect UI)
+
+    @property
+    def can_detect_car_alarm(self) -> bool:
+        return self._can_detect_audio(SmartDetectObjectType.BURGLAR)
+
+    @property
+    def is_car_alarm_detection_on(self) -> bool:
+        """Is Car Alarm Detection available and enabled (camera will produce car alarm smart
+        detection events)?
+        """
+
+        return self._is_audio_enabled(SmartDetectObjectType.BURGLAR)
+
+    @property
+    def last_car_alarm_detect_event(self) -> Optional[Event]:
+        """Get the last Car Alarm smart detection event."""
+
+        return self.get_last_smart_audio_detect_event(SmartDetectAudioType.BURGLAR)
+
+    @property
+    def last_car_alarm_detect(self) -> Optional[datetime]:
+        """Get the last Car Alarm smart detection event."""
+
+        return self.last_smart_audio_detects.get(SmartDetectAudioType.BURGLAR)
+
+    @property
+    def is_car_alarm_currently_detected(self) -> bool:
+        """Is Car Alarm currently being detected"""
+
+        return self._is_audio_detected(SmartDetectObjectType.BURGLAR)
+
+    # car horn
+
+    @property
+    def can_detect_car_horn(self) -> bool:
+        return self._can_detect_audio(SmartDetectObjectType.CAR_HORN)
+
+    @property
+    def is_car_horn_detection_on(self) -> bool:
+        """Is Car Horn Detection available and enabled (camera will produce car horn smart
+        detection events)?
+        """
+
+        return self._is_audio_enabled(SmartDetectObjectType.CAR_HORN)
+
+    @property
+    def last_car_horn_detect_event(self) -> Optional[Event]:
+        """Get the last Car Horn smart detection event."""
+
+        return self.get_last_smart_audio_detect_event(SmartDetectAudioType.CAR_HORN)
+
+    @property
+    def last_car_horn_detect(self) -> Optional[datetime]:
+        """Get the last Car Horn smart detection event."""
+
+        return self.last_smart_audio_detects.get(SmartDetectAudioType.CAR_HORN)
+
+    @property
+    def is_car_horn_currently_detected(self) -> bool:
+        """Is Car Horn currently being detected"""
+
+        return self._is_audio_detected(SmartDetectObjectType.CAR_HORN)
+
+    # glass break
+
+    @property
+    def can_detect_glass_break(self) -> bool:
+        return self._can_detect_audio(SmartDetectObjectType.GLASS_BREAK)
+
+    @property
+    def is_glass_break_detection_on(self) -> bool:
+        """Is Glass Break available and enabled (camera will produce glass break smart
+        detection events)?
+        """
+
+        return self._is_audio_enabled(SmartDetectObjectType.GLASS_BREAK)
+
+    @property
+    def last_glass_break_detect_event(self) -> Optional[Event]:
+        """Get the last Glass Break smart detection event."""
+
+        return self.get_last_smart_audio_detect_event(SmartDetectAudioType.GLASS_BREAK)
+
+    @property
+    def last_glass_break_detect(self) -> Optional[datetime]:
+        """Get the last Glass Break smart detection event."""
+
+        return self.last_smart_audio_detects.get(SmartDetectAudioType.GLASS_BREAK)
+
+    @property
+    def is_glass_break_currently_detected(self) -> bool:
+        """Is Glass Break currently being detected"""
+
+        return self._is_audio_detected(SmartDetectObjectType.GLASS_BREAK)
 
     @property
     def is_ringing(self) -> bool:
