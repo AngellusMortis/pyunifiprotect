@@ -62,6 +62,8 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 MAX_SUPPORTED_CAMERAS = 256
 MAX_EVENT_HISTORY_IN_STATE_MACHINE = MAX_SUPPORTED_CAMERAS * 2
+DELETE_KEYS_THUMB = {"color", "vehicleType"}
+DELETE_KEYS_EVENT = {"deletedAt", "category", "subCategory"}
 
 
 class NVRLocation(UserLocation):
@@ -140,8 +142,7 @@ class EventThumbnailAttributes(ProtectBaseObject):
     ) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
-        delete_keys = {"color", "vehicleType"}
-        for key in delete_keys.intersection(data.keys()):
+        for key in DELETE_KEYS_THUMB.intersection(data.keys()):
             if data[key] is None:
                 del data[key]
 
@@ -293,8 +294,7 @@ class Event(ProtectModelWithId):
     ) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
-        delete_keys = {"deletedAt", "category", "subCategory"}
-        for key in delete_keys.intersection(data.keys()):
+        for key in DELETE_KEYS_EVENT.intersection(data.keys()):
             if data[key] is None:
                 del data[key]
 
