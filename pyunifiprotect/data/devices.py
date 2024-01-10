@@ -2480,7 +2480,7 @@ class Sensor(ProtectAdoptableDeviceModel):
 
     @property
     def is_leak_sensor_enabled(self) -> bool:
-        return self.mount_type == MountType.LEAK
+        return self.mount_type is MountType.LEAK
 
     def set_alarm_timeout(self) -> None:
         self._alarm_timeout = utc_now() + EVENT_PING_INTERVAL
