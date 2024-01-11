@@ -1133,6 +1133,14 @@ class Camera(ProtectMotionDeviceModel):
             and self.last_motion_event.end is None
         )
 
+    async def set_motion_detection(self, enabled: bool) -> None:
+        """Sets motion detection on camera"""
+
+        def callback() -> None:
+            self.recording_settings.enable_motion_detection = enabled
+
+        await self.queue_update(callback)
+
     # object smart detections
 
     def _is_smart_enabled(self, smart_type: SmartDetectObjectType) -> bool:
@@ -1195,6 +1203,11 @@ class Camera(ProtectMotionDeviceModel):
 
         return self._is_smart_detected(SmartDetectObjectType.PERSON)
 
+    async def set_person_detection(self, enabled: bool) -> None:
+        """Toggles person smart detection. Requires camera to have smart detection"""
+
+        return await self._set_object_detect(SmartDetectObjectType.PERSON, enabled)
+
     # vehicle
 
     @property
@@ -1226,6 +1239,11 @@ class Camera(ProtectMotionDeviceModel):
         """Is vehicle currently being detected"""
 
         return self._is_smart_detected(SmartDetectObjectType.VEHICLE)
+
+    async def set_vehicle_detection(self, enabled: bool) -> None:
+        """Toggles vehicle smart detection. Requires camera to have smart detection"""
+
+        return await self._set_object_detect(SmartDetectObjectType.VEHICLE, enabled)
 
     # license plate
 
@@ -1261,6 +1279,14 @@ class Camera(ProtectMotionDeviceModel):
 
         return self._is_smart_detected(SmartDetectObjectType.LICENSE_PLATE)
 
+    async def set_license_plate_detection(self, enabled: bool) -> None:
+        """Toggles license plate smart detection. Requires camera to have smart detection"""
+
+        return await self._set_object_detect(
+            SmartDetectObjectType.LICENSE_PLATE,
+            enabled,
+        )
+
     # package
 
     @property
@@ -1292,6 +1318,11 @@ class Camera(ProtectMotionDeviceModel):
         """Is package currently being detected"""
 
         return self._is_smart_detected(SmartDetectObjectType.PACKAGE)
+
+    async def set_package_detection(self, enabled: bool) -> None:
+        """Toggles package smart detection. Requires camera to have smart detection"""
+
+        return await self._set_object_detect(SmartDetectObjectType.PACKAGE, enabled)
 
     # audio smart detections
 
@@ -1371,6 +1402,11 @@ class Camera(ProtectMotionDeviceModel):
 
         return self._is_audio_detected(SmartDetectObjectType.SMOKE)
 
+    async def set_smoke_detection(self, enabled: bool) -> None:
+        """Toggles smoke smart detection. Requires camera to have smart detection"""
+
+        return await self._set_audio_detect(SmartDetectAudioType.SMOKE, enabled)
+
     # co alarm
 
     @property
@@ -1402,6 +1438,11 @@ class Camera(ProtectMotionDeviceModel):
         """Is CO alarm currently being detected"""
 
         return self._is_audio_detected(SmartDetectObjectType.CMONX)
+
+    async def set_cmonx_detection(self, enabled: bool) -> None:
+        """Toggles smoke smart detection. Requires camera to have smart detection"""
+
+        return await self._set_audio_detect(SmartDetectAudioType.CMONX, enabled)
 
     # siren
 
@@ -1435,6 +1476,11 @@ class Camera(ProtectMotionDeviceModel):
 
         return self._is_audio_detected(SmartDetectObjectType.SIREN)
 
+    async def set_siren_detection(self, enabled: bool) -> None:
+        """Toggles siren smart detection. Requires camera to have smart detection"""
+
+        return await self._set_audio_detect(SmartDetectAudioType.SIREN, enabled)
+
     # baby cry
 
     @property
@@ -1466,6 +1512,11 @@ class Camera(ProtectMotionDeviceModel):
         """Is Baby Cry currently being detected"""
 
         return self._is_audio_detected(SmartDetectObjectType.BABY_CRY)
+
+    async def set_baby_cry_detection(self, enabled: bool) -> None:
+        """Toggles baby_cry smart detection. Requires camera to have smart detection"""
+
+        return await self._set_audio_detect(SmartDetectAudioType.BABY_CRY, enabled)
 
     # speaking
 
@@ -1499,6 +1550,11 @@ class Camera(ProtectMotionDeviceModel):
 
         return self._is_audio_detected(SmartDetectObjectType.SPEAK)
 
+    async def set_speaking_detection(self, enabled: bool) -> None:
+        """Toggles speaking smart detection. Requires camera to have smart detection"""
+
+        return await self._set_audio_detect(SmartDetectAudioType.SPEAK, enabled)
+
     # bark
 
     @property
@@ -1530,6 +1586,11 @@ class Camera(ProtectMotionDeviceModel):
         """Is Bark currently being detected"""
 
         return self._is_audio_detected(SmartDetectObjectType.BARK)
+
+    async def set_bark_detection(self, enabled: bool) -> None:
+        """Toggles bark smart detection. Requires camera to have smart detection"""
+
+        return await self._set_audio_detect(SmartDetectAudioType.BARK, enabled)
 
     # car alarm (burglar in code, car alarm in Protect UI)
 
@@ -1563,6 +1624,11 @@ class Camera(ProtectMotionDeviceModel):
 
         return self._is_audio_detected(SmartDetectObjectType.BURGLAR)
 
+    async def set_car_alarm_detection(self, enabled: bool) -> None:
+        """Toggles car_alarm smart detection. Requires camera to have smart detection"""
+
+        return await self._set_audio_detect(SmartDetectAudioType.BURGLAR, enabled)
+
     # car horn
 
     @property
@@ -1595,6 +1661,11 @@ class Camera(ProtectMotionDeviceModel):
 
         return self._is_audio_detected(SmartDetectObjectType.CAR_HORN)
 
+    async def set_car_horn_detection(self, enabled: bool) -> None:
+        """Toggles car_horn smart detection. Requires camera to have smart detection"""
+
+        return await self._set_audio_detect(SmartDetectAudioType.CAR_HORN, enabled)
+
     # glass break
 
     @property
@@ -1626,6 +1697,11 @@ class Camera(ProtectMotionDeviceModel):
         """Is Glass Break currently being detected"""
 
         return self._is_audio_detected(SmartDetectObjectType.GLASS_BREAK)
+
+    async def set_glass_break_detection(self, enabled: bool) -> None:
+        """Toggles glass_break smart detection. Requires camera to have smart detection"""
+
+        return await self._set_audio_detect(SmartDetectAudioType.GLASS_BREAK, enabled)
 
     @property
     def is_ringing(self) -> bool:
@@ -1842,14 +1918,6 @@ class Camera(ProtectMotionDeviceModel):
             chunk_size=chunk_size,
             fps=fps,
         )
-
-    async def set_motion_detection(self, enabled: bool) -> None:
-        """Sets motion detection on camera"""
-
-        def callback() -> None:
-            self.recording_settings.enable_motion_detection = enabled
-
-        await self.queue_update(callback)
 
     async def set_recording_mode(self, mode: RecordingMode) -> None:
         """Sets recording mode on camera"""
@@ -2096,44 +2164,6 @@ class Camera(ProtectMotionDeviceModel):
             self.smart_detect_settings.audio_types = objects
 
         await self.queue_update(callback)
-
-    async def set_person_detection(self, enabled: bool) -> None:
-        """Toggles person smart detection. Requires camera to have smart detection"""
-
-        return await self._set_object_detect(SmartDetectObjectType.PERSON, enabled)
-
-    async def set_vehicle_detection(self, enabled: bool) -> None:
-        """Toggles vehicle smart detection. Requires camera to have smart detection"""
-
-        return await self._set_object_detect(SmartDetectObjectType.VEHICLE, enabled)
-
-    async def set_face_detection(self, enabled: bool) -> None:
-        """Toggles face smart detection. Requires camera to have smart detection"""
-
-        return await self._set_object_detect(SmartDetectObjectType.FACE, enabled)
-
-    async def set_pet_detection(self, enabled: bool) -> None:
-        """Toggles pet smart detection. Requires camera to have smart detection"""
-
-        return await self._set_object_detect(SmartDetectObjectType.PET, enabled)
-
-    async def set_license_plate_detection(self, enabled: bool) -> None:
-        """Toggles license plate smart detection. Requires camera to have smart detection"""
-
-        return await self._set_object_detect(
-            SmartDetectObjectType.LICENSE_PLATE,
-            enabled,
-        )
-
-    async def set_package_detection(self, enabled: bool) -> None:
-        """Toggles package smart detection. Requires camera to have smart detection"""
-
-        return await self._set_object_detect(SmartDetectObjectType.PACKAGE, enabled)
-
-    async def set_smoke_detection(self, enabled: bool) -> None:
-        """Toggles smoke_cmonx smart detection. Requires camera to have smart detection"""
-
-        return await self._set_audio_detect(SmartDetectAudioType.SMOKE_CMONX, enabled)
 
     async def set_lcd_text(
         self,
