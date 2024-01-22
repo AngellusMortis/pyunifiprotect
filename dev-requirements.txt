@@ -186,7 +186,7 @@ pathspec==0.12.1
     #   mkdocs
 pexpect==4.8.0
     # via ipython
-pillow==10.1.0
+pillow==10.2.0
     # via pyunifiprotect (pyproject.toml)
 pip-tools==7.3.0
     # via pyunifiprotect (pyproject.toml)
