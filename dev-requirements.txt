@@ -6,7 +6,7 @@
 #
 aiofiles==23.2.1
     # via pyunifiprotect (pyproject.toml)
-aiohttp==3.9.1
+aiohttp==3.9.2
     # via
     #   black
     #   pyunifiprotect (pyproject.toml)
