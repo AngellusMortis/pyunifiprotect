@@ -427,10 +427,12 @@ class FocusMode(str, ValuesEnumMixin, enum.Enum):
 
 
 @enum.unique
-class MountPosition(str, ValuesEnumMixin, enum.Enum):
+class MountPosition(str, UnknownValuesEnumMixin, enum.Enum):
     CEILING = "ceiling"
     WALL = "wall"
     DESK = "desk"
+    NONE = "none"
+    UNKNOWN = "unknown"
 
 
 @enum.unique
