@@ -160,8 +160,9 @@ def test_base_url(protect_client: ProtectApiClient):
     assert protect_client.ws_url == f"wss://127.0.0.1:0{arg}"
 
     protect_client._port = 443
+    protect_client._update_url()
 
-    assert protect_client.base_url == "https://127.0.0.1:0"
+    assert protect_client.base_url == "https://127.0.0.1"
     assert protect_client.ws_url == f"wss://127.0.0.1{arg}"
 
 

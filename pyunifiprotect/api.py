@@ -177,6 +177,10 @@ class BaseApiClient:
         if session is not None:
             self._session = session
 
+        self._update_url()
+
+    def _update_url(self) -> None:
+        """Updates the url after changing _host or _port."""
         if self._port != 443:
             self._url = URL(f"https://{self._host}:{self._port}")
         else:
