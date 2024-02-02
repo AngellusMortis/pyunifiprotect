@@ -260,7 +260,7 @@ class BaseApiClient:
         for attempt in range(2):
             try:
                 req_context = session.request(
-                    method, request_url, headers=headers, **kwargs
+                    method, request_url, headers=headers, **kwargs,
                 )
                 response = await req_context.__aenter__()
 
