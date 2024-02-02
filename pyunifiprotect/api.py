@@ -250,16 +250,16 @@ class BaseApiClient:
         if require_auth:
             await self.ensure_authenticated()
 
-        url = self._url.joinpath(url)
+        request_url = self._url.joinpath(url)
         headers = kwargs.get("headers") or self.headers
-        _LOGGER.debug("Request url: %s", url)
+        _LOGGER.debug("Request url: %s", request_url)
         if not self._verify_ssl:
             kwargs["ssl"] = False
         session = await self.get_session()
 
         for attempt in range(2):
             try:
-                req_context = session.request(method, url, headers=headers, **kwargs)
+                req_context = session.request(method, request_url, headers=headers, **kwargs)
                 response = await req_context.__aenter__()
 
                 self._update_last_token_cookie(response)
