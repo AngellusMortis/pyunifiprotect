@@ -21,6 +21,7 @@ import aiofiles
 import aiohttp
 from aiohttp import CookieJar, client_exceptions
 import orjson
+from yarl import URL
 
 from pyunifiprotect.data import (
     NVR,
@@ -176,11 +177,12 @@ class BaseApiClient:
         if session is not None:
             self._session = session
 
-    @property
-    def base_url(self) -> str:
         if self._port != 443:
-            return f"https://{self._host}:{self._port}"
-        return f"https://{self._host}"
+            self._url = URL(f"https://{self._host}:{self._port}")
+        else:
+            self._url = URL(f"https://{self._host}")
+
+        self.base_url = str(self._url)
 
     @property
     def ws_url(self) -> str:
@@ -248,7 +250,7 @@ class BaseApiClient:
         if require_auth:
             await self.ensure_authenticated()
 
-        url = urljoin(self.base_url, url)
+        url = self._url.joinpath(url)
         headers = kwargs.get("headers") or self.headers
         _LOGGER.debug("Request url: %s", url)
         if not self._verify_ssl:
