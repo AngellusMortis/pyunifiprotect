@@ -250,7 +250,7 @@ class BaseApiClient:
         if require_auth:
             await self.ensure_authenticated()
 
-        request_url = self._url.joinpath(url)
+        request_url = self._url.joinpath(url[1:])
         headers = kwargs.get("headers") or self.headers
         _LOGGER.debug("Request url: %s", request_url)
         if not self._verify_ssl:
