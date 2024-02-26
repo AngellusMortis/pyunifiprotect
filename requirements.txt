@@ -64,7 +64,7 @@ multidict==6.0.4
     # via
     #   aiohttp
     #   yarl
-orjson==3.9.10
+orjson==3.9.15
     # via pyunifiprotect (pyproject.toml)
 packaging==23.2
     # via pyunifiprotect (pyproject.toml)
