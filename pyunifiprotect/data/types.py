@@ -510,6 +510,7 @@ class PermissionNode(str, enum.Enum):
     DELETE = "delete"
     READ_MEDIA = "readmedia"
     DELETE_MEDIA = "deletemedia"
+    READ_LIVE = "readlive"
 
 
 @enum.unique
