@@ -1644,3 +1644,36 @@ class ProtectApiClient(BaseApiClient):
                 _LOGGER.warning("Failed to retrieve release versions from online.")
 
         return versions
+
+    async def get_release_channel(self) -> str | None:
+        """
+        Get release channel for UniFi OS console.
+
+        Requires a superadmin user to access.
+        """
+
+        url = "/api/firmware/update"
+        response = await self.request("get", url=url, require_auth=True, auto_close=False)
+        try:
+            if response.status != 200:
+                reason = await get_response_reason(response)
+                msg = "Request failed: %s - Status: %s - Reason: %s"
+                if response.status in {401, 403}:
+                    raise NotAuthorized(msg % (url, response.status, reason))
+                if response.status >= 400 and response.status < 500:
+                    raise BadRequest(msg % (url, response.status, reason))
+                raise NvrError(msg % (url, response.status, reason))
+
+            data: Optional[bytes] = await response.read()
+            response.release()
+
+        except Exception:
+            # make sure response is released
+            response.release()
+            # re-raise exception
+            raise
+
+        if data is not None:
+            json_data: Union[list[Any], dict[str, Any]] = orjson.loads(data)
+            return json_data["channel"]
+        return None
