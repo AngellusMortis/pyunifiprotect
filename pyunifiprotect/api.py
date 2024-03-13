@@ -1653,7 +1653,12 @@ class ProtectApiClient(BaseApiClient):
         """
 
         url = "/api/firmware/update"
-        response = await self.request("get", url=url, require_auth=True, auto_close=False)
+        response = await self.request(
+            "get",
+            url=url,
+            require_auth=True,
+            auto_close=False,
+        )
         try:
             if response.status != 200:
                 reason = await get_response_reason(response)
@@ -1675,5 +1680,5 @@ class ProtectApiClient(BaseApiClient):
 
         if data is not None:
             json_data: Union[list[Any], dict[str, Any]] = orjson.loads(data)
-            return json_data["channel"]
+            return cast(str, json_data["channel"])
         return None
