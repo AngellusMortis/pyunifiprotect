@@ -1679,6 +1679,6 @@ class ProtectApiClient(BaseApiClient):
             raise
 
         if data is not None:
-            json_data: Union[list[Any], dict[str, Any]] = orjson.loads(data)
+            json_data: dict[str, Any] = orjson.loads(data)
             return cast(str, json_data["channel"])
         return None
