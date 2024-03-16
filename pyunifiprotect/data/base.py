@@ -199,6 +199,7 @@ class ProtectBaseObject(BaseModel):
         return cls._to_unifi_remaps
 
     @classmethod
+    @cache
     def _set_protect_subtypes(cls) -> None:
         """Helper method to detect attrs of current class that are UFP Objects themselves"""
 
