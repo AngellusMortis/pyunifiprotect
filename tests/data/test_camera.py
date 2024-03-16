@@ -1054,6 +1054,7 @@ async def test_camera_set_icr_custom_lux(
     await camera_obj.set_icr_custom_lux(lux)
 
     assert camera_obj.isp_settings.icr_custom_value == value
+    assert camera_obj.icr_lux_display == lux
 
     camera_obj.api.api_request.assert_called_with(
         f"cameras/{camera_obj.id}",
