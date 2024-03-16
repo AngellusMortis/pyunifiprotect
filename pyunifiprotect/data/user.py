@@ -1,4 +1,5 @@
 """UniFi Protect User models."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -140,6 +141,7 @@ class User(ProtectModelWithId):
     # alertRules
     # notificationsV2
     # notifications
+    # cloudProviders
 
     _groups: Optional[list[Group]] = PrivateAttr(None)
     _perm_cache: dict[str, bool] = PrivateAttr({})

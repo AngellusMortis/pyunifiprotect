@@ -1,4 +1,5 @@
 """UniFi Protect Data."""
+
 from __future__ import annotations
 
 import asyncio
@@ -475,7 +476,8 @@ class ProtectBaseObject(BaseModel):
             if use_obj or key in data:
                 data[key] = self._unifi_dict_protect_obj_dict(data, key, use_obj)
 
-        data: dict[str, Any] = serialize_unifi_obj(data)
+        # all child objects have been serialized correctly do not do it twice
+        data: dict[str, Any] = serialize_unifi_obj(data, levels=2)
         remaps = self._get_to_unifi_remaps()
         for to_key in set(data).intersection(remaps):
             data[remaps[to_key]] = data.pop(to_key)

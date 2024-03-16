@@ -304,9 +304,8 @@ def test_bootstrap(bootstrap: dict[str, Any]):
     # TODO: fields that still need implemented
     if "deviceGroups" in bootstrap:  # added in 2.0-beta
         del bootstrap["deviceGroups"]
-    del bootstrap["legacyUFVs"]
-    del bootstrap["displays"]
     bootstrap.pop("schedules", None)
+    bootstrap.pop("agreements", None)
     if "deviceGroups" in bootstrap:
         del bootstrap["deviceGroups"]
 

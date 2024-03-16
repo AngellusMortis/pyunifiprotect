@@ -6604,7 +6604,6 @@
         },
         "modelKey": "nvr"
     },
-    "legacyUFVs": [],
     "lastUpdateId": "ebf25bac-d5a1-4f1d-a0ee-74c15981eb70",
     "viewers": [
         {
@@ -6643,7 +6642,6 @@
             "modelKey": "viewer"
         }
     ],
-    "displays": [],
     "lights": [
         {
             "mac": "534D8B001B14",

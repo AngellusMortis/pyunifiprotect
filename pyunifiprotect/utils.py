@@ -253,15 +253,15 @@ def convert_unifi_data(value: Any, field: ModelField) -> Any:
     return value
 
 
-def serialize_unifi_obj(value: Any) -> Any:
+def serialize_unifi_obj(value: Any, levels: int = -1) -> Any:
     """Serializes UFP data"""
     if unifi_dict := getattr(value, "unifi_dict", None):
         value = unifi_dict()
 
-    if isinstance(value, dict):
-        return serialize_dict(value)
-    if isinstance(value, Iterable) and not isinstance(value, str):
-        return serialize_list(value)
+    if levels != 0 and isinstance(value, dict):
+        return serialize_dict(value, levels=levels - 1)
+    if levels != 0 and isinstance(value, Iterable) and not isinstance(value, str):
+        return serialize_list(value, levels=levels - 1)
     if isinstance(value, Enum):
         return value.value
     if isinstance(value, (IPv4Address, IPv6Address, UUID, Path, tzinfo, Version)):
@@ -276,13 +276,13 @@ def serialize_unifi_obj(value: Any) -> Any:
     return value
 
 
-def serialize_dict(data: dict[str, Any]) -> dict[str, Any]:
+def serialize_dict(data: dict[str, Any], levels: int = -1) -> dict[str, Any]:
     """Serializes UFP data dict"""
     for key in list(data.keys()):
         set_key = key
         if set_key not in SNAKE_CASE_KEYS:
             set_key = to_camel_case(set_key)
-        data[set_key] = serialize_unifi_obj(data.pop(key))
+        data[set_key] = serialize_unifi_obj(data.pop(key), levels=levels)
 
     return data
 
@@ -307,10 +307,10 @@ def serialize_point(point: tuple[CoordType, CoordType]) -> list[Union[int, float
     ]
 
 
-def serialize_list(items: Iterable[Any]) -> list[Any]:
+def serialize_list(items: Iterable[Any], levels: int = -1) -> list[Any]:
     """Serializes UFP data list"""
 
-    return [serialize_unifi_obj(i) for i in items]
+    return [serialize_unifi_obj(i, levels=levels) for i in items]
 
 
 def convert_smart_types(items: Iterable[str]) -> list[SmartDetectObjectType]:

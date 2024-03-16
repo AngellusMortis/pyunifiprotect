@@ -1,4 +1,5 @@
 """UniFi Protect Data."""
+
 from __future__ import annotations
 
 import asyncio
@@ -499,7 +500,6 @@ class PortConfig(ProtectBaseObject):
     rtmp: int
     devices_wss: int
     camera_https: int
-    camera_tcp: int
     live_ws: int
     live_wss: int
     tcp_streams: int
@@ -513,6 +513,8 @@ class PortConfig(ProtectBaseObject):
     piongw: Optional[int] = None
     ems_json_cli: Optional[int] = None
     stacking: Optional[int] = None
+    # 3.0.22+
+    ai_feature_console: Optional[int] = None
 
     @classmethod
     @cache
@@ -683,6 +685,9 @@ class UOSSpace(ProtectBaseObject):
     # requires 2.8.22+
     space_type: Optional[str] = None
 
+    # TODO:
+    # reasons
+
     @classmethod
     @cache
     def _get_unifi_remaps(cls) -> dict[str, str]:
@@ -707,7 +712,7 @@ class UOSSpace(ProtectBaseObject):
     ) -> dict[str, Any]:
         data = super().unifi_dict(data=data, exclude=exclude)
 
-        # esimtate is actually in seconds, not milliseconds
+        # estimate is actually in seconds, not milliseconds
         if "estimate" in data and data["estimate"] is not None:
             data["estimate"] = data["estimate"] / 1000
 
@@ -878,6 +883,12 @@ class NVRFeatureFlags(ProtectBaseObject):
     has_two_way_audio_media_streams: Optional[bool] = None
 
 
+class NVRSmartDetection(ProtectBaseObject):
+    enable: bool
+    face_recognition: bool
+    license_plate_recognition: bool
+
+
 class NVR(ProtectDeviceModel):
     can_auto_update: bool
     is_stats_gathering_enabled: bool
@@ -946,6 +957,9 @@ class NVR(ProtectDeviceModel):
     is_ucore_updatable: Optional[bool] = None
     # requires 2.11.13+
     last_device_fw_updates_checked_at: Optional[datetime] = None
+    # requires 3.0.22+
+    smart_detection: Optional[NVRSmartDetection] = None
+    is_ucore_stacked: Optional[bool] = None
 
     # TODO:
     # errorCode   read only
@@ -965,6 +979,7 @@ class NVR(ProtectDeviceModel):
             "recordingRetentionDurationMs": "recordingRetentionDuration",
             "vaultCameras": "vaultCameraIds",
             "lastDeviceFWUpdatesCheckedAt": "lastDeviceFwUpdatesCheckedAt",
+            "isUCoreStacked": "isUcoreStacked",
         }
 
     @classmethod

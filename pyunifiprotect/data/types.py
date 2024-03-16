@@ -79,7 +79,7 @@ class UnknownValuesEnumMixin(ValuesEnumMixin):
 
 
 @enum.unique
-class ModelType(str, ValuesEnumMixin, enum.Enum):
+class ModelType(str, UnknownValuesEnumMixin, enum.Enum):
     CAMERA = "camera"
     CLOUD_IDENTITY = "cloudIdentity"
     EVENT = "event"
@@ -90,15 +90,14 @@ class ModelType(str, ValuesEnumMixin, enum.Enum):
     USER = "user"
     USER_LOCATION = "userLocation"
     VIEWPORT = "viewer"
-    DISPLAYS = "display"
     BRIDGE = "bridge"
     SENSOR = "sensor"
     DOORLOCK = "doorlock"
     SCHEDULE = "schedule"
     CHIME = "chime"
     DEVICE_GROUP = "deviceGroup"
-    LEGACY_UFV = "legacyUFV"
     RECORDING_SCHEDULE = "recordingSchedule"
+    UNKNOWN = "unknown"
 
     @staticmethod
     def bootstrap_models() -> tuple[str, ...]:
@@ -140,6 +139,7 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     NO_SCHEDULE = "nonScheduledRecording"
     RECORDING_MODE_CHANGED = "recordingModeChanged"
     HOTPLUG = "hotplug"
+    FACE_GROUP_DETECTED = "faceGroupDetected"
     CONSOLIDATED_RESOLUTION_LOWERED = "consolidatedResolutionLowered"
     CONSOLIDATED_POOR_CONNECTION = "consolidatedPoorConnection"
     CAMERA_CONNECTED = "cameraConnected"
@@ -245,8 +245,8 @@ class SmartDetectObjectType(str, ValuesEnumMixin, enum.Enum):
     BURGLAR = "alrmBurglar"
     CAR_HORN = "alrmCarHorn"
     GLASS_BREAK = "alrmGlassBreak"
-    # old?
     FACE = "face"
+    # old?
     CAR = "car"
     PET = "pet"
 
@@ -366,12 +366,14 @@ class ResolutionStorageType(str, ValuesEnumMixin, enum.Enum):
 
 
 @enum.unique
-class IRLEDMode(str, ValuesEnumMixin, enum.Enum):
+class IRLEDMode(str, UnknownValuesEnumMixin, enum.Enum):
     AUTO = "auto"
     ON = "on"
     AUTO_NO_LED = "autoFilterOnly"
     OFF = "off"
     MANUAL = "manual"
+    CUSTOM = "custom"
+    UNKNOWN = "unknown"
 
 
 @enum.unique
@@ -503,7 +505,7 @@ class LockStatusType(str, ValuesEnumMixin, enum.Enum):
 
 
 @enum.unique
-class PermissionNode(str, enum.Enum):
+class PermissionNode(str, UnknownValuesEnumMixin, enum.Enum):
     CREATE = "create"
     READ = "read"
     WRITE = "write"
@@ -511,6 +513,13 @@ class PermissionNode(str, enum.Enum):
     READ_MEDIA = "readmedia"
     DELETE_MEDIA = "deletemedia"
     READ_LIVE = "readlive"
+    UNKNOWN = "unknown"
+
+
+@enum.unique
+class HDRMode(str, UnknownValuesEnumMixin, enum.Enum):
+    NORMAL = "normal"
+    ALWAYS_ON = "superHdr"
 
 
 @enum.unique
@@ -524,6 +533,11 @@ class LensType(str, enum.Enum):
 
 class DoorbellText(ConstrainedStr):
     max_length = 30
+
+
+class ICRCustomValue(ConstrainedInt):
+    ge = 0
+    le = 9
 
 
 class LEDLevel(ConstrainedInt):

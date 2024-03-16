@@ -125,7 +125,6 @@ class SampleDataGenerator:
             "group": len(bootstrap["groups"]),
             "liveview": len(bootstrap["liveviews"]),
             "viewer": len(bootstrap["viewers"]),
-            "display": len(bootstrap["displays"]),
             "light": len(bootstrap["lights"]),
             "bridge": len(bootstrap["bridges"]),
             "sensor": len(bootstrap["sensors"]),

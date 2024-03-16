@@ -568,6 +568,15 @@ NEW_FIELDS = {
     # 2.11.13+
     "lastDeviceFWUpdatesCheckedAt",
     "audioSettings",
+    # 3.0.22+
+    "smartDetection",
+    "platform",
+    "repeatTimes",
+    "ringSettings",
+    "speakerTrackList",
+    "trackNo",
+    "hasHttpsClientOTA",
+    "isUCoreStacked",
 }
 
 NEW_CAMERA_FEATURE_FLAGS = {
@@ -592,6 +601,16 @@ NEW_CAMERA_FEATURE_FLAGS = {
     # 2.11.13+
     "audioStyle",
     "hasVerticalFlip",
+    # 3.0.22+
+    "flashRange",
+}
+
+NEW_ISP_SETTINGS = {
+    # 3.0.22+
+    "hdrMode",
+    "icrCustomValue",
+    "icrSwitchMode",
+    "spotlightDuration",
 }
 
 NEW_NVR_FEATURE_FLAGS = {
@@ -604,6 +623,8 @@ OLD_FIELDS = {
     "avgMotions",
     # removed in 2.10.11
     "eventStats",
+    # removed in 3.0.22
+    "pirSettings",
 }
 
 
@@ -629,6 +650,9 @@ def compare_objs(obj_type, expected, actual):  # noqa: PLR0915
         expected.pop("stopStreamLevel", None)
         expected.pop("uplinkDevice", None)
         expected.pop("recordingSchedulesV2", None)
+        expected["stats"].pop("battery", None)
+        expected["recordingSettings"].pop("enablePirTimelapse", None)
+        expected["featureFlags"].pop("hasBattery", None)
 
         # do not compare detect zones because float math sucks
         assert len(expected["motionZones"]) == len(actual["motionZones"])
@@ -672,13 +696,25 @@ def compare_objs(obj_type, expected, actual):  # noqa: PLR0915
             if flag not in expected["featureFlags"]:
                 del actual["featureFlags"][flag]
 
+        for setting in NEW_ISP_SETTINGS:
+            if setting not in expected["ispSettings"]:
+                del actual["ispSettings"][setting]
+
         # ignore changes to motion for live tests
         assert isinstance(actual["isMotionDetected"], bool)
         expected["isMotionDetected"] = actual["isMotionDetected"]
 
+        for index, channel in enumerate(expected["channels"]):
+            if "bitrate" not in channel:
+                actual["channels"][index].pop("bitrate", None)
+            if "autoBitrate" not in channel:
+                actual["channels"][index].pop("autoBitrate", None)
+            if "autoFps" not in channel:
+                actual["channels"][index].pop("autoFps", None)
+
     elif obj_type == ModelType.USER.value:
-        if "settings" in expected:
-            expected.pop("settings", None)
+        expected.pop("settings", None)
+        expected.pop("cloudProviders", None)
         del expected["alertRules"]
         del expected["notificationsV2"]
         expected.pop("notifications", None)
@@ -725,10 +761,15 @@ def compare_objs(obj_type, expected, actual):  # noqa: PLR0915
         expected.pop("portStatus", None)
         expected.pop("cameraCapacity", None)
         expected.pop("deviceFirmwareSettings", None)
+        # removed fields
+        expected["ports"].pop("cameraTcp", None)
 
         expected["ports"]["piongw"] = expected["ports"].get("piongw")
         expected["ports"]["stacking"] = expected["ports"].get("stacking")
         expected["ports"]["emsJsonCLI"] = expected["ports"].get("emsJsonCLI")
+        expected["ports"]["aiFeatureConsole"] = expected["ports"].get(
+            "aiFeatureConsole",
+        )
 
         if (
             "homekitPaired" in actual["featureFlags"]
@@ -784,6 +825,9 @@ def compare_objs(obj_type, expected, actual):  # noqa: PLR0915
                     del actual_device["space_type"]
                 if "size" in device:
                     actual_device["size"] = actual_device.pop("size", None)
+                # TODO field
+                if "reasons" in device:
+                    del device["reasons"]
 
         for flag in NEW_NVR_FEATURE_FLAGS:
             if flag not in expected["featureFlags"]:

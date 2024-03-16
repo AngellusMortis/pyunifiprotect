@@ -1,4 +1,5 @@
 """UniFi Protect Data."""
+
 from __future__ import annotations
 
 import asyncio
@@ -32,6 +33,8 @@ from pyunifiprotect.data.types import (
     DoorbellMessageType,
     FocusMode,
     GeofencingSetting,
+    HDRMode,
+    ICRCustomValue,
     ICRSensitivity,
     IRLEDMode,
     IteratorCallback,
@@ -51,7 +54,6 @@ from pyunifiprotect.data.types import (
     ProgressCallback,
     RecordingMode,
     SensorStatusType,
-    SleepStateType,
     SmartDetectAudioType,
     SmartDetectObjectType,
     TwoByteInt,
@@ -251,6 +253,10 @@ class CameraChannel(ProtectBaseObject):
     min_motion_adaptive_bit_rate: Optional[int]  # read only
     fps_values: list[int]  # read only
     idr_interval: int
+    # 3.0.22+
+    auto_bitrate: Optional[bool] = None
+    auto_fps: Optional[bool] = None
+
     _rtsp_url: Optional[str] = PrivateAttr(None)
     _rtsps_url: Optional[str] = PrivateAttr(None)
 
@@ -311,6 +317,11 @@ class ISPSettings(ProtectBaseObject):
     mount_position: Optional[MountPosition] = None
     # requires 2.8.14+
     is_color_night_vision_enabled: Optional[bool] = None
+    # 3.0.22+
+    hdr_mode: Optional[HDRMode] = None
+    icr_custom_value: Optional[ICRCustomValue] = None
+    icr_switch_mode: Optional[str] = None
+    spotlight_duration: Optional[int] = None
 
     def unifi_dict(
         self,
@@ -360,7 +371,6 @@ class RecordingSettings(ProtectBaseObject):
     geofencing: GeofencingSetting
     motion_algorithm: MotionAlgorithm
     enable_motion_detection: Optional[bool] = None
-    enable_pir_timelapse: bool
     use_new_motion_algorithm: bool
     # requires 2.9.20+
     in_schedule_mode: Optional[str] = None
@@ -460,13 +470,6 @@ class SmartDetectSettings(ProtectBaseObject):
         return super().unifi_dict_to_dict(data)
 
 
-class PIRSettings(ProtectBaseObject):
-    pir_sensitivity: int
-    pir_motion_clip_length: int
-    timelapse_frame_interval: int
-    timelapse_transfer_interval: int
-
-
 class LCDMessage(ProtectBaseObject):
     type: DoorbellMessageType
     text: str
@@ -534,12 +537,6 @@ class WifiStats(ProtectBaseObject):
     link_speed_mbps: Optional[str]
     signal_quality: PercentInt
     signal_strength: int
-
-
-class BatteryStats(ProtectBaseObject):
-    percentage: Optional[PercentInt]
-    is_charging: bool
-    sleep_state: SleepStateType
 
 
 class VideoStats(ProtectBaseObject):
@@ -620,7 +617,6 @@ class CameraStats(ProtectBaseObject):
     rx_bytes: int
     tx_bytes: int
     wifi: WifiStats
-    battery: BatteryStats
     video: VideoStats
     storage: Optional[StorageStats]
     wifi_quality: PercentInt
@@ -707,6 +703,8 @@ class HotplugExtender(ProtectBaseObject):
     has_ir: Optional[bool] = None
     has_radar: Optional[bool] = None
     is_attached: Optional[bool] = None
+    # 3.0.22+
+    flash_range: Optional[Any] = None
 
     @classmethod
     @cache
@@ -729,7 +727,6 @@ class CameraFeatureFlags(ProtectBaseObject):
     can_touch_focus: bool
     has_accelerometer: bool
     has_aec: bool
-    has_battery: bool
     has_bluetooth: bool
     has_chime: bool
     has_external_ir: bool
@@ -778,6 +775,8 @@ class CameraFeatureFlags(ProtectBaseObject):
     # 2.11.13+
     audio_style: Optional[list[AudioStyle]] = None
     has_vertical_flip: Optional[bool] = None
+    # 3.0.22+
+    flash_range: Optional[Any] = None
 
     # TODO:
     # focus
@@ -862,7 +861,6 @@ class Camera(ProtectMotionDeviceModel):
     smart_detect_zones: list[SmartMotionZone]
     stats: CameraStats
     feature_flags: CameraFeatureFlags
-    pir_settings: PIRSettings
     lcd_message: Optional[LCDMessage]
     lenses: list[CameraLenses]
     platform: str
@@ -2889,6 +2887,41 @@ class ChimeFeatureFlags(ProtectBaseObject):
         return {**super()._get_unifi_remaps(), "hasHttpsClientOTA": "hasHttpsClientOta"}
 
 
+class RingSetting(ProtectBaseObject):
+    camera_id: str
+    repeat_times: int
+    track_no: int
+    volume: int
+
+    @classmethod
+    @cache
+    def _get_unifi_remaps(cls) -> dict[str, str]:
+        return {**super()._get_unifi_remaps(), "camera": "cameraId"}
+
+    @property
+    def camera(self) -> Optional[Camera]:
+        """Paired Camera will always be none if no camera is paired"""
+
+        if self.camera_id is None:
+            return None
+
+        return self.api.bootstrap.cameras[self.camera_id]
+
+
+class ChimeTrack(ProtectBaseObject):
+    md5: str
+    name: str
+    state: str
+    track_no: int
+    volume: int
+    size: int
+
+    @classmethod
+    @cache
+    def _get_unifi_remaps(cls) -> dict[str, str]:
+        return {**super()._get_unifi_remaps(), "track_no": "trackNo"}
+
+
 class Chime(ProtectAdoptableDeviceModel):
     volume: PercentInt
     is_probing_for_wifi: bool
@@ -2901,11 +2934,23 @@ class Chime(ProtectAdoptableDeviceModel):
     feature_flags: Optional[ChimeFeatureFlags] = None
     # requires 2.8.22+
     user_configured_ap: Optional[bool] = None
+    # requires 3.0.22+
+    has_https_client_ota: Optional[bool] = None
+    platform: Optional[str] = None
+    repeat_times: Optional[int] = None
+    track_no: Optional[int] = None
+    ring_settings: list[RingSetting] = []
+    speaker_track_list: list[ChimeTrack] = []
 
     # TODO: used for adoption
     # apMac  read only
     # apRssi  read only
     # elementInfo  read only
+
+    @classmethod
+    @cache
+    def _get_unifi_remaps(cls) -> dict[str, str]:
+        return {**super()._get_unifi_remaps(), "hasHttpsClientOTA": "hasHttpsClientOta"}
 
     @classmethod
     @cache

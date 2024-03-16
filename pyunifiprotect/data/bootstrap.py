@@ -1,4 +1,5 @@
 """UniFi Protect Bootstrap."""
+
 from __future__ import annotations
 
 import asyncio
@@ -181,9 +182,8 @@ class Bootstrap(ProtectBaseObject):
     last_update_id: UUID
 
     # TODO:
-    # legacyUFVs
-    # displays
     # schedules
+    # agreements
 
     # not directly from UniFi
     events: dict[str, Event] = FixSizeOrderedDict()
