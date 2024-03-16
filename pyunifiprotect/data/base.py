@@ -71,6 +71,8 @@ _LOGGER = logging.getLogger(__name__)
 def _is_protect_base_object(cls: type) -> bool:
     """A cached version of `issubclass(cls, ProtectBaseObject)` to speed up the check."""
     return issubclass(cls, ProtectBaseObject)
+
+
 class ProtectBaseObject(BaseModel):
     """Base class for building Python objects from UniFi Protect JSON.
 
