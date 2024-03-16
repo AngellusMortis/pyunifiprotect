@@ -9,7 +9,7 @@ from functools import cache
 from ipaddress import IPv4Address
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 import warnings
 
 try:
@@ -2023,7 +2023,7 @@ class Camera(ProtectMotionDeviceModel):
                 break
 
         def callback() -> None:
-            self.isp_settings.icr_custom_value = icr_value
+            self.isp_settings.icr_custom_value = cast(ICRCustomValue, icr_value)
 
         await self.queue_update(callback)
 
