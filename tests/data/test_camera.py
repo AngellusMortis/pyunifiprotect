@@ -11,6 +11,7 @@ import pytest
 from pyunifiprotect.data import (
     Camera,
     DoorbellMessageType,
+    HDRMode,
     IRLEDMode,
     LCDMessage,
     RecordingMode,
@@ -158,30 +159,46 @@ async def test_camera_set_hdr_no_hdr(camera_obj: Optional[Camera]):
     camera_obj.feature_flags.has_hdr = False
 
     with pytest.raises(BadRequest):
-        await camera_obj.set_hdr(True)
+        await camera_obj.set_hdr_mode("off")
 
     assert not camera_obj.api.api_request.called
 
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
-@pytest.mark.parametrize("status", [True, False])
+@pytest.mark.parametrize(
+    ("status", "state"),
+    [
+        ("auto", (True, HDRMode.NORMAL)),
+        ("off", (False, HDRMode.NORMAL)),
+        ("always", (True, HDRMode.ALWAYS_ON)),
+    ],
+)
 @pytest.mark.asyncio()
-async def test_camera_set_hdr(camera_obj: Optional[Camera], status: bool):
+async def test_camera_set_hdr(
+    camera_obj: Optional[Camera],
+    status: str,
+    state: tuple[bool, HDRMode],
+):
     if camera_obj is None:
         pytest.skip("No camera_obj obj found")
 
     camera_obj.api.api_request.reset_mock()
 
     camera_obj.feature_flags.has_hdr = True
-    camera_obj.hdr_mode = not status
+    camera_obj.hdr_mode = not state[0]
+    camera_obj.isp_settings.hdr_mode = (
+        HDRMode.NORMAL if state[1] == HDRMode.ALWAYS_ON else HDRMode.ALWAYS_ON
+    )
 
-    await camera_obj.set_hdr(status)
+    await camera_obj.set_hdr_mode(status)
 
     camera_obj.api.api_request.assert_called_with(
         f"cameras/{camera_obj.id}",
         method="patch",
-        json={"hdrMode": status},
+        json={"hdrMode": state[0], "ispSettings": {"hdrMode": state[1]}},
     )
+
+    assert camera_obj.hdr_mode_display == status
 
 
 @pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
@@ -996,7 +1013,9 @@ async def test_camera_set_person_track(camera_obj: Optional[Camera], status: boo
     camera_obj.api.api_request.assert_called_with(
         f"cameras/{camera_obj.id}",
         method="patch",
-        json={"smartDetectSettings": {"autoTrackingObjectTypes": ["person"]}}
-        if status
-        else {"smartDetectSettings": {"autoTrackingObjectTypes": []}},
+        json=(
+            {"smartDetectSettings": {"autoTrackingObjectTypes": ["person"]}}
+            if status
+            else {"smartDetectSettings": {"autoTrackingObjectTypes": []}}
+        ),
     )

@@ -9,7 +9,8 @@ from functools import cache
 from ipaddress import IPv4Address
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+import warnings
 
 try:
     from pydantic.v1.fields import PrivateAttr
@@ -1063,6 +1064,16 @@ class Camera(ProtectMotionDeviceModel):
 
         return self.api.bootstrap.events.get(self.last_smart_detect_event_id)
 
+    @property
+    def hdr_mode_display(self) -> Literal["auto", "off", "always"]:
+        """Get HDR mode similar to how Protect interface works."""
+
+        if not self.hdr_mode:
+            return "off"
+        if self.isp_settings.hdr_mode == HDRMode.ALWAYS_ON:
+            return "always"
+        return "auto"
+
     def get_last_smart_detect_event(
         self,
         smart_type: SmartDetectObjectType,
@@ -1986,6 +1997,14 @@ class Camera(ProtectMotionDeviceModel):
 
         await self.queue_update(callback)
 
+    async def is_ir_led_slider_enabled(self) -> bool:
+        """Return if IR LED custom slider is enabled."""
+
+        return (
+            self.feature_flags.has_led_ir
+            and self.isp_settings.ir_led_mode == IRLEDMode.CUSTOM
+        )
+
     async def set_status_light(self, enabled: bool) -> None:
         """Sets status indicicator light on camera"""
 
@@ -2001,11 +2020,35 @@ class Camera(ProtectMotionDeviceModel):
     async def set_hdr(self, enabled: bool) -> None:
         """Sets HDR (High Dynamic Range) on camera"""
 
+        warnings.warn(
+            "set_hdr is deprecated and replaced with set_hdr_mode for versions of UniFi Protect v3.0+",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         if not self.feature_flags.has_hdr:
             raise BadRequest("Camera does not have HDR")
 
         def callback() -> None:
             self.hdr_mode = enabled
+
+        await self.queue_update(callback)
+
+    async def set_hdr_mode(self, mode: Literal["auto", "off", "always"]) -> None:
+        """Sets HDR mode similar to how Protect interface works."""
+
+        if not self.feature_flags.has_hdr:
+            raise BadRequest("Camera does not have HDR")
+
+        def callback() -> None:
+            if mode == "off":
+                self.hdr_mode = False
+                self.isp_settings.hdr_mode = HDRMode.NORMAL
+            else:
+                self.hdr_mode = True
+                self.isp_settings.hdr_mode = (
+                    HDRMode.NORMAL if mode == "auto" else HDRMode.ALWAYS_ON
+                )
 
         await self.queue_update(callback)
 
