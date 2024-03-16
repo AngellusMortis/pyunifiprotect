@@ -1433,7 +1433,6 @@ class Camera(ProtectMotionDeviceModel):
         event = self.get_last_smart_audio_detect_event(audio_type)
         return (
             self._is_audio_enabled(smart_type)
-            and self.is_smart_detected
             and event is not None
             and event.end is None
             and smart_type in event.smart_detect_types
@@ -1446,7 +1445,6 @@ class Camera(ProtectMotionDeviceModel):
         return (
             self.is_recording_enabled
             and bool(self.smart_detect_settings.audio_types)
-            and self.is_smart_detected
             and self.last_smart_audio_detect_event is not None
             and self.last_smart_audio_detect_event.end is None
         )
