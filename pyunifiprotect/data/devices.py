@@ -1070,9 +1070,9 @@ class Camera(ProtectMotionDeviceModel):
 
         if not self.hdr_mode:
             return "off"
-        if self.isp_settings.hdr_mode == HDRMode.ALWAYS_ON:
-            return "always"
-        return "auto"
+        if self.isp_settings.hdr_mode == HDRMode.NORMAL:
+            return "auto"
+        return "always"
 
     def get_last_smart_detect_event(
         self,
@@ -2043,12 +2043,14 @@ class Camera(ProtectMotionDeviceModel):
         def callback() -> None:
             if mode == "off":
                 self.hdr_mode = False
-                self.isp_settings.hdr_mode = HDRMode.NORMAL
+                if self.isp_settings.hdr_mode is not None:
+                    self.isp_settings.hdr_mode = HDRMode.NORMAL
             else:
                 self.hdr_mode = True
-                self.isp_settings.hdr_mode = (
-                    HDRMode.NORMAL if mode == "auto" else HDRMode.ALWAYS_ON
-                )
+                if self.isp_settings.hdr_mode is not None:
+                    self.isp_settings.hdr_mode = (
+                        HDRMode.NORMAL if mode == "auto" else HDRMode.ALWAYS_ON
+                    )
 
         await self.queue_update(callback)
 
