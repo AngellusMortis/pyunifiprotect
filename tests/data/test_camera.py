@@ -1019,3 +1019,44 @@ async def test_camera_set_person_track(camera_obj: Optional[Camera], status: boo
             else {"smartDetectSettings": {"autoTrackingObjectTypes": []}}
         ),
     )
+
+
+@pytest.mark.skipif(not TEST_CAMERA_EXISTS, reason="Missing testdata")
+@pytest.mark.parametrize(
+    ("value", "lux"),
+    [
+        (1, 1),
+        (2, 3),
+        (3, 5),
+        (4, 7),
+        (5, 10),
+        (6, 12),
+        (7, 15),
+        (8, 20),
+        (9, 25),
+        (10, 30),
+    ],
+)
+@pytest.mark.asyncio()
+async def test_camera_set_icr_custom_lux(
+    camera_obj: Optional[Camera],
+    value: int,
+    lux: int,
+):
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    camera_obj.feature_flags.has_led_ir = True
+    camera_obj.isp_settings.icr_custom_value = 0
+
+    camera_obj.api.api_request.reset_mock()
+
+    await camera_obj.set_icr_custom_lux(lux)
+
+    assert camera_obj.isp_settings.icr_custom_value == value
+
+    camera_obj.api.api_request.assert_called_with(
+        f"cameras/{camera_obj.id}",
+        method="patch",
+        json=({"ispSettings": {"icrCustomValue": value}}),
+    )

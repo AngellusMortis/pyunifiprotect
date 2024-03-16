@@ -36,6 +36,7 @@ from pyunifiprotect.data.types import (
     GeofencingSetting,
     HDRMode,
     ICRCustomValue,
+    ICRLuxValue,
     ICRSensitivity,
     IRLEDMode,
     IteratorCallback,
@@ -79,6 +80,18 @@ if TYPE_CHECKING:
     from pyunifiprotect.data.nvr import Event, Liveview
 
 PRIVACY_ZONE_NAME = "pyufp_privacy_zone"
+LUX_MAPPING_VALUES = [
+    30,
+    25,
+    20,
+    15,
+    12,
+    10,
+    7,
+    5,
+    3,
+    1,
+]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1997,7 +2010,25 @@ class Camera(ProtectMotionDeviceModel):
 
         await self.queue_update(callback)
 
-    async def is_ir_led_slider_enabled(self) -> bool:
+    async def set_icr_custom_lux(self, value: ICRLuxValue) -> None:
+        """Set ICRCustomValue from lux value."""
+
+        if not self.feature_flags.has_led_ir:
+            raise BadRequest("Camera does not have an LED IR")
+
+        icr_value = 0
+        for index, threshold in enumerate(LUX_MAPPING_VALUES):
+            if value >= threshold:
+                icr_value = 10 - index
+                break
+
+        def callback() -> None:
+            self.isp_settings.icr_custom_value = icr_value
+
+        await self.queue_update(callback)
+
+    @property
+    def is_ir_led_slider_enabled(self) -> bool:
         """Return if IR LED custom slider is enabled."""
 
         return (

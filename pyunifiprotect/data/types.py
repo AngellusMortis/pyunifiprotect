@@ -537,7 +537,12 @@ class DoorbellText(ConstrainedStr):
 
 class ICRCustomValue(ConstrainedInt):
     ge = 0
-    le = 9
+    le = 10
+
+
+class ICRLuxValue(ConstrainedInt):
+    ge = 1
+    le = 30
 
 
 class LEDLevel(ConstrainedInt):
