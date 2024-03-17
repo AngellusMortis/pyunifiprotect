@@ -52,7 +52,7 @@ except ImportError:
 
 if TYPE_CHECKING:
     from pyunifiprotect.api import ProtectApiClient
-    from pyunifiprotect.data import CoordType
+    from pyunifiprotect.data import CoordType, Event, EventType
     from pyunifiprotect.data.bootstrap import WSStat
 
 if sys.version_info[:2] < (3, 11):
@@ -559,3 +559,59 @@ def local_datetime(dt: datetime | None = None) -> datetime:
     if dt.tzinfo is None:
         return dt.replace(tzinfo=local_tz)
     return dt.astimezone(local_tz)
+
+
+def log_event(event: Event) -> None:
+    _LOGGER.debug("event WS msg: %s", event.dict())
+    if "smart" not in event.type.value:
+        return
+
+    camera = event.camera
+    if camera is None:
+        return
+
+    if event.end is not None:
+        _LOGGER.debug(
+            "%s (%s): Smart detection ended for %s (%s)",
+            camera.name,
+            camera.mac,
+            event.smart_detect_types,
+            event.id,
+        )
+        return
+
+    _LOGGER.debug(
+        "%s (%s): New smart detection started for %s (%s)",
+        camera.name,
+        camera.mac,
+        event.smart_detect_types,
+        event.id,
+    )
+    smart_settings = camera.smart_detect_settings
+    for smart_type in event.smart_detect_types:
+        is_audio = event.type == EventType.SMART_AUDIO_DETECT
+        if is_audio:
+            if smart_type.audio_type is None:
+                return
+
+            is_enabled = (
+                smart_settings.audio_types is not None
+                and smart_type.audio_type in smart_settings.audio_types
+            )
+            last_event = camera.get_last_smart_audio_detect_event(smart_type.audio_type)
+        else:
+            is_enabled = smart_type in smart_settings.object_types
+            last_event = camera.get_last_smart_detect_event(smart_type)
+
+        _LOGGER.debug(
+            "Event info (%s):\n"
+            "    is_smart_detected: %s\n"
+            "    is_recording_enabled: %s\n"
+            "    is_enabled: %s\n"
+            "    event: %s",
+            smart_type,
+            camera.is_smart_detected,
+            camera.is_recording_enabled,
+            is_enabled,
+            last_event,
+        )
