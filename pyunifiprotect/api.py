@@ -269,7 +269,7 @@ class BaseApiClient:
                     headers=headers,
                     **kwargs,
                 )
-                response = await req_context.__aenter__()
+                response = await req_context.__aenter__()  # noqa: PLC2801
 
                 self._update_last_token_cookie(response)
                 if auto_close:

@@ -132,16 +132,19 @@ include = "\\.pyi?$"
 exclude = "(/(\\.*|_build|buck-out|build|dist|migrations)/)"
 
 [tool.ruff]
-select = ["ALL"]
 exclude = ["*migrations*", ".*", "/usr/local/lib", "dist", "venv"]
 line-length = 88
 target-version = "py39"
+
+
+[tool.ruff.lint]
+select = ["ALL"]
 ignore = ["AIR", "ANN", "ARG", "C901", "CPY", "D106", "D202", "D203", "D213", "D417", "DJ", "E501", "FBT003", "FIX", "I", "NPY", "PD", "PERF203", "PLR0904", "PLR0913", "PLR1711", "PLR6301", "RUF012", "S", "TD002", "TD003", "W505"]
 
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 max-complexity = 10
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "**/*.py" = [
     "UP007",  # TODO: upgrade to pydantic v2
     # TODO
