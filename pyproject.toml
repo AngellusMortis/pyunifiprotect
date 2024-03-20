@@ -60,7 +60,7 @@ dev = [
     "black",
     "build",
     "coverage[toml]",
-    "ipython",
+    "ipython<8.19",  # requires Python 3.10+
     "isort",
     "mike",
     "mkdocs-git-revision-date-localized-plugin",
@@ -92,13 +92,13 @@ full = [
     "aiosqlite",
     "asyncify",
     "av",
-    "ipython",
+    "ipython<8.19",  # requires Python 3.10+
     "python-dotenv",
     "sqlalchemy[asyncio]",
     "termcolor",
 ]
 shell = [
-    "ipython",
+    "ipython<8.19",  # requires Python 3.10+
     "termcolor",
     "python-dotenv",
 ]

@@ -46,7 +46,7 @@ greenlet==3.0.3
     # via sqlalchemy
 idna==3.6
     # via yarl
-ipython==8.22.2
+ipython==8.18.1
     # via pyunifiprotect (pyproject.toml)
 jedi==0.19.1
     # via ipython
