@@ -195,6 +195,7 @@ platformdirs==4.2.0
     #   black
     #   mkdocs
     #   mkdocstrings
+    #   pyunifiprotect (pyproject.toml)
 pluggy==1.4.0
     # via pytest
 prompt-toolkit==3.0.43

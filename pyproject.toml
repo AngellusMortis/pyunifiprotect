@@ -34,18 +34,19 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
+    'async-timeout; python_version < "3.11"',
     "aiofiles",
     "aiohttp",
-    "yarl>=1.9",
     "aioshutil",
-    'async-timeout; python_version < "3.11"',
     "dateparser",
     "orjson",
     "packaging",
     "pillow",
+    "platformdirs",
     "pydantic!=1.9.1",
     "pyjwt",
     "typer[all]>0.6",
+    "yarl>=1.9",
 ]
 
 [project.urls]

@@ -161,8 +161,11 @@ def main(
         protect._bootstrap = await protect.get_bootstrap()
         await protect.close_session()
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(update())
+    if sys.version_info >= (3, 11):
+        asyncio.run(update())
+    else:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(update())
     ctx.obj = CliContext(protect=protect, output_format=output_format)
 
 

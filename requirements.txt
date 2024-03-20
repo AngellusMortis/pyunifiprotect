@@ -70,6 +70,8 @@ pexpect==4.9.0
     # via ipython
 pillow==10.2.0
     # via pyunifiprotect (pyproject.toml)
+platformdirs==4.2.0
+    # via pyunifiprotect (pyproject.toml)
 prompt-toolkit==3.0.43
     # via ipython
 ptyprocess==0.7.0
