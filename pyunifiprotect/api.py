@@ -440,6 +440,11 @@ class BaseApiClient:
 
     async def ensure_authenticated(self) -> None:
         """Ensure we are authenticated."""
+
+        # load session first before checking for auth
+        if self._session is None:
+            await self.get_session()
+
         if self.is_authenticated() is False:
             await self.authenticate()
 
@@ -471,16 +476,17 @@ class BaseApiClient:
                 "cookie": response.headers.get("set-cookie", ""),
             }
 
-            csrf_token = response.headers.get("x-csrf-token")
-            if csrf_token is not None:
-                self.headers["x-csrf-token"] = csrf_token
-
             self._is_authenticated = True
             await self._update_last_token_cookie(response)
             _LOGGER.debug("Authenticated successfully!")
 
     async def _update_last_token_cookie(self, response: aiohttp.ClientResponse) -> None:
         """Update the last token cookie."""
+
+        csrf_token = response.headers.get("x-csrf-token")
+        if csrf_token is not None:
+            self.headers["x-csrf-token"] = csrf_token
+
         if (
             token_cookie := response.cookies.get("TOKEN")
         ) and token_cookie != self._last_token_cookie:
@@ -544,9 +550,13 @@ class BaseApiClient:
         for key, value in session.get("metadata", {}).items():
             cookie["TOKEN"][key] = value
 
+        cookie_value = str(cookie["TOKEN"]).replace("Set-Cookie: ", "")
         self._last_token_cookie = cookie["TOKEN"]
         self._last_token_cookie_decode = None
         self._is_authenticated = True
+        self.headers = {
+            "cookie": cookie_value,
+        }
         return cookie
 
     def is_authenticated(self) -> bool:
