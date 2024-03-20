@@ -94,7 +94,7 @@ importlib-resources==6.3.2
     # via mike
 iniconfig==2.0.0
     # via pytest
-ipython==8.22.2
+ipython==8.18.1
     # via pyunifiprotect (pyproject.toml)
 isort==5.13.2
     # via pyunifiprotect (pyproject.toml)
