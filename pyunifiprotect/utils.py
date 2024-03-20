@@ -129,13 +129,11 @@ async def get_response_reason(response: ClientResponse) -> str:
 
 
 @overload
-def to_js_time(dt: datetime | int) -> int:
-    ...
+def to_js_time(dt: datetime | int) -> int: ...
 
 
 @overload
-def to_js_time(dt: None) -> None:
-    ...
+def to_js_time(dt: None) -> None: ...
 
 
 def to_js_time(dt: datetime | int | None) -> Optional[int]:

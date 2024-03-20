@@ -1,6 +1,5 @@
 """Tests for pyunifiprotect.unifi_protect_server."""
 
-
 from __future__ import annotations
 
 import asyncio
@@ -90,7 +89,7 @@ async def test_ws_all(
         return result
 
     # bypass pydantic checks
-    object.__setattr__(
+    object.__setattr__(  # noqa: PLC2801
         protect_client.bootstrap,
         "process_ws_packet",
         benchmark_process_ws_packet,
@@ -141,7 +140,7 @@ async def test_ws_filtered(
         return result
 
     # bypass pydantic checks
-    object.__setattr__(
+    object.__setattr__(  # noqa: PLC2801
         protect_client.bootstrap,
         "process_ws_packet",
         benchmark_process_ws_packet,

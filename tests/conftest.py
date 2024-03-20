@@ -23,7 +23,7 @@ from pyunifiprotect import ProtectApiClient
 from pyunifiprotect.data import Camera, ModelType
 from pyunifiprotect.data.nvr import Event
 from pyunifiprotect.data.types import EventType
-from pyunifiprotect.utils import _BAD_UUID, set_debug, set_no_debug
+from pyunifiprotect.utils import _BAD_UUID, set_debug, set_no_debug  # noqa: PLC2701
 from tests.sample_data.constants import CONSTANTS
 
 UFP_SAMPLE_DIR = os.environ.get("UFP_SAMPLE_DIR")

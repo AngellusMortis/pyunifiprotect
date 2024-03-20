@@ -1,9 +1,18 @@
 """UniFi Protect Data Conversion."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional
 
-from pyunifiprotect.data.devices import Bridge, Camera, Doorlock, Light, Sensor, Viewer
+from pyunifiprotect.data.devices import (
+    Bridge,
+    Camera,
+    Chime,
+    Doorlock,
+    Light,
+    Sensor,
+    Viewer,
+)
 from pyunifiprotect.data.nvr import NVR, Event, Liveview
 from pyunifiprotect.data.types import ModelType
 from pyunifiprotect.data.user import CloudAccount, Group, User, UserLocation
@@ -28,6 +37,7 @@ MODEL_TO_CLASS: dict[str, type[ProtectModel]] = {
     ModelType.BRIDGE: Bridge,
     ModelType.SENSOR: Sensor,
     ModelType.DOORLOCK: Doorlock,
+    ModelType.CHIME: Chime,
 }
 
 

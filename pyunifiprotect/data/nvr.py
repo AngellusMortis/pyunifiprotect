@@ -795,12 +795,12 @@ class StorageDistribution(ProtectBaseObject):
     recording_type_distributions: list[RecordingTypeDistribution]
     resolution_distributions: list[ResolutionDistribution]
 
-    _recording_type_dict: Optional[
-        dict[RecordingType, RecordingTypeDistribution]
-    ] = PrivateAttr(None)
-    _resolution_dict: Optional[
-        dict[ResolutionStorageType, ResolutionDistribution]
-    ] = PrivateAttr(None)
+    _recording_type_dict: Optional[dict[RecordingType, RecordingTypeDistribution]] = (
+        PrivateAttr(None)
+    )
+    _resolution_dict: Optional[dict[ResolutionStorageType, ResolutionDistribution]] = (
+        PrivateAttr(None)
+    )
 
     def _get_recording_type_dict(
         self,
@@ -808,9 +808,9 @@ class StorageDistribution(ProtectBaseObject):
         if self._recording_type_dict is None:
             self._recording_type_dict = {}
             for recording_type in self.recording_type_distributions:
-                self._recording_type_dict[
-                    recording_type.recording_type
-                ] = recording_type
+                self._recording_type_dict[recording_type.recording_type] = (
+                    recording_type
+                )
 
         return self._recording_type_dict
 

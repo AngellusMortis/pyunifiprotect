@@ -145,7 +145,7 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     CAMERA_CONNECTED = "cameraConnected"
     CAMERA_REBOOTED = "cameraRebooted"
     CAMERA_DISCONNECTED = "cameraDisconnected"
-    #
+    # ---
     INSTALLED_DISK = "installed"
     CORRUPTED_DB_RECOVERED = "corruptedDbRecovered"
     OFFLINE = "offline"
@@ -161,7 +161,7 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     DRIVE_SLOW = "driveSlow"
     GLOBAL_RECORDING_MODE_CHANGED = "globalRecordingModeChanged"
     NVR_SETTINGS_CHANGED = "nvrSettingsChanged"
-    #
+    # ---
     UNADOPTED_DEVICE_DISCOVERED = "unadoptedDeviceDiscovered"
     MULTIPLE_UNADOPTED_DEVICE_DISCOVERED = "multipleUnadoptedDeviceDiscovered"
     DEVICE_ADOPTED = "deviceAdopted"
@@ -174,14 +174,14 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     DEVICE_REBOOTED = "deviceRebooted"
     DEVICE_DISCONNECTED = "deviceDisconnected"
     NETWORK_DEVICE_OFFLINE = "networkDeviceOffline"
-    #
+    # ---
     USER_LEFT = "userLeft"
     USER_ARRIVED = "userArrived"
     VIDEO_EXPORTED = "videoExported"
     MIC_DISABLED = "microphoneDisabled"
     VIDEO_DELETED = "videoDeleted"
     SCHEDULE_CHANGED = "recordingScheduleChanged"
-    #
+    # ---
     MOTION_SENSOR = "sensorMotion"
     SENSOR_OPENED = "sensorOpened"
     SENSOR_CLOSED = "sensorClosed"
@@ -189,15 +189,15 @@ class EventType(str, ValuesEnumMixin, enum.Enum):
     SENSOR_EXTREME_VALUE = "sensorExtremeValues"
     SENSOR_WATER_LEAK = "sensorWaterLeak"
     SENSOR_BATTERY_LOW = "sensorBatteryLow"
-    #
+    # ---
     MOTION_LIGHT = "lightMotion"
-    #
+    # ---
     DOORLOCK_OPEN = "doorlockOpened"
     DOORLOCK_CLOSE = "doorlockClosed"
     DOORLOCK_BATTERY_LOW = "doorlockBatteryLow"
-    #
+    # ---
     DISRUPTED_CONDITIONS = "ringDisruptedConditions"
-    #
+    # ---
     RECORDING_OFF = "recordingOff"
 
     @staticmethod

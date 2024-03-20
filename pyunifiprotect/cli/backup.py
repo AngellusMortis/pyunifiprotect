@@ -926,7 +926,8 @@ async def _download_event(
     return downloaded
 
 
-async def _download_events(
+# TODO
+async def _download_events(  # noqa: PLR0914
     ctx: BackupContext,
     event_types: list[d.EventType],
     smart_types: list[d.SmartDetectObjectType],

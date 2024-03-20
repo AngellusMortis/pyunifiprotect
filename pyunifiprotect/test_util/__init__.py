@@ -181,8 +181,7 @@ class SampleDataGenerator:
         name: str,
         data: list[Any],
         anonymize: Optional[bool] = None,
-    ) -> list[Any]:
-        ...
+    ) -> list[Any]: ...
 
     @overload
     async def write_json_file(
@@ -190,8 +189,7 @@ class SampleDataGenerator:
         name: str,
         data: dict[str, Any],
         anonymize: Optional[bool] = None,
-    ) -> dict[str, Any]:
-        ...
+    ) -> dict[str, Any]: ...
 
     async def write_json_file(
         self,
