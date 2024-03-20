@@ -227,7 +227,7 @@ async def test_chime_set_repeat_times(
     chime_obj.ring_settings = [
         RingSetting(
             camera_id=camera_obj.id,
-            repeat_times=1,
+            repeat_times=1,  # type: ignore[arg-type]
             track_no=1,
             volume=100,
         ),
@@ -273,7 +273,7 @@ async def test_chime_set_repeat_times_with_existing_custom(
     chime_obj.ring_settings = [
         RingSetting(
             camera_id=camera_obj.id,
-            repeat_times=3,
+            repeat_times=3,  # type: ignore[arg-type]
             track_no=1,
             volume=100,
         ),
@@ -309,7 +309,7 @@ async def test_chime_set_repeat_times_for_camera(
     chime_obj.ring_settings = [
         RingSetting(
             camera_id=camera_obj.id,
-            repeat_times=1,
+            repeat_times=1,  # type: ignore[arg-type]
             track_no=1,
             volume=100,
         ),
@@ -354,7 +354,7 @@ async def test_chime_set_repeat_times_for_camera_not_exist(
     chime_obj.ring_settings = [
         RingSetting(
             camera_id="other-id",
-            repeat_times=1,
+            repeat_times=1,  # type: ignore[arg-type]
             track_no=1,
             volume=100,
         ),

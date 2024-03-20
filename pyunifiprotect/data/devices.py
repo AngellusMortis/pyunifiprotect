@@ -3092,23 +3092,23 @@ class Chime(ProtectAdoptableDeviceModel):
 
         await self.api.play_buzzer(self.id)
 
-    async def set_repeat_times(self, value: RepeatTimes) -> None:
+    async def set_repeat_times(self, value: int) -> None:
         """Set repeat times on chime."""
 
         old_value = self.repeat_times
 
         def callback() -> None:
-            self.repeat_times = value
+            self.repeat_times = cast(RepeatTimes, value)
             for setting in self.ring_settings:
                 if setting.repeat_times == old_value:
-                    setting.repeat_times = value
+                    setting.repeat_times = cast(RepeatTimes, value)
 
         await self.queue_update(callback)
 
     async def set_repeat_times_for_camera(
         self,
         camera: Camera,
-        value: RepeatTimes,
+        value: int,
     ) -> None:
         """Set repeat times on chime for specific camera."""
 
@@ -3116,7 +3116,7 @@ class Chime(ProtectAdoptableDeviceModel):
             handled = False
             for setting in self.ring_settings:
                 if setting.camera_id == camera.id:
-                    setting.repeat_times = value
+                    setting.repeat_times = cast(RepeatTimes, value)
                     handled = True
                     break
 

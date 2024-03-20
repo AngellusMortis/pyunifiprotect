@@ -418,7 +418,7 @@ class ProtectBaseObject(BaseModel):
             if isinstance(item, ProtectBaseObject):
                 new_item = item.unifi_dict()
             else:
-                new_item = klass.construct({}).unifi_dict(data=item)
+                new_item = klass.construct({}).unifi_dict(data=item)  # type: ignore[arg-type]
             items.append(new_item)
 
         return items
