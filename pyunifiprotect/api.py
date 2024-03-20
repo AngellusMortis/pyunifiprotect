@@ -246,7 +246,8 @@ class BaseApiClient:
             if force:
                 if self._session is not None:
                     self._session.cookie_jar.clear()
-                self.headers = None
+                self.set_header("cookie", None)
+                self.set_header("x-csrf-token", None)
 
             await self.ensure_authenticated()
             return self.headers
@@ -268,6 +269,15 @@ class BaseApiClient:
         if self._session is not None:
             await self._session.close()
             self._session = None
+
+    def set_header(self, key: str, value: str | None) -> None:
+        """Set header."""
+
+        self.headers = self.headers or {}
+        if value is None:
+            self.headers.pop(key, None)
+        else:
+            self.headers[key] = value
 
     async def request(
         self,
@@ -461,9 +471,7 @@ class BaseApiClient:
 
             if self._session is not None:
                 self._session.cookie_jar.clear()
-
-                if self.headers is not None and "cookie" in self.headers:
-                    del self.headers["cookie"]
+                self.set_header("cookie", None)
 
             auth = {
                 "username": self._username,
@@ -472,10 +480,7 @@ class BaseApiClient:
             }
 
             response = await self.request("post", url=url, json=auth)
-            self.headers = {
-                "cookie": response.headers.get("set-cookie", ""),
-            }
-
+            self.set_header("cookie", response.headers.get("set-cookie", ""))
             self._is_authenticated = True
             await self._update_last_token_cookie(response)
             _LOGGER.debug("Authenticated successfully!")
@@ -485,7 +490,7 @@ class BaseApiClient:
 
         csrf_token = response.headers.get("x-csrf-token")
         if csrf_token is not None:
-            self.headers["x-csrf-token"] = csrf_token
+            self.set_header("x-csrf-token", csrf_token)
 
         if (
             token_cookie := response.cookies.get("TOKEN")
@@ -554,9 +559,7 @@ class BaseApiClient:
         self._last_token_cookie = cookie["TOKEN"]
         self._last_token_cookie_decode = None
         self._is_authenticated = True
-        self.headers = {
-            "cookie": cookie_value,
-        }
+        self.set_header("cookie", cookie_value)
         return cookie
 
     def is_authenticated(self) -> bool:
