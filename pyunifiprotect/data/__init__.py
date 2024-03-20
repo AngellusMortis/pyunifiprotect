@@ -17,6 +17,7 @@ from pyunifiprotect.data.devices import (
     Doorlock,
     LCDMessage,
     Light,
+    RingSetting,
     Sensor,
     Viewer,
 )
@@ -126,6 +127,7 @@ __all__ = [
     "ProtectModelWithId",
     "ProtectWSPayloadFormat",
     "RecordingMode",
+    "RingSetting",
     "Sensor",
     "SensorStatusType",
     "SensorType",

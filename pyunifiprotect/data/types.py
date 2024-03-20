@@ -580,6 +580,11 @@ class Percent(ConstrainedFloat):
     le = 1
 
 
+class RepeatTimes(ConstrainedInt):
+    ge = 1
+    le = 6
+
+
 CoordType = Union[Percent, int, float]
 
 

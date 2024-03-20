@@ -12,6 +12,7 @@ from pyunifiprotect.data import Chime
 app = typer.Typer(rich_markup_mode="rich")
 
 ARG_DEVICE_ID = typer.Argument(None, help="ID of chime to select for subcommands")
+ARG_REPEAT = typer.Argument(..., help="Repeat times count", min=1, max=6)
 
 
 @dataclass
@@ -92,11 +93,11 @@ def cameras(
 
     for camera_id in camera_ids:
         if (camera := protect.bootstrap.cameras.get(camera_id)) is None:
-            typer.secho(f"Invalid camera ID: {camera_id}")
+            typer.secho(f"Invalid camera ID: {camera_id}", fg="red")
             raise typer.Exit(1)
 
         if not camera.feature_flags.is_doorbell:
-            typer.secho(f"Camera is not a doorbell: {camera_id}")
+            typer.secho(f"Camera is not a doorbell: {camera_id}", fg="red")
             raise typer.Exit(1)
 
     if add:
@@ -125,3 +126,29 @@ def play_buzzer(ctx: typer.Context) -> None:
     base.require_device_id(ctx)
     obj: Chime = ctx.obj.device
     base.run(ctx, obj.play_buzzer())
+
+
+@app.command()
+def set_repeat_times(
+    ctx: typer.Context,
+    value: int = ARG_REPEAT,
+    camera_id: Optional[str] = typer.Option(
+        None,
+        "-c",
+        "--camera",
+        help="Camera ID to apply repeat times to",
+    ),
+) -> None:
+    """Set number of times for a chime to repeat when doorbell is rang."""
+
+    base.require_device_id(ctx)
+    obj: Chime = ctx.obj.device
+    if camera_id is None:
+        base.run(ctx, obj.set_repeat_times(value))
+    else:
+        protect: ProtectApiClient = ctx.obj.protect
+        camera = protect.bootstrap.cameras.get(camera_id)
+        if camera is None:
+            typer.secho(f"Invalid camera ID: {camera_id}", fg="red")
+            raise typer.Exit(1)
+        base.run(ctx, obj.set_repeat_times_for_camera(camera, value))

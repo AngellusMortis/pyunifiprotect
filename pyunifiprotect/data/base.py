@@ -404,6 +404,7 @@ class ProtectBaseObject(BaseModel):
         data: dict[str, Any],
         key: str,
         use_obj: bool,
+        klass: type[ProtectBaseObject],
     ) -> Any:
         value: Optional[Any] = data.get(key)
         if use_obj:
@@ -415,8 +416,10 @@ class ProtectBaseObject(BaseModel):
         items: list[Any] = []
         for item in value:
             if isinstance(item, ProtectBaseObject):
-                item = item.unifi_dict()  # noqa: PLW2901
-            items.append(item)
+                new_item = item.unifi_dict()
+            else:
+                new_item = klass.construct({}).unifi_dict(data=item)
+            items.append(new_item)
 
         return items
 
@@ -474,9 +477,9 @@ class ProtectBaseObject(BaseModel):
             if use_obj or key in data:
                 data[key] = self._unifi_dict_protect_obj(data, key, use_obj, klass)
 
-        for key in self._get_protect_lists():
+        for key, klass in self._get_protect_lists().items():
             if use_obj or key in data:
-                data[key] = self._unifi_dict_protect_obj_list(data, key, use_obj)
+                data[key] = self._unifi_dict_protect_obj_list(data, key, use_obj, klass)
 
         for key in self._get_protect_dicts():
             if use_obj or key in data:

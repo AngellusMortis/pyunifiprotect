@@ -55,6 +55,7 @@ from pyunifiprotect.data.types import (
     PermissionNode,
     ProgressCallback,
     RecordingMode,
+    RepeatTimes,
     SensorStatusType,
     SmartDetectAudioType,
     SmartDetectObjectType,
@@ -2972,7 +2973,7 @@ class ChimeFeatureFlags(ProtectBaseObject):
 
 class RingSetting(ProtectBaseObject):
     camera_id: str
-    repeat_times: int
+    repeat_times: RepeatTimes
     track_no: int
     volume: int
 
@@ -3020,7 +3021,7 @@ class Chime(ProtectAdoptableDeviceModel):
     # requires 3.0.22+
     has_https_client_ota: Optional[bool] = None
     platform: Optional[str] = None
-    repeat_times: Optional[int] = None
+    repeat_times: Optional[RepeatTimes] = None
     track_no: Optional[int] = None
     ring_settings: list[RingSetting] = []
     speaker_track_list: list[ChimeTrack] = []
@@ -3090,3 +3091,36 @@ class Chime(ProtectAdoptableDeviceModel):
         """Plays chime buzzer"""
 
         await self.api.play_buzzer(self.id)
+
+    async def set_repeat_times(self, value: RepeatTimes) -> None:
+        """Set repeat times on chime."""
+
+        old_value = self.repeat_times
+
+        def callback() -> None:
+            self.repeat_times = value
+            for setting in self.ring_settings:
+                if setting.repeat_times == old_value:
+                    setting.repeat_times = value
+
+        await self.queue_update(callback)
+
+    async def set_repeat_times_for_camera(
+        self,
+        camera: Camera,
+        value: RepeatTimes,
+    ) -> None:
+        """Set repeat times on chime for specific camera."""
+
+        def callback() -> None:
+            handled = False
+            for setting in self.ring_settings:
+                if setting.camera_id == camera.id:
+                    setting.repeat_times = value
+                    handled = True
+                    break
+
+            if not handled:
+                raise BadRequest("Camera %s is not paired with chime", camera.id)
+
+        await self.queue_update(callback)
