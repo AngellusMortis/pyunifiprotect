@@ -4,6 +4,7 @@ import asyncio
 from collections.abc import Callable, Coroutine, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
+import sys
 from typing import Any, Optional, TypeVar
 
 import orjson
@@ -42,9 +43,14 @@ def run(ctx: typer.Context, func: Coroutine[Any, Any, T]) -> T:
         await ctx.obj.protect.close_session()
         return return_value
 
-    loop = asyncio.get_event_loop()
+    runner = asyncio.run
+    if sys.version_info < (3, 11):
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(update())
+        runner = loop.run_until_complete
+
     try:
-        return loop.run_until_complete(callback())
+        return runner(callback())
     except (BadRequest, ValidationError, StreamError, NvrError) as err:
         typer.secho(str(err), fg="red")
         raise typer.Exit(1) from err

@@ -138,12 +138,16 @@ def set_volume(
 
 
 @app.command()
-def play(ctx: typer.Context) -> None:
+def play(
+    ctx: typer.Context,
+    volume: Optional[int] = typer.Option(None, "-v", "--volume", min=1, max=100),
+    repeat_times: Optional[int] = typer.Option(None, "-r", "--repeat", min=1, max=6),
+) -> None:
     """Plays chime tone."""
 
     base.require_device_id(ctx)
     obj: Chime = ctx.obj.device
-    base.run(ctx, obj.play())
+    base.run(ctx, obj.play(volume=volume, repeat_times=repeat_times))
 
 
 @app.command()

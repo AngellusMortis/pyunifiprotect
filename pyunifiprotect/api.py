@@ -1588,10 +1588,32 @@ class ProtectApiClient(BaseApiClient):
             json={"auto": True},
         )
 
-    async def play_speaker(self, device_id: str) -> None:
+    async def play_speaker(
+        self,
+        device_id: str,
+        *,
+        volume: int | None = None,
+        repeat_times: int | None = None,
+    ) -> None:
         """Plays chime tones on a chime"""
 
-        await self.api_request(f"chimes/{device_id}/play-speaker", method="post")
+        data: dict[str, Any] | None = None
+        if volume or repeat_times:
+            chime = self.bootstrap.chimes.get(device_id)
+            if chime is None:
+                raise BadRequest("Invalid chime ID %s", device_id)
+
+            data = {
+                "volume": volume or chime.volume,
+                "repeatTimes": repeat_times or chime.repeat_times,
+                "trackNo": chime.track_no,
+            }
+
+        await self.api_request(
+            f"chimes/{device_id}/play-speaker",
+            method="post",
+            json=data,
+        )
 
     async def play_buzzer(self, device_id: str) -> None:
         """Plays chime tones on a chime"""

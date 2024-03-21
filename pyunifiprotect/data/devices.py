@@ -3104,10 +3104,15 @@ class Chime(ProtectAdoptableDeviceModel):
 
         await self.queue_update(callback)
 
-    async def play(self) -> None:
+    async def play(
+        self,
+        *,
+        volume: int | None = None,
+        repeat_times: int | None = None,
+    ) -> None:
         """Plays chime tone"""
 
-        await self.api.play_speaker(self.id)
+        await self.api.play_speaker(self.id, volume=volume, repeat_times=repeat_times)
 
     async def play_buzzer(self) -> None:
         """Plays chime buzzer"""
