@@ -491,7 +491,11 @@ class BaseApiClient:
         """Update the last token cookie."""
 
         csrf_token = response.headers.get("x-csrf-token")
-        if csrf_token is not None and csrf_token != self.headers.get("x-csrf-token"):
+        if (
+            csrf_token is not None
+            and self.headers
+            and csrf_token != self.headers.get("x-csrf-token")
+        ):
             self.set_header("x-csrf-token", csrf_token)
             await self._update_last_token_cookie(response)
 
@@ -528,7 +532,7 @@ class BaseApiClient:
         config["sessions"][session_hash] = {
             "metadata": dict(cookie),
             "value": cookie.value,
-            "csrf": self.headers.get("x-csrf-token"),
+            "csrf": self.headers.get("x-csrf-token") if self.headers else None,
         }
 
         async with aiofiles.open(self.config_file, "wb") as f:
