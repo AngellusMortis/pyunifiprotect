@@ -194,6 +194,31 @@ async def test_chime_play(chime_obj: Optional[Chime]):
     chime_obj.api.api_request.assert_called_with(
         f"chimes/{chime_obj.id}/play-speaker",
         method="post",
+        json=None,
+    )
+
+
+@pytest.mark.skipif(not TEST_CHIME_EXISTS, reason="Missing testdata")
+@pytest.mark.asyncio()
+async def test_chime_play_with_options(chime_obj: Optional[Chime]):
+    if chime_obj is None:
+        pytest.skip("No chime_obj obj found")
+
+    chime_obj.volume = 100
+    chime_obj.repeat_times = 1
+    chime_obj.track_no = 1
+    chime_obj.api.api_request.reset_mock()
+
+    await chime_obj.play(volume=50)
+
+    chime_obj.api.api_request.assert_called_with(
+        f"chimes/{chime_obj.id}/play-speaker",
+        method="post",
+        json={
+            "volume": 50,
+            "repeatTimes": 1,
+            "trackNo": 1,
+        },
     )
 
 
