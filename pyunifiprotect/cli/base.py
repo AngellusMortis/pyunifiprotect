@@ -46,8 +46,7 @@ def run(ctx: typer.Context, func: Coroutine[Any, Any, T]) -> T:
     runner = asyncio.run
     if sys.version_info < (3, 11):
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(update())
-        runner = loop.run_until_complete
+        runner = loop.run_until_complete  # type: ignore[assignment]
 
     try:
         return runner(callback())
