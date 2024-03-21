@@ -3050,10 +3050,32 @@ class Chime(ProtectAdoptableDeviceModel):
         return [self.api.bootstrap.cameras[c] for c in self.camera_ids]
 
     async def set_volume(self, level: int) -> None:
-        """Sets the volume on chime"""
+        """Set the volume on chime."""
+
+        old_value = self.volume
+        new_value = PercentInt(level)
 
         def callback() -> None:
-            self.volume = PercentInt(level)
+            self.volume = new_value
+            for setting in self.ring_settings:
+                if setting.volume == old_value:
+                    setting.volume = new_value
+
+        await self.queue_update(callback)
+
+    async def set_volume_for_camera(self, camera: Camera, level: int) -> None:
+        """Set the volume on chime for specific camera."""
+
+        def callback() -> None:
+            handled = False
+            for setting in self.ring_settings:
+                if setting.camera_id == camera.id:
+                    setting.volume = cast(PercentInt, level)
+                    handled = True
+                    break
+
+            if not handled:
+                raise BadRequest("Camera %s is not paired with chime", camera.id)
 
         await self.queue_update(callback)
 

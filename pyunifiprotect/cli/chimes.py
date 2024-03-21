@@ -13,6 +13,7 @@ app = typer.Typer(rich_markup_mode="rich")
 
 ARG_DEVICE_ID = typer.Argument(None, help="ID of chime to select for subcommands")
 ARG_REPEAT = typer.Argument(..., help="Repeat times count", min=1, max=6)
+ARG_VOLUME = typer.Argument(..., help="Volume", min=1, max=100)
 
 
 @dataclass
@@ -108,6 +109,32 @@ def cameras(
     data_before_changes = obj.dict_with_excludes()
     obj.camera_ids = camera_ids
     base.run(ctx, obj.save_device(data_before_changes))
+
+
+@app.command()
+def set_volume(
+    ctx: typer.Context,
+    value: int = ARG_VOLUME,
+    camera_id: Optional[str] = typer.Option(
+        None,
+        "-c",
+        "--camera",
+        help="Camera ID to apply volume to",
+    ),
+) -> None:
+    """Set volume level for chime rings."""
+
+    base.require_device_id(ctx)
+    obj: Chime = ctx.obj.device
+    if camera_id is None:
+        base.run(ctx, obj.set_volume(value))
+    else:
+        protect: ProtectApiClient = ctx.obj.protect
+        camera = protect.bootstrap.cameras.get(camera_id)
+        if camera is None:
+            typer.secho(f"Invalid camera ID: {camera_id}", fg="red")
+            raise typer.Exit(1)
+        base.run(ctx, obj.set_volume_for_camera(camera, value))
 
 
 @app.command()

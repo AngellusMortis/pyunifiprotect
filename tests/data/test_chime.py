@@ -19,15 +19,30 @@ if TYPE_CHECKING:
     from pyunifiprotect.data import Camera, Chime
 
 
-@pytest.mark.skipif(not TEST_CHIME_EXISTS, reason="Missing testdata")
+@pytest.mark.skipif(
+    not TEST_CHIME_EXISTS or not TEST_CAMERA_EXISTS,
+    reason="Missing testdata",
+)
 @pytest.mark.parametrize("level", [-1, 0, 100, 200])
 @pytest.mark.asyncio()
-async def test_chime_set_volume(chime_obj: Optional[Chime], level: int):
+async def test_chime_set_volume(
+    chime_obj: Optional[Chime],
+    camera_obj: Optional[Camera],
+    level: int,
+):
     if chime_obj is None:
         pytest.skip("No chime_obj obj found")
 
     chime_obj.api.api_request.reset_mock()
     chime_obj.volume = 20
+    chime_obj.ring_settings = [
+        RingSetting(
+            camera_id=camera_obj.id,
+            repeat_times=1,  # type: ignore[arg-type]
+            track_no=1,
+            volume=20,
+        ),
+    ]
 
     if level in {-1, 200}:
         with pytest.raises(ValidationError):
@@ -40,8 +55,132 @@ async def test_chime_set_volume(chime_obj: Optional[Chime], level: int):
         chime_obj.api.api_request.assert_called_with(
             f"chimes/{chime_obj.id}",
             method="patch",
-            json={"volume": level},
+            json={
+                "volume": level,
+                "ringSettings": [
+                    {
+                        "camera": camera_obj.id,
+                        "repeatTimes": 1,
+                        "trackNo": 1,
+                        "volume": level,
+                    },
+                ],
+            },
         )
+
+
+@pytest.mark.skipif(
+    not TEST_CHIME_EXISTS or not TEST_CAMERA_EXISTS,
+    reason="Missing testdata",
+)
+@pytest.mark.asyncio()
+async def test_chime_set_volume_with_existing_custom(
+    chime_obj: Optional[Chime],
+    camera_obj: Optional[Camera],
+):
+    if chime_obj is None:
+        pytest.skip("No chime_obj obj found")
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    chime_obj.camera_ids = [camera_obj.id]
+    chime_obj.volume = 100
+    chime_obj.ring_settings = [
+        RingSetting(
+            camera_id=camera_obj.id,
+            repeat_times=1,  # type: ignore[arg-type]
+            track_no=1,
+            volume=20,
+        ),
+    ]
+
+    camera_obj.api.api_request.reset_mock()
+
+    await chime_obj.set_volume(50)
+
+    chime_obj.api.api_request.assert_called_with(
+        f"chimes/{chime_obj.id}",
+        method="patch",
+        json={"volume": 50},
+    )
+
+
+@pytest.mark.skipif(
+    not TEST_CHIME_EXISTS or not TEST_CAMERA_EXISTS,
+    reason="Missing testdata",
+)
+@pytest.mark.asyncio()
+async def test_chime_set_volume_for_camera(
+    chime_obj: Optional[Chime],
+    camera_obj: Optional[Camera],
+):
+    if chime_obj is None:
+        pytest.skip("No chime_obj obj found")
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    chime_obj.camera_ids = [camera_obj.id]
+    chime_obj.volume = 100
+    chime_obj.ring_settings = [
+        RingSetting(
+            camera_id=camera_obj.id,
+            repeat_times=1,  # type: ignore[arg-type]
+            track_no=1,
+            volume=100,
+        ),
+    ]
+
+    camera_obj.api.api_request.reset_mock()
+
+    await chime_obj.set_volume_for_camera(camera_obj, 50)
+
+    chime_obj.api.api_request.assert_called_with(
+        f"chimes/{chime_obj.id}",
+        method="patch",
+        json={
+            "ringSettings": [
+                {
+                    "camera": camera_obj.id,
+                    "repeatTimes": 1,
+                    "trackNo": 1,
+                    "volume": 50,
+                },
+            ],
+        },
+    )
+
+
+@pytest.mark.skipif(
+    not TEST_CHIME_EXISTS or not TEST_CAMERA_EXISTS,
+    reason="Missing testdata",
+)
+@pytest.mark.asyncio()
+async def test_chime_set_volume_for_camera_not_exist(
+    chime_obj: Optional[Chime],
+    camera_obj: Optional[Camera],
+):
+    if chime_obj is None:
+        pytest.skip("No chime_obj obj found")
+    if camera_obj is None:
+        pytest.skip("No camera_obj obj found")
+
+    chime_obj.camera_ids = [camera_obj.id]
+    chime_obj.volume = 100
+    chime_obj.ring_settings = [
+        RingSetting(
+            camera_id="other-id",
+            repeat_times=1,  # type: ignore[arg-type]
+            track_no=1,
+            volume=100,
+        ),
+    ]
+
+    camera_obj.api.api_request.reset_mock()
+
+    with pytest.raises(BadRequest):
+        await chime_obj.set_volume_for_camera(camera_obj, 2)
+
+    assert not chime_obj.api.api_request.called
 
 
 @pytest.mark.skipif(not TEST_CHIME_EXISTS, reason="Missing testdata")
