@@ -11,6 +11,7 @@ from http.cookies import Morsel, SimpleCookie
 from ipaddress import IPv4Address, IPv6Address
 import logging
 from pathlib import Path
+import re
 import sys
 import time
 from typing import Any, Literal, Optional, Union, cast
@@ -79,6 +80,7 @@ If your Protect instance has a lot of events, this request will take much longer
 
 
 _LOGGER = logging.getLogger(__name__)
+_COOKIE_RE = re.compile(r"^set-cookie: ", re.IGNORECASE)
 
 # TODO: Urls to still support
 # Backups
@@ -510,7 +512,7 @@ class BaseApiClient:
 
         config: dict[str, Any] = {}
         session_hash = get_user_hash(str(self._url), self._username)
-        if await aos.path.isfile(self.config_file):
+        try:
             async with aiofiles.open(self.config_file, "rb") as f:
                 config_data = await f.read()
                 if config_data:
@@ -518,6 +520,8 @@ class BaseApiClient:
                         config = orjson.loads(config_data)
                     except Exception:
                         _LOGGER.warning("Invalid config file, ignoring.")
+        except FileNotFoundError:
+            pass
 
         config["sessions"] = config.get("sessions", {})
         config["sessions"][session_hash] = {
@@ -531,18 +535,18 @@ class BaseApiClient:
     async def _read_auth_config(self) -> SimpleCookie | None:
         """Read auth cookie from config."""
 
-        if not await aos.path.isfile(self.config_file):
+        try:
+            async with aiofiles.open(self.config_file, "rb") as f:
+                config_data = await f.read()
+                if config_data:
+                    try:
+                        config = orjson.loads(config_data)
+                    except Exception:
+                        _LOGGER.warning("Invalid config file, ignoring.")
+                        return None
+        except FileNotFoundError:
             _LOGGER.debug("no config file, not loading session")
             return None
-
-        async with aiofiles.open(self.config_file, "rb") as f:
-            config_data = await f.read()
-            if config_data:
-                try:
-                    config = orjson.loads(config_data)
-                except Exception:
-                    _LOGGER.warning("Invalid config file, ignoring.")
-                    return None
 
         session_hash = get_user_hash(str(self._url), self._username)
         session = config.get("sessions", {}).get(session_hash)
@@ -555,7 +559,7 @@ class BaseApiClient:
         for key, value in session.get("metadata", {}).items():
             cookie["TOKEN"][key] = value
 
-        cookie_value = str(cookie["TOKEN"]).replace("Set-Cookie: ", "")
+        cookie_value = _COOKIE_RE.sub(str(cookie["TOKEN"]), "")
         self._last_token_cookie = cookie["TOKEN"]
         self._last_token_cookie_decode = None
         self._is_authenticated = True
@@ -693,6 +697,9 @@ class ProtectApiClient(BaseApiClient):
         verify_ssl: bool = True,
         session: Optional[aiohttp.ClientSession] = None,
         ws_timeout: int = 30,
+        cache_dir: Optional[Path] = None,
+        config_dir: Optional[Path] = None,
+        store_sessions: bool = True,
         override_connection_host: bool = False,
         minimum_score: int = 0,
         subscribed_models: Optional[set[ModelType]] = None,
@@ -708,6 +715,9 @@ class ProtectApiClient(BaseApiClient):
             verify_ssl=verify_ssl,
             session=session,
             ws_timeout=ws_timeout,
+            cache_dir=cache_dir,
+            config_dir=config_dir,
+            store_sessions=store_sessions,
         )
 
         self._minimum_score = minimum_score
