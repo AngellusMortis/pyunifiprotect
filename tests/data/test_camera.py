@@ -907,6 +907,7 @@ async def test_camera_set_privacy_no_privacy(camera_obj: Optional[Camera]):
 @pytest.mark.parametrize("enabled", [True, False])
 @pytest.mark.parametrize("level", [None, -1, 0, 100, 200])
 @pytest.mark.parametrize("mode", [None, RecordingMode.ALWAYS])
+@pytest.mark.parametrize("use_global", [None, True])
 @pytest.mark.asyncio()
 async def test_camera_set_privacy(
     camera_obj: Optional[Camera],
@@ -914,6 +915,7 @@ async def test_camera_set_privacy(
     enabled: bool,
     level: Optional[int],
     mode: Optional[RecordingMode],
+    use_global: Optional[bool],
 ):
     if camera_obj is None:
         pytest.skip("No camera_obj obj found")
@@ -926,10 +928,11 @@ async def test_camera_set_privacy(
         camera_obj.add_privacy_zone()
     camera_obj.mic_volume = 10
     camera_obj.recording_settings.mode = RecordingMode.NEVER
+    camera_obj.use_global = False
 
     if level in {-1, 200}:
         with pytest.raises(ValidationError):
-            await camera_obj.set_privacy(enabled, level, mode)
+            await camera_obj.set_privacy(enabled, level, mode, use_global)
         assert not camera_obj.api.api_request.called
     else:
         expected = {}
@@ -946,6 +949,9 @@ async def test_camera_set_privacy(
                 },
             )
 
+        if use_global is not None:
+            expected.update({"useGlobal": use_global})
+
         if actual_enabled != enabled:
             if enabled:
                 expected.update(
@@ -954,7 +960,7 @@ async def test_camera_set_privacy(
             else:
                 expected.update({"privacyZones": []})
 
-        await camera_obj.set_privacy(enabled, level, mode)
+        await camera_obj.set_privacy(enabled, level, mode, use_global)
 
         if not expected:
             assert not camera_obj.api.api_request.called

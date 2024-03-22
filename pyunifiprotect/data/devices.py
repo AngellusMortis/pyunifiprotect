@@ -2344,6 +2344,7 @@ class Camera(ProtectMotionDeviceModel):
         enabled: bool,
         mic_level: Optional[int] = None,
         recording_mode: Optional[RecordingMode] = None,
+        use_global: Optional[bool] = None,
     ) -> None:
         """Adds/removes a privacy zone that blacks out the whole camera"""
 
@@ -2361,6 +2362,9 @@ class Camera(ProtectMotionDeviceModel):
 
             if recording_mode is not None:
                 self.recording_settings.mode = recording_mode
+
+            if use_global is not None:
+                self.use_global = use_global
 
         await self.queue_update(callback)
 
