@@ -147,7 +147,7 @@ features though.
 Examples include:
 
 * Stream sharing
-* Facial recognition (recognition is not done on console and requires Ubiquiti's cloud to function)
+* Facial recognition
 
 ## Credits
 
