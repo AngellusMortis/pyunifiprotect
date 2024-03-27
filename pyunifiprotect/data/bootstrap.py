@@ -436,6 +436,12 @@ class Bootstrap(ProtectBaseObject):
             self._create_stat(packet, [], True)
             return None
 
+        # for another NVR in stack
+        nvr_id = packet.action_frame.data.get("id")
+        if nvr_id and nvr_id != self.nvr.id:
+            self._create_stat(packet, [], True)
+            return None
+
         data = self.nvr.unifi_dict_to_dict(data)
         # nothing left to process
         if not data:
