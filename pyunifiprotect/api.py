@@ -159,6 +159,7 @@ class BaseApiClient:
     _last_token_cookie: Morsel[str] | None = None
     _last_token_cookie_decode: Optional[dict[str, Any]] = None
     _session: Optional[aiohttp.ClientSession] = None
+    _loaded_session: bool = False
 
     headers: Optional[dict[str, str]] = None
     _websocket: Optional[Websocket] = None
@@ -191,6 +192,7 @@ class BaseApiClient:
         self._password = password
         self._verify_ssl = verify_ssl
         self._ws_timeout = ws_timeout
+        self._loaded_session = False
 
         self.config_dir = config_dir or (Path(user_config_dir()) / "ufp")
         self.cache_dir = cache_dir or (Path(user_cache_dir()) / "ufp_cache")
@@ -234,11 +236,12 @@ class BaseApiClient:
                 _LOGGER.debug("Session was closed, creating a new one")
             # need unsafe to access httponly cookies
             self._session = aiohttp.ClientSession(cookie_jar=CookieJar(unsafe=True))
-            if self.store_sessions:
-                session_cookie = await self._read_auth_config()
-                if session_cookie:
-                    _LOGGER.debug("Successfully loaded session from config")
-                    self._session.cookie_jar.update_cookies(session_cookie)
+
+        if not self._loaded_session and self.store_sessions:
+            session_cookie = await self._read_auth_config()
+            if session_cookie:
+                _LOGGER.debug("Successfully loaded session from config")
+                self._session.cookie_jar.update_cookies(session_cookie)
 
         return self._session
 
@@ -272,6 +275,7 @@ class BaseApiClient:
         if self._session is not None:
             await self._session.close()
             self._session = None
+            self._loaded_session = False
 
     def set_header(self, key: str, value: str | None) -> None:
         """Set header."""
@@ -454,10 +458,7 @@ class BaseApiClient:
     async def ensure_authenticated(self) -> None:
         """Ensure we are authenticated."""
 
-        # load session first before checking for auth
-        if self._session is None:
-            await self.get_session()
-
+        await self._load_session()
         if self.is_authenticated() is False:
             await self.authenticate()
 
@@ -538,6 +539,18 @@ class BaseApiClient:
 
         async with aiofiles.open(self.config_file, "wb") as f:
             await f.write(orjson.dumps(config, option=orjson.OPT_INDENT_2))
+
+    async def _load_session(self) -> None:
+        if self._session is None:
+            await self.get_session()
+            assert self._session is not None
+
+        if not self._loaded_session and self.store_sessions:
+            session_cookie = await self._read_auth_config()
+            self._loaded_session = True
+            if session_cookie:
+                _LOGGER.debug("Successfully loaded session from config")
+                self._session.cookie_jar.update_cookies(session_cookie)
 
     async def _read_auth_config(self) -> SimpleCookie | None:
         """Read auth cookie from config."""
