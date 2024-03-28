@@ -237,12 +237,6 @@ class BaseApiClient:
             # need unsafe to access httponly cookies
             self._session = aiohttp.ClientSession(cookie_jar=CookieJar(unsafe=True))
 
-        if not self._loaded_session and self.store_sessions:
-            session_cookie = await self._read_auth_config()
-            if session_cookie:
-                _LOGGER.debug("Successfully loaded session from config")
-                self._session.cookie_jar.update_cookies(session_cookie)
-
         return self._session
 
     async def get_websocket(self) -> Websocket:
